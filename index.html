@@ -704,11 +704,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         reader.readAsDataURL(e.target.files[0]);
         
-        /*window.addEventListener("load", async () => {
-    await Tone.loaded();
-    console.log("Strumenti pronti");
-}); */
-        
+
     });
 
     // ======================================
@@ -865,7 +861,7 @@ function buildSection(startBar, progression, scale) {
         for (let i = 0; i < 8; i++) {
 
             events.push({
-                time: `${startBar + barIndex}:${Math.floor(i/2)}:${(i%2)*2}`,
+                time: Tone.Time(barTime) + Tone.Time("8n") * i,
                 note: chordRoot
             });
 
@@ -873,11 +869,11 @@ function buildSection(startBar, progression, scale) {
 
     });
 
-    new Tone.Part((time, value) => {
-
+    const rhythmPart = new Tone.Part((time, value) => {
         guitarLead.triggerAttackRelease(value.note, "8n", time);
-
+        bass.triggerAttackRelease(value.note, "8n", time);
     }, events).start(0);
+
 }
 
 function buildDrums(startBar, bars) {
