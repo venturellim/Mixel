@@ -865,7 +865,7 @@ function buildSection(startBar, progression, scale) {
         for (let i = 0; i < 8; i++) {
 
             events.push({
-                time: Tone.Time(barTime) + Tone.Time("8n") * i,
+                time: `${startBar + barIndex}:${Math.floor(i/2)}:${(i%2)*2}`,
                 note: chordRoot
             });
 
@@ -873,11 +873,11 @@ function buildSection(startBar, progression, scale) {
 
     });
 
-    const rhythmPart = new Tone.Part((time, value) => {
-        guitar.triggerAttackRelease(value.note, "8n", time);
-        bass.triggerAttackRelease(value.note, "8n", time);
-    }, events).start(0);
+    new Tone.Part((time, value) => {
 
+        guitarLead.triggerAttackRelease(value.note, "8n", time);
+
+    }, events).start(0);
 }
 
 function buildDrums(startBar, bars) {
@@ -948,7 +948,7 @@ function buildRhythmGuitar(startBar, bars, progression) {
 
             const time = `${barIndex}:${Math.floor(sixteenth/4)}:${sixteenth%4}`;
 
-            const rootNote = root + "3";
+            const rootNote = root;
             const fifthNote = Tone.Frequency(rootNote).transpose(7).toNote();
             const octaveNote = Tone.Frequency(rootNote).transpose(12).toNote();
 
@@ -982,7 +982,7 @@ function buildBass(startBar, bars, progression) {
 
         const barTime = Tone.Time(`${startBar + bar}m`);
 
-        const rootMidi = Tone.Frequency(rootNote + "2").toMidi();
+        const rootMidi = Tone.Frequency(rootNote).transpose(-12).toMidi();
         const fifthMidi = rootMidi + 7;
 
         const root = Tone.Frequency(rootMidi, "midi").toNote();
