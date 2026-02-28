@@ -737,26 +737,34 @@ document.addEventListener("DOMContentLoaded", () => {
     // ======================================
     // PLAY BUTTON
     // ======================================
-    playBtn.addEventListener("click", async () => {
+   
+playBtn.addEventListener("click", async () => {
 
-        if (!dna) {
+if (!dna) {
             alert("Carica un'immagine prima!");
             return;
         }
 
-        await Tone.start();
-        await Tone.loaded();
-        console.log("Drums loaded:", drums.loaded);
-console.log("Guitar loaded:", guitarRhithm.loaded);
-console.log("Bass loaded:", bass.loaded);
-        Tone.Transport.stop();
-        Tone.Transport.cancel();
 
-        buildSong(dna);
+    playBtn.disabled = true;
+    playBtn.textContent = "Caricamento...";
 
-        Tone.Transport.start();
-    });
+    await Tone.start();
 
+    // Aspetta caricamento TUTTI i buffer
+    await Tone.loaded();
+
+    console.log("Tutto caricato.");
+
+    Tone.Transport.stop();
+    Tone.Transport.cancel();
+
+    buildSong(dna);
+
+    Tone.Transport.start();
+
+    playBtn.textContent = "Play";
+    playBtn.disabled = false;
 });
 
 function buildSong(dna) {
