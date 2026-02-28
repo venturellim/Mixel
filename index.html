@@ -746,8 +746,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
         await Tone.start();
         await Tone.loaded();
-        console.log(guitarRhithm.loaded);
-console.log(bass.loaded);
+        console.log("Drums loaded:", drums.loaded);
+console.log("Guitar loaded:", guitarRhithm.loaded);
+console.log("Bass loaded:", bass.loaded);
         Tone.Transport.stop();
         Tone.Transport.cancel();
 
