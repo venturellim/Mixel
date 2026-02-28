@@ -703,6 +703,12 @@ document.addEventListener("DOMContentLoaded", () => {
         };
 
         reader.readAsDataURL(e.target.files[0]);
+        
+        window.addEventListener("load", async () => {
+    await Tone.loaded();
+    console.log("Strumenti pronti");
+});
+        
     });
 
     // ======================================
@@ -740,12 +746,6 @@ document.addEventListener("DOMContentLoaded", () => {
    
 playBtn.addEventListener("click", async () => {
 
-if (!dna) {
-            alert("Carica un'immagine prima!");
-            return;
-        }
-
-
     playBtn.disabled = true;
     playBtn.textContent = "Caricamento...";
 
@@ -753,6 +753,9 @@ if (!dna) {
 
     // Aspetta caricamento TUTTI i buffer
     await Tone.loaded();
+    console.log("Drums loaded:", drums.loaded);
+console.log("Guitar loaded:", guitarRhithm.loaded);
+console.log("Bass loaded:", bass.loaded);
 
     console.log("Tutto caricato.");
 
