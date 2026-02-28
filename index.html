@@ -110,7 +110,7 @@
         }
        
 
-          /* ANTEPRIMA IMMAGINE LIMITATA */
+          /* PRIMA IMMAGINE LIMITATA */
         .preview {
             display: block;
             max-width: 70%;
@@ -704,10 +704,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
         reader.readAsDataURL(e.target.files[0]);
         
-        window.addEventListener("load", async () => {
+        /*window.addEventListener("load", async () => {
     await Tone.loaded();
     console.log("Strumenti pronti");
-});
+}); */
         
     });
 
@@ -1023,7 +1023,7 @@ function buildBass(startBar, bars, progression) {
     part.loop = false;
 }
 
-});
+//});
 
 </script>
 </body>
