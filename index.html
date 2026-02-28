@@ -704,7 +704,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         reader.readAsDataURL(e.target.files[0]);
         
-
+        
     });
 
     // ======================================
@@ -944,7 +944,7 @@ function buildRhythmGuitar(startBar, bars, progression) {
 
             const time = `${barIndex}:${Math.floor(sixteenth/4)}:${sixteenth%4}`;
 
-            const rootNote = root;
+            const rootNote = root + "3";
             const fifthNote = Tone.Frequency(rootNote).transpose(7).toNote();
             const octaveNote = Tone.Frequency(rootNote).transpose(12).toNote();
 
@@ -978,7 +978,7 @@ function buildBass(startBar, bars, progression) {
 
         const barTime = Tone.Time(`${startBar + bar}m`);
 
-        const rootMidi = Tone.Frequency(rootNote).transpose(-12).toMidi();
+        const rootMidi = Tone.Frequency(rootNote + "2").toMidi();
         const fifthMidi = rootMidi + 7;
 
         const root = Tone.Frequency(rootMidi, "midi").toNote();
