@@ -963,9 +963,9 @@ function buildRhythmGuitar(startBar, bars, progression) {
     new Tone.Part((time, ev) => {
 
         if (ev.open) {
-            guitarRhythm.triggerAttackRelease(ev.chord, "8n", time);
+            guitarRhithm.triggerAttackRelease(ev.chord, "8n", time);
         } else {
-            guitarRhythm.triggerAttackRelease(ev.chord, "16n", time);
+            guitarRhithm.triggerAttackRelease(ev.chord, "16n", time);
         }
 
     }, events).start(0);
