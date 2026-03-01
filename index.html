@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <title>Mixel - Ascolta le tue foto!</title>
 
-<link rel="stylesheet" href="style.css">
+ <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+<script>eruda.init(); console.log("🟦 Eruda inizializzato");</script>
 
 </head>
 
@@ -24,16 +26,12 @@
     <aside class="sidebar">
 
         <div id="sidebarLogo" class="sidebar-logo-box">
-            <img src="Mixel2.PNG"
+            <img src="https://digilander.libero.it/mventu/mixel.PNG"
                  alt="Logo"
                  style="width: 100%; height: 100%; object-fit: contain;">
         </div>
 
-        <input type="file" id="imageLoader" class="file-input">
-
-<canvas id="canvas" style="display:none;"></canvas>
-
-<button id="playBtn">Play</button>
+        <input type="file" id="fileInput" class="file-input">
 
         <button id="btnGlitch" class="side-btn hidden">Ascolta file non elaborato</button>
         <button id="btnElabora" class="side-btn hidden">Elabora file</button>
@@ -46,7 +44,7 @@
 
         <div id="heroLogoContainer">
             <div id="heroLogo" class="hero-logo-box">
-                <img src="Mixel2.PNG" 
+                <img src="https://digilander.libero.it/mventu/mixel.PNG" 
                      alt="Logo" 
                      style="width: 100%; height: 100%; object-fit: contain;">
             </div>
@@ -77,6 +75,8 @@
 <canvas id="spectrumCanvas" width="600" height="120" class="spectrum"></canvas>
 
         </div>
+
+   </main>
 
     <!-- PANNELLO FX SLIDE-IN -->
     <div id="fxPanel" class="fx-panel">
@@ -157,11 +157,7 @@
 
     </div>
     
-    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-<script>eruda.init(); console.log("🟦 Eruda inizializzato");</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
-
-<script type="module" src="main.js"></script>
-
+ <script type="module" src="main.js"></script>
+ 
 </body>
 </html>
