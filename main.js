@@ -3,7 +3,7 @@ import { generateMetal } from "./metal.js";
 let currentDNA = null;
 let currentEngine = null;
 
-const imageLoader = document.getElementById("imageLoader");
+const imageLoader = document.getElementById("fileInput");
 const genreButton = document.getElementById("genreButton");
 const metalBtn = document.getElementById("metalBtn");
 const player = document.getElementById("player");
