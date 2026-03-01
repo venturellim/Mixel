@@ -13,6 +13,8 @@ window.addEventListener("DOMContentLoaded", () => {
     const imageLoader = document.getElementById("fileInput");
     const genreButton = document.getElementById("btnElabora");
     const player = document.getElementById("Player");
+    console.log("PLAYER INIT:", player);
+console.log("GENRE BTN INIT:", genreButton);
     const playBtn = document.getElementById("btnPlay");
 
     const genreButtons = document.querySelectorAll(".genre-btn");
@@ -46,8 +48,15 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 function resetApp() {
-    player.classList.add("hidden");
-    genreButton.classList.add("hidden");
+
+    if (player) {
+        player.classList.add("hidden");
+    }
+
+    if (genreButton) {
+        genreButton.classList.add("hidden");
+    }
+
     currentDNA = null;
     currentEngine = null;
 }
