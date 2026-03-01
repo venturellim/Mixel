@@ -7,17 +7,35 @@ window.addEventListener("DOMContentLoaded", () => {
 
     const imageLoader = document.getElementById("fileInput");
     const genreButton = document.getElementById("btnElabora");
-    const metalBtn = document.querySelector('[data-genre="metal"]');
     const player = document.getElementById("Player");
     const playBtn = document.getElementById("btnPlay");
 
+    const genreButtons = document.querySelectorAll(".genre-btn");
+
+    // ===== Controlli sicurezza =====
     if (!imageLoader) {
-        console.error("imageLoader non trovato nel DOM");
+        console.error("fileInput non trovato");
         return;
     }
 
+    if (!playBtn) {
+        console.error("btnPlay non trovato");
+        return;
+    }
+
+    // ===== Eventi =====
     imageLoader.addEventListener("change", handleImage);
-    metalBtn.addEventListener("click", selectMetal);
+
+    genreButtons.forEach(btn => {
+        btn.addEventListener("click", () => {
+            const genre = btn.dataset.genre;
+
+            if (genre === "metal") {
+                selectMetal();
+            }
+        });
+    });
+
     playBtn.addEventListener("click", startPlayback);
 
 });
