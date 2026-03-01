@@ -3,15 +3,24 @@ import { generateMetal } from "./metal.js";
 let currentDNA = null;
 let currentEngine = null;
 
-const fileInput = document.getElementById("fileInput");
-const genreButton = document.getElementById("genreButton");
-const metalBtn = document.getElementById("metalBtn");
-const player = document.getElementById("player");
-const playBtn = document.getElementById("playBtn");
+window.addEventListener("DOMContentLoaded", () => {
 
-fileInput.addEventListener("change", handleImage);
-metalBtn.addEventListener("click", selectMetal);
-playBtn.addEventListener("click", startPlayback);
+    const imageLoader = document.getElementById("fileInput");
+    const genreButton = document.getElementById("genreButton");
+    const metalBtn = document.getElementById("metalBtn");
+    const player = document.getElementById("player");
+    const playBtn = document.getElementById("playBtn");
+
+    if (!imageLoader) {
+        console.error("imageLoader non trovato nel DOM");
+        return;
+    }
+
+    imageLoader.addEventListener("change", handleImage);
+    metalBtn.addEventListener("click", selectMetal);
+    playBtn.addEventListener("click", startPlayback);
+
+});
 
 function resetApp() {
     player.classList.add("hidden");
