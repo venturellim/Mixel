@@ -6,9 +6,9 @@ let currentEngine = null;
 window.addEventListener("DOMContentLoaded", () => {
 
     const imageLoader = document.getElementById("fileInput");
-    const genreButton = document.getElementById("genre-btn");
-    const metalBtn = document.getElementById("metal");
-    const player = document.getElementById("metalPlayer");
+    const genreButton = document.getElementById("btnElabora");
+    const metalBtn = document.querySelector('[data-genre="metal"]');
+    const player = document.getElementById("Player");
     const playBtn = document.getElementById("btnPlay");
 
     if (!imageLoader) {
