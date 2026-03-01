@@ -2,6 +2,11 @@ import { generateMetal } from "./metal.js";
 
 let currentDNA = null;
 let currentEngine = null;
+// 👇 variabili globali
+let imageLoader;
+let genreButton;
+let player;
+let playBtn;
 
 window.addEventListener("DOMContentLoaded", () => {
 
