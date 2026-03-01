@@ -6,10 +6,10 @@ let currentEngine = null;
 window.addEventListener("DOMContentLoaded", () => {
 
     const imageLoader = document.getElementById("fileInput");
-    const genreButton = document.getElementById("genreButton");
-    const metalBtn = document.getElementById("metalBtn");
-    const player = document.getElementById("player");
-    const playBtn = document.getElementById("playBtn");
+    const genreButton = document.getElementById("genre-btn");
+    const metalBtn = document.getElementById("metal");
+    const player = document.getElementById("metalPlayer");
+    const playBtn = document.getElementById("btnPlay");
 
     if (!imageLoader) {
         console.error("imageLoader non trovato nel DOM");
