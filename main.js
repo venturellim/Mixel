@@ -9,7 +9,7 @@ const metalBtn = document.getElementById("metalBtn");
 const player = document.getElementById("player");
 const playBtn = document.getElementById("playBtn");
 
-imageLoader.addEventListener("change", handleImage);
+fileInput.addEventListener("change", handleImage);
 metalBtn.addEventListener("click", selectMetal);
 playBtn.addEventListener("click", startPlayback);
 
