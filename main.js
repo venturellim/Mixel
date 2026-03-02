@@ -73,21 +73,15 @@ function initGenrePanel() {
     const btnElabora = document.getElementById("btnElabora");
     const genrePanel = document.getElementById("genrePanel");
     const closeGenrePanel = document.getElementById("closeGenrePanel");
-    const genreButtons = document.querySelectorAll(".genre-btn");
 
-    btnElabora.onclick = () => {
-        genrePanel.classList.add("open");
-    };
+    btnElabora.addEventListener("click", () => {
+        genrePanel.classList.remove("hidden"); // 🔥 QUESTA È LA CHIAVE
+        genrePanel.classList.add("show");
+    });
 
-    closeGenrePanel.onclick = () => {
+    closeGenrePanel.addEventListener("click", () => {
         genrePanel.classList.remove("open");
-    };
-
-    genreButtons.forEach(btn => {
-        btn.onclick = () => {
-            const genre = btn.dataset.genre;
-            selectGenre(genre);
-        };
+        genrePanel.classList.add("hidden"); // opzionale ma pulito
     });
 }
 
@@ -103,7 +97,7 @@ function selectGenre(genre) {
         currentEngine = createMetalEngine();
     }
 
-    document.getElementById("genrePanel").classList.remove("open");
+    document.getElementById("genrePanel").classList.remove("show");
     document.getElementById("metalPlayer").classList.remove("hidden");
 }
 
