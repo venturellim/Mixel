@@ -103,7 +103,7 @@ console.log("INIT GENRE PANEL");
 
 // 🎶 Selezione Genere
 
-import { createMetalEngine } from "./metal.js";
+import { createMetalEngine } from "metal.js";
 
 function selectGenre(genre) {
 
@@ -115,7 +115,7 @@ function selectGenre(genre) {
 initPlayerUI();
     initFxPanel();
     document.getElementById("genrePanel").classList.remove("show");
-    //document.getElementById("Player").classList.remove("hidden");
+    document.getElementById("Player").classList.remove("hidden");
 }
 
 // 🎧 Player UI
