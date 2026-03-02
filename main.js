@@ -103,7 +103,7 @@ console.log("INIT GENRE PANEL");
 
 // 🎶 Selezione Genere
 
-import { createMetalEngine } from "metal.js";
+import { createMetalEngine } from "./metal.js";
 
 function selectGenre(genre) {
 
