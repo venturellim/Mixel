@@ -120,6 +120,14 @@ function selectGenre(genre) {
 
 function initPlayerUI() {
 
+const mixelPlayer = document.getElementById("Player");
+if (!mixelPlayer) {
+        console.error("❌ ERRORE: elemento #metalPlayer non trovato!");
+        return;
+    }
+    
+    mixelPlayer.classList.remove("hidden");
+    
     const playBtn = document.getElementById("btnPlay");
     const pauseBtn = document.getElementById("btnPause");
     const stopBtn = document.getElementById("btnStop");
@@ -156,5 +164,5 @@ function resetAppState() {
     currentEngine = null;
     currentDNA = null;
 
-    document.getElementById("Player")?.classList.add("hidden");
+    document.getElementById("mPlayer")?.classList.add("hidden");
 }
