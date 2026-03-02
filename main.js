@@ -74,15 +74,15 @@ function initGenrePanel() {
     const genrePanel = document.getElementById("genrePanel");
     const closeGenrePanel = document.getElementById("closeGenrePanel");
 
-    btnElabora.addEventListener("click", () => {
-        genrePanel.classList.remove("hidden"); // 🔥 QUESTA È LA CHIAVE
-        genrePanel.classList.add("show");
-    });
+    btnElabora.addEventListener("click", function () {
+    genrePanel.classList.add("show");
+    genrePanel.classList.remove("hidden");
+});
 
-    closeGenrePanel.addEventListener("click", () => {
-        genrePanel.classList.remove("open");
-        genrePanel.classList.add("hidden"); // opzionale ma pulito
-    });
+closeGenrePanel.addEventListener("click", function () {
+    genrePanel.classList.remove("show");
+    setTimeout(() => genrePanel.classList.add("hidden"), 400);
+});
 }
 
 // 🎶 Selezione Genere
