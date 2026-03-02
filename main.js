@@ -113,7 +113,7 @@ function selectGenre(genre) {
     }
 
     document.getElementById("genrePanel").classList.remove("show");
-    document.getElementById("Player").classList.remove("hidden");
+    //document.getElementById("Player").classList.remove("hidden");
 }
 
 // 🎧 Player UI
@@ -124,7 +124,7 @@ console.log("MIXEL PLAYER INIZZIALIZZATO");
 
 const mixelPlayer = document.getElementById("Player");
 if (!mixelPlayer) {
-        console.error("❌ ERRORE: elemento #metalPlayer non trovato!");
+        console.error("❌ ERRORE: elemento #mixelPlayer non trovato!");
         return;
     }
     
@@ -134,10 +134,17 @@ if (!mixelPlayer) {
     const pauseBtn = document.getElementById("btnPause");
     const stopBtn = document.getElementById("btnStop");
     const seekBar = document.getElementById("seekBar");
+    
+    if (!playBtn || !pauseBtn || !stopBtn || !seekBar) {
+        console.error("❌ ERRORE: uno dei pulsanti del player non esiste!");
+        return;
+    }
 
     playBtn.onclick = () => currentEngine?.play();
     pauseBtn.onclick = () => currentEngine?.pause();
     stopBtn.onclick = () => currentEngine?.stop();
+    
+    
 
     seekBar.oninput = () => {
         if (!currentEngine) return;
@@ -166,5 +173,5 @@ function resetAppState() {
     currentEngine = null;
     currentDNA = null;
 
-    document.getElementById("mPlayer")?.classList.add("hidden");
+    document.getElementById("Player")?.classList.add("hidden");
 }
