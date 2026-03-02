@@ -156,5 +156,5 @@ function resetAppState() {
     currentEngine = null;
     currentDNA = null;
 
-    document.getElementById("metalPlayer")?.classList.add("hidden");
+    document.getElementById("Player")?.classList.add("hidden");
 }
