@@ -96,8 +96,7 @@ console.log("INIT GENRE PANEL");
             const genre = btn.dataset.genre;
             console.log("🎵 Selezionato:", genre);
             selectGenre(genre);
-            initPlayerUI();
-    initFxPanel();
+            
         });
     });
 }
@@ -113,7 +112,8 @@ function selectGenre(genre) {
     if (genre === "metal") {
         currentEngine = createMetalEngine();
     }
-
+initPlayerUI();
+    initFxPanel();
     document.getElementById("genrePanel").classList.remove("show");
     //document.getElementById("Player").classList.remove("hidden");
 }
