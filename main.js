@@ -1,114 +1,151 @@
-import { generateMetal } from "./metal.js";
-
-let currentDNA = null;
+// ===============================
+// STATO GLOBALE APP
+// ===============================
 let currentEngine = null;
-// 👇 variabili globali
-let imageLoader;
-let genreButton;
-let player;
-let playBtn;
+let currentDNA = null;
+let currentGenre = null;
 
+
+// ===============================
+// DOM READY
+// ===============================
 window.addEventListener("DOMContentLoaded", () => {
 
-    const imageLoader = document.getElementById("fileInput");
-    const genreButton = document.getElementById("btnElabora");
-    const player = document.getElementById("Player");
-    console.log("PLAYER INIT:", player);
-console.log("GENRE BTN INIT:", genreButton);
-    const playBtn = document.getElementById("btnPlay");
-
-    const genreButtons = document.querySelectorAll(".genre-btn");
-
-    // ===== Controlli sicurezza =====
-    if (!imageLoader) {
-        console.error("fileInput non trovato");
-        return;
-    }
-
-    if (!playBtn) {
-        console.error("btnPlay non trovato");
-        return;
-    }
-
-    // ===== Eventi =====
-    imageLoader.addEventListener("change", handleImage);
-
-    genreButtons.forEach(btn => {
-        btn.addEventListener("click", () => {
-            const genre = btn.dataset.genre;
-
-            if (genre === "metal") {
-                selectMetal();
-            }
-        });
-    });
-
-    playBtn.addEventListener("click", startPlayback);
+    initOrientation();
+    initFileLoader();
+    initGenrePanel();
+    initPlayerUI();
+    initFxPanel();
 
 });
 
-function resetApp() {
+// 📱 Orientamento
 
-    if (player) {
-        player.classList.add("hidden");
+function initOrientation() {
+
+    const rotateOverlay = document.getElementById("rotateOverlay");
+
+    function checkOrientation() {
+        const isPortrait = window.innerHeight > window.innerWidth;
+        rotateOverlay.classList.toggle("hidden", !isPortrait);
     }
 
-    if (genreButton) {
-        genreButton.classList.add("hidden");
+    checkOrientation();
+    window.addEventListener("resize", checkOrientation);
+    window.addEventListener("orientationchange", checkOrientation);
+}
+
+// 🖼 File Loader
+
+function initFileLoader() {
+
+    const fileInput = document.getElementById("fileInput");
+    const previewImage = document.getElementById("previewImage");
+    const heroLogoContainer = document.getElementById("heroLogoContainer");
+    const btnElabora = document.getElementById("btnElabora");
+
+    fileInput.addEventListener("change", function () {
+
+        const file = this.files[0];
+        if (!file) return;
+
+        if (!file.type.startsWith("image/")) {
+            alert("Carica solo immagini.");
+            return;
+        }
+
+        const url = URL.createObjectURL(file);
+
+        previewImage.src = url;
+        previewImage.classList.remove("hidden");
+        heroLogoContainer.style.display = "none";
+
+        btnElabora.classList.remove("hidden");
+
+        resetAppState();
+    });
+}
+
+// 🎛 Pannello Generi
+
+function initGenrePanel() {
+
+    const btnElabora = document.getElementById("btnElabora");
+    const genrePanel = document.getElementById("genrePanel");
+    const closeGenrePanel = document.getElementById("closeGenrePanel");
+    const genreButtons = document.querySelectorAll(".genre-btn");
+
+    btnElabora.onclick = () => {
+        genrePanel.classList.add("open");
+    };
+
+    closeGenrePanel.onclick = () => {
+        genrePanel.classList.remove("open");
+    };
+
+    genreButtons.forEach(btn => {
+        btn.onclick = () => {
+            const genre = btn.dataset.genre;
+            selectGenre(genre);
+        };
+    });
+}
+
+// 🎶 Selezione Genere
+
+import { createMetalEngine } from "./metal.js";
+
+function selectGenre(genre) {
+
+    currentGenre = genre;
+
+    if (genre === "metal") {
+        currentEngine = createMetalEngine();
     }
 
-    currentDNA = null;
+    document.getElementById("genrePanel").classList.remove("open");
+    document.getElementById("metalPlayer").classList.remove("hidden");
+}
+
+// 🎧 Player UI
+
+function initPlayerUI() {
+
+    const playBtn = document.getElementById("btnPlay");
+    const pauseBtn = document.getElementById("btnPause");
+    const stopBtn = document.getElementById("btnStop");
+    const seekBar = document.getElementById("seekBar");
+
+    playBtn.onclick = () => currentEngine?.play();
+    pauseBtn.onclick = () => currentEngine?.pause();
+    stopBtn.onclick = () => currentEngine?.stop();
+
+    seekBar.oninput = () => {
+        if (!currentEngine) return;
+        const sec = (seekBar.value / 100) * currentEngine.totalDuration;
+        currentEngine.seek(sec);
+    };
+}
+
+// 🎚 FX Panel
+
+function initFxPanel() {
+
+    const fxPanel = document.getElementById("fxPanel");
+    const btnFxPanel = document.getElementById("btnFxPanel");
+    const closeFxPanel = document.getElementById("closeFxPanel");
+
+    btnFxPanel.onclick = () => fxPanel.classList.add("open");
+    closeFxPanel.onclick = () => fxPanel.classList.remove("open");
+}
+
+// 🔄 Reset App
+
+function resetAppState() {
+
+    currentEngine?.stop();
     currentEngine = null;
-}
+    currentDNA = null;
 
-function handleImage(e) {
-    resetApp();
-
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const img = new Image();
-    img.onload = () => {
-        currentDNA = analyzeImage(img);
-        genreButton.classList.remove("hidden");
-    };
-
-    img.src = URL.createObjectURL(file);
-}
-
-function analyzeImage(img) {
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-
-    canvas.width = img.width;
-    canvas.height = img.height;
-    ctx.drawImage(img, 0, 0);
-
-    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-
-    let brightness = 0;
-
-    for (let i = 0; i < data.length; i += 4) {
-        brightness += (data[i] + data[i+1] + data[i+2]) / 3;
-    }
-
-    brightness /= (data.length / 4);
-
-    return {
-        brightness
-    };
-}
-
-function selectMetal() {
-    currentEngine = generateMetal(currentDNA);
-    player.classList.remove("hidden");
-}
-
-async function startPlayback() {
-    await Tone.start();
-    await Tone.loaded();
-
-    if (!currentEngine) return;
-
-    currentEngine.start();
+    document.getElementById("metalPlayer")?.classList.add("hidden");
 }

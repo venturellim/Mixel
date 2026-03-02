@@ -1,22 +1,34 @@
-export function generateMetal(dna) {
+export function createMetalEngine() {
 
-    const bpm = 135 + Math.floor(Math.random() * 20);
-    Tone.Transport.bpm.value = bpm;
+    console.log("⚡ Engine METAL creato (test)");
 
-    const synth = new Tone.Synth().toDestination();
-
-    function start() {
-        Tone.Transport.stop();
-        Tone.Transport.cancel();
-
-        Tone.Transport.scheduleRepeat((time) => {
-            synth.triggerAttackRelease("C3", "8n", time);
-        }, "4n");
-
-        Tone.Transport.start();
-    }
+    let isPlaying = false;
 
     return {
-        start
+
+        totalDuration: 120,
+
+        play() {
+            console.log("▶ PLAY metal");
+            isPlaying = true;
+        },
+
+        pause() {
+            console.log("⏸ PAUSE metal");
+            isPlaying = false;
+        },
+
+        stop() {
+            console.log("⏹ STOP metal");
+            isPlaying = false;
+        },
+
+        seek(sec) {
+            console.log("⏩ Seek:", sec);
+        },
+
+        jumpTo(section) {
+            console.log("Jump to:", section);
+        }
     };
 }
