@@ -120,6 +120,8 @@ function selectGenre(genre) {
 
 function initPlayerUI() {
 
+console.log("MIXEL PLAYER INIZZIALIZZATO");
+
 const mixelPlayer = document.getElementById("Player");
 if (!mixelPlayer) {
         console.error("❌ ERRORE: elemento #metalPlayer non trovato!");
