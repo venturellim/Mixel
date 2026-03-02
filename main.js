@@ -144,7 +144,9 @@ if (!mixelPlayer) {
     pauseBtn.onclick = () => currentEngine?.pause();
     stopBtn.onclick = () => currentEngine?.stop();
     
-    
+    console.log("🔎 currentEngine:", currentEngine);
+    console.log("🔎 typeof currentEngine:", typeof currentEngine);
+    console.log("🔎 metodi engine:", Object.keys(currentEngine));
 
     seekBar.oninput = () => {
         if (!currentEngine) return;
