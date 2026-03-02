@@ -109,7 +109,7 @@ function selectGenre(genre) {
     }
 
     document.getElementById("genrePanel").classList.remove("show");
-    document.getElementById("metalPlayer").classList.remove("hidden");
+    document.getElementById("Player").classList.remove("hidden");
 }
 
 // 🎧 Player UI
