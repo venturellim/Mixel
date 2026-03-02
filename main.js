@@ -5,6 +5,7 @@ let currentEngine = null;
 let currentDNA = null;
 let currentGenre = null;
 
+console.log("MAIN CARICATO");
 
 // ===============================
 // DOM READY
@@ -16,6 +17,8 @@ window.addEventListener("DOMContentLoaded", () => {
     initGenrePanel();
     initPlayerUI();
     initFxPanel();
+    
+    console.log("DOM READY");
 
 });
 
@@ -70,6 +73,7 @@ function initFileLoader() {
 
 function initGenrePanel() {
 
+console.log("INIT GENRE PANEL");
     const btnElabora = document.getElementById("btnElabora");
     const genrePanel = document.getElementById("genrePanel");
     const closeGenrePanel = document.getElementById("closeGenrePanel");
