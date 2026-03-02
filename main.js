@@ -75,14 +75,25 @@ function initGenrePanel() {
     const closeGenrePanel = document.getElementById("closeGenrePanel");
 
     btnElabora.addEventListener("click", function () {
-    genrePanel.classList.add("show");
-    genrePanel.classList.remove("hidden");
-});
+        genrePanel.classList.add("show");
+        genrePanel.classList.remove("hidden");
+    });
 
-closeGenrePanel.addEventListener("click", function () {
-    genrePanel.classList.remove("show");
-    setTimeout(() => genrePanel.classList.add("hidden"), 400);
-});
+    closeGenrePanel.addEventListener("click", function () {
+        genrePanel.classList.remove("show");
+        setTimeout(() => genrePanel.classList.add("hidden"), 400);
+    });
+
+    // 🔥 COLLEGAMENTO BOTTONI GENERE
+    const genreButtons = document.querySelectorAll(".genre-btn");
+
+    genreButtons.forEach(btn => {
+        btn.addEventListener("click", () => {
+            const genre = btn.dataset.genre;
+            console.log("🎵 Selezionato:", genre);
+            selectGenre(genre);
+        });
+    });
 }
 
 // 🎶 Selezione Genere
