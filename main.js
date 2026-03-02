@@ -149,7 +149,7 @@ if (!mixelPlayer) {
     console.log("🔎 metodi engine:", Object.keys(currentEngine));
 
     seekBar.oninput = () => {
-        if (!currentEngine) return;
+        //if (!currentEngine) return;
         const sec = (seekBar.value / 100) * currentEngine.totalDuration;
         currentEngine.seek(sec);
     };

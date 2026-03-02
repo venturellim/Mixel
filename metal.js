@@ -31,4 +31,8 @@ export function createMetalEngine() {
             console.log("Jump to:", section);
         }
     };
+    
+    console.log("🔎 currentEngine:", currentEngine);
+    console.log("🔎 typeof currentEngine:", typeof currentEngine);
+    console.log("🔎 metodi engine:", Object.keys(currentEngine));
 }
