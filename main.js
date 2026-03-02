@@ -155,7 +155,6 @@ if (!mixelPlayer) {
         const sec = (seekBar.value / 100) * currentEngine.totalDuration;
         currentEngine.seek(sec);
     };
-    const seekBar = document.getElementById("seekBar");
 const currentTimeEl = document.getElementById("currentTime");
 const totalTimeEl = document.getElementById("totalTime");
 
