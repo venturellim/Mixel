@@ -2,33 +2,58 @@ export function createMetalEngine() {
 
     console.log("⚡ Engine METAL creato (test)");
 
-    let isPlaying = false;
+    let interval = null;
+    let currentTime = 0;
+    const totalDuration = 120; // 2 minuti
+
+    function update() {
+        currentTime += 0.1;
+
+        if (currentTime >= totalDuration) {
+            stop();
+        }
+
+        window.dispatchEvent(new CustomEvent("engineTick", {
+            detail: { currentTime, totalDuration }
+        }));
+    }
+
+    function play() {
+        if (interval) return;
+        console.log("▶ PLAY");
+        interval = setInterval(update, 100);
+    }
+
+    function pause() {
+        console.log("⏸ PAUSE");
+        clearInterval(interval);
+        interval = null;
+    }
+
+    function stop() {
+        console.log("⏹ STOP");
+        clearInterval(interval);
+        interval = null;
+        currentTime = 0;
+
+        window.dispatchEvent(new CustomEvent("engineTick", {
+            detail: { currentTime, totalDuration }
+        }));
+    }
+
+    function seek(seconds) {
+        currentTime = seconds;
+
+        window.dispatchEvent(new CustomEvent("engineTick", {
+            detail: { currentTime, totalDuration }
+        }));
+    }
 
     return {
-
-        totalDuration: 120,
-
-        play() {
-            console.log("▶ PLAY metal");
-            isPlaying = true;
-        },
-
-        pause() {
-            console.log("⏸ PAUSE metal");
-            isPlaying = false;
-        },
-
-        stop() {
-            console.log("⏹ STOP metal");
-            isPlaying = false;
-        },
-
-        seek(sec) {
-            console.log("⏩ Seek:", sec);
-        },
-
-        jumpTo(section) {
-            console.log("Jump to:", section);
-        }
+        play,
+        pause,
+        stop,
+        seek,
+        totalDuration
     };
 }
