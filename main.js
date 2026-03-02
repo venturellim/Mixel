@@ -15,8 +15,8 @@ window.addEventListener("DOMContentLoaded", () => {
     initOrientation();
     initFileLoader();
     initGenrePanel();
-    initPlayerUI();
-    initFxPanel();
+    // initPlayerUI();
+    // initFxPanel();
     
     console.log("DOM READY");
 
@@ -96,6 +96,8 @@ console.log("INIT GENRE PANEL");
             const genre = btn.dataset.genre;
             console.log("🎵 Selezionato:", genre);
             selectGenre(genre);
+            initPlayerUI();
+    initFxPanel();
         });
     });
 }
