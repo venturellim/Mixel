@@ -1,9 +1,13 @@
+import { createMetalEngineFromImage } from "./metal.js";
+
 // ===============================
 // STATO GLOBALE APP
 // ===============================
 let currentEngine = null;
 let currentDNA = null;
 let currentGenre = null;
+
+console.log("MAIN MODULE ATTIVO");
 
 console.log("MAIN CARICATO");
 
@@ -103,7 +107,6 @@ console.log("INIT GENRE PANEL");
 
 // 🎶 Selezione Genere
 
-import { createMetalEngineFromImage } from "./metal.js";
 
 function selectGenre(genre) {
 
