@@ -1,78 +1,53 @@
-export async function createMetalEngineFromImage(imgElement) {
+// metal.js
 
-    console.log("🔥 Avvio METAL ENGINE");
+import { createInstruments } from "./common.js";
+
+export async function createMetalEngineFromImage(imgElement) {
 
     await Tone.start();
     Tone.Transport.cancel();
     Tone.Transport.stop();
+    Tone.Transport.bpm.value = 150;
 
-    Tone.Transport.bpm.value = 140;
+    const instruments = await createInstruments();
+    const { guitarRhythm, bass, drums } = instruments;
 
-    // ========================
-    // STRUMENTI
-    // ========================
-
-    const guitar = new Tone.Synth({
-        oscillator: { type: "sawtooth" },
-        envelope: { attack: 0.01, decay: 0.1, sustain: 0.4, release: 0.1 }
-    }).toDestination();
-
-    const bass = new Tone.Synth({
-        oscillator: { type: "square" },
-        envelope: { attack: 0.01, decay: 0.1, sustain: 0.5, release: 0.1 }
-    }).toDestination();
-
-    const kick = new Tone.MembraneSynth().toDestination();
-    const snare = new Tone.NoiseSynth({
-        envelope: { attack: 0.001, decay: 0.2, sustain: 0 }
-    }).toDestination();
-
-    // ========================
-    // RIFF BASE
-    // ========================
-
-    const riff = ["E2", "E2", "G2", "E2", "A2", "E2", "D2", "E2"];
+    const scale = ["E2","F#2","G2","A2","B2","C3","D3"];
+    const riffPattern = [0,0,2,0,3,0,1,0];
 
     const loop = new Tone.Loop((time) => {
 
-        const step = Math.floor((Tone.Transport.ticks / Tone.Time("8n").toTicks()) % riff.length);
-        const note = riff[step];
+        const step = Math.floor(
+            (Tone.Transport.ticks / Tone.Time("8n").toTicks()) 
+            % riffPattern.length
+        );
 
-        guitar.triggerAttackRelease(note, "8n", time);
-        bass.triggerAttackRelease(note, "8n", time);
+        const root = scale[riffPattern[step]];
+        const fifth = Tone.Frequency(root).transpose(7).toNote();
+        const octave = Tone.Frequency(root).transpose(12).toNote();
 
-        // Kick su ogni battito
-        kick.triggerAttackRelease("C1", "8n", time);
+        guitarRhythm.triggerAttackRelease(
+            [root, fifth, octave],
+            "8n",
+            time
+        );
 
-        // Snare su 2 e 4
+        bass.triggerAttackRelease(root, "8n", time);
+
+        drums.player("kick").start(time);
+
         if (step % 4 === 2) {
-            snare.triggerAttackRelease("16n", time);
+            drums.player("snare").start(time);
         }
 
     }, "8n");
 
     loop.start(0);
 
-    // ========================
-    // ENGINE CONTROLLER
-    // ========================
-
-    function play() {
-        Tone.Transport.start();
-    }
-
-    function pause() {
-        Tone.Transport.pause();
-    }
-
-    function stop() {
-        Tone.Transport.stop();
-        Tone.Transport.seconds = 0;
-    }
-
-    function seek(sec) {
-        Tone.Transport.seconds = sec;
-    }
+    function play() { Tone.Transport.start(); }
+    function pause() { Tone.Transport.pause(); }
+    function stop() { Tone.Transport.stop(); Tone.Transport.seconds = 0; }
+    function seek(sec) { Tone.Transport.seconds = sec; }
 
     return {
         play,
