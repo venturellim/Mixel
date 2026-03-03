@@ -121,7 +121,7 @@ initFxPanel();
 
     
     document.getElementById("genrePanel").classList.remove("show");
-    document.getElementById("Player").classList.remove("hidden");
+    //document.getElementById("Player").classList.remove("hidden");
 }
 
 // 🎧 Player UI
