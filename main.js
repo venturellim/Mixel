@@ -108,9 +108,10 @@ console.log("INIT GENRE PANEL");
 // 🎶 Selezione Genere
 
 
-function selectGenre(genre) {
+async function selectGenre(genre) {
 
     currentGenre = genre;
+    const previewImage = document.getElementById("previewImage");
 
     if (genre === "metal") {
         currentEngine = await createMetalEngineFromImage(previewImage);
