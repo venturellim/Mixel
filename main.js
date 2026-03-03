@@ -155,13 +155,26 @@ if (!mixelPlayer) {
     console.log("🔎 currentEngine:", currentEngine);
     console.log("🔎 typeof currentEngine:", typeof currentEngine);
     console.log("🔎 metodi engine:", Object.keys(currentEngine));
-
-    seekBar.oninput = () => {
-        if (!currentEngine) return;
-        const sec = (seekBar.value / 100) * currentEngine.totalDuration;
-        currentEngine.seek(sec);
-    };
     
+const currentTimeEl = document.getElementById("currentTime");
+const totalTimeEl = document.getElementById("totalTime");
+
+window.addEventListener("engineTick", (e) => {
+
+    const { currentTime, totalDuration } = e.detail;
+
+    const percent = (currentTime / totalDuration) * 100;
+    seekBar.value = percent;
+
+    currentTimeEl.textContent = formatTime(currentTime);
+    totalTimeEl.textContent = formatTime(totalDuration);
+});
+
+function formatTime(sec) {
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60).toString().padStart(2, "0");
+    return `${m}:${s}`;
+}
 
 }
 
