@@ -109,6 +109,7 @@
             display: block;
             max-width: 70%;
             max-height: 45vh; /* Limite verticale */
+            margin-bottom: 240px; /* leggermente più dell’altezza del pannello */
             object-fit: contain;
             margin: 20px auto;
             border-radius: 10px;
@@ -262,6 +263,26 @@
     margin-top: 15px;
     border: 1px solid #333;
 }
+
+/* PLAYER SLIDE-UP INTERNO */
+.player-slideup {
+    position: absolute;
+    left: 0;
+    bottom: -220px;
+    width: 100%;
+    height: 220px;
+    background: rgba(20,20,20,0.9);
+    border-top: 1px solid #444;
+    padding: 15px;
+    box-shadow: 0 -4px 15px rgba(0,0,0,0.5);
+    transition: bottom 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+    z-index: 10;
+    height: 220px; /* altezza fissa */
+}
+.player-slideup.open {
+    bottom: 0;
+}
+
 
 #fxControls {
     margin-top: 20px;
