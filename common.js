@@ -179,3 +179,60 @@ export const drums = new Tone.Players({
     openhat: "Samples/Drums/hihat_open.mp3",
     crash: "Samples/Drums/crash.mp3"
 }).connect(masterEQ);
+
+export function analyzeImageBrightness(img) {
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+
+    canvas.width = 64;
+    canvas.height = 64;
+
+    ctx.drawImage(img, 0, 0, 64, 64);
+
+    const imageData = ctx.getImageData(0, 0, 64, 64);
+    const data = imageData.data;
+
+    let total = 0;
+
+    for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+
+        const brightness = 0.299*r + 0.587*g + 0.114*b;
+        total += brightness;
+    }
+
+    const avg = total / (data.length / 4);
+
+    return avg / 255;
+}
+
+export function generateImageDNA(img) {
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+
+    canvas.width = 32;
+    canvas.height = 32;
+
+    ctx.drawImage(img, 0, 0, 32, 32);
+
+    const data = ctx.getImageData(0, 0, 32, 32).data;
+
+    let hash = 0;
+
+    for (let i = 0; i < data.length; i += 4) {
+        hash = (hash * 31 + data[i] + data[i+1] + data[i+2]) >>> 0;
+    }
+
+    return hash;
+}
+
+export function createSeededRandom(seed) {
+    return function() {
+        seed = (seed * 1664525 + 1013904223) % 4294967296;
+        return seed / 4294967296;
+    };
+}

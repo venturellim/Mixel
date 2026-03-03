@@ -1,19 +1,66 @@
 // metal.js
 
-import { createInstruments } from "./common.js";
+import {
+    guitarPalm,
+    guitarOpen,
+    bass,
+    drums,
+    analyzeImageBrightness,
+    generateImageDNA,
+    createSeededRandom
+} from "./common.js";
 
 export async function createMetalEngineFromImage(imgElement) {
 
     await Tone.start();
     Tone.Transport.cancel();
     Tone.Transport.stop();
-    Tone.Transport.bpm.value = 150;
 
-    const instruments = await createInstruments();
-    const { guitarRhythm, bass, drums } = instruments;
+    // =========================
+    // ANALISI IMMAGINE
+    // =========================
 
-    const scale = ["E2","F#2","G2","A2","B2","C3","D3"];
-    const riffPattern = [0,0,2,0,3,0,1,0];
+    const brightness = analyzeImageBrightness(imgElement);
+    console.log("Luminosità:", brightness);
+
+const dna = generateImageDNA(imgElement);
+const rng = createSeededRandom(dna);
+
+console.log("DNA:", dna);
+
+    let scale;
+    let bpm;
+    let usePalmMore = false;
+
+    if (brightness < 0.33) {
+        // Foto scura → cupo
+        scale = ["D2","E2","F2","G2","A2","Bb2","C3"];
+        bpm = 140;
+        usePalmMore = true;
+    }
+    else if (brightness < 0.66) {
+        // Media → metal classico
+        scale = ["E2","Gb2","G2","A2","B2","C3","D3"];
+        bpm = 155;
+    }
+    else {
+        // Luminosa → power brillante
+        scale = ["Gb2","Ab2","A2","B2","Db3","D3","E3"];
+        bpm = 170;
+    }
+
+    Tone.Transport.bpm.value = bpm;
+
+    // =========================
+    // RIFF BASE
+    // =========================
+
+    const riffLength = 8;
+const riffPattern = [];
+
+for (let i = 0; i < riffLength; i++) {
+    riffPattern.push(Math.floor(rng() * scale.length));
+}
 
     const loop = new Tone.Loop((time) => {
 
@@ -26,27 +73,48 @@ export async function createMetalEngineFromImage(imgElement) {
         const fifth = Tone.Frequency(root).transpose(7).toNote();
         const octave = Tone.Frequency(root).transpose(12).toNote();
 
-        guitarRhythm.triggerAttackRelease(
-            [root, fifth, octave],
-            "8n",
-            time
-        );
+        const chord = [root, fifth, octave];
 
+        // 🎸 Alternanza palm/open
+        if (usePalmMore || step % 4 !== 3) {
+            guitarPalm.triggerAttackRelease(chord, "8n", time);
+        } else {
+            guitarOpen.triggerAttackRelease(chord, "8n", time);
+        }
+
+        // 🎸 Basso
         bass.triggerAttackRelease(root, "8n", time);
 
+        // 🥁 Kick sempre
         drums.player("kick").start(time);
 
+        // 🥁 Snare su 2 e 4
         if (step % 4 === 2) {
             drums.player("snare").start(time);
         }
 
     }, "8n");
+    
+    if (rng() > 0.7 && step % 4 === 0) {
+    drums.player("crash").start(time);
+}
+    if (brightness > 0.6 && step % 2 === 0) {
+    drums.player("hihat").start(time);
+
+}
 
     loop.start(0);
 
+    // =========================
+    // ENGINE CONTROLLER
+    // =========================
+
     function play() { Tone.Transport.start(); }
     function pause() { Tone.Transport.pause(); }
-    function stop() { Tone.Transport.stop(); Tone.Transport.seconds = 0; }
+    function stop() { 
+        Tone.Transport.stop(); 
+        Tone.Transport.seconds = 0; 
+    }
     function seek(sec) { Tone.Transport.seconds = sec; }
 
     return {
