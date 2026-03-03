@@ -1,5 +1,3 @@
-import * as Tone from "https://cdn.skypack.dev/tone";
-
 export async function createMetalEngineFromImage(imgElement) {
 
     console.log("🔥 Avvio METAL ENGINE");
