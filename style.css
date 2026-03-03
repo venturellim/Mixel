@@ -263,26 +263,6 @@
     border: 1px solid #333;
 }
 
-/* PLAYER SLIDE-UP */
-.player-slideup {
-    position: fixed;
-    bottom: -350px; /* nascosto fuori dallo schermo */
-    left: 0;
-    width: 100%;
-    background: rgba(20,20,20,0.95);
-    border-top: 1px solid #444;
-    box-shadow: 0 -4px 15px rgba(0,0,0,0.5);
-    padding: 20px;
-    transition: bottom 0.45s ease;
-    z-index: 4000;
-}
-
-/* Quando è aperto */
-.player-slideup.open {
-    bottom: 0;
-}
-
-
 #fxControls {
     margin-top: 20px;
     padding: 20px;
