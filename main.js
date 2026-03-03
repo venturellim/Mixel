@@ -159,22 +159,27 @@ if (!mixelPlayer) {
 const currentTimeEl = document.getElementById("currentTime");
 const totalTimeEl = document.getElementById("totalTime");
 
-window.addEventListener("engineTick", (e) => {
+totalTimeEl.textContent = formatTime(currentEngine.totalDuration);
 
-    const { currentTime, totalDuration } = e.detail;
+// aggiorna continuamente la UI
+Tone.Transport.scheduleRepeat(() => {
 
-    const percent = (currentTime / totalDuration) * 100;
+    const now = Tone.Transport.seconds;
+    const duration = currentEngine.totalDuration;
+
+    const percent = (now / duration) * 100;
     seekBar.value = percent;
 
-    currentTimeEl.textContent = formatTime(currentTime);
-    totalTimeEl.textContent = formatTime(totalDuration);
-});
+    currentTimeEl.textContent = formatTime(now);
 
-function formatTime(sec) {
-    const m = Math.floor(sec / 60);
-    const s = Math.floor(sec % 60).toString().padStart(2, "0");
-    return `${m}:${s}`;
-}
+}, 0.1);
+
+seekBar.addEventListener("input", () => {
+    if (!currentEngine) return;
+
+    const seconds = (seekBar.value / 100) * currentEngine.totalDuration;
+    currentEngine.seek(seconds);
+});
 
 }
 
