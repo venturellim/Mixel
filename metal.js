@@ -92,16 +92,17 @@ for (let i = 0; i < riffLength; i++) {
         if (step % 4 === 2) {
             drums.player("snare").start(time);
         }
-
-    }, "8n");
-    
-    if (rng() > 0.7 && step % 4 === 0) {
+        if (rng() > 0.7 && step % 4 === 0) {
     drums.player("crash").start(time);
 }
     if (brightness > 0.6 && step % 2 === 0) {
     drums.player("hihat").start(time);
 
 }
+
+    }, "8n");
+    
+    
 
     loop.start(0);
 
