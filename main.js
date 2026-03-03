@@ -124,19 +124,29 @@ initFxPanel();
     //document.getElementById("Player").classList.remove("hidden");
 }
 
+function showPlayerPanel() {
+    playerPanel.classList.add("open");
+}
+
+function hidePlayerPanel() {
+    playerPanel.classList.remove("open");
+}
+
+
 // 🎧 Player UI
 
 function initPlayerUI() {
 
 console.log("MIXEL PLAYER INIZZIALIZZATO");
 
-const mixelPlayer = document.getElementById("Player");
+const mixelPlayer = document.getElementById("playerPanel");
 if (!mixelPlayer) {
         console.error("❌ ERRORE: elemento #mixelPlayer non trovato!");
         return;
     }
-    
-    mixelPlayer.classList.remove("hidden");
+    showPlayerPanel();
+
+    //mixelPlayer.classList.remove("hidden");
     
     const playBtn = document.getElementById("btnPlay");
     const pauseBtn = document.getElementById("btnPause");
@@ -209,6 +219,8 @@ function resetAppState() {
     currentEngine?.stop();
     currentEngine = null;
     currentDNA = null;
+    
+    hidePlayerPanel();
 
-    document.getElementById("Player")?.classList.add("hidden");
+    //document.getElementById("Player")?.classList.add("hidden");
 }
