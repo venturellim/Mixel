@@ -70,14 +70,15 @@ for (let i = 0; i < riffLength; i++) {
         );
 
         const root = scale[riffPattern[step]];
-        const fifth = Tone.Frequency(root).transpose(7).toNote();
+        const fifth = Tone.Frequency(root).transpose(7).toNote().replace("#", "b");
         const octave = Tone.Frequency(root).transpose(12).toNote();
 
         const chord = [root, fifth, octave];
 
         // 🎸 Alternanza palm/open
         if (usePalmMore || step % 4 !== 3) {
-            guitarPalm.triggerAttackRelease(chord, "8n", time);
+            //guitarPalm.triggerAttackRelease(chord, "8n", time);
+            guitarPalm.triggerAttackRelease(root, "8n", time);
         } else {
             guitarOpen.triggerAttackRelease(chord, "8n", time);
         }
@@ -92,6 +93,7 @@ for (let i = 0; i < riffLength; i++) {
         if (step % 4 === 2) {
             drums.player("snare").start(time);
         }
+        
         if (rng() > 0.7 && step % 4 === 0) {
     drums.player("crash").start(time);
 }
