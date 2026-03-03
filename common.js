@@ -23,6 +23,15 @@ export async function createInstruments() {
     leadDelay.connect(leadReverb);
     leadReverb.connect(leadAutoWah);
     leadAutoWah.connect(masterEQ);
+    
+    const rhythmComp = new Tone.Compressor({
+    threshold: -20,
+    ratio: 3,
+    attack: 0.003,
+    release: 0.2
+});
+
+rhythmComp.connect(masterEQ);
 
     // =====================
     // GUITAR LEAD
@@ -48,44 +57,54 @@ export async function createInstruments() {
     const guitarRhythm = new Tone.Sampler({
             urls: {
         C2: "Samples/Guitar/C2.mp3",
-        "C#2": "Samples/Guitar/Db2.mp3",
+        Db2: "Samples/Guitar/Db2.mp3",
         D2: "Samples/Guitar/D2.mp3",
-        "D#2": "Samples/Guitar/Eb2.mp3",
+        Eb2: "Samples/Guitar/Eb2.mp3",
         E2: "Samples/Guitar/E2.mp3",
         F2: "Samples/Guitar/F2.mp3",
-        "F#2": "Samples/Guitar/Gb2.mp3",
+        Gb2: "Samples/Guitar/Gb2.mp3",
         G2: "Samples/Guitar/G2.mp3",
-         "G#2": "Samples/Guitar/Ab2.mp3",
+         Ab2: "Samples/Guitar/Ab2.mp3",
         A2: "Samples/Guitar/A2.mp3",
-        "A#2": "Samples/Guitar/Bb2.mp3",
+        Bb2: "Samples/Guitar/Bb2.mp3",
         B2: "Samples/Guitar/B2.mp3",
         C3: "Samples/Guitar/C3.mp3",
-        "C#3": "Samples/Guitar/Db3.mp3",
+        Db3: "Samples/Guitar/Db3.mp3",
         D3: "Samples/Guitar/D3.mp3",
-        "D#3": "Samples/Guitar/Eb3.mp3",
+        Eb3: "Samples/Guitar/Eb3.mp3",
         E3: "Samples/Guitar/E3.mp3",
         F3: "Samples/Guitar/F3.mp3",
-         "F#3": "Samples/Guitar/Gb3.mp3",
+         Gb3: "Samples/Guitar/Gb3.mp3",
         G3: "Samples/Guitar/G3.mp3",
-        "G#3": "Samples/Guitar/Ab3.mp3",
+        Ab3 : "Samples/Guitar/Ab3.mp3",
         A3: "Samples/Guitar/A3.mp3",
-         "A#3": "Samples/Guitar/Bb3.mp3",
+        Bb3: "Samples/Guitar/Bb3.mp3",
         B3: "Samples/Guitar/B3.mp3",
         C4: "Samples/Guitar/C4.mp3",
-        "C#4": "Samples/Guitar/Db4.mp3",
+        Db4: "Samples/Guitar/Db4.mp3",
         D4: "Samples/Guitar/D4.mp3",
-        "D#4": "Samples/Guitar/Eb4.mp3",
+        Eb4: "Samples/Guitar/Eb4.mp3",
         E4: "Samples/Guitar/E4.mp3",
         F4: "Samples/Guitar/F4.mp3",
-         "F#4": "Samples/Guitar/Gb4.mp3",
+         Gb4: "Samples/Guitar/Gb4.mp3",
         G4: "Samples/Guitar/G4.mp3",
-        "G#4": "Samples/Guitar/Ab4.mp3",
+        Ab4: "Samples/Guitar/Ab4.mp3",
         A4: "Samples/Guitar/A4.mp3",
-         "A#4": "Samples/Guitar/Bb4.mp3",
+        Bb4: "Samples/Guitar/Bb4.mp3",
         B4: "Samples/Guitar/B4.mp3",
         C5: "Samples/Guitar/C5.mp3"
     }
-}).connect(masterEQ);
+}).connect(rhythmComp);
+
+guitarRhythm.set({
+    envelope: {
+        attack: 0.001,
+        decay: 0.08,
+        sustain: 0.2,
+        release: 0.05
+    }
+});
+
 
     // =====================
     // BASS
