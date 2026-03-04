@@ -4,18 +4,19 @@
     <meta charset="UTF-8">
     <title>Mixel - Ascolta le tue foto!</title>
 
- <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css">
+
     <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-<script>eruda.init(); console.log("🟦 Eruda inizializzato");</script>
-
-
-
+    <script>
+        eruda.init();
+        console.log("🟦 Eruda inizializzato");
+    </script>
 </head>
 
 <body>
 
-    <!-- OVERLAY ORIENTAMENTO -->
-    <div id="rotateOverlay" class="rotate-overlay hidden">
+<!-- OVERLAY ORIENTAMENTO -->
+<div id="rotateOverlay" class="rotate-overlay hidden">
     <div class="rotate-box">
         <div class="rotate-icon">🔄</div>
         <p>Ruota il dispositivo per usare l'app</p>
@@ -35,9 +36,16 @@
 
         <input type="file" id="fileInput" class="file-input">
 
-        <button id="btnGlitch" class="side-btn hidden">Ascolta file non elaborato</button>
-        <button id="btnElabora" class="side-btn hidden">Elabora file</button>
-        <button id="btnConsigliato" class="side-btn hidden"></button>
+        <button id="btnGlitch" class="side-btn hidden">
+            Ascolta file non elaborato
+        </button>
+
+        <button id="btnElabora" class="side-btn hidden">
+            Elabora file
+        </button>
+
+        <button id="btnConsigliato" class="side-btn hidden">
+        </button>
 
     </aside>
 
@@ -46,106 +54,115 @@
 
         <div id="heroLogoContainer">
             <div id="heroLogo" class="hero-logo-box">
-                <img src="Mixel2.PNG" 
-                     alt="Logo" 
+                <img src="Mixel2.PNG"
+                     alt="Logo"
                      style="width: 100%; height: 100%; object-fit: contain;">
             </div>
         </div>
 
-        <img id="previewImage" class="preview hidden" alt="MIXEL - Ascolta le tue foto!">
+        <img id="previewImage"
+             class="preview hidden"
+             alt="MIXEL - Ascolta le tue foto!">
 
-<!-- GENRE PANEL -->
-    <div id="genrePanel" class="genre-panel hidden">
+        <!-- GENRE PANEL -->
+        <div id="genrePanel" class="genre-panel hidden">
 
-        <h2>Scegli il genere musicale</h2>
+            <h2>Scegli il genere musicale</h2>
 
-        <button class="genre-btn" data-genre="ambient">Ambient</button>
-        <button class="genre-btn" data-genre="chiptune">Chiptune</button>
-        <button class="genre-btn" data-genre="metal">Metal-like</button>
+            <button class="genre-btn" data-genre="ambient">Ambient</button>
+            <button class="genre-btn" data-genre="chiptune">Chiptune</button>
+            <button class="genre-btn" data-genre="metal">Metal-like</button>
 
-        <button id="closeGenrePanel" class="close-panel-btn">Chiudi</button>
-
-        </div>
-        
-        <!-- PLAYER UI 2.0 -->
-       <div id="playerPanel" class="player-slideup">
-    <div id="Player" class="player-ui">
-
-            <div class="player-controls">
-                <button id="btnPlay">▶️ Play</button>
-                <button id="btnPause">⏸️ Pause</button>
-                <button id="btnStop">⏹️ Stop</button>
-
-                <!-- NUOVO BOTTONE -->
-                <button id="btnFxPanel">🎛️ Controlli</button>
-            </div>
-
-            <div class="player-seek">
-                <input type="range" id="seekBar" min="0" max="100" value="0">
-            </div>
-
-            <div class="player-time">
-                <span id="currentTime">0:00</span> / 
-                <span id="totalTime">0:00</span>
-            </div>
-<canvas id="spectrumCanvas" width="600" height="120" class="spectrum"></canvas>
+            <button id="closeGenrePanel" class="close-panel-btn">
+                Chiudi
+            </button>
 
         </div>
-  </div>
-   </main>
 
-    <!-- PANNELLO FX SLIDE-IN -->
-    <div id="fxPanel" class="fx-panel">
+        <!-- PLAYER SLIDE-UP -->
+        <div id="playerPanel" class="player-slideup">
 
-        <div class="fx-header">
-            <h2>Controlli Audio</h2>
-            <button id="closeFxPanel" class="close-fx-btn">✖</button>
+            <div id="Player" class="player-ui">
+
+                <div class="player-controls">
+                    <button id="btnPlay">▶️ Play</button>
+                    <button id="btnPause">⏸️ Pause</button>
+                    <button id="btnStop">⏹️ Stop</button>
+                    <button id="btnFxPanel">🎛️ Controlli</button>
+                </div>
+
+                <div class="player-seek">
+                    <input type="range"
+                           id="seekBar"
+                           min="0"
+                           max="100"
+                           value="0">
+                </div>
+
+                <div class="player-time">
+                    <span id="currentTime">0:00</span> /
+                    <span id="totalTime">0:00</span>
+                </div>
+
+                <canvas id="spectrumCanvas"
+                        width="600"
+                        height="120"
+                        class="spectrum">
+                </canvas>
+
+            </div>
         </div>
 
-        <h3>Equalizzatore Master</h3>
+    </main>
+</div>
 
-        <label for="eqLow">Bassi</label>
-        <input type="range" id="eqLow" min="-12" max="12" value="0">
+<!-- FX PANEL (FUORI DAL MAIN) -->
+<div id="fxPanel" class="fx-panel">
 
-        <label for="eqMid">Medi</label>
-        <input type="range" id="eqMid" min="-12" max="12" value="0">
-
-        <label for="eqHigh">Alti</label>
-        <input type="range" id="eqHigh" min="-12" max="12" value="0">
-
-        <h3>Effetti Lead</h3>
-
-        <label for="chorusWet">Chorus (wet)</label>
-        <input type="range" id="chorusWet" min="0" max="1" step="0.01" value="0.3">
-
-        <label for="delayFeedback">Delay (feedback)</label>
-        <input type="range" id="delayFeedback" min="0" max="0.9" step="0.01" value="0.35">
-
-        <label for="reverbWet">Reverb (wet)</label>
-        <input type="range" id="reverbWet" min="0" max="1" step="0.01" value="0.25">
-
-        <h3>AutoWah</h3>
-
-        <label for="wahWet">Wet</label>
-        <input type="range" id="wahWet" min="0" max="1" step="0.01" value="0">
-
-        <label for="wahSensitivity">Sensitivity</label>
-        <input type="range" id="wahSensitivity" min="-40" max="0" step="1" value="0">
-
-        <label for="wahQ">Q (Resonance)</label>
-        <input type="range" id="wahQ" min="1" max="10" step="0.1" value="2">
-
-        <label for="wahBase">Base Frequency</label>
-        <input type="range" id="wahBase" min="50" max="1000" step="10" value="100">
-
+    <div class="fx-header">
+        <h2>Controlli Audio</h2>
+        <button id="closeFxPanel" class="close-fx-btn">✖</button>
     </div>
 
-    </div>
-</main>
+    <h3>Equalizzatore Master</h3>
 
+    <label for="eqLow">Bassi</label>
+    <input type="range" id="eqLow" min="-12" max="12" value="0">
 
-    
- <script type="module" src="main.js"></script>
- 
+    <label for="eqMid">Medi</label>
+    <input type="range" id="eqMid" min="-12" max="12" value="0">
+
+    <label for="eqHigh">Alti</label>
+    <input type="range" id="eqHigh" min="-12" max="12" value="0">
+
+    <h3>Effetti Lead</h3>
+
+    <label for="chorusWet">Chorus (wet)</label>
+    <input type="range" id="chorusWet" min="0" max="1" step="0.01" value="0.3">
+
+    <label for="delayFeedback">Delay (feedback)</label>
+    <input type="range" id="delayFeedback" min="0" max="0.9" step="0.01" value="0.35">
+
+    <label for="reverbWet">Reverb (wet)</label>
+    <input type="range" id="reverbWet" min="0" max="1" step="0.01" value="0.25">
+
+    <h3>AutoWah</h3>
+
+    <label for="wahWet">Wet</label>
+    <input type="range" id="wahWet" min="0" max="1" step="0.01" value="0">
+
+    <label for="wahSensitivity">Sensitivity</label>
+    <input type="range" id="wahSensitivity" min="-40" max="0" step="1" value="0">
+
+    <label for="wahQ">Q (Resonance)</label>
+    <input type="range" id="wahQ" min="1" max="10" step="0.1" value="2">
+
+    <label for="wahBase">Base Frequency</label>
+    <input type="range" id="wahBase" min="50" max="1000" step="10" value="100">
+
+</div>
+
+<script type="module" src="main.js"></script>
+
 </body>
 </html>
