@@ -241,7 +241,7 @@
     flex-direction: row;
     flex: 0 0 auto;
     justify-content: center;
-    align-items: center;
+    /*align-items: center;*/
     gap: 10px;
     flex-wrap: wrap; /* così su mobile non esplode */
 }
