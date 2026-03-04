@@ -127,7 +127,9 @@ initFxPanel();
 }
 
 function togglePlayerPanel() {
-    playerPanel.classList.toggle("open");
+    const panel = document.getElementById("playerPanel");
+    if (!panel) return;
+    panel.classList.toggle("open");
 }
 
 
