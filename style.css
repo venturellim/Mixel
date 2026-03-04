@@ -266,7 +266,7 @@
 
 /* PLAYER SLIDE-UP INTERNO */
 .player-slideup {
-    position: absolute;
+    position: fixed;
     left: 0;
     bottom: -220px;
     width: 100%;
