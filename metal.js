@@ -1,5 +1,7 @@
 // metal.js
 
+import * as Tone from "https://esm.sh/tone";
+
 import {
     guitarPalm,
     guitarOpen,
