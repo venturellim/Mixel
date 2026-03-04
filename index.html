@@ -7,7 +7,7 @@
  <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
 <script>eruda.init(); console.log("🟦 Eruda inizializzato");</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+
 
 
 </head>
@@ -68,7 +68,8 @@
         </div>
         
         <!-- PLAYER UI 2.0 -->
-        <div id="Player" class="player-ui hidden">
+       <div id="playerPanel" class="player-slideup">
+    <div id="Player" class="player-ui">
 
             <div class="player-controls">
                 <button id="btnPlay">▶️ Play</button>
@@ -90,7 +91,7 @@
 <canvas id="spectrumCanvas" width="600" height="120" class="spectrum"></canvas>
 
         </div>
-
+  </div>
    </main>
 
     <!-- PANNELLO FX SLIDE-IN -->

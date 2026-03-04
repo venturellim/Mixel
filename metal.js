@@ -12,7 +12,7 @@ import {
 
 export async function createMetalEngineFromImage(imgElement) {
 
-    await Tone.start();
+    // await Tone.start();
     Tone.Transport.cancel();
     Tone.Transport.stop();
 
@@ -114,10 +114,12 @@ for (let i = 0; i < riffLength; i++) {
 
     function play() { Tone.Transport.start(); }
     function pause() { Tone.Transport.pause(); }
-    function stop() { 
-        Tone.Transport.stop(); 
-        Tone.Transport.seconds = 0; 
-    }
+    function stop() {
+    Tone.Transport.stop();
+    Tone.Transport.cancel();
+    loop.stop(0);
+    Tone.Transport.seconds = 0;
+}
     function seek(sec) { Tone.Transport.seconds = sec; }
 
     return {

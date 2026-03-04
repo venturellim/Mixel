@@ -124,19 +124,24 @@ initFxPanel();
     //document.getElementById("Player").classList.remove("hidden");
 }
 
+function togglePlayerPanel() {
+    playerPanel.classList.toggle("open");
+}
+
+
 // 🎧 Player UI
 
 function initPlayerUI() {
 
 console.log("MIXEL PLAYER INIZZIALIZZATO");
 
-const mixelPlayer = document.getElementById("Player");
-if (!mixelPlayer) {
+const playerPanel = document.getElementById("playerPanel");
+if (!playerPanel) {
         console.error("❌ ERRORE: elemento #mixelPlayer non trovato!");
         return;
     }
-    
-    mixelPlayer.classList.remove("hidden");
+    togglePlayerPanel()
+    //mixelPlayer.classList.remove("hidden");
     
     const playBtn = document.getElementById("btnPlay");
     const pauseBtn = document.getElementById("btnPause");
@@ -155,7 +160,11 @@ if (!mixelPlayer) {
         }
     
 
-    playBtn.onclick = () => currentEngine?.play();
+    playBtn.onclick = async () => {
+    await Tone.start();
+    await Tone.loaded();
+    currentEngine?.play();
+};
     pauseBtn.onclick = () => currentEngine?.pause();
     stopBtn.onclick = () => currentEngine?.stop();
     
