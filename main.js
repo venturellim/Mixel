@@ -128,7 +128,10 @@ initFxPanel();
 
 function togglePlayerPanel() {
     const panel = document.getElementById("playerPanel");
-    if (!panel) return;
+    if (!playerPanel) {
+        console.error("❌ ERRORE: elemento #mixelPlayer non trovato!");
+        return;
+    }
     panel.classList.toggle("open");
 }
 
@@ -139,11 +142,8 @@ function initPlayerUI() {
 
 console.log("MIXEL PLAYER INIZZIALIZZATO");
 
-const playerPanel = document.getElementById("playerPanel");
-if (!playerPanel) {
-        console.error("❌ ERRORE: elemento #mixelPlayer non trovato!");
-        return;
-    }
+//const playerPanel = document.getElementById("playerPanel");
+
     togglePlayerPanel()
     //mixelPlayer.classList.remove("hidden");
     
