@@ -204,6 +204,19 @@ seekBar.addEventListener("input", () => {
 
 }
 
+// Analizzatore FFT
+const fft = new Tone.Analyser("fft", 256); // 256 bande = molto dettagliato
+Tone.Destination.connect(fft);
+
+const canvas = document.getElementById("spectrumCanvas");
+const ctx = canvas.getContext("2d");
+
+const W = canvas.width;
+const H = canvas.height;
+
+// Array per memorizzare i picchi
+let peaks = new Array(256).fill(0);
+
 // Analizzatore di spettro
 
 function drawSpectrum() {
