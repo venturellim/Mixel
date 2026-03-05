@@ -2,147 +2,111 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-import { createInstruments, analyzeImageBrightness } from "./common.js";
+import {
+    guitarPalm,
+    guitarOpen,
+    bass,
+    drums,
+    extractPhotoDNA
+    analyzeImageBrightness
+} from "./common.js";
 
 export async function createMetalEngineFromImage(imgElement) {
 
+    /* ---------------- RESET TRANSPORT ---------------- */
+
     Tone.Transport.cancel();
     Tone.Transport.stop();
+    Tone.Transport.seconds = 0;
 
     Tone.Transport.bpm.value = 150;
 
-    const instruments = await createInstruments();
-
-    const {
-        guitarPalm,
-        guitarOpen,
-        guitarLead,
-        bass,
-        drums
-    } = instruments;
+    /* ---------------- DNA FOTO ---------------- */
 
     const brightness = analyzeImageBrightness(imgElement);
 
     const dna = Math.floor(brightness * 1000000000);
 
+    /* ---------------- SCALA ---------------- */
+
     const scale = [
         "E2","Gb2","G2","A2","B2","C3","D3"
     ];
 
-    function generatePattern(seed, length) {
+    /* ---------------- GENERAZIONE RIFF ---------------- */
 
-        const pattern = [];
+    function generateRiff(dna, shift = 0, length = 16) {
+
+        const riff = [];
+
+        let pos = (dna + shift) % scale.length;
 
         for (let i = 0; i < length; i++) {
 
-            const index = (seed >> (i * 3)) & 7;
+            const step = ((dna >> ((i + shift) * 3)) & 7) - 3;
 
-            pattern.push(index % scale.length);
+            pos += step;
 
+            if (pos < 0) pos = 0;
+            if (pos >= scale.length) pos = scale.length - 1;
+
+            riff.push(scale[pos]);
         }
 
-        return pattern;
-
+        return riff;
     }
 
-    const riffVerse = generatePattern(dna, 16);
-    const riffChorus = generatePattern(dna * 3, 16);
-    const riffSolo = generatePattern(dna * 7, 32);
+    const riffVerse  = generateRiff(dna, 0);
+    const riffChorus = generateRiff(dna, 5);
+    const riffSolo   = generateRiff(dna, 11);
+    const riffOutro  = generateRiff(dna, 17);
 
-    const leadVerse = generatePattern(dna * 5, 8);
-    const leadChorus = generatePattern(dna * 9, 8);
+    /* ---------------- STRUTTURA CANZONE ---------------- */
 
-    const sections = [
-        { name:"intro", bars:4 },
-        { name:"verse", bars:8 },
-        { name:"chorus", bars:8 },
-        { name:"verse", bars:8 },
-        { name:"chorus", bars:8 },
-        { name:"solo", bars:8 },
-        { name:"chorusFinal", bars:8 },
-        { name:"outro", bars:4 }
+    const songStructure = [
+
+        { name: "intro",  riff: riffVerse,  bars: 4 },
+        { name: "verse",  riff: riffVerse,  bars: 8 },
+        { name: "chorus", riff: riffChorus, bars: 8 },
+
+        { name: "verse",  riff: riffVerse,  bars: 8 },
+        { name: "chorus", riff: riffChorus, bars: 8 },
+
+        { name: "solo",   riff: riffSolo,   bars: 8 },
+
+        { name: "chorus", riff: riffChorus, bars: 12 },
+
+        { name: "outro",  riff: riffOutro,  bars: 6 }
+
     ];
 
-    const totalBars = sections.reduce((a,b)=>a+b.bars,0);
+    /* ---------------- STATO PLAYBACK ---------------- */
 
-    let currentBar = 0;
+    let sectionIndex = 0;
+    let bar = 0;
     let step = 0;
 
-    const loop = new Tone.Loop((time)=>{
+    /* ---------------- LOOP PRINCIPALE ---------------- */
 
-        const barPosition = Math.floor(step / 8);
+    const loop = new Tone.Loop((time) => {
 
-        let sectionName = "verse";
+        const section = songStructure[sectionIndex];
+        const riff = section.riff;
 
-        let acc = 0;
+        const note = riff[step % riff.length];
 
-        for(const s of sections){
-
-            if(barPosition < acc + s.bars){
-
-                sectionName = s.name;
-                break;
-
-            }
-
-            acc += s.bars;
-
-        }
-
-        let riff;
-
-        if(sectionName === "verse") riff = riffVerse;
-        else if(sectionName === "chorus") riff = riffChorus;
-        else if(sectionName === "solo") riff = riffSolo;
-        else if(sectionName === "chorusFinal") riff = riffChorus;
-        else riff = riffVerse;
-
-        const note = scale[riff[step % riff.length]];
-
-        const fifth = Tone.Frequency(note).transpose(7).toNote();
+        const fifth  = Tone.Frequency(note).transpose(7).toNote();
         const octave = Tone.Frequency(note).transpose(12).toNote();
 
-        if(sectionName === "intro"){
+        /* -------- CHITARRA RITMICA -------- */
 
-            guitarOpen.triggerAttackRelease(
-                [note,fifth],
-                "8n",
-                time
-            );
+        guitarPalm.triggerAttackRelease(
+            [note, fifth, octave],
+            "8n",
+            time
+        );
 
-        }
-
-        if(sectionName === "verse"){
-
-            guitarPalm.triggerAttackRelease(
-                [note,fifth],
-                "8n",
-                time
-            );
-
-        }
-
-        if(sectionName === "chorus" || sectionName === "chorusFinal"){
-
-            guitarOpen.triggerAttackRelease(
-                [note,fifth,octave],
-                "8n",
-                time
-            );
-
-        }
-
-        if(sectionName === "solo"){
-
-            const soloNote = scale[riffSolo[step % riffSolo.length]];
-
-            guitarLead.triggerAttackRelease(
-                Tone.Frequency(soloNote).transpose(12).toNote(),
-                "16n",
-                time
-            );
-
-        }
+        /* -------- BASSO -------- */
 
         bass.triggerAttackRelease(
             note,
@@ -150,59 +114,68 @@ export async function createMetalEngineFromImage(imgElement) {
             time
         );
 
+        /* -------- DRUMS -------- */
+
         drums.player("kick").start(time);
 
-        if(step % 4 === 2)
+        if (step % 4 === 2)
             drums.player("snare").start(time);
 
-        if(sectionName === "chorus" || sectionName === "chorusFinal")
-            drums.player("crash").start(time);
+        drums.player("hihat").start(time);
 
-        if(brightness > 0.6)
-            drums.player("ride").start(time);
-        else
-            drums.player("hihat").start(time);
-
-        if(sectionName === "solo" && Math.random() > 0.8){
-
-            drums.player("tom1").start(time);
-            drums.player("tom2").start(time + 0.05);
-            drums.player("tom3").start(time + 0.1);
-
-        }
+        /* -------- CAMBIO SEZIONI -------- */
 
         step++;
+
+        if (step >= 8) {
+
+            step = 0;
+            bar++;
+
+            if (bar >= section.bars) {
+
+                bar = 0;
+                sectionIndex++;
+
+                if (sectionIndex >= songStructure.length)
+                    sectionIndex = 0;
+            }
+        }
 
     }, "8n");
 
     loop.start(0);
 
-    function play(){
+    /* ---------------- CONTROLLI PLAYER ---------------- */
+
+    function play() {
 
         Tone.Transport.start();
 
     }
 
-    function pause(){
+    function pause() {
 
         Tone.Transport.pause();
 
     }
 
-    function stop(){
+    function stop() {
 
         Tone.Transport.stop();
         Tone.Transport.seconds = 0;
 
+        sectionIndex = 0;
+        bar = 0;
+        step = 0;
+
     }
 
-    function seek(sec){
+    function seek(sec) {
 
         Tone.Transport.seconds = sec;
 
     }
-
-    const totalDuration = Tone.Time(totalBars + "m").toSeconds();
 
     return {
 
@@ -210,8 +183,7 @@ export async function createMetalEngineFromImage(imgElement) {
         pause,
         stop,
         seek,
-        totalDuration
+        totalDuration: 240
 
     };
-
 }
