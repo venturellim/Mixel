@@ -76,7 +76,23 @@ const guitarUrls = {
     A4: "Samples/Guitar/A4.mp3",
     Bb4: "Samples/Guitar/Bb4.mp3",
     B4: "Samples/Guitar/B4.mp3",
-    C5: "Samples/Guitar/C5.mp3"
+    C5: "Samples/Guitar/C5.mp3",
+    Db5: "Samples/Guitar/Db5.mp3",
+    D5: "Samples/Guitar/D5.mp3",
+    Eb5: "Samples/Guitar/Eb5.mp3",
+    E5: "Samples/Guitar/E5.mp3",
+    F5: "Samples/Guitar/F5.mp3",
+    Gb5: "Samples/Guitar/Gb5.mp3",
+    G5: "Samples/Guitar/G5.mp3",
+    Ab5: "Samples/Guitar/Ab5.mp3",
+    A5: "Samples/Guitar/A5.mp3",
+    Bb5: "Samples/Guitar/Bb5.mp3",
+    B5: "Samples/Guitar/B5.mp3",
+    C6: "Samples/Guitar/C6.mp3",
+    Db6: "Samples/Guitar/Db6.mp3",
+    D6: "Samples/Guitar/D6.mp3",
+    Eb6: "Samples/Guitar/Eb6.mp3",
+    E6: "Samples/Guitar/E6.mp3",
 };
 
 
@@ -150,20 +166,31 @@ guitarLead.connect(leadEQ);
 
 export const bass = new Tone.Sampler({
     urls: {
-        C1: "Samples/Bass/C1.mp3",
-        D1: "Samples/Bass/D1.mp3",
-        E1: "Samples/Bass/E1.mp3",
-        F1: "Samples/Bass/F1.mp3",
-        G1: "Samples/Bass/G1.mp3",
-        A1: "Samples/Bass/A1.mp3",
-        B1: "Samples/Bass/B1.mp3",
-        C2: "Samples/Bass/C2.mp3",
-        D2: "Samples/Bass/D2.mp3",
-        E2: "Samples/Bass/E2.mp3",
-        F2: "Samples/Bass/F2.mp3",
-        G2: "Samples/Bass/G2.mp3",
-        A2: "Samples/Bass/A2.mp3",
-        B2: "Samples/Bass/B2.mp3"
+    C1: "Samples/Bass/C1.mp3",
+    Db1: "Samples/Bass/Db1.mp3",
+    D1: "Samples/Bass/D1.mp3",
+    Eb1: "Samples/Bass/Eb1.mp3",
+    E1: "Samples/Bass/E1.mp3",
+    F1: "Samples/Bass/F1.mp3",
+    Gb1: "Samples/Bass/Gb1.mp3",
+    G1: "Samples/Bass/G1.mp3",
+    Ab1: "Samples/Bass/Ab1.mp3",
+    A1: "Samples/Bass/A1.mp3",
+    Bb1: "Samples/Bass/Bb1.mp3",
+    B1: "Samples/Bass/B1.mp3",
+    C2: "Samples/Bass/C2.mp3",
+    Db2: "Samples/Bass/Db2.mp3",
+    D2: "Samples/Bass/D2.mp3",
+    Eb2: "Samples/Bass/Eb2.mp3",
+    E2: "Samples/Bass/E2.mp3",
+    F2: "Samples/Bass/F2.mp3",
+    Gb2: "Samples/Bass/Gb2.mp3",
+    G2: "Samples/Bass/G2.mp3",
+    Ab2: "Samples/Bass/Ab2.mp3",
+    A2: "Samples/Bass/A2.mp3",
+    Bb2: "Samples/Bass/Bb2.mp3",
+    B2: "Samples/Bass/B2.mp3",
+    C3: "Samples/Bass/C3.mp3"
     }
 }).connect(masterEQ);
 
@@ -177,7 +204,18 @@ export const drums = new Tone.Players({
     snare: "Samples/Drums/snare.mp3",
     hihat: "Samples/Drums/hihat_closed.mp3",
     openhat: "Samples/Drums/hihat_open.mp3",
-    crash: "Samples/Drums/crash.mp3"
+
+    crash1: "Samples/Drums/crash_1.mp3",
+    crash2: "Samples/Drums/crash_2.mp3",
+
+    tom1: "Samples/Drums/tom_1.mp3",
+    tom2: "Samples/Drums/tom_2.mp3",
+    tom3: "Samples/Drums/tom_3.mp3",
+    tom4: "Samples/Drums/tom_4.mp3",
+
+    ride: "Samples/Drums/ride.mp3",
+    china: "Samples/Drums/china.mp3"
+
 }).connect(masterEQ);
 
 export function analyzeImageBrightness(img) {

@@ -1,134 +1,128 @@
 // metal.js
 
-import * as Tone from "https://esm.sh/tone";
-
-import {
-    guitarPalm,
-    guitarOpen,
-    bass,
-    drums,
-    analyzeImageBrightness,
-    generateImageDNA,
-    createSeededRandom
-} from "./common.js";
+import * as Tone from "https://cdn.skypack.dev/tone";
+import { createInstruments, analyzeImageBrightness } from "./common.js";
 
 export async function createMetalEngineFromImage(imgElement) {
 
-    // await Tone.start();
     Tone.Transport.cancel();
     Tone.Transport.stop();
 
-    // =========================
-    // ANALISI IMMAGINE
-    // =========================
+    Tone.Transport.bpm.value = 150;
+
+    const instruments = await createInstruments();
+
+    const { guitarRhythm, bass, drums } = instruments;
 
     const brightness = analyzeImageBrightness(imgElement);
-    console.log("Luminosità:", brightness);
 
-const dna = generateImageDNA(imgElement);
-const rng = createSeededRandom(dna);
+    const dna = Math.floor(brightness * 1000000000);
 
-console.log("DNA:", dna);
+    const scale = [
+        "E2","Gb2","G2","A2","B2","C3","D3"
+    ];
 
-    let scale;
-    let bpm;
-    let usePalmMore = false;
+    function generateRiff(dna) {
 
-    if (brightness < 0.33) {
-        // Foto scura → cupo
-        scale = ["D2","E2","F2","G2","A2","Bb2","C3"];
-        bpm = 140;
-        usePalmMore = true;
-    }
-    else if (brightness < 0.66) {
-        // Media → metal classico
-        scale = ["E2","Gb2","G2","A2","B2","C3","D3"];
-        bpm = 155;
-    }
-    else {
-        // Luminosa → power brillante
-        scale = ["Gb2","Ab2","A2","B2","Db3","D3","E3"];
-        bpm = 170;
+        const pattern = [];
+
+        for (let i = 0; i < 8; i++) {
+
+            const index = (dna >> (i * 2)) & 7;
+
+            pattern.push(index % 7);
+
+        }
+
+        return pattern;
     }
 
-    Tone.Transport.bpm.value = bpm;
+    const riffPattern = generateRiff(dna);
 
-    // =========================
-    // RIFF BASE
-    // =========================
+    const stepDur = Tone.Time("8n").toSeconds();
 
-    const riffLength = 8;
-const riffPattern = [];
-
-for (let i = 0; i < riffLength; i++) {
-    riffPattern.push(Math.floor(rng() * scale.length));
-}
+    let step = 0;
 
     const loop = new Tone.Loop((time) => {
 
-        const step = Math.floor(
-            (Tone.Transport.ticks / Tone.Time("8n").toTicks()) 
-            % riffPattern.length
+        const note = scale[riffPattern[step]];
+
+        const fifth = Tone.Frequency(note).transpose(7).toNote();
+        const octave = Tone.Frequency(note).transpose(12).toNote();
+
+        guitarRhythm.triggerAttackRelease(
+            [note, fifth, octave],
+            "8n",
+            time
         );
 
-        const root = scale[riffPattern[step]];
-        const fifth = Tone.Frequency(root).transpose(7).toNote().replace("#", "b");
-        const octave = Tone.Frequency(root).transpose(12).toNote();
+        bass.triggerAttackRelease(
+            note,
+            "8n",
+            time
+        );
 
-        const chord = [root, fifth, octave];
-
-        // 🎸 Alternanza palm/open
-        if (usePalmMore || step % 4 !== 3) {
-            //guitarPalm.triggerAttackRelease(chord, "8n", time);
-            guitarPalm.triggerAttackRelease(root, "8n", time);
-        } else {
-            guitarOpen.triggerAttackRelease(chord, "8n", time);
-        }
-
-        // 🎸 Basso
-        bass.triggerAttackRelease(root, "8n", time);
-
-        // 🥁 Kick sempre
         drums.player("kick").start(time);
 
-        // 🥁 Snare su 2 e 4
-        if (step % 4 === 2) {
+        if (step === 2 || step === 6)
             drums.player("snare").start(time);
-        }
-        
-        if (rng() > 0.7 && step % 4 === 0) {
-    drums.player("crash").start(time);
-}
-    if (brightness > 0.6 && step % 2 === 0) {
-    drums.player("hihat").start(time);
 
-}
+        if (brightness > 0.6)
+            drums.player("ride").start(time);
+        else
+            drums.player("hihat").start(time);
+
+        if (step === 7 && Math.random() > 0.7) {
+
+            drums.player("tom1").start(time);
+            drums.player("tom2").start(time + 0.05);
+            drums.player("tom3").start(time + 0.1);
+            drums.player("tom4").start(time + 0.15);
+
+        }
+
+        step++;
+
+        if (step >= 8)
+            step = 0;
 
     }, "8n");
-    
-    
 
     loop.start(0);
 
-    // =========================
-    // ENGINE CONTROLLER
-    // =========================
+    function play() {
 
-    function play() { Tone.Transport.start(); }
-    function pause() { Tone.Transport.pause(); }
+        Tone.Transport.start();
+
+    }
+
+    function pause() {
+
+        Tone.Transport.pause();
+
+    }
+
     function stop() {
-    Tone.Transport.stop();
-    Tone.Transport.cancel();
-    loop.stop(0);
-    Tone.Transport.seconds = 0;
-}
-    function seek(sec) { Tone.Transport.seconds = sec; }
+
+        Tone.Transport.stop();
+        Tone.Transport.seconds = 0;
+
+    }
+
+    function seek(sec) {
+
+        Tone.Transport.seconds = sec;
+
+    }
 
     return {
+
         play,
         pause,
         stop,
         seek,
         totalDuration: 999
+
     };
+
 }
