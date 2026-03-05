@@ -257,7 +257,7 @@ ctx.fillStyle = `hsl(${hue}, 100%, 60%)`;
         }
 
         // Disegna il picco (linea oro)
-        ctx.fillStyle = "#FFD700"; // oro
+        ctx.fillStyle = "#FFFFFF"; // BIANCO
         const peakY = H - peaks[i];
         ctx.fillRect(x, peakY, barWidth - 1, 3); // tacchetta
     }
