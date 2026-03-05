@@ -1,7 +1,16 @@
 // metal.js
 
-import * as Tone from "https://cdn.skypack.dev/tone";
-import { createInstruments, analyzeImageBrightness } from "./common.js";
+import * as Tone from "https://esm.sh/tone";
+
+import {
+    guitarPalm,
+    guitarOpen,
+    bass,
+    drums,
+    analyzeImageBrightness,
+    generateImageDNA,
+    createSeededRandom
+} from "./common.js";
 
 export async function createMetalEngineFromImage(imgElement) {
 
@@ -9,10 +18,6 @@ export async function createMetalEngineFromImage(imgElement) {
     Tone.Transport.stop();
 
     Tone.Transport.bpm.value = 150;
-
-    const instruments = await createInstruments();
-
-    const { guitarRhythm, bass, drums } = instruments;
 
     const brightness = analyzeImageBrightness(imgElement);
 
@@ -29,7 +34,6 @@ export async function createMetalEngineFromImage(imgElement) {
         for (let i = 0; i < 8; i++) {
 
             const index = (dna >> (i * 2)) & 7;
-
             pattern.push(index % 7);
 
         }
@@ -38,8 +42,6 @@ export async function createMetalEngineFromImage(imgElement) {
     }
 
     const riffPattern = generateRiff(dna);
-
-    const stepDur = Tone.Time("8n").toSeconds();
 
     let step = 0;
 
@@ -50,7 +52,7 @@ export async function createMetalEngineFromImage(imgElement) {
         const fifth = Tone.Frequency(note).transpose(7).toNote();
         const octave = Tone.Frequency(note).transpose(12).toNote();
 
-        guitarRhythm.triggerAttackRelease(
+        guitarPalm.triggerAttackRelease(
             [note, fifth, octave],
             "8n",
             time
@@ -91,38 +93,28 @@ export async function createMetalEngineFromImage(imgElement) {
     loop.start(0);
 
     function play() {
-
         Tone.Transport.start();
-
     }
 
     function pause() {
-
         Tone.Transport.pause();
-
     }
 
     function stop() {
-
         Tone.Transport.stop();
         Tone.Transport.seconds = 0;
-
     }
 
     function seek(sec) {
-
         Tone.Transport.seconds = sec;
-
     }
 
     return {
-
         play,
         pause,
         stop,
         seek,
         totalDuration: 999
-
     };
 
 }
