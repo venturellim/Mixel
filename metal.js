@@ -30,16 +30,16 @@ const scale = [
 
 function generateRiff(dna) {
 
-const pattern = [];
+    const rand = createSeededRandom(dna);
+    const pattern = [];
 
-for (let i = 0; i < 16; i++) {
+    for (let i = 0; i < 16; i++) {
 
-const index = (dna >> (i * 2)) & 7;
-pattern.push(index % 7);
+        pattern.push(Math.floor(rand() * 7));
 
-}
+    }
 
-return pattern;
+    return pattern;
 
 }
 
@@ -90,11 +90,23 @@ time
 
 if (section === "verse" || section === "verse2") {
 
-guitarPalm.triggerAttackRelease(
-[note, fifth],
-"8n",
-time
-);
+if (step % 2 === 0) {
+
+    guitarPalm.triggerAttackRelease(
+    [note, fifth],
+    "8n",
+    time
+    );
+
+} else {
+
+    guitarPalm.triggerAttackRelease(
+    [note],
+    "16n",
+    time
+    );
+
+}
 
 }
 
@@ -148,8 +160,8 @@ bass.triggerAttackRelease(note,"8n",time);
 
 drums.player("kick").start(time);
 
-if (step % 4 === 2)
-drums.player("snare").start(time);
+if (step % 4 === 2 || step % 4 === 0)
+drums.player("snare").start(time + Tone.Time("16n"));
 
 if (section.includes("chorus"))
 drums.player("ride").start(time);
@@ -194,7 +206,13 @@ Tone.Transport.seconds = 0;
 
 function seek(sec) {
 
-Tone.Transport.seconds = sec;
+    Tone.Transport.seconds = sec;
+
+    const stepDur = Tone.Time("8n").toSeconds();
+
+    step = Math.floor(sec / stepDur) % 16;
+
+    bar = Math.floor(sec / (stepDur * 16));
 
 }
 
