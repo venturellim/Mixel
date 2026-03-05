@@ -2,226 +2,216 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-import {
-guitarPalm,
-guitarOpen,
-guitarLead,
-bass,
-drums,
-analyzeImageBrightness,
-generateImageDNA
-} from "./common.js";
+import { createInstruments, analyzeImageBrightness } from "./common.js";
 
 export async function createMetalEngineFromImage(imgElement) {
 
-Tone.Transport.cancel();
-Tone.Transport.stop();
+    Tone.Transport.cancel();
+    Tone.Transport.stop();
 
-Tone.Transport.bpm.value = 150;
+    Tone.Transport.bpm.value = 150;
 
-const brightness = analyzeImageBrightness(imgElement);
-const dna = generateImageDNA(imgElement);
+    const instruments = await createInstruments();
 
-const modulation = (dna % 2) + 1;
+    const {
+        guitarPalm,
+        guitarOpen,
+        guitarLead,
+        bass,
+        drums
+    } = instruments;
 
-const scale = [
-"E2","Gb2","G2","A2","B2","C3","D3"
-];
+    const brightness = analyzeImageBrightness(imgElement);
 
-function generateRiff(dna) {
+    const dna = Math.floor(brightness * 1000000000);
 
-    const rand = createSeededRandom(dna);
-    const pattern = [];
+    const scale = [
+        "E2","Gb2","G2","A2","B2","C3","D3"
+    ];
 
-    for (let i = 0; i < 16; i++) {
+    function generatePattern(seed, length) {
 
-        pattern.push(Math.floor(rand() * 7));
+        const pattern = [];
+
+        for (let i = 0; i < length; i++) {
+
+            const index = (seed >> (i * 3)) & 7;
+
+            pattern.push(index % scale.length);
+
+        }
+
+        return pattern;
 
     }
 
-    return pattern;
+    const riffVerse = generatePattern(dna, 16);
+    const riffChorus = generatePattern(dna * 3, 16);
+    const riffSolo = generatePattern(dna * 7, 32);
 
-}
+    const leadVerse = generatePattern(dna * 5, 8);
+    const leadChorus = generatePattern(dna * 9, 8);
 
-const riff = generateRiff(dna);
+    const sections = [
+        { name:"intro", bars:4 },
+        { name:"verse", bars:8 },
+        { name:"chorus", bars:8 },
+        { name:"verse", bars:8 },
+        { name:"chorus", bars:8 },
+        { name:"solo", bars:8 },
+        { name:"chorusFinal", bars:8 },
+        { name:"outro", bars:4 }
+    ];
 
-let step = 0;
-let bar = 0;
+    const totalBars = sections.reduce((a,b)=>a+b.bars,0);
 
-function getSection() {
+    let currentBar = 0;
+    let step = 0;
 
-if (bar < 8) return "intro";
-if (bar < 24) return "verse";
-if (bar < 40) return "chorus";
-if (bar < 56) return "verse2";
-if (bar < 72) return "chorus2";
-if (bar < 88) return "solo";
-if (bar < 104) return "final_chorus";
-return "outro";
+    const loop = new Tone.Loop((time)=>{
 
-}
+        const barPosition = Math.floor(step / 8);
 
-const loop = new Tone.Loop((time) => {
+        let sectionName = "verse";
 
-const section = getSection();
+        let acc = 0;
 
-let note = scale[riff[step % riff.length]];
+        for(const s of sections){
 
-if (section === "final_chorus") {
+            if(barPosition < acc + s.bars){
 
-note = Tone.Frequency(note)
-.transpose(modulation)
-.toNote();
+                sectionName = s.name;
+                break;
 
-}
+            }
 
-const fifth = Tone.Frequency(note).transpose(7).toNote();
-const octave = Tone.Frequency(note).transpose(12).toNote();
+            acc += s.bars;
 
-if (section === "intro") {
+        }
 
-guitarOpen.triggerAttackRelease(
-[note, fifth],
-"4n",
-time
-);
+        let riff;
 
-}
+        if(sectionName === "verse") riff = riffVerse;
+        else if(sectionName === "chorus") riff = riffChorus;
+        else if(sectionName === "solo") riff = riffSolo;
+        else if(sectionName === "chorusFinal") riff = riffChorus;
+        else riff = riffVerse;
 
-if (section === "verse" || section === "verse2") {
+        const note = scale[riff[step % riff.length]];
 
-if (step % 2 === 0) {
+        const fifth = Tone.Frequency(note).transpose(7).toNote();
+        const octave = Tone.Frequency(note).transpose(12).toNote();
 
-    guitarPalm.triggerAttackRelease(
-    [note, fifth],
-    "8n",
-    time
-    );
+        if(sectionName === "intro"){
 
-} else {
+            guitarOpen.triggerAttackRelease(
+                [note,fifth],
+                "8n",
+                time
+            );
 
-    guitarPalm.triggerAttackRelease(
-    [note],
-    "16n",
-    time
-    );
+        }
 
-}
+        if(sectionName === "verse"){
 
-}
+            guitarPalm.triggerAttackRelease(
+                [note,fifth],
+                "8n",
+                time
+            );
 
-if (section === "chorus" || section === "chorus2") {
+        }
 
-guitarOpen.triggerAttackRelease(
-[note, fifth, octave],
-"8n",
-time
-);
+        if(sectionName === "chorus" || sectionName === "chorusFinal"){
 
-}
+            guitarOpen.triggerAttackRelease(
+                [note,fifth,octave],
+                "8n",
+                time
+            );
 
-if (section === "solo") {
+        }
 
-guitarLead.triggerAttackRelease(
-Tone.Frequency(note).transpose(12).toNote(),
-"8n",
-time
-);
+        if(sectionName === "solo"){
 
-}
+            const soloNote = scale[riffSolo[step % riffSolo.length]];
 
-if (section === "final_chorus") {
+            guitarLead.triggerAttackRelease(
+                Tone.Frequency(soloNote).transpose(12).toNote(),
+                "16n",
+                time
+            );
 
-guitarOpen.triggerAttackRelease(
-[note, fifth, octave],
-"8n",
-time
-);
+        }
 
-guitarLead.triggerAttackRelease(
-Tone.Frequency(note).transpose(12).toNote(),
-"8n",
-time
-);
+        bass.triggerAttackRelease(
+            note,
+            "8n",
+            time
+        );
 
-}
+        drums.player("kick").start(time);
 
-if (section === "outro") {
+        if(step % 4 === 2)
+            drums.player("snare").start(time);
 
-guitarOpen.triggerAttackRelease(
-[note],
-"4n",
-time
-);
+        if(sectionName === "chorus" || sectionName === "chorusFinal")
+            drums.player("crash").start(time);
 
-}
+        if(brightness > 0.6)
+            drums.player("ride").start(time);
+        else
+            drums.player("hihat").start(time);
 
-bass.triggerAttackRelease(note,"8n",time);
+        if(sectionName === "solo" && Math.random() > 0.8){
 
-drums.player("kick").start(time);
+            drums.player("tom1").start(time);
+            drums.player("tom2").start(time + 0.05);
+            drums.player("tom3").start(time + 0.1);
 
-if (step % 4 === 2 || step % 4 === 0)
-drums.player("snare").start(time + Tone.Time("16n"));
+        }
 
-if (section.includes("chorus"))
-drums.player("ride").start(time);
-else
-drums.player("hihat").start(time);
+        step++;
 
-if (step === 15) {
+    }, "8n");
 
-drums.player("tom1").start(time);
-drums.player("tom2").start(time + 0.05);
-drums.player("tom3").start(time + 0.1);
-drums.player("tom4").start(time + 0.15);
+    loop.start(0);
 
-bar++;
+    function play(){
 
-}
+        Tone.Transport.start();
 
-step++;
+    }
 
-},"8n");
+    function pause(){
 
-loop.start(0);
+        Tone.Transport.pause();
 
-function play() {
+    }
 
-Tone.Transport.start();
+    function stop(){
 
-}
+        Tone.Transport.stop();
+        Tone.Transport.seconds = 0;
 
-function pause() {
+    }
 
-Tone.Transport.pause();
+    function seek(sec){
 
-}
+        Tone.Transport.seconds = sec;
 
-function stop() {
+    }
 
-Tone.Transport.stop();
-Tone.Transport.seconds = 0;
+    const totalDuration = Tone.Time(totalBars + "m").toSeconds();
 
-}
+    return {
 
-function seek(sec) {
+        play,
+        pause,
+        stop,
+        seek,
+        totalDuration
 
-    Tone.Transport.seconds = sec;
-
-    const stepDur = Tone.Time("8n").toSeconds();
-
-    step = Math.floor(sec / stepDur) % 16;
-
-    bar = Math.floor(sec / (stepDur * 16));
-
-}
-
-return {
-play,
-pause,
-stop,
-seek,
-totalDuration: 240
-};
+    };
 
 }
