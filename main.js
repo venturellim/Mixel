@@ -118,6 +118,7 @@ async function selectGenre(genre) {
     if (genre === "metal") {
         currentEngine = await createMetalEngineFromImage(previewImage);
 initPlayerUI();
+drawSpectrum()
 initFxPanel();
     }
 
@@ -201,6 +202,52 @@ seekBar.addEventListener("input", () => {
     currentEngine.seek(seconds);
 });
 
+}
+
+// Analizzatore di spettro
+
+function drawSpectrum() {
+    requestAnimationFrame(drawSpectrum);
+
+    const values = fft.getValue(); // valori in dB
+    ctx.clearRect(0, 0, W, H);
+
+    const barWidth = W / values.length;
+
+    for (let i = 0; i < values.length; i++) {
+        const v = values[i];
+        const magnitude = (v + 140) / 140; 
+        const barHeight = magnitude * H;
+
+        // --- BARRA PRINCIPALE ---
+        /* const hue = Math.floor(120 * magnitude); 
+        ctx.fillStyle = `hsl(${hue}, 100%, 50%)`; */
+        
+        const startHue = 320; // blu elettrico
+const endHue = 220;   // fucsia
+
+const hue = startHue + (endHue - startHue) * magnitude;
+ctx.fillStyle = `hsl(${hue}, 100%, 60%)`;
+
+        const x = i * barWidth;
+        const y = H - barHeight;
+
+        ctx.fillRect(x, y, barWidth - 1, barHeight);
+
+        // --- PEAK HOLD ---
+        // Aggiorna il picco se la barra è più alta
+        if (barHeight > peaks[i]) {
+            peaks[i] = barHeight;
+        } else {
+            // Decadimento lento
+            peaks[i] *= 0.98;
+        }
+
+        // Disegna il picco (linea oro)
+        ctx.fillStyle = "#FFD700"; // oro
+        const peakY = H - peaks[i];
+        ctx.fillRect(x, peakY, barWidth - 1, 3); // tacchetta
+    }
 }
 
 // 🎚 FX Panel
