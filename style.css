@@ -301,6 +301,19 @@
     bottom: 0;
 }
 
+/* Player invisibile quando il pannello è chiuso */
+.player-slideup .player-ui {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+}
+
+/* Player visibile quando il pannello è aperto */
+.player-slideup.open .player-ui {
+    opacity: 1;
+    pointer-events: auto;
+}
+
 
 #fxControls {
     margin-top: 20px;
