@@ -1,3 +1,5 @@
+// metalTheory.js
+
 export function detectMetalStyle(brightness,dna){
 
     if(brightness > 0.7) return "power";

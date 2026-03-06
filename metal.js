@@ -15,8 +15,10 @@ import {
 
 import { extractPhotoDNA } from "./imageAnalysis.js";
 import { chooseKey, chooseScale, powerChord } from "./musicTheory.js";
-import { detectMetalStyle, computeBPM, generateRiffFromDNA } from "./metalTheory.js";
+import { detectMetalStyle, computeBPM } from "./metalTheory.js";
 import { createMetalDrumEngine } from "./metalDrums.js";
+import { generateMetalRiff } from "./metalRiff.js";
+import { createLeadEngine } from "./leadEngine.js";
 
 
 // =========================
@@ -113,11 +115,22 @@ export async function createMetalEngineFromImage(imgElement){
         rand
     });
 
+const lead = generateMetalLead(dna, scale, style, rand);
+
+const leadEngine = createLeadEngine({
+    sampler: guitarLead,
+    lead,
+    style,
+    dna,
+    rand,
+    master: masterEQ
+
     // =========================
     // GENERAZIONE RIFF
     // =========================
 
-    const riff = generateRiffFromDNA(dna, scale, 16, rand);
+    const riff = generateMetalRiff(dna, scale, style, rand);
+
 
     console.log("Riff:", riff);
 
