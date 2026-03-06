@@ -7,174 +7,114 @@ import {
     guitarOpen,
     bass,
     drums,
-    extractPhotoDNA
+    createSeededRandom,
     analyzeImageBrightness
 } from "./common.js";
+import { extractPhotoDNA } from "./imageAnalysis.js";
+import { chooseKey, chooseScale, powerChord } from "./musicTheory.js";
+import { detectMetalStyle, computeBPM, generateRiffFromDNA } from "./metalTheory.js";
+import { createMetalDrumEngine } from "./metalDrums.js";
 
 export async function createMetalEngineFromImage(imgElement) {
 
-    /* ---------------- RESET TRANSPORT ---------------- */
-
+    // reset transport
     Tone.Transport.cancel();
     Tone.Transport.stop();
-    Tone.Transport.seconds = 0;
 
-    Tone.Transport.bpm.value = 150;
-
-    /* ---------------- DNA FOTO ---------------- */
+    // =========================
+    // ANALISI IMMAGINE
+    // =========================
 
     const brightness = analyzeImageBrightness(imgElement);
+    const dna = extractPhotoDNA(imgElement);
 
-    const dna = Math.floor(brightness * 1000000000);
+    const rand = createSeededRandom(dna);
 
-    /* ---------------- SCALA ---------------- */
+    console.log("Luminosità:", brightness);
+    console.log("DNA:", dna);
 
-    const scale = [
-        "E2","Gb2","G2","A2","B2","C3","D3"
-    ];
+    // =========================
+    // TEORIA MUSICALE
+    // =========================
 
-    /* ---------------- GENERAZIONE RIFF ---------------- */
+    const style = detectMetalStyle(brightness, dna);
+    const bpm = computeBPM(brightness, dna);
 
-    function generateRiff(dna, shift = 0, length = 16) {
+    Tone.Transport.bpm.value = bpm;
 
-        const riff = [];
+    const key = chooseKey(dna);
+    const scale = chooseScale(dna, key);
 
-        let pos = (dna + shift) % scale.length;
+    console.log("Metal style:", style);
+    console.log("BPM:", bpm);
+    console.log("Key:", key);
+    console.log("Scale:", scale);
+    
+    const drumEngine = createMetalDrumEngine({
+    drums,
+    style,
+    brightness,
+    dna,
+    rand
+});
 
-        for (let i = 0; i < length; i++) {
+    // =========================
+    // GENERAZIONE RIFF
+    // =========================
 
-            const step = ((dna >> ((i + shift) * 3)) & 7) - 3;
+    const riff = generateRiffFromDNA(dna, scale, 16, rand);
 
-            pos += step;
+    console.log("Riff:", riff);
 
-            if (pos < 0) pos = 0;
-            if (pos >= scale.length) pos = scale.length - 1;
-
-            riff.push(scale[pos]);
-        }
-
-        return riff;
-    }
-
-    const riffVerse  = generateRiff(dna, 0);
-    const riffChorus = generateRiff(dna, 5);
-    const riffSolo   = generateRiff(dna, 11);
-    const riffOutro  = generateRiff(dna, 17);
-
-    /* ---------------- STRUTTURA CANZONE ---------------- */
-
-    const songStructure = [
-
-        { name: "intro",  riff: riffVerse,  bars: 4 },
-        { name: "verse",  riff: riffVerse,  bars: 8 },
-        { name: "chorus", riff: riffChorus, bars: 8 },
-
-        { name: "verse",  riff: riffVerse,  bars: 8 },
-        { name: "chorus", riff: riffChorus, bars: 8 },
-
-        { name: "solo",   riff: riffSolo,   bars: 8 },
-
-        { name: "chorus", riff: riffChorus, bars: 12 },
-
-        { name: "outro",  riff: riffOutro,  bars: 6 }
-
-    ];
-
-    /* ---------------- STATO PLAYBACK ---------------- */
-
-    let sectionIndex = 0;
-    let bar = 0;
     let step = 0;
-
-    /* ---------------- LOOP PRINCIPALE ---------------- */
 
     const loop = new Tone.Loop((time) => {
 
-        const section = songStructure[sectionIndex];
-        const riff = section.riff;
+    const note = riff[step];
+    const chord = powerChord(note);
 
-        const note = riff[step % riff.length];
+    guitarPalm.triggerAttackRelease(
+        chord,
+        "8n",
+        time
+    );
 
-        const fifth  = Tone.Frequency(note).transpose(7).toNote();
-        const octave = Tone.Frequency(note).transpose(12).toNote();
+    bass.triggerAttackRelease(
+        note,
+        "8n",
+        time
+    );
 
-        /* -------- CHITARRA RITMICA -------- */
+    drumEngine.play(time);
 
-        guitarPalm.triggerAttackRelease(
-            [note, fifth, octave],
-            "8n",
-            time
-        );
+    step++;
 
-        /* -------- BASSO -------- */
+    if (step >= riff.length)
+        step = 0;
 
-        bass.triggerAttackRelease(
-            note,
-            "8n",
-            time
-        );
-
-        /* -------- DRUMS -------- */
-
-        drums.player("kick").start(time);
-
-        if (step % 4 === 2)
-            drums.player("snare").start(time);
-
-        drums.player("hihat").start(time);
-
-        /* -------- CAMBIO SEZIONI -------- */
-
-        step++;
-
-        if (step >= 8) {
-
-            step = 0;
-            bar++;
-
-            if (bar >= section.bars) {
-
-                bar = 0;
-                sectionIndex++;
-
-                if (sectionIndex >= songStructure.length)
-                    sectionIndex = 0;
-            }
-        }
-
-    }, "8n");
+}, "8n");
 
     loop.start(0);
 
-    /* ---------------- CONTROLLI PLAYER ---------------- */
+    // =========================
+    // PLAYER CONTROL
+    // =========================
 
     function play() {
-
         Tone.Transport.start();
-
     }
 
     function pause() {
-
         Tone.Transport.pause();
-
     }
 
     function stop() {
-
         Tone.Transport.stop();
         Tone.Transport.seconds = 0;
-
-        sectionIndex = 0;
-        bar = 0;
-        step = 0;
-
     }
 
     function seek(sec) {
-
         Tone.Transport.seconds = sec;
-
     }
 
     return {
@@ -183,7 +123,8 @@ export async function createMetalEngineFromImage(imgElement) {
         pause,
         stop,
         seek,
-        totalDuration: 240
+        totalDuration: 240 // ~4 minuti
 
     };
+
 }

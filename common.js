@@ -247,124 +247,30 @@ export function analyzeImageBrightness(img) {
     return avg / 255;
 }
 
-export function extractPhotoDNA(imgElement) {
+export function generateImageDNA(img) {
 
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
 
-    canvas.width = imgElement.width;
-    canvas.height = imgElement.height;
+    canvas.width = 32;
+    canvas.height = 32;
 
-    ctx.drawImage(imgElement, 0, 0);
+    ctx.drawImage(img, 0, 0, 32, 32);
 
-    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const data = imgData.data;
+    const data = ctx.getImageData(0, 0, 32, 32).data;
 
-    let totalBrightness = 0;
-    let minBrightness = 255;
-    let maxBrightness = 0;
-
-    let colorSet = new Set();
-    let saturationSum = 0;
-
-    let edgeCount = 0;
-
-    const pixelCount = data.length / 4;
+    let hash = 0;
 
     for (let i = 0; i < data.length; i += 4) {
-
-        const r = data[i];
-        const g = data[i + 1];
-        const b = data[i + 2];
-
-        const brightness = (r + g + b) / 3;
-
-        totalBrightness += brightness;
-
-        if (brightness < minBrightness) minBrightness = brightness;
-        if (brightness > maxBrightness) maxBrightness = brightness;
-
-        const max = Math.max(r, g, b);
-        const min = Math.min(r, g, b);
-
-        const saturation = max === 0 ? 0 : (max - min) / max;
-
-        saturationSum += saturation;
-
-        const colorBucket =
-            Math.floor(r / 32) +
-            "-" +
-            Math.floor(g / 32) +
-            "-" +
-            Math.floor(b / 32);
-
-        colorSet.add(colorBucket);
-
-        if (i > 0) {
-
-            const prevBrightness =
-                (data[i - 4] + data[i - 3] + data[i - 2]) / 3;
-
-            if (Math.abs(brightness - prevBrightness) > 40)
-                edgeCount++;
-
-        }
-
+        hash = (hash * 31 + data[i] + data[i+1] + data[i+2]) >>> 0;
     }
 
-    const brightnessAvg = totalBrightness / pixelCount / 255;
-
-    const contrast =
-        (maxBrightness - minBrightness) / 255;
-
-    const saturationAvg =
-        saturationSum / pixelCount;
-
-    const colorSpread =
-        colorSet.size / 512;
-
-    const edgeDensity =
-        edgeCount / pixelCount;
-
-    return {
-
-        brightness: brightnessAvg,
-        contrast: contrast,
-        saturation: saturationAvg,
-        colorSpread: colorSpread,
-        edgeDensity: edgeDensity
-
-    };
-
+    return hash;
 }
 
-export function generateRiffFromDNA(dna, length = 16) {
-
-    const scale = [
-        "E2","Gb2","G2","A2","B2","C3","D3"
-    ];
-
-    const riff = [];
-
-    let pos = dna % scale.length;
-
-    for (let i = 0; i < length; i++) {
-
-        const step =
-            ((dna >> (i * 3)) & 7) - 3;
-
-        pos += step;
-
-        if (pos < 0)
-            pos = 0;
-
-        if (pos >= scale.length)
-            pos = scale.length - 1;
-
-        riff.push(scale[pos]);
-
-    }
-
-    return riff;
-
+export function createSeededRandom(seed) {
+    return function() {
+        seed = (seed * 1664525 + 1013904223) % 4294967296;
+        return seed / 4294967296;
+    };
 }
