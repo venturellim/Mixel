@@ -85,7 +85,10 @@ console.log("INIT GENRE PANEL");
     const closeGenrePanel = document.getElementById("closeGenrePanel");
 
     btnElabora.addEventListener("click", function () {
-        genrePanel.classList.add("show");
+    
+    closePlayerPanel();
+    
+genrePanel.classList.add("show");
         genrePanel.classList.remove("hidden");
     });
 
@@ -131,15 +134,20 @@ initFxPanel();
     //document.getElementById("Player").classList.remove("hidden");
 }
 
-function togglePlayerPanel() {
+function openPlayerPanel() {
     const panel = document.getElementById("playerPanel");
     if (!panel) {
         console.error("❌ ERRORE: elemento #mixelPlayer non trovato!");
         return;
     }
-    panel.classList.toggle("open");
+    panel.classList.add("open");
 }
 
+function closePlayerPanel() {
+    const panel = document.getElementById("playerPanel");
+    if (!panel) return;
+    panel.classList.remove("open");
+}
 
 // 🎧 Player UI
 
@@ -149,7 +157,8 @@ console.log("MIXEL PLAYER INIZZIALIZZATO");
 
 //const playerPanel = document.getElementById("playerPanel");
 
-    togglePlayerPanel()
+    openPlayerPanel();
+
     //mixelPlayer.classList.remove("hidden");
     
     const playBtn = document.getElementById("btnPlay");
@@ -286,6 +295,7 @@ function resetAppState() {
     currentEngine?.stop();
     currentEngine = null;
     currentDNA = null;
+closePlayerPanel();
 
     document.getElementById("Player")?.classList.add("hidden");
 }
