@@ -27,7 +27,7 @@ export function generateRiffFromDNA(dna,scale,length,rand){
 
         const index = Math.floor(rand()*scale.length);
 
-        riff.push(scale[index]+"2");
+        riff.push(scale[index]);
 
     }
 
