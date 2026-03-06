@@ -69,58 +69,40 @@ const riff = generateRiffFromDNA(dna,scale,16,rand);
 
 console.log("Riff:",riff);
 
-let step = 0;
-
-
 // =========================
 // LOOP PRINCIPALE
 // =========================
 
-const loop = new Tone.Loop((time)=>{
+let step = 0;
 
-    const note = riff[step];
+const loop = new Tone.Loop((time) => {
+
+    const note = riff[step] + "2";
+
     const chord = powerChord(note);
 
-    // alternanza palm/open
-    if(rand() > 0.75){
+    guitarPalm.triggerAttackRelease(
+        chord,
+        "8n",
+        time
+    );
 
-        guitarOpen.triggerAttackRelease(
-            chord,
-            "4n",
-            time
-        );
+    bass.triggerAttackRelease(
+        note,
+        "8n",
+        time
+    );
 
-    }else{
+console.log("DRUM HIT");
 
-        guitarPalm.triggerAttackRelease(
-            chord,
-            "8n",
-            time
-        );
-
-    }
-
-    // basso più lungo
-    if(step % 2 === 0){
-
-        bass.triggerAttackRelease(
-            note,
-            "4n",
-            time
-        );
-
-    }
-
-    // batteria
-    drumEngine.play(time,step);
+    drumEngine.play(time);
 
     step++;
 
-    if(step >= riff.length){
+    if(step >= riff.length)
         step = 0;
-    }
 
-},"8n");
+}, "8n");
 
 loop.start(0);
 
