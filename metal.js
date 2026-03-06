@@ -12,51 +12,47 @@ import {
     createSeededRandom,
     analyzeImageBrightness
 } from "./common.js";
+
 import { extractPhotoDNA } from "./imageAnalysis.js";
 import { chooseKey, chooseScale, powerChord } from "./musicTheory.js";
 import { detectMetalStyle, computeBPM, generateRiffFromDNA } from "./metalTheory.js";
 import { createMetalDrumEngine } from "./metalDrums.js";
 
-console.log("IMPORT OK");
-
-export async function createMetalEngineFromImage(imgElement) {
+export async function createMetalEngineFromImage(imgElement){
 
 console.log("ENGINE START");
 
-    // reset transport
-    Tone.Transport.cancel();
-    Tone.Transport.stop();
+Tone.Transport.cancel();
+Tone.Transport.stop();
 
-    // =========================
-    // ANALISI IMMAGINE
-    // =========================
 
-    const brightness = analyzeImageBrightness(imgElement);
-    const dna = extractPhotoDNA(imgElement);
+// =========================
+// ANALISI IMMAGINE
+// =========================
 
-    const rand = createSeededRandom(dna);
+const brightness = analyzeImageBrightness(imgElement);
+const dna = extractPhotoDNA(imgElement);
+const rand = createSeededRandom(dna);
 
-    console.log("Luminosità:", brightness);
-    console.log("DNA:", dna);
 
-    // =========================
-    // TEORIA MUSICALE
-    // =========================
+// =========================
+// TEORIA METAL
+// =========================
 
-    const style = detectMetalStyle(brightness, dna);
-    const bpm = computeBPM(brightness, dna);
+const style = detectMetalStyle(brightness,dna);
+const bpm = computeBPM(brightness,dna);
 
-    Tone.Transport.bpm.value = bpm;
+Tone.Transport.bpm.value = bpm;
 
-    const key = chooseKey(dna);
-    const scale = chooseScale(dna, key);
+const key = chooseKey(dna);
+const scale = chooseScale(dna,key);
 
-    console.log("Metal style:", style);
-    console.log("BPM:", bpm);
-    console.log("Key:", key);
-    console.log("Scale:", scale);
-    
-    const drumEngine = createMetalDrumEngine({
+
+// =========================
+// DRUM ENGINE
+// =========================
+
+const drumEngine = createMetalDrumEngine({
     drums,
     style,
     brightness,
@@ -64,73 +60,100 @@ console.log("ENGINE START");
     rand
 });
 
-    // =========================
-    // GENERAZIONE RIFF
-    // =========================
 
-    const riff = generateRiffFromDNA(dna, scale, 16, rand);
+// =========================
+// GENERAZIONE RIFF
+// =========================
 
-    console.log("Riff:", riff);
+const riff = generateRiffFromDNA(dna,scale,16,rand);
 
-    let step = 0;
+console.log("Riff:",riff);
 
-    const loop = new Tone.Loop((time) => {
+let step = 0;
+
+
+// =========================
+// LOOP PRINCIPALE
+// =========================
+
+const loop = new Tone.Loop((time)=>{
 
     const note = riff[step];
     const chord = powerChord(note);
 
-    guitarPalm.triggerAttackRelease(
-        chord,
-        "8n",
-        time
-    );
+    // alternanza palm/open
+    if(rand() > 0.75){
 
-    bass.triggerAttackRelease(
-        note,
-        "8n",
-        time
-    );
+        guitarOpen.triggerAttackRelease(
+            chord,
+            "4n",
+            time
+        );
 
-    drumEngine.play(time);
+    }else{
+
+        guitarPalm.triggerAttackRelease(
+            chord,
+            "8n",
+            time
+        );
+
+    }
+
+    // basso più lungo
+    if(step % 2 === 0){
+
+        bass.triggerAttackRelease(
+            note,
+            "4n",
+            time
+        );
+
+    }
+
+    // batteria
+    drumEngine.play(time,step);
 
     step++;
 
-    if (step >= riff.length)
+    if(step >= riff.length){
         step = 0;
-
-}, "8n");
-
-    loop.start(0);
-
-    // =========================
-    // PLAYER CONTROL
-    // =========================
-
-    function play() {
-        Tone.Transport.start();
     }
 
-    function pause() {
-        Tone.Transport.pause();
-    }
+},"8n");
 
-    function stop() {
-        Tone.Transport.stop();
-        Tone.Transport.seconds = 0;
-    }
+loop.start(0);
 
-    function seek(sec) {
-        Tone.Transport.seconds = sec;
-    }
 
-    return {
+// =========================
+// PLAYER API
+// =========================
 
-        play,
-        pause,
-        stop,
-        seek,
-        totalDuration: 240 // ~4 minuti
+function play(){
+    Tone.Transport.start();
+}
 
-    };
+function pause(){
+    Tone.Transport.pause();
+}
+
+function stop(){
+    Tone.Transport.stop();
+    Tone.Transport.seconds = 0;
+}
+
+function seek(sec){
+    Tone.Transport.seconds = sec;
+}
+
+return{
+
+    play,
+    pause,
+    stop,
+    seek,
+    totalDuration:240
+
+};
 
 }
