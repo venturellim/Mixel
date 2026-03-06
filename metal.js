@@ -1,5 +1,7 @@
 // metal.js
 
+console.log("METAL ENGINE LOADED");
+
 import * as Tone from "https://esm.sh/tone";
 
 import {
@@ -15,7 +17,11 @@ import { chooseKey, chooseScale, powerChord } from "./musicTheory.js";
 import { detectMetalStyle, computeBPM, generateRiffFromDNA } from "./metalTheory.js";
 import { createMetalDrumEngine } from "./metalDrums.js";
 
+console.log("IMPORT OK");
+
 export async function createMetalEngineFromImage(imgElement) {
+
+console.log("ENGINE START");
 
     // reset transport
     Tone.Transport.cancel();
