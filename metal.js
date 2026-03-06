@@ -18,124 +18,164 @@ import { chooseKey, chooseScale, powerChord } from "./musicTheory.js";
 import { detectMetalStyle, computeBPM, generateRiffFromDNA } from "./metalTheory.js";
 import { createMetalDrumEngine } from "./metalDrums.js";
 
+
+// =========================
+// SCELTA OTTAVA IN BASE ALLO STILE
+// =========================
+
+function chooseOctaveForStyle(style, rand) {
+    switch(style){
+        case "doom":
+        case "sludge":
+            return 2;
+
+        case "heavy":
+        case "groove":
+            return 3;
+
+        case "thrash":
+            return rand() > 0.5 ? 3 : 4;
+
+        case "black":
+        case "speed":
+            return rand() > 0.5 ? 4 : 5;
+
+        case "power":
+        case "melodic":
+            return 5;
+
+        default:
+            return 3;
+    }
+}
+
+
+// =========================
+// NORMALIZZAZIONE NOTE
+// =========================
+
+const NOTE_ORDER = ["c","db","d","eb","e","f","gb","g","ab","a","bb","b"];
+
+function clampToSampleRange(note, octave) {
+    const n = note.toLowerCase();
+
+    // Se siamo in ottava 6, non superare E6
+    if (octave === 6) {
+        const idx = NOTE_ORDER.indexOf(n);
+        const maxIdx = NOTE_ORDER.indexOf("e");
+        if (idx > maxIdx) return "e6";
+    }
+
+    return n + octave;
+}
+
+
+// =========================
+// ENGINE PRINCIPALE
+// =========================
+
 export async function createMetalEngineFromImage(imgElement){
 
-console.log("ENGINE START");
+    console.log("ENGINE START");
 
-Tone.Transport.cancel();
-Tone.Transport.stop();
-
-
-// =========================
-// ANALISI IMMAGINE
-// =========================
-
-const brightness = analyzeImageBrightness(imgElement);
-const dna = extractPhotoDNA(imgElement);
-const rand = createSeededRandom(dna);
-
-
-// =========================
-// TEORIA METAL
-// =========================
-
-const style = detectMetalStyle(brightness,dna);
-const bpm = computeBPM(brightness,dna);
-
-Tone.Transport.bpm.value = bpm;
-
-const key = chooseKey(dna);
-const scale = chooseScale(dna,key);
-
-
-// =========================
-// DRUM ENGINE
-// =========================
-
-const drumEngine = createMetalDrumEngine({
-    drums,
-    style,
-    brightness,
-    dna,
-    rand
-});
-
-
-// =========================
-// GENERAZIONE RIFF
-// =========================
-
-const riff = generateRiffFromDNA(dna,scale,16,rand);
-
-console.log("Riff:",riff);
-
-// =========================
-// LOOP PRINCIPALE
-// =========================
-
-let step = 0;
-
-const loop = new Tone.Loop((time) => {
-
-    const note = riff[step] + "2";
-
-    const chord = powerChord(note);
-
-    guitarPalm.triggerAttackRelease(
-        chord,
-        "8n",
-        time
-    );
-
-    bass.triggerAttackRelease(
-        note,
-        "8n",
-        time
-    );
-
-console.log("DRUM HIT");
-
-    drumEngine.play(time);
-
-    step++;
-
-    if(step >= riff.length)
-        step = 0;
-
-}, "8n");
-
-loop.start(0);
-
-
-// =========================
-// PLAYER API
-// =========================
-
-function play(){
-    Tone.Transport.start();
-}
-
-function pause(){
-    Tone.Transport.pause();
-}
-
-function stop(){
+    Tone.Transport.cancel();
     Tone.Transport.stop();
-    Tone.Transport.seconds = 0;
-}
 
-function seek(sec){
-    Tone.Transport.seconds = sec;
-}
+    // =========================
+    // ANALISI IMMAGINE
+    // =========================
 
-return{
+    const brightness = analyzeImageBrightness(imgElement);
+    const dna = extractPhotoDNA(imgElement);
+    const rand = createSeededRandom(dna);
 
-    play,
-    pause,
-    stop,
-    seek,
-    totalDuration:240
+    // =========================
+    // TEORIA METAL
+    // =========================
 
-};
+    const style = detectMetalStyle(brightness, dna);
+    const bpm = computeBPM(brightness, dna);
 
+    Tone.Transport.bpm.value = bpm;
+
+    const key = chooseKey(dna);
+    const scale = chooseScale(dna, key);
+
+    // =========================
+    // DRUM ENGINE
+    // =========================
+
+    const drumEngine = createMetalDrumEngine({
+        drums,
+        style,
+        brightness,
+        dna,
+        rand
+    });
+
+    // =========================
+    // GENERAZIONE RIFF
+    // =========================
+
+    const riff = generateRiffFromDNA(dna, scale, 16, rand);
+
+    console.log("Riff:", riff);
+
+    // =========================
+    // LOOP PRINCIPALE
+    // =========================
+
+    let step = 0;
+    const octave = chooseOctaveForStyle(style, rand);
+
+    const loop = new Tone.Loop((time) => {
+
+        const raw = riff[step];                 // es. "db"
+        const note = clampToSampleRange(raw, octave);
+        const chord = powerChord(note);
+
+        guitarPalm.triggerAttackRelease(chord, "8n", time);
+        bass.triggerAttackRelease(note, "8n", time);
+
+        drumEngine.play(time);
+
+        step++;
+        if(step >= riff.length) step = 0;
+
+    }, "8n");
+
+    loop.start(0);
+
+    // =========================
+    // PLAYER API
+    // =========================
+
+    function play(){
+        Tone.Transport.start();
+    }
+
+    function pause(){
+        Tone.Transport.pause();
+    }
+
+    function stop(){
+        Tone.Transport.stop();
+        Tone.Transport.seconds = 0;
+        step = 0; // reset del riff
+    }
+
+    function seek(sec){
+        Tone.Transport.seconds = sec;
+    }
+
+    // Durata stimata del loop
+    const totalDuration = riff.length * (60 / bpm) * 0.5;
+
+    return {
+        play,
+        pause,
+        stop,
+        seek,
+        totalDuration
+    };
 }
