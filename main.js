@@ -117,6 +117,10 @@ async function selectGenre(genre) {
 
     if (genre === "metal") {
         currentEngine = await createMetalEngineFromImage(previewImage);
+        if (!currentEngine) {
+    console.error("Engine non creato!");
+    return;
+}
 initPlayerUI();
 drawSpectrum()
 initFxPanel();
@@ -129,7 +133,7 @@ initFxPanel();
 
 function togglePlayerPanel() {
     const panel = document.getElementById("playerPanel");
-    if (!playerPanel) {
+    if (!panel) {
         console.error("❌ ERRORE: elemento #mixelPlayer non trovato!");
         return;
     }

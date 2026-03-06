@@ -102,19 +102,21 @@ const guitarUrls = {
 
 const palmFilter = new Tone.Filter({
     type: "lowpass",
-    frequency: 1100,
+    frequency: 750,
     Q: 1
 });
 
 const palmComp = new Tone.Compressor({
     threshold: -18,
-    ratio: 3,
+    ratio: 4,
     attack: 0.003,
     release: 0.15
 });
 
 export const guitarPalm = new Tone.Sampler({
-    urls: guitarUrls
+    urls: guitarUrls,
+    release: 1,
+    baseUrl: ""
 });
 
 guitarPalm.set({
@@ -222,6 +224,7 @@ export function analyzeImageBrightness(img) {
 
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
+if (!ctx) return 0.5;
 
     canvas.width = 64;
     canvas.height = 64;
@@ -245,27 +248,6 @@ export function analyzeImageBrightness(img) {
     const avg = total / (data.length / 4);
 
     return avg / 255;
-}
-
-export function generateImageDNA(img) {
-
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-
-    canvas.width = 32;
-    canvas.height = 32;
-
-    ctx.drawImage(img, 0, 0, 32, 32);
-
-    const data = ctx.getImageData(0, 0, 32, 32).data;
-
-    let hash = 0;
-
-    for (let i = 0; i < data.length; i += 4) {
-        hash = (hash * 31 + data[i] + data[i+1] + data[i+2]) >>> 0;
-    }
-
-    return hash;
 }
 
 export function createSeededRandom(seed) {
