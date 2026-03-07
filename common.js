@@ -204,6 +204,7 @@ export const bass = new Tone.Sampler({
 export const drums = new Tone.Players({
     kick: "Samples/Drums/kick.mp3",
     snare: "Samples/Drums/snare.mp3",
+    ghost: "Samples/Drums/ghost.mp3",
     hihat: "Samples/Drums/hihat_closed.mp3",
     openhat: "Samples/Drums/hihat_open.mp3",
 
@@ -216,6 +217,7 @@ export const drums = new Tone.Players({
     tom4: "Samples/Drums/tom_4.mp3",
 
     ride: "Samples/Drums/ride.mp3",
+    ridebell: "Samples/Drums/ride_bell.mp3",
     china: "Samples/Drums/china.mp3"
 
 }).connect(masterEQ);
