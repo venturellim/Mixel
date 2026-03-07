@@ -20,8 +20,6 @@ import { generateMetalRiff } from "./metalRiff.js";
 import { generateMetalLead } from "./metalLead.js";
 import { createMetalDrumEngine } from "./drumEngine.js";
 import { createLeadEngine } from "./leadEngine.js";
-import { guitarPalm, guitarOpen, guitarLead, drums, masterEQ } from "./common.js";
-
 
 // ===============================
 // UTILITÀ
