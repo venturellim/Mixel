@@ -7,6 +7,7 @@ import * as Tone from "https://esm.sh/tone";
 import {
     guitarPalm,
     guitarOpen,
+    guitarLead,
     bass,
     drums,
     createSeededRandom,
