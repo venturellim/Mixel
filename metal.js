@@ -41,6 +41,40 @@ function createSeededRandom(seed) {
     };
 }
 
+// Attesa caricamento strumenti
+
+export async function waitInstrumentsWithProgress() {
+
+    const overlay = document.getElementById("loadingOverlay");
+    const bar = document.getElementById("loadingBar");
+    const text = document.getElementById("loadingText");
+
+    overlay.style.display = "flex";
+
+    const instruments = [
+        guitarPalm.loaded,
+        guitarOpen.loaded,
+        guitarLead.loaded,
+        drums.loaded,
+        bass.loaded
+    ];
+
+    let loaded = 0;
+    const total = instruments.length;
+
+    for (const inst of instruments) {
+        await inst;
+        loaded++;
+        const percent = Math.floor((loaded / total) * 100);
+        bar.style.width = percent + "%";
+        text.innerText = `Caricamento strumenti… ${percent}%`;
+    }
+
+    overlay.style.display = "none";
+}
+
+
+
 
 // ===============================
 // GENERATORE DI BRANO COMPLETO

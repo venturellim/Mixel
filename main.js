@@ -1,6 +1,8 @@
 import * as Tone from "https://esm.sh/tone";
 
-import { createMetalEngineFromImage } from "./metal.js";
+import { createMetalEngineFromImage,
+  waitInstrumentsWithProgress
+ } from "./metal.js";
 
 // ===============================
 // STATO GLOBALE APP
@@ -176,19 +178,29 @@ console.log("MIXEL PLAYER INIZZIALIZZATO");
         const s = Math.floor(sec % 60).toString().padStart(2, "0");
         return `${m}:${s}`;
         }
-    
 
-    playBtn.onclick = async () => {
+playBtn.onclick = async () => {
+
+    // Mostra messaggio
+    const loading = document.getElementById("loadingMsg");
+    loading.style.display = "block";
+
+    // Sblocco AudioContext
     await Tone.start();
-    await Tone.loaded();
-    await guitarPalm.loaded;
-await guitarOpen.loaded;
-await guitarLead.loaded;
-await drums.loaded;
-await bass.loaded;
 
+    // Attendo caricamento Tone.js
+    await Tone.loaded();
+
+    // Attendo caricamento strumenti
+    await waitInstrumentsWithProgress();
+
+    // Nascondo messaggio
+    loading.style.display = "none";
+
+    // Avvio brano
     currentEngine?.play();
 };
+
     pauseBtn.onclick = () => currentEngine?.pause();
     stopBtn.onclick = () => currentEngine?.stop();
     
