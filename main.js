@@ -1,6 +1,13 @@
 import * as Tone from "https://esm.sh/tone";
 
 import { createMetalEngineFromImage } from "./metal.js";
+import {
+    guitarPalm,
+    guitarOpen,
+    guitarLead,
+    bass,
+    drums
+} from "./common.js";
 
 // ===============================
 // STATO GLOBALE APP
@@ -181,6 +188,12 @@ console.log("MIXEL PLAYER INIZZIALIZZATO");
     playBtn.onclick = async () => {
     await Tone.start();
     await Tone.loaded();
+    await guitarPalm.loaded;
+await guitarOpen.loaded;
+await guitarLead.loaded;
+await drums.loaded;
+await bass.loaded;
+
     currentEngine?.play();
 };
     pauseBtn.onclick = () => currentEngine?.pause();

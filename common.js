@@ -220,6 +220,13 @@ export const drums = new Tone.Players({
 
 }).connect(masterEQ);
 
+guitarPalm.volume.value = -6;
+guitarOpen.volume.value = -6;
+guitarLead.volume.value = -12;
+bass.volume.value = -3;
+drums.volume.value = 0;
+
+
 export function analyzeImageBrightness(img) {
 
     const canvas = document.createElement("canvas");

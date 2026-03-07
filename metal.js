@@ -162,24 +162,41 @@ export async function createMetalSongFromImage({
     let t = 0;
 
     function scheduleSection(riff, drumsEngine, leadEngine, duration) {
-        Tone.Transport.schedule((time) => {
+
+    Tone.Transport.schedule((time) => {
+        if (drumsEngine && drumsEngine.play) {
             drumsEngine.play(time);
-        }, t);
+        }
+    }, t);
 
-        Tone.Transport.schedule((time) => {
-            // riff player
-            let step = 0;
-            const loop = new Tone.Loop((time) => {
-                const note = riff[step];
-                guitarPalm.triggerAttackRelease(note + "2", "8n", time);
-                step = (step + 1) % riff.length;
-            }, "8n").start(t);
+    Tone.Transport.schedule((time) => {
 
-            Tone.Transport.scheduleOnce(() => loop.stop(), t + duration);
-        }, t);
+        let step = 0;
 
-        t += duration;
-    }
+        const loop = new Tone.Loop((loopTime) => {
+            const note = riff[step];
+
+            if (note) {
+                try {
+                    guitarPalm.triggerAttackRelease(note + "2", "8n", loopTime);
+                } catch(e) {
+                    console.warn("Errore nota riff:", note, e);
+                }
+            }
+
+            step = (step + 1) % riff.length;
+
+        }, "8n").start(t);
+
+        Tone.Transport.scheduleOnce(() => {
+            loop.stop();
+        }, t + duration);
+
+    }, t);
+
+    t += duration;
+}
+
 
     scheduleSection(riffIntro, drumsIntro, leadEngineIntro, introDur);
     scheduleSection(riffVerse, drumsVerse, leadEngineVerse, verseDur);
@@ -195,7 +212,11 @@ export async function createMetalSongFromImage({
     Tone.Transport.start();
 
     return {
-        totalDuration,
-        bpm
-    };
+    play,
+    pause,
+    stop,
+    seek,
+    totalDuration
+};
+
 }
