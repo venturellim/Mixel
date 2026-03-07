@@ -19,6 +19,7 @@ import { detectMetalStyle, computeBPM } from "./metalTheory.js";
 import { createMetalDrumEngine } from "./metalDrums.js";
 import { generateMetalRiff } from "./metalRiff.js";
 import { createLeadEngine } from "./leadEngine.js";
+import { generateMetalLead } from "./metalLead.js";
 
 
 // =========================
