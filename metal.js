@@ -182,34 +182,49 @@ export async function createMetalSongFromImage({ dna, brightness, img }) {
 
     function scheduleSection(riff, drumsEngine, leadEngine, duration) {
 
-        Tone.Transport.schedule((time) => {
-            drumsEngine?.play?.(time);
-        }, t);
+    // --- BATTERIA ---
+    Tone.Transport.schedule((time) => {
+        if (drumsEngine && typeof drumsEngine.play === "function") {
+            drumsEngine.play(time);
+        }
+    }, t);
 
-        Tone.Transport.schedule((time) => {
+    // --- RIFF DI CHITARRA ---
+    Tone.Transport.schedule((time) => {
 
-            let step = 0;
+        let step = 0;
 
-            const loop = new Tone.Loop((loopTime) => {
-                const note = riff[step];
-                if (note) {
-                    try {
-                        guitarPalm.triggerAttackRelease(note + "2", "8n", loopTime);
-                    } catch(e) {
-                        console.warn("Errore nota riff:", note, e);
-                    }
+        const loop = new Tone.Loop((loopTime) => {
+            const note = riff[step];
+
+            if (note) {
+                try {
+                    guitarPalm.triggerAttackRelease(note + "2", "8n", loopTime);
+                } catch (e) {
+                    console.warn("Errore nota riff:", note, e);
                 }
-                step = (step + 1) % riff.length;
-            }, "8n").start(t);
+            }
 
-            Tone.Transport.scheduleOnce(() => loop.stop(), t + duration);
+            step = (step + 1) % riff.length;
 
+        }, "8n").start(t);
+
+        Tone.Transport.scheduleOnce(() => {
+            loop.stop();
+        }, t + duration);
+
+    }, t);
+
+    // --- LEAD ENGINE ---
+    if (leadEngine && typeof leadEngine.playSection === "function") {
+        Tone.Transport.schedule((time) => {
+            leadEngine.playSection(time, duration);
         }, t);
-
-        leadEngine?.playSection?.(t, duration);
-
-        t += duration;
     }
+
+    // Avanza il tempo globale
+    t += duration;
+}
 
     scheduleSection(riffIntro,        drumsIntro,        leadEngineIntro,        introDur);
     scheduleSection(riffVerse,        drumsVerse,        leadEngineVerse,        verseDur);
