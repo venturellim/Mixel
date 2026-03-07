@@ -1,198 +1,190 @@
-// metal.js
-
-console.log("METAL ENGINE LOADED");
+// metalSongEngine.js
+// FILE PRINCIPALE — usa i tuoi moduli esistenti
 
 import * as Tone from "https://esm.sh/tone";
 
-import {
-    guitarPalm,
-    guitarOpen,
-    guitarLead,
-    bass,
-    drums,
-    masterEQ,
-    createSeededRandom,
-    analyzeImageBrightness
-} from "./common.js";
-
-import { extractPhotoDNA } from "./imageAnalysis.js";
-import { chooseKey, chooseScale, powerChord } from "./musicTheory.js";
+import { chooseKey, chooseScale } from "./musicTheory.js";
 import { detectMetalStyle, computeBPM } from "./metalTheory.js";
-import { createMetalDrumEngine } from "./metalDrums.js";
 import { generateMetalRiff } from "./metalRiff.js";
-import { createLeadEngine } from "./leadEngine.js";
 import { generateMetalLead } from "./metalLead.js";
+import { createMetalDrumEngine } from "./drumEngine.js";
+import { createLeadEngine } from "./leadEngine.js";
+import { guitarPalm, guitarOpen, guitarLead, drums, masterEQ } from "./common.js";
 
 
-// =========================
-// SCELTA OTTAVA IN BASE ALLO STILE
-// =========================
+// ===============================
+// UTILITÀ
+// ===============================
 
-function chooseOctaveForStyle(style, rand) {
-    switch(style){
-        case "doom":
-        case "sludge":
-            return 2;
+function transposeKey(key, semitones) {
+    const notes = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+    const index = notes.indexOf(key);
+    const newIndex = (index + semitones + 12) % 12;
+    return notes[newIndex];
+}
 
-        case "heavy":
-        case "groove":
-            return 3;
-
-        case "thrash":
-            return rand() > 0.5 ? 3 : 4;
-
-        case "black":
-        case "speed":
-            return rand() > 0.5 ? 4 : 5;
-
-        case "power":
-        case "melodic":
-            return 5;
-
-        default:
-            return 3;
-    }
+function createSeededRandom(seed) {
+    return function() {
+        seed = (seed * 1664525 + 1013904223) % 4294967296;
+        return seed / 4294967296;
+    };
 }
 
 
-// =========================
-// NORMALIZZAZIONE NOTE
-// =========================
+// ===============================
+// GENERATORE DI BRANO COMPLETO
+// ===============================
 
-const NOTE_ORDER = ["c","db","d","eb","e","f","gb","g","ab","a","bb","b"];
+export async function createMetalSongFromImage({
+    dna,
+    brightness,
+    img
+}) {
 
-function clampToSampleRange(note, octave) {
-    const n = note.toLowerCase();
+    await Tone.loaded();
 
-    // Se siamo in ottava 6, non superare E6
-    if (octave === 6) {
-        const idx = NOTE_ORDER.indexOf(n);
-        const maxIdx = NOTE_ORDER.indexOf("e");
-        if (idx > maxIdx) return "e6";
-    }
-
-    return n + octave;
-}
-
-
-// =========================
-// ENGINE PRINCIPALE
-// =========================
-
-export async function createMetalEngineFromImage(imgElement){
-
-    console.log("ENGINE START");
-
-    Tone.Transport.cancel();
-    Tone.Transport.stop();
-
-    // =========================
-    // ANALISI IMMAGINE
-    // =========================
-
-    const brightness = analyzeImageBrightness(imgElement);
-    const dna = extractPhotoDNA(imgElement);
     const rand = createSeededRandom(dna);
 
-    // =========================
-    // TEORIA METAL
-    // =========================
+    // ===============================
+    // DURATA TOTALE (3–5 minuti)
+    // ===============================
 
-    const style = detectMetalStyle(brightness, dna);
+    const totalDuration =
+        180 + (dna % 60) + (brightness * 30); // secondi
+
+    // ===============================
+    // BPM
+    // ===============================
+
     const bpm = computeBPM(brightness, dna);
-
     Tone.Transport.bpm.value = bpm;
 
-    const key = chooseKey(dna);
-    const scale = chooseScale(dna, key);
+    const measureDuration = (60 / bpm) * 4;
 
-    // =========================
-    // DRUM ENGINE
-    // =========================
+    // ===============================
+    // DURATA SEZIONI
+    // ===============================
 
-    const drumEngine = createMetalDrumEngine({
-        drums,
-        style,
-        brightness,
-        dna,
-        rand
-    });
+    const introDur = totalDuration * 0.10;
+    const verseDur = totalDuration * 0.20;
+    const chorusDur = totalDuration * 0.20;
+    const bridgeDur = totalDuration * 0.25;
+    const finalChorusDur = totalDuration * 0.20;
+    const outroDur = totalDuration * 0.05;
 
-const lead = generateMetalLead(dna, scale, style, rand);
+    // ===============================
+    // TONALITÀ E MODULAZIONI
+    // ===============================
 
-const leadEngine = createLeadEngine({
-    sampler: guitarLead,
-    lead,
-    style,
-    dna,
-    rand,
-    master: masterEQ
-    });
+    const keyIntro = chooseKey(dna);
+    const keyVerse = transposeKey(keyIntro, -2);
+    const keyChorus = transposeKey(keyVerse, +5);
+    const keyBridge = transposeKey(keyChorus, +7);
+    const keyFinalChorus = transposeKey(keyBridge, -5);
+    const keyOutro = transposeKey(keyFinalChorus, -2);
 
-    // =========================
-    // GENERAZIONE RIFF
-    // =========================
+    // ===============================
+    // SCALE PER SEZIONE
+    // ===============================
 
-    const riff = generateMetalRiff(dna, scale, style, rand);
+    const scaleIntro = chooseScale(dna, keyIntro);
+    const scaleVerse = chooseScale(dna+1, keyVerse);
+    const scaleChorus = chooseScale(dna+2, keyChorus);
+    const scaleBridge = chooseScale(dna+3, keyBridge);
+    const scaleFinalChorus = chooseScale(dna+4, keyFinalChorus);
+    const scaleOutro = chooseScale(dna+5, keyOutro);
 
+    // ===============================
+    // STILE METAL BASE
+    // ===============================
 
-    console.log("Riff:", riff);
+    const style = detectMetalStyle(brightness, dna);
 
-    // =========================
-    // LOOP PRINCIPALE
-    // =========================
+    // ===============================
+    // GENERAZIONE RIFF PER SEZIONE
+    // ===============================
 
-    let step = 0;
-    const octave = chooseOctaveForStyle(style, rand);
+    const riffIntro = generateMetalRiff(dna, scaleIntro, style, rand);
+    const riffVerse = generateMetalRiff(dna+1, scaleVerse, style, rand);
+    const riffChorus = generateMetalRiff(dna+2, scaleChorus, style, rand);
+    const riffBridge = generateMetalRiff(dna+3, scaleBridge, style, rand);
+    const riffFinalChorus = generateMetalRiff(dna+4, scaleFinalChorus, style, rand);
+    const riffOutro = generateMetalRiff(dna+5, scaleOutro, style, rand);
 
-    const loop = new Tone.Loop((time) => {
+    // ===============================
+    // GENERAZIONE LEAD PER SEZIONE
+    // ===============================
 
-        const raw = riff[step];                 // es. "db"
-        const note = clampToSampleRange(raw, octave);
-        const chord = powerChord(note);
+    const leadIntro = generateMetalLead(dna, scaleIntro, style, rand);
+    const leadVerse = generateMetalLead(dna+1, scaleVerse, style, rand);
+    const leadChorus = generateMetalLead(dna+2, scaleChorus, style, rand);
+    const leadBridge = generateMetalLead(dna+3, scaleBridge, style, rand);
+    const leadFinalChorus = generateMetalLead(dna+4, scaleFinalChorus, style, rand);
+    const leadOutro = generateMetalLead(dna+5, scaleOutro, style, rand);
 
-        guitarPalm.triggerAttackRelease(chord, "8n", time);
-        bass.triggerAttackRelease(note, "8n", time);
+    // ===============================
+    // DRUM ENGINE PER SEZIONE
+    // ===============================
 
-        drumEngine.play(time);
+    const drumsIntro = createMetalDrumEngine({ drums, style, brightness, dna, rand });
+    const drumsVerse = createMetalDrumEngine({ drums, style, brightness: brightness*0.7, dna: dna+1, rand });
+    const drumsChorus = createMetalDrumEngine({ drums, style, brightness: brightness*1.2, dna: dna+2, rand });
+    const drumsBridge = createMetalDrumEngine({ drums, style, brightness, dna: dna+3, rand });
+    const drumsFinalChorus = createMetalDrumEngine({ drums, style, brightness: brightness*1.3, dna: dna+4, rand });
+    const drumsOutro = createMetalDrumEngine({ drums, style, brightness: brightness*0.5, dna: dna+5, rand });
 
-        step++;
-        if(step >= riff.length) step = 0;
+    // ===============================
+    // LEAD ENGINE PER SEZIONE
+    // ===============================
 
-    }, "8n");
+    const leadEngineIntro = createLeadEngine({ sampler: guitarLead, lead: leadIntro, style, dna, rand, master: masterEQ });
+    const leadEngineVerse = createLeadEngine({ sampler: guitarLead, lead: leadVerse, style, dna: dna+1, rand, master: masterEQ });
+    const leadEngineChorus = createLeadEngine({ sampler: guitarLead, lead: leadChorus, style, dna: dna+2, rand, master: masterEQ });
+    const leadEngineBridge = createLeadEngine({ sampler: guitarLead, lead: leadBridge, style, dna: dna+3, rand, master: masterEQ });
+    const leadEngineFinalChorus = createLeadEngine({ sampler: guitarLead, lead: leadFinalChorus, style, dna: dna+4, rand, master: masterEQ });
+    const leadEngineOutro = createLeadEngine({ sampler: guitarLead, lead: leadOutro, style, dna: dna+5, rand, master: masterEQ });
 
-    loop.start(0);
+    // ===============================
+    // SCHEDULING DELLE SEZIONI
+    // ===============================
 
-    // =========================
-    // PLAYER API
-    // =========================
+    let t = 0;
 
-    function play(){
-        Tone.Transport.start();
+    function scheduleSection(riff, drumsEngine, leadEngine, duration) {
+        Tone.Transport.schedule((time) => {
+            drumsEngine.play(time);
+        }, t);
+
+        Tone.Transport.schedule((time) => {
+            // riff player
+            let step = 0;
+            const loop = new Tone.Loop((time) => {
+                const note = riff[step];
+                guitarPalm.triggerAttackRelease(note + "2", "8n", time);
+                step = (step + 1) % riff.length;
+            }, "8n").start(t);
+
+            Tone.Transport.scheduleOnce(() => loop.stop(), t + duration);
+        }, t);
+
+        t += duration;
     }
 
-    function pause(){
-        Tone.Transport.pause();
-    }
+    scheduleSection(riffIntro, drumsIntro, leadEngineIntro, introDur);
+    scheduleSection(riffVerse, drumsVerse, leadEngineVerse, verseDur);
+    scheduleSection(riffChorus, drumsChorus, leadEngineChorus, chorusDur);
+    scheduleSection(riffBridge, drumsBridge, leadEngineBridge, bridgeDur);
+    scheduleSection(riffFinalChorus, drumsFinalChorus, leadEngineFinalChorus, finalChorusDur);
+    scheduleSection(riffOutro, drumsOutro, leadEngineOutro, outroDur);
 
-    function stop(){
-        Tone.Transport.stop();
-        Tone.Transport.seconds = 0;
-        step = 0; // reset del riff
-    }
+    // ===============================
+    // AVVIO
+    // ===============================
 
-    function seek(sec){
-        Tone.Transport.seconds = sec;
-    }
-
-    // Durata stimata del loop
-    const totalDuration = riff.length * (60 / bpm) * 0.5;
+    Tone.Transport.start();
 
     return {
-        play,
-        pause,
-        stop,
-        seek,
-        totalDuration
+        totalDuration,
+        bpm
     };
 }
