@@ -70,20 +70,11 @@ export function createLeadEngine({
 
     function performLeadNote(note, time) {
 
-        // ----------------------------
-        // OTTAVA AUTOMATICA
-        // ----------------------------
-
         let octave = 4;
         if (style === "power") octave = 5;
         if (style === "doom")  octave = 3;
 
         const fullNote = note + octave;
-
-
-        // ----------------------------
-        // BENDING (power, heavy)
-        // ----------------------------
 
         if ((style === "power" || style === "heavy") && rand() > 0.7) {
             sampler.triggerAttackRelease(fullNote, "8n", time);
@@ -95,22 +86,12 @@ export function createLeadEngine({
             return;
         }
 
-
-        // ----------------------------
-        // TREMOLO PICKING (thrash, black)
-        // ----------------------------
-
         if ((style === "thrash" || energy > 0.7) && rand() > 0.6) {
             sampler.triggerAttackRelease(fullNote, "32n", time);
             sampler.triggerAttackRelease(fullNote, "32n", time + Tone.Time("32n"));
             sampler.triggerAttackRelease(fullNote, "32n", time + Tone.Time("32n") * 2);
             return;
         }
-
-
-        // ----------------------------
-        // SLIDE (texture alta)
-        // ----------------------------
 
         if (texture > 0.6 && rand() > 0.8) {
             const slideTo = Tone.Frequency(fullNote).transpose(2).toNote();
@@ -119,45 +100,31 @@ export function createLeadEngine({
             return;
         }
 
-
-        // ----------------------------
-        // TWIN GUITAR (power metal)
-        // ----------------------------
-
         if (style === "power" && rand() > 0.75) {
-            const harmony = Tone.Frequency(fullNote).transpose(4).toNote(); // terza maggiore
+            const harmony = Tone.Frequency(fullNote).transpose(4).toNote();
             sampler.triggerAttackRelease(fullNote, "8n", time);
             sampler.triggerAttackRelease(harmony, "8n", time);
             return;
         }
-
-
-        // ----------------------------
-        // NOTA NORMALE
-        // ----------------------------
 
         sampler.triggerAttackRelease(fullNote, "8n", time);
     }
 
 
     // ============================
-    // PLAYER LOOP
+    // LOOP (NON avviato subito!)
     // ============================
 
     let step = 0;
 
     const loop = new Tone.Loop((time) => {
-
         const note = lead[step];
-
         performLeadNote(note, time);
-
-        step++;
-        if (step >= lead.length) step = 0;
-
+        step = (step + 1) % lead.length;
     }, "8n");
 
-    loop.start(0);
+    // NON startare qui!
+    // loop.start(0);
 
 
     // ============================
@@ -165,6 +132,17 @@ export function createLeadEngine({
     // ============================
 
     return {
+
+        playSection(startTime, duration) {
+            step = 0;
+            loop.start(startTime);
+
+            Tone.Transport.scheduleOnce(() => {
+                loop.stop();
+                step = 0;
+            }, startTime + duration);
+        },
+
         stop() {
             loop.stop();
             step = 0;
