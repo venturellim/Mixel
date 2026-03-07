@@ -3,6 +3,17 @@
 
 import * as Tone from "https://esm.sh/tone";
 
+
+import {
+    guitarPalm,
+    guitarOpen,
+    guitarLead,
+    bass,
+    drums,
+    masterEQ,
+    createSeededRandom,
+    analyzeImageBrightness
+} from "./common.js";
 import { chooseKey, chooseScale } from "./musicTheory.js";
 import { detectMetalStyle, computeBPM } from "./metalTheory.js";
 import { generateMetalRiff } from "./metalRiff.js";
