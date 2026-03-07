@@ -124,6 +124,7 @@ const leadEngine = createLeadEngine({
     dna,
     rand,
     master: masterEQ
+    });
 
     // =========================
     // GENERAZIONE RIFF
