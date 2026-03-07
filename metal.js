@@ -32,13 +32,6 @@ function transposeKey(key, semitones) {
     return notes[newIndex];
 }
 
-function createSeededRandom(seed) {
-    return function() {
-        seed = (seed * 1664525 + 1013904223) % 4294967296;
-        return seed / 4294967296;
-    };
-}
-
 // Attesa caricamento strumenti
 
 export async function waitInstrumentsWithProgress() {
