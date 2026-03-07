@@ -1,13 +1,6 @@
 import * as Tone from "https://esm.sh/tone";
 
 import { createMetalEngineFromImage } from "./metal.js";
-import {
-    guitarPalm,
-    guitarOpen,
-    guitarLead,
-    bass,
-    drums
-} from "./common.js";
 
 // ===============================
 // STATO GLOBALE APP
