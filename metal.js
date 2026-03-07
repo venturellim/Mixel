@@ -10,6 +10,7 @@ import {
     guitarLead,
     bass,
     drums,
+    masterEQ,
     createSeededRandom,
     analyzeImageBrightness
 } from "./common.js";
