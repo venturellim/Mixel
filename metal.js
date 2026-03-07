@@ -19,25 +19,6 @@ import { generateMetalLead } from "./metalLead.js";
 import { createMetalDrumEngine } from "./drumEngine.js";
 import { createLeadEngine } from "./leadEngine.js";
 
-// Wrapper usato dal main: prende direttamente l'immagine <img>
-export async function createMetalEngineFromImage(previewImage) {
-
-    // 1) Calcolo brightness dall'immagine
-    const brightness = await analyzeImageBrightness(previewImage);
-
-    // 2) Creo un DNA deterministico (puoi cambiare la logica se ne hai già una)
-    const dna = Math.floor(brightness * 1000000);
-
-    // 3) Creo il vero engine
-    const engine = await createMetalSongFromImage({
-        dna,
-        brightness,
-        img: previewImage
-    });
-
-    return engine;
-}
-
 // ===============================
 // UTILITÀ
 // ===============================
@@ -248,34 +229,14 @@ export async function createMetalSongFromImage({
     // AVVIO
     // ===============================
 
-    function play() {
-    if (Tone.Transport.state !== "started") {
-        Tone.Transport.start();
-    }
-}
+    Tone.Transport.start();
 
-function pause() {
-    if (Tone.Transport.state === "started") {
-        Tone.Transport.pause();
-    }
-}
-
-function stop() {
-    Tone.Transport.stop();
-    Tone.Transport.position = 0;
-}
-
-function seek(seconds) {
-    Tone.Transport.seconds = seconds;
-}
-
-return {
+    return {
     play,
     pause,
     stop,
     seek,
     totalDuration
 };
-
 
 }
