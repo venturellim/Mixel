@@ -181,9 +181,9 @@ console.log("MIXEL PLAYER INIZZIALIZZATO");
 
 playBtn.onclick = async () => {
 
-    // Mostra messaggio
-    const loading = document.getElementById("loadingMsg");
-    loading.style.display = "block";
+    // Mostra overlay di caricamento
+    const overlay = document.getElementById("loadingOverlay");
+    overlay.style.display = "flex";
 
     // Sblocco AudioContext
     await Tone.start();
@@ -194,12 +194,13 @@ playBtn.onclick = async () => {
     // Attendo caricamento strumenti
     await waitInstrumentsWithProgress();
 
-    // Nascondo messaggio
-    loading.style.display = "none";
+    // Nascondo overlay
+    overlay.style.display = "none";
 
     // Avvio brano
-    currentEngine?.play();
+    currentEngine.play();
 };
+
 
     pauseBtn.onclick = () => currentEngine?.pause();
     stopBtn.onclick = () => currentEngine?.stop();
