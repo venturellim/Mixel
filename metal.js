@@ -1,5 +1,7 @@
 // metal.js
 
+console.log("METAL.JS CARICATO");
+
 import * as Tone from "https://esm.sh/tone";
 
 import {
