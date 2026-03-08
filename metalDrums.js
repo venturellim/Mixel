@@ -4,7 +4,7 @@
 //
 
 import { drums } from "./common.js";   // i tuoi sample
-import * as Tone from "tone";
+import * as Tone from "https://esm.sh/tone";
 
 // -------------------------------------------------------------
 // Utility
