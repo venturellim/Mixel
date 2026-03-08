@@ -4,7 +4,7 @@
 //
 
 import { drums } from "./common.js";   // i tuoi sample
-import * as Tone from "https://esm.sh/tone";
+// import * as Tone from "https://esm.sh/tone";
 
 // -------------------------------------------------------------
 // Utility
@@ -151,16 +151,17 @@ function generateMeasure(seed, style, params) {
     const steps = rate === "16n" ? 16 : rate === "8n" ? 8 : 4;
 
     for (let i = 0; i < steps; i++) {
-        const pos = rate === "16n"
-            ? `0:0:${i}`
-            : rate === "8n"
-            ? `0:${Math.floor(i/2)}:${(i%2)*2}`
-            : `0:${i}:0`;
+            const pos = rate === "16n"
+        ? `0:0:${i}`
+        : rate === "8n"
+        ? `0:${Math.floor(i/2)}:${(i%2)*2}`
+        : `0:${i}:0`
+;
 
-        events.push({ sample: cymbal, pos });
-    }
+    events.push({ sample: cymbal, pos });
+}
 
-    return events;
+return events;
 }
 
 // -------------------------------------------------------------
