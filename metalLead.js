@@ -1,6 +1,6 @@
 // metalLead.js
 
-import * as Tone from "https://esm.sh/tone";
+//import * as Tone from "https://esm.sh/tone";
 
 export function generateMetalLead(dna, scale, style, rand) {
 
