@@ -15,7 +15,7 @@ import {
     analyzeImageBrightness
 } from "./common.js";
 
-import { analyzeImage } from "./imageAnslysis.js";
+import { analyzeImage } from "./imageAnalysis.js";
 import { chooseKey, chooseScale } from "./musicTheory.js";
 import { detectMetalStyle, computeBPM } from "./metalTheory.js";
 import { generateMetalRiff } from "./metalRiff.js";
