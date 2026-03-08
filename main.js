@@ -1,5 +1,7 @@
 //import * as Tone from "https://esm.sh/tone";
 
+console.log("MAIN.js PARTITO");
+
 import { createMetalEngineFromImage,
   waitInstrumentsWithProgress
  } from "./metal.js";
