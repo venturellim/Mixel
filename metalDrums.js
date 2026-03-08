@@ -4,7 +4,7 @@
 //
 
 import { drums } from "./common.js";
-//import * as Tone from "https://cdn.jsdelivr.net/npm/tone@14.7.77/build/Tone.js";
+import * as Tone from "https://esm.sh/tone";
 
 // -------------------------------------------------------------
 // Utility

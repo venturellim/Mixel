@@ -1,6 +1,6 @@
 // leadEngine.js
 
-//import * as Tone from "https://esm.sh/tone";
+import * as Tone from "https://esm.sh/tone";
 
 export function createLeadEngine(obj) {
 

@@ -1,6 +1,6 @@
 // metalRiff.js
 
-//import * as Tone from "https://esm.sh/tone";
+import * as Tone from "https://esm.sh/tone";
 
 export function generateMetalRiff(dna, scale, style, rand) {
 

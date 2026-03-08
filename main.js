@@ -1,4 +1,4 @@
-//import * as Tone from "https://esm.sh/tone";
+import * as Tone from "https://esm.sh/tone";
 
 console.log("MAIN.js PARTITO");
 
