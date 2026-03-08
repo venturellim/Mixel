@@ -222,7 +222,6 @@ const drumsOutro = createDrumEngine(style, outroParams);
     Tone.Transport.schedule((time) => {
         if (drumsEngine && typeof drumsEngine.playSection === "function") {
     drumsEngine.playSection(time, duration);
-}
         }
     }, t);
 
