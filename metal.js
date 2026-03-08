@@ -14,12 +14,12 @@ import {
     createSeededRandom,
     analyzeImageBrightness
 } from "./common.js";
-
+import { analyzeImage } from "./analyzeImage.js";
 import { chooseKey, chooseScale } from "./musicTheory.js";
 import { detectMetalStyle, computeBPM } from "./metalTheory.js";
 import { generateMetalRiff } from "./metalRiff.js";
 import { generateMetalLead } from "./metalLead.js";
-import { createMetalDrumEngine } from "./metalDrums.js";
+import { createDrumEngine } from "./metalDrums.js";
 import { createLeadEngine } from "./leadEngine.js";
 
 
@@ -110,6 +110,12 @@ export async function createMetalSongFromImage({ dna, brightness, img }) {
     await Tone.loaded();
 
     const rand = createSeededRandom(dna);
+    
+    // Analisi immagine
+const baseParams = analyzeImage(img);
+
+// Stile metal
+const style = detectMetalStyle(baseParams.brightness, baseParams.dna);
 
     // Durata totale 3–5 minuti
     const totalDuration = 180 + (dna % 60) + (brightness * 30);
@@ -142,9 +148,6 @@ export async function createMetalSongFromImage({ dna, brightness, img }) {
     const scaleFinalChorus = chooseScale(dna+4, keyFinalChorus);
     const scaleOutro = chooseScale(dna+5, keyOutro);
 
-    // Stile
-    const style = detectMetalStyle(brightness, dna);
-
     // Riff
     const riffIntro = generateMetalRiff(dna,   scaleIntro,       style, rand);
     const riffVerse = generateMetalRiff(dna+1, scaleVerse,       style, rand);
@@ -160,14 +163,47 @@ export async function createMetalSongFromImage({ dna, brightness, img }) {
     const leadBridge = generateMetalLead(dna+3, scaleBridge,     style, rand);
     const leadFinalChorus = generateMetalLead(dna+4, scaleFinalChorus, style, rand);
     const leadOutro = generateMetalLead(dna+5, scaleOutro,       style, rand);
+    
+// Funzione clone
+function cloneParams(obj) {
+    return { ...obj };
+}
 
-    // Drums
-    const drumsIntro = createMetalDrumEngine({ drums, style, brightness,           dna,     rand });
-    const drumsVerse = createMetalDrumEngine({ drums, style, brightness: brightness*0.7, dna: dna+1, rand });
-    const drumsChorus = createMetalDrumEngine({ drums, style, brightness: brightness*1.2, dna: dna+2, rand });
-    const drumsBridge = createMetalDrumEngine({ drums, style, brightness,           dna: dna+3, rand });
-    const drumsFinalChorus = createMetalDrumEngine({ drums, style, brightness: brightness*1.3, dna: dna+4, rand });
-    const drumsOutro = createMetalDrumEngine({ drums, style, brightness: brightness*0.5, dna: dna+5, rand });
+// Intro
+const introParams = cloneParams(baseParams);
+introParams.brightness *= 1.0;
+introParams.dna += 0;
+const drumsIntro = createDrumEngine(style, introParams);
+
+// Verse
+const verseParams = cloneParams(baseParams);
+verseParams.brightness *= 0.7;
+verseParams.dna += 1;
+const drumsVerse = createDrumEngine(style, verseParams);
+
+// Chorus
+const chorusParams = cloneParams(baseParams);
+chorusParams.brightness *= 1.2;
+chorusParams.dna += 2;
+const drumsChorus = createDrumEngine(style, chorusParams);
+
+// Bridge
+const bridgeParams = cloneParams(baseParams);
+bridgeParams.brightness *= 1.0;
+bridgeParams.dna += 3;
+const drumsBridge = createDrumEngine(style, bridgeParams);
+
+// Final Chorus
+const finalChorusParams = cloneParams(baseParams);
+finalChorusParams.brightness *= 1.3;
+finalChorusParams.dna += 4;
+const drumsFinalChorus = createDrumEngine(style, finalChorusParams);
+
+// Outro
+const outroParams = cloneParams(baseParams);
+outroParams.brightness *= 0.5;
+outroParams.dna += 5;
+const drumsOutro = createDrumEngine(style, outroParams);
 
     // Lead engine
     const leadEngineIntro = createLeadEngine({ sampler: guitarLead, lead: leadIntro,        style, dna,     rand, master: masterEQ });
@@ -184,8 +220,9 @@ export async function createMetalSongFromImage({ dna, brightness, img }) {
 
     // --- BATTERIA ---
     Tone.Transport.schedule((time) => {
-        if (drumsEngine && typeof drumsEngine.play === "function") {
-            drumsEngine.play(time);
+        if (drumsEngine && typeof drumsEngine.playSection === "function") {
+    drumsEngine.playSection(time, duration);
+}
         }
     }, t);
 
