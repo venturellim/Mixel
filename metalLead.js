@@ -1,113 +1,73 @@
-// metalLead.js
+// metalLead.js — nuovo engine lead per Tone.js 15
+// Range sicuro: C2–E6 (36–88 MIDI)
 
-import * as Tone from "https://esm.sh/tone";
+import { guitarLead } from "./common.js";
+import { clampNote, pickFromScale } from "./common.js";
 
-export function generateMetalLead(dna, scale, style, rand) {
+export function createLeadEngine(analysis, rand) {
 
-    // ============================
-    // PARAMETRI DAL DNA
-    // ============================
+    const scale = analysis.scale;
+    const entropy = analysis.entropy;       // complessità melodica
+    const edges = analysis.edges;           // aggressività → velocità
+    const texture = analysis.texture;       // varietà
+    const brightness = analysis.brightness; // energia → note alte
+    const symmetry = analysis.symmetry;     // pattern ripetuti
 
-    const complexity = (dna % 1000) / 1000;
-    const texture    = ((dna >> 8)  % 1000) / 1000;
-    const energy     = ((dna >> 16) % 1000) / 1000;
-    const direction  = ((dna >> 24) % 1000) / 1000;
+    // Range sicuro
+    const MIN = 36; // C2
+    const MAX = 88; // E6
 
-    // ============================
-    // PARAMETRI MUSICALI
-    // ============================
+    // Altezza media: immagini più complesse → lead più alto
+    const baseOctave = 3 + Math.floor(entropy * 2); // C3–C5
 
-    const length = 16; // 1 misura in 16th
-    const lead = [];
+    // Velocità: più edges → lead più veloce
+    const speed = 1 + Math.floor(edges * 3); // 1–4
 
-    const root = scale[0];
-    const highNote = scale[scale.length - 1];
+    // Varietà melodica: più texture → più note diverse
+    const variety = 1 + Math.floor(texture * 3); // 1–4
 
-    // cromatismo metal
-    const chromatic = Tone.Frequency(root + "3")
-        .transpose(-1)
-        .toNote()
-        .replace(/\d/, "");
+    // Pattern deterministico basato su symmetry
+    const patternType = Math.floor(symmetry * 3); // 0,1,2
 
-    // ============================
-    // FUNZIONI DI SUPPORTO
-    // ============================
-
-    function pickScaleNote() {
-        return scale[Math.floor(rand() * scale.length)];
-    }
-
-    function pickHighNote() {
-        return scale[Math.floor(scale.length * 0.6 + rand() * scale.length * 0.4)];
-    }
-
-    function tremoloPattern(i) {
-        return (rand() > 0.5) ? highNote : pickScaleNote();
-    }
-
-    function doomPattern(i) {
-        if (i % 4 === 0) return pickScaleNote();
-        return root;
-    }
-
-    function powerPattern(i) {
-        if (i % 4 === 0) return pickHighNote();
-        if (i % 2 === 0) return pickScaleNote();
-        return root;
-    }
-
-    function heavyPattern(i) {
-        return (i % 2 === 0) ? pickScaleNote() : pickHighNote();
-    }
-
-    function chromaticChance() {
-        return (complexity > 0.6 && rand() > 0.85);
-    }
-
-    // ============================
-    // GENERAZIONE LEAD
-    // ============================
-
-    for (let i = 0; i < length; i++) {
-
-        let note;
-
-        // stile → pattern
-        if (style === "thrash") {
-            note = tremoloPattern(i);
+    function applyPattern(step, note) {
+        if (patternType === 0) {
+            // pattern ripetuto
+            return pickFromScale(scale, step % scale.length);
         }
-        else if (style === "power") {
-            note = powerPattern(i);
+        if (patternType === 1) {
+            // alternanza
+            return (step % 2 === 0) ? note : pickFromScale(scale, step + 1);
         }
-        else if (style === "doom") {
-            note = doomPattern(i);
+        if (patternType === 2) {
+            // salita/discesa
+            const idx = (step + Math.floor(rand() * variety)) % scale.length;
+            return scale[idx];
         }
-        else { // heavy
-            note = heavyPattern(i);
-        }
-
-        // cromatismi
-        if (chromaticChance()) {
-            note = chromatic;
-        }
-
-        // direzione melodica
-        if (direction > 0.7 && rand() > 0.8) {
-            note = highNote;
-        }
-
-        lead.push(note);
+        return note;
     }
 
-    // ============================
-    // VARIAZIONI FINALI
-    // ============================
+    return function(time, step) {
 
-    if (complexity > 0.5) {
-        for (let i = 12; i < 16; i++) {
-            if (rand() > 0.6) lead[i] = pickHighNote();
-        }
-    }
+        // ritmo: suona solo ogni "speed" step
+        if (step % speed !== 0) return;
 
-    return lead;
+        // probabilità di suonare: più entropy → più note
+        if (rand() > entropy) return;
+
+        // nota base dalla scala
+        let note = pickFromScale(scale, step + Math.floor(rand() * variety));
+
+        // altezza: immagini più luminose → lead più alto
+        let octave = baseOctave + (rand() < brightness * 0.5 ? 1 : 0);
+
+        // applica pattern
+        note = applyPattern(step, note);
+
+        const fullNote = note + octave;
+        const clamped = clampNote(fullNote, MIN, MAX);
+        if (!clamped) return;
+
+        guitarLead.triggerAttackRelease(clamped, "8n", time);
+    };
 }
+

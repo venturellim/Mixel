@@ -1,6 +1,5 @@
-// common.js
-
-import * as Tone from "https://esm.sh/tone";
+// common.js — versione moderna per Tone.js 15
+import * as Tone from "https://esm.sh/tone@15.1.22";
 
 // ==============================
 // MASTER BUS
@@ -12,7 +11,6 @@ export const masterEQ = new Tone.EQ3({
     high: 0
 }).toDestination();
 
-
 // ==============================
 // LEAD FX CHAIN
 // ==============================
@@ -23,9 +21,17 @@ export const leadEQ = new Tone.EQ3({
     high: 3
 });
 
-export const leadChorus = new Tone.Chorus(4, 2.5, 0.4).start();
+export const leadChorus = new Tone.Chorus({
+    frequency: 4,
+    delayTime: 2.5,
+    depth: 0.4,
+    spread: 180
+}).start();
 
-export const leadDelay = new Tone.FeedbackDelay("8n", 0.35);
+export const leadDelay = new Tone.FeedbackDelay({
+    delayTime: "8n",
+    feedback: 0.35
+});
 
 export const leadReverb = new Tone.Reverb({
     decay: 3,
@@ -34,9 +40,8 @@ export const leadReverb = new Tone.Reverb({
 
 leadEQ.chain(leadChorus, leadDelay, leadReverb, masterEQ);
 
-
 // ==============================
-// GUITAR URL MAP
+// GUITAR URL MAP (C2–E6)
 // ==============================
 
 const guitarUrls = {
@@ -92,12 +97,11 @@ const guitarUrls = {
     Db6: "Samples/Guitar/Db6.mp3",
     D6: "Samples/Guitar/D6.mp3",
     Eb6: "Samples/Guitar/Eb6.mp3",
-    E6: "Samples/Guitar/E6.mp3",
+    E6: "Samples/Guitar/E6.mp3"
 };
 
-
 // ==============================
-// 🎸 GUITAR PALM (Envelope + Filtro + Comp)
+// 🎸 GUITAR PALM (C2–C3)
 // ==============================
 
 const palmFilter = new Tone.Filter({
@@ -130,13 +134,13 @@ guitarPalm.set({
 
 guitarPalm.chain(palmFilter, palmComp, masterEQ);
 
-
 // ==============================
-// 🎸 GUITAR OPEN
+// 🎸 GUITAR OPEN (C2–C3)
 // ==============================
 
 export const guitarOpen = new Tone.Sampler({
-    urls: guitarUrls
+    urls: guitarUrls,
+    baseUrl: ""
 });
 
 guitarOpen.set({
@@ -150,52 +154,50 @@ guitarOpen.set({
 
 guitarOpen.connect(masterEQ);
 
-
 // ==============================
-// 🎸 GUITAR LEAD
+// 🎸 GUITAR LEAD (C2–E6)
 // ==============================
 
 export const guitarLead = new Tone.Sampler({
-    urls: guitarUrls
+    urls: guitarUrls,
+    baseUrl: ""
 });
 
 guitarLead.connect(leadEQ);
 
-
 // ==============================
-// 🎸 BASS
+// 🎸 BASS (C1–C3)
 // ==============================
 
 export const bass = new Tone.Sampler({
     urls: {
-    C1: "Samples/Bass/C1.mp3",
-    Db1: "Samples/Bass/Db1.mp3",
-    D1: "Samples/Bass/D1.mp3",
-    Eb1: "Samples/Bass/Eb1.mp3",
-    E1: "Samples/Bass/E1.mp3",
-    F1: "Samples/Bass/F1.mp3",
-    Gb1: "Samples/Bass/Gb1.mp3",
-    G1: "Samples/Bass/G1.mp3",
-    Ab1: "Samples/Bass/Ab1.mp3",
-    A1: "Samples/Bass/A1.mp3",
-    Bb1: "Samples/Bass/Bb1.mp3",
-    B1: "Samples/Bass/B1.mp3",
-    C2: "Samples/Bass/C2.mp3",
-    Db2: "Samples/Bass/Db2.mp3",
-    D2: "Samples/Bass/D2.mp3",
-    Eb2: "Samples/Bass/Eb2.mp3",
-    E2: "Samples/Bass/E2.mp3",
-    F2: "Samples/Bass/F2.mp3",
-    Gb2: "Samples/Bass/Gb2.mp3",
-    G2: "Samples/Bass/G2.mp3",
-    Ab2: "Samples/Bass/Ab2.mp3",
-    A2: "Samples/Bass/A2.mp3",
-    Bb2: "Samples/Bass/Bb2.mp3",
-    B2: "Samples/Bass/B2.mp3",
-    C3: "Samples/Bass/C3.mp3"
+        C1: "Samples/Bass/C1.mp3",
+        Db1: "Samples/Bass/Db1.mp3",
+        D1: "Samples/Bass/D1.mp3",
+        Eb1: "Samples/Bass/Eb1.mp3",
+        E1: "Samples/Bass/E1.mp3",
+        F1: "Samples/Bass/F1.mp3",
+        Gb1: "Samples/Bass/Gb1.mp3",
+        G1: "Samples/Bass/G1.mp3",
+        Ab1: "Samples/Bass/Ab1.mp3",
+        A1: "Samples/Bass/A1.mp3",
+        Bb1: "Samples/Bass/Bb1.mp3",
+        B1: "Samples/Bass/B1.mp3",
+        C2: "Samples/Bass/C2.mp3",
+        Db2: "Samples/Bass/Db2.mp3",
+        D2: "Samples/Bass/D2.mp3",
+        Eb2: "Samples/Bass/Eb2.mp3",
+        E2: "Samples/Bass/E2.mp3",
+        F2: "Samples/Bass/F2.mp3",
+        Gb2: "Samples/Bass/Gb2.mp3",
+        G2: "Samples/Bass/G2.mp3",
+        Ab2: "Samples/Bass/Ab2.mp3",
+        A2: "Samples/Bass/A2.mp3",
+        Bb2: "Samples/Bass/Bb2.mp3",
+        B2: "Samples/Bass/B2.mp3",
+        C3: "Samples/Bass/C3.mp3"
     }
 }).connect(masterEQ);
-
 
 // ==============================
 // 🥁 DRUMS
@@ -207,20 +209,20 @@ export const drums = new Tone.Players({
     ghost: "Samples/Drums/ghost.mp3",
     hihat: "Samples/Drums/hihat_closed.mp3",
     openhat: "Samples/Drums/hihat_open.mp3",
-
     crash1: "Samples/Drums/crash_1.mp3",
     crash2: "Samples/Drums/crash_2.mp3",
-
     tom1: "Samples/Drums/tom_1.mp3",
     tom2: "Samples/Drums/tom_2.mp3",
     tom3: "Samples/Drums/tom_3.mp3",
     tom4: "Samples/Drums/tom_4.mp3",
-
     ride: "Samples/Drums/ride.mp3",
     ridebell: "Samples/Drums/ride_bell.mp3",
     china: "Samples/Drums/china.mp3"
-
 }).connect(masterEQ);
+
+// ==============================
+// VOLUMI
+// ==============================
 
 guitarPalm.volume.value = -6;
 guitarOpen.volume.value = -6;
@@ -228,39 +230,22 @@ guitarLead.volume.value = -12;
 bass.volume.value = -3;
 drums.volume.value = 0;
 
+// ==============================
+// UTILITIES
+// ==============================
 
-export function analyzeImageBrightness(img) {
+export function clampNote(note, minMidi, maxMidi) {
+    const midi = Tone.Frequency(note).toMidi();
+    if (midi < minMidi || midi > maxMidi) return null;
+    return note;
+}
 
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-if (!ctx) return 0.5;
-
-    canvas.width = 64;
-    canvas.height = 64;
-
-    ctx.drawImage(img, 0, 0, 64, 64);
-
-    const imageData = ctx.getImageData(0, 0, 64, 64);
-    const data = imageData.data;
-
-    let total = 0;
-
-    for (let i = 0; i < data.length; i += 4) {
-        const r = data[i];
-        const g = data[i + 1];
-        const b = data[i + 2];
-
-        const brightness = 0.299*r + 0.587*g + 0.114*b;
-        total += brightness;
-    }
-
-    const avg = total / (data.length / 4);
-
-    return avg / 255;
+export function pickFromScale(scale, step) {
+    return scale[step % scale.length];
 }
 
 export function createSeededRandom(seed) {
-    return function() {
+    return function () {
         seed = (seed * 1664525 + 1013904223) % 4294967296;
         return seed / 4294967296;
     };

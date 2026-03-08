@@ -296,12 +296,30 @@ export function analyzeDirection(img) {
 // Funzione finale
 // -------------------------------------------------------------
 export function analyzeImage(img) {
+    const brightness = analyzeImageBrightness(img);
+    const dna = extractPhotoDNA(img);
+    const energy = analyzeEnergy(img);
+    const texture = analyzeTexture(img);
+    const complexity = analyzeComplexity(img);
+    const direction = analyzeDirection(img);
+
+    // Derivati per i nuovi engine
+    const entropy = complexity;   // alias più musicale
+    const edges = texture;        // densità bordi = edges
+    const symmetry = 0.5;         // placeholder neutro (0 = asimmetrico, 1 = molto simmetrico)
+
     return {
-        brightness: analyzeImageBrightness(img),
-        dna: extractPhotoDNA(img),
-        energy: analyzeEnergy(img),
-        texture: analyzeTexture(img),
-        complexity: analyzeComplexity(img),
-        direction: analyzeDirection(img)
+        // valori originali
+        brightness,
+        dna,
+        energy,
+        texture,
+        complexity,
+        direction,
+
+        // alias/derivati per i nuovi engine
+        entropy,
+        edges,
+        symmetry
     };
 }

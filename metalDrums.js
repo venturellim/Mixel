@@ -1,21 +1,13 @@
-//
-// drumsEngine.js
-// Drum Engine Sequenziale a 4 misure per sezione
-//
-
+// drumsEngine.js — versione moderna per Tone.js 15
 import { drums } from "./common.js";
 import * as Tone from "https://esm.sh/tone";
 
 // -------------------------------------------------------------
 // Utility
 // -------------------------------------------------------------
-function rand(seed) {
+function seededRand(seed) {
     seed = (seed * 1664525 + 1013904223) % 4294967296;
     return seed / 4294967296;
-}
-
-function choose(arr, r) {
-    return arr[Math.floor(r * arr.length)];
 }
 
 function humanize(time, amount = 0.005) {
@@ -23,182 +15,160 @@ function humanize(time, amount = 0.005) {
 }
 
 // -------------------------------------------------------------
-// Pattern base per stile (1 misura)
+// Pattern base per stile (1 misura = 16 step)
 // -------------------------------------------------------------
-function patternThrash(seed, params) {
-    const kickDensity = 0.6 + params.energy * 0.4;
-    const rideRate = params.energy > 0.5 ? "16n" : "8n";
+function getBasePattern(style, params) {
+    const energy = params.energy;
+    const brightness = params.brightness;
 
+    if (style === "thrash") {
+        return {
+            kickDensity: 0.6 + energy * 0.4,
+            snareBeats: [4, 12],
+            cymbal: "ride",
+            cymbalRate: "16n"
+        };
+    }
+
+    if (style === "power") {
+        return {
+            kickDensity: 0.4 + energy * 0.3,
+            snareBeats: [4, 12],
+            cymbal: brightness > 0.75 ? "openhat" : "ride",
+            cymbalRate: "8n"
+        };
+    }
+
+    if (style === "doom") {
+        return {
+            kickDensity: 0.15 + energy * 0.2,
+            snareBeats: [8],
+            cymbal: "ride",
+            cymbalRate: "4n"
+        };
+    }
+
+    // heavy default
     return {
-        kick: kickDensity,
-        snare: [2, 4],
-        cymbal: "ride",
-        cymbalRate: rideRate
-    };
-}
-
-function patternPower(seed, params) {
-    const kickDensity = 0.4 + params.energy * 0.3;
-
-    return {
-        kick: kickDensity,
-        snare: [2, 4],
-        cymbal: params.brightness > 0.75 ? "openhat" : "ride",
-        cymbalRate: "8n"
-    };
-}
-
-function patternHeavy(seed, params) {
-    const kickDensity = 0.3 + params.energy * 0.3;
-
-    return {
-        kick: kickDensity,
-        snare: [2, 4],
+        kickDensity: 0.3 + energy * 0.3,
+        snareBeats: [4, 12],
         cymbal: "hihat",
         cymbalRate: "8n"
     };
 }
 
-function patternDoom(seed, params) {
-    const kickDensity = 0.15 + params.energy * 0.2;
-
-    return {
-        kick: kickDensity,
-        snare: [3],
-        cymbal: "ride",
-        cymbalRate: "4n"
-    };
-}
-
 // -------------------------------------------------------------
-// Fill generator
+// Genera una misura di 16 step
 // -------------------------------------------------------------
-function generateFill(seed, params) {
-    const complexity = params.complexity;
-
-    if (complexity < 0.3) {
-        return [
-            { sample: "snare", pos: "3:3:2" },
-            { sample: "crash1", pos: "4:0:0" }
-        ];
-    }
-
-    if (complexity < 0.6) {
-        return [
-            { sample: "tom2", pos: "3:2:0" },
-            { sample: "tom3", pos: "3:2:2" },
-            { sample: "snare", pos: "3:3:0" },
-            { sample: "crash2", pos: "4:0:0" }
-        ];
-    }
-
-    return [
-        { sample: "tom1", pos: "3:1:0" },
-        { sample: "tom2", pos: "3:1:2" },
-        { sample: "tom3", pos: "3:2:0" },
-        { sample: "tom4", pos: "3:2:2" },
-        { sample: "snare", pos: "3:3:0" },
-        { sample: "china", pos: "3:3:2" },
-        { sample: "crash1", pos: "4:0:0" }
-    ];
-}
-
-// -------------------------------------------------------------
-// Genera 1 misura
-// -------------------------------------------------------------
-function generateMeasure(seed, style, params) {
-    let base;
-
-    if (style === "thrash") base = patternThrash(seed, params);
-    else if (style === "power") base = patternPower(seed, params);
-    else if (style === "doom") base = patternDoom(seed, params);
-    else base = patternHeavy(seed, params);
-
-    const events = [];
+function generateMeasure(style, params, seed) {
+    const base = getBasePattern(style, params);
+    const events = Array.from({ length: 16 }, () => []);
 
     // Kick
     for (let step = 0; step < 16; step++) {
-        const r = rand(seed + step);
-        if (r < base.kick) {
-            events.push({ sample: "kick", pos: "0:0:" + step });
+        const r = seededRand(seed + step);
+        if (r < base.kickDensity) {
+            events[step].push("kick");
         }
     }
 
     // Snare
-    for (let beat of base.snare) {
-        events.push({ sample: "snare", pos: "0:" + beat + ":0" });
+    for (let s of base.snareBeats) {
+        events[s].push("snare");
     }
 
     // Ghost notes
     if (params.texture > 0.4) {
         for (let step = 1; step < 16; step += 4) {
-            const r = rand(seed + step * 2);
+            const r = seededRand(seed + step * 2);
             if (r < params.texture) {
-                events.push({ sample: "ghost", pos: "0:0:" + step });
+                events[step].push("ghost");
             }
         }
     }
 
-    // Cymbal
-    const cymbal = base.cymbal;
+    // Cymbal pattern
+    const cym = base.cymbal;
     const rate = base.cymbalRate;
-    const steps = rate === "16n" ? 16 : rate === "8n" ? 8 : 4;
 
-    for (let i = 0; i < steps; i++) {
-        let pos;
-
-        if (rate === "16n") {
-            pos = "0:0:" + i;
-        } else if (rate === "8n") {
-            pos = "0:" + Math.floor(i / 2) + ":" + ((i % 2) * 2);
-        } else {
-            pos = "0:" + i + ":0";
-        }
-
-        events.push({ sample: cymbal, pos: pos });
+    if (rate === "16n") {
+        for (let i = 0; i < 16; i++) events[i].push(cym);
+    } else if (rate === "8n") {
+        for (let i = 0; i < 8; i++) events[i * 2].push(cym);
+    } else if (rate === "4n") {
+        for (let i = 0; i < 4; i++) events[i * 4].push(cym);
     }
 
     return events;
 }
 
 // -------------------------------------------------------------
-// Genera 4 misure
+// Fill generator (1 misura)
 // -------------------------------------------------------------
-function generate4Bars(style, params) {
-    const events = [];
-    let seed = params.dna;
+function generateFill(params, seed) {
+    const complexity = params.entropy;
+    const events = Array.from({ length: 16 }, () => []);
 
-    for (let bar = 0; bar < 4; bar++) {
-        const measure = generateMeasure(seed + bar * 1000, style, params);
-
-        for (let ev of measure) {
-            const parts = ev.pos.split(":");
-            const b = parts[1];
-            const s = parts[2];
-            const newPos = bar + ":" + b + ":" + s;
-            events.push({ sample: ev.sample, pos: newPos });
-        }
+    if (complexity < 0.3) {
+        events[14].push("snare");
+        events[15].push("crash1");
+        return events;
     }
 
-    const fill = generateFill(seed + 99999, params);
-    for (let ev of fill) events.push(ev);
+    if (complexity < 0.6) {
+        events[10].push("tom2");
+        events[11].push("tom3");
+        events[14].push("snare");
+        events[15].push("crash2");
+        return events;
+    }
 
+    events[6].push("tom1");
+    events[7].push("tom2");
+    events[10].push("tom3");
+    events[11].push("tom4");
+    events[14].push("snare");
+    events[15].push("china");
     return events;
 }
 
 // -------------------------------------------------------------
-// Drum Engine
+// Drum Engine continuo (step-based)
 // -------------------------------------------------------------
-export function createDrumEngine(style, params) {
-    return {
-        playSection(time, duration) {
-            const events = generate4Bars(style, params);
+export function createDrumEngine(analysis, rand) {
+    const style = analysis.style || "heavy";
+    let seed = Math.floor(analysis.brightness * 1000000);
 
-            for (let ev of events) {
-                Tone.Transport.schedule((absTime) => {
-                    drums.player(ev.sample).start(humanize(absTime), 0, 1);
-                }, time + Tone.Time(ev.pos).toSeconds());
+    let currentMeasure = generateMeasure(style, analysis, seed);
+    let nextMeasure = generateMeasure(style, analysis, seed + 999);
+
+    let step = 0;
+    let measureCount = 0;
+
+    return function(time, globalStep) {
+
+        const events = currentMeasure[step];
+
+        // Suona gli eventi dello step
+        for (let sample of events) {
+            drums.player(sample).start(humanize(time), 0, 1);
+        }
+
+        step++;
+
+        // Fine misura → passa alla successiva
+        if (step >= 16) {
+            step = 0;
+            measureCount++;
+
+            // Ogni 4 misure → fill
+            if (measureCount % 4 === 0) {
+                currentMeasure = generateFill(analysis, seed + measureCount * 1234);
+            } else {
+                currentMeasure = nextMeasure;
             }
+
+            nextMeasure = generateMeasure(style, analysis, seed + measureCount * 999);
         }
     };
 }

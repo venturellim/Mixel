@@ -1,124 +1,82 @@
-// metalRiff.js
+// metalRiff.js — nuova versione compatibile con Tone.js 15
+// Riff engine basato su imageAnalysis + range sicuro C2–C3
 
-import * as Tone from "https://esm.sh/tone";
+import { clampNote, pickFromScale, guitarPalm, guitarOpen } from "./common.js";
 
-export function generateMetalRiff(dna, scale, style, rand) {
+export function generateMetalRiff(analysis, rand) {
 
-    // ============================
-    // PARAMETRI DAL DNA
-    // ============================
-
-    const complexity = (dna % 1000) / 1000;           
-    const texture    = ((dna >> 8)  % 1000) / 1000;   
-    const energy     = ((dna >> 16) % 1000) / 1000;   
-    const direction  = ((dna >> 24) % 1000) / 1000;   
-
-    // ============================
-    // PARAMETRI MUSICALI
-    // ============================
+    const scale = analysis.scale;
+    const texture = analysis.texture;       // complessità ritmica
+    const contrast = analysis.contrast;     // palm vs open
+    const entropy = analysis.entropy;       // varietà melodica
+    const symmetry = analysis.symmetry;     // pattern ripetuti
+    const brightness = analysis.brightness; // energia
+    const edges = analysis.edges;           // aggressività
 
     const length = 16; // 1 misura in 16th
     const riff = [];
 
-    // nota pedal (fondamentale)
-    const pedal = scale[0];
+    // Range sicuro: C2–C3
+    const octave = 2;
+    const MIN = 36; // C2
+    const MAX = 48; // C3
 
-    // nota alta per salti
-    const highNote = scale[scale.length - 1];
+    // Densità ritmica: più texture → più note
+    const density = 1 + Math.floor(texture * 3); // 1–4
 
-    // cromatismo metal (nota fuori scala)
-    const chromatic = Tone.Frequency(pedal + "2").transpose(-1).toNote().replace(/\d/, "");
+    // Palm ratio: più contrasto → più palm mute
+    const palmRatio = contrast;
 
-    // pattern AB deterministico
-    const patternType = dna % 3; // 0 = pedal, 1 = alternate, 2 = gallop
+    // Varietà melodica: più entropy → più note diverse
+    const melodicVariety = 1 + Math.floor(entropy * 3);
 
+    // Pattern base deterministico
+    const patternType = Math.floor(symmetry * 3); // 0,1,2
 
-    // ============================
-    // FUNZIONI DI SUPPORTO
-    // ============================
+    function chooseNote(step) {
+        // 70%: nota della scala
+        if (rand() < 0.7) {
+            return pickFromScale(scale, step + Math.floor(rand() * melodicVariety));
+        }
 
-    function chooseScaleNote() {
+        // 30%: nota casuale della scala
         return scale[Math.floor(rand() * scale.length)];
     }
 
-    function chooseWeightedNote() {
-        // più energia → più note alte
-        if (energy > 0.7 && rand() > 0.5) return highNote;
-        return chooseScaleNote();
+    function applyPattern(step, note) {
+        if (patternType === 0) {
+            // pedal pattern
+            return scale[0];
+        }
+        if (patternType === 1) {
+            // alternanza
+            return (step % 2 === 0) ? scale[0] : note;
+        }
+        if (patternType === 2) {
+            // gallop
+            if (step % 4 === 0) return scale[0];
+            if (step % 4 === 1) return scale[0];
+            if (step % 4 === 2) return note;
+            return scale[0];
+        }
+        return note;
     }
-
-    function gallopPattern(i) {
-        // pattern tipico thrash/power: 1-eee-a
-        if (i % 4 === 0) return pedal;
-        if (i % 4 === 1) return pedal;
-        if (i % 4 === 2) return chooseWeightedNote();
-        return pedal;
-    }
-
-    function alternatePattern(i) {
-        // alternanza pedal / nota scala
-        return (i % 2 === 0) ? pedal : chooseWeightedNote();
-    }
-
-    function pedalPattern() {
-        return pedal;
-    }
-
-    function chromaticChance() {
-        // più complessità → più cromatismi
-        return (complexity > 0.6 && rand() > 0.8);
-    }
-
-
-    // ============================
-    // GENERAZIONE RIGA PRINCIPALE
-    // ============================
 
     for (let i = 0; i < length; i++) {
 
-        let note;
-
-        // stile → pattern
-        if (style === "thrash") {
-            note = gallopPattern(i);
-        }
-        else if (style === "power") {
-            note = alternatePattern(i);
-        }
-        else if (style === "doom") {
-            // doom → note lunghe, poche variazioni
-            note = (i % 4 === 0) ? chooseScaleNote() : pedal;
-        }
-        else { // heavy
-            note = (patternType === 0)
-                ? pedalPattern(i)
-                : (patternType === 1)
-                    ? alternatePattern(i)
-                    : gallopPattern(i);
+        // densità: se texture è bassa, alcuni step sono silenziosi
+        if (i % (4 - density) !== 0) {
+            riff.push(null);
+            continue;
         }
 
-        // cromatismi
-        if (chromaticChance()) {
-            note = chromatic;
-        }
+        let note = chooseNote(i);
+        note = applyPattern(i, note);
 
-        // direzione melodica (DNA)
-        if (direction > 0.7 && rand() > 0.8) {
-            note = highNote;
-        }
+        const fullNote = note + octave;
+        const clamped = clampNote(fullNote, MIN, MAX);
 
-        riff.push(note);
-    }
-
-
-    // ============================
-    // VARIAZIONE OGNI 4 MISURE
-    // ============================
-
-    if (complexity > 0.5) {
-        for (let i = 12; i < 16; i++) {
-            if (rand() > 0.6) riff[i] = chooseWeightedNote();
-        }
+        riff.push(clamped);
     }
 
     return riff;
