@@ -3,14 +3,13 @@
 // Drum Engine Sequenziale a 4 misure per sezione
 //
 
-import { drums } from "./common.js";   // i tuoi sample
-// import * as Tone from "https://esm.sh/tone";
+import { drums } from "./common.js";
+import * as Tone from "https://cdn.jsdelivr.net/npm/tone@14.7.77/build/Tone.js";
 
 // -------------------------------------------------------------
 // Utility
 // -------------------------------------------------------------
 function rand(seed) {
-    // LCG deterministico basato sul DNA
     seed = (seed * 1664525 + 1013904223) % 4294967296;
     return seed / 4294967296;
 }
@@ -27,20 +26,18 @@ function humanize(time, amount = 0.005) {
 // Pattern base per stile (1 misura)
 // -------------------------------------------------------------
 function patternThrash(seed, params) {
-    const r = rand(seed);
     const kickDensity = 0.6 + params.energy * 0.4;
     const rideRate = params.energy > 0.5 ? "16n" : "8n";
 
     return {
         kick: kickDensity,
-        snare: [2, 4], // backbeat
+        snare: [2, 4],
         cymbal: "ride",
         cymbalRate: rideRate
     };
 }
 
 function patternPower(seed, params) {
-    const r = rand(seed);
     const kickDensity = 0.4 + params.energy * 0.3;
 
     return {
@@ -52,7 +49,6 @@ function patternPower(seed, params) {
 }
 
 function patternHeavy(seed, params) {
-    const r = rand(seed);
     const kickDensity = 0.3 + params.energy * 0.3;
 
     return {
@@ -64,22 +60,20 @@ function patternHeavy(seed, params) {
 }
 
 function patternDoom(seed, params) {
-    const r = rand(seed);
     const kickDensity = 0.15 + params.energy * 0.2;
 
     return {
         kick: kickDensity,
-        snare: [3], // colpo pesante
+        snare: [3],
         cymbal: "ride",
         cymbalRate: "4n"
     };
 }
 
 // -------------------------------------------------------------
-// Fill generator (fine misura 4)
+// Fill generator
 // -------------------------------------------------------------
 function generateFill(seed, params) {
-    const r = rand(seed);
     const complexity = params.complexity;
 
     if (complexity < 0.3) {
@@ -110,7 +104,7 @@ function generateFill(seed, params) {
 }
 
 // -------------------------------------------------------------
-// Genera 1 misura completa
+// Genera 1 misura
 // -------------------------------------------------------------
 function generateMeasure(seed, style, params) {
     let base;
@@ -126,21 +120,21 @@ function generateMeasure(seed, style, params) {
     for (let step = 0; step < 16; step++) {
         const r = rand(seed + step);
         if (r < base.kick) {
-            events.push({ sample: "kick", pos: `0:0:${step}` });
+            events.push({ sample: "kick", pos: "0:0:" + step });
         }
     }
 
     // Snare
     for (let beat of base.snare) {
-        events.push({ sample: "snare", pos: `0:${beat}:0` });
+        events.push({ sample: "snare", pos: "0:" + beat + ":0" });
     }
 
-    // Ghost notes (texture)
+    // Ghost notes
     if (params.texture > 0.4) {
         for (let step = 1; step < 16; step += 4) {
             const r = rand(seed + step * 2);
             if (r < params.texture) {
-                events.push({ sample: "ghost", pos: `0:0:${step}` });
+                events.push({ sample: "ghost", pos: "0:0:" + step });
             }
         }
     }
@@ -151,21 +145,24 @@ function generateMeasure(seed, style, params) {
     const steps = rate === "16n" ? 16 : rate === "8n" ? 8 : 4;
 
     for (let i = 0; i < steps; i++) {
-            const pos = rate === "16n"
-        ? `0:0:${i}`
-        : rate === "8n"
-        ? `0:${Math.floor(i/2)}:${(i%2)*2}`
-        : `0:${i}:0`
-;
+        let pos;
 
-    events.push({ sample: cymbal, pos });
-}
+        if (rate === "16n") {
+            pos = "0:0:" + i;
+        } else if (rate === "8n") {
+            pos = "0:" + Math.floor(i / 2) + ":" + ((i % 2) * 2);
+        } else {
+            pos = "0:" + i + ":0";
+        }
 
-return events;
+        events.push({ sample: cymbal, pos: pos });
+    }
+
+    return events;
 }
 
 // -------------------------------------------------------------
-// Genera 4 misure complete
+// Genera 4 misure
 // -------------------------------------------------------------
 function generate4Bars(style, params) {
     const events = [];
@@ -175,23 +172,22 @@ function generate4Bars(style, params) {
         const measure = generateMeasure(seed + bar * 1000, style, params);
 
         for (let ev of measure) {
-            const [m, b, s] = ev.pos.split(":").map(Number);
-            const newPos = `${bar}:${b}:${s}`;
+            const parts = ev.pos.split(":");
+            const b = parts[1];
+            const s = parts[2];
+            const newPos = bar + ":" + b + ":" + s;
             events.push({ sample: ev.sample, pos: newPos });
         }
     }
 
-    // Fill alla misura 4
     const fill = generateFill(seed + 99999, params);
-    for (let ev of fill) {
-        events.push(ev);
-    }
+    for (let ev of fill) events.push(ev);
 
     return events;
 }
 
 // -------------------------------------------------------------
-// Drum Engine principale
+// Drum Engine
 // -------------------------------------------------------------
 export function createDrumEngine(style, params) {
     return {

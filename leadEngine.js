@@ -2,14 +2,14 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-export function createLeadEngine({
-    sampler,
-    lead,
-    style,
-    dna,
-    rand,
-    master
-}) {
+export function createLeadEngine(obj) {
+
+    const sampler = obj.sampler;
+    const lead = obj.lead;
+    const style = obj.style;
+    const dna = obj.dna;
+    const rand = obj.rand;
+    const master = obj.master;
 
     // ============================
     // PARAMETRI DAL DNA
@@ -19,7 +19,6 @@ export function createLeadEngine({
     const texture    = ((dna >> 8)  % 1000) / 1000;
     const energy     = ((dna >> 16) % 1000) / 1000;
     const direction  = ((dna >> 24) % 1000) / 1000;
-
 
     // ============================
     // FX CHAIN
@@ -62,7 +61,6 @@ export function createLeadEngine({
         leadReverb,
         master
     );
-
 
     // ============================
     // PERFORMANCE ENGINE
@@ -110,22 +108,17 @@ export function createLeadEngine({
         sampler.triggerAttackRelease(fullNote, "8n", time);
     }
 
-
     // ============================
-    // LOOP (NON avviato subito!)
+    // LOOP
     // ============================
 
     let step = 0;
 
-    const loop = new Tone.Loop((time) => {
+    const loop = new Tone.Loop(function(time) {
         const note = lead[step];
         performLeadNote(note, time);
         step = (step + 1) % lead.length;
     }, "8n");
-
-    // NON startare qui!
-    // loop.start(0);
-
 
     // ============================
     // API
@@ -133,17 +126,17 @@ export function createLeadEngine({
 
     return {
 
-        playSection(startTime, duration) {
+        playSection: function(startTime, duration) {
             step = 0;
             loop.start(startTime);
 
-            Tone.Transport.scheduleOnce(() => {
+            Tone.Transport.scheduleOnce(function() {
                 loop.stop();
                 step = 0;
             }, startTime + duration);
         },
 
-        stop() {
+        stop: function() {
             loop.stop();
             step = 0;
         }

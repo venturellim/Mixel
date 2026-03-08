@@ -2,7 +2,7 @@
 
 console.log("METAL.JS CARICATO");
 
-import * as Tone from "https://esm.sh/tone";
+import * as Tone from "https://cdn.jsdelivr.net/npm/tone@14.7.77/build/Tone.js";
 
 import {
     guitarPalm,
@@ -14,6 +14,7 @@ import {
     createSeededRandom,
     analyzeImageBrightness
 } from "./common.js";
+
 import { analyzeImage } from "./analyzeImage.js";
 import { chooseKey, chooseScale } from "./musicTheory.js";
 import { detectMetalStyle, computeBPM } from "./metalTheory.js";
@@ -29,16 +30,13 @@ import { createLeadEngine } from "./leadEngine.js";
 
 export async function createMetalEngineFromImage(previewImage) {
 
-    // Calcolo luminosità immagine
     const brightness = await analyzeImageBrightness(previewImage);
 
-    // DNA deterministico
     const dna = Math.floor(brightness * 1000000);
 
-    // Creo il vero engine
     const engine = await createMetalSongFromImage({
-        dna,
-        brightness,
+        dna: dna,
+        brightness: brightness,
         img: previewImage
     });
 
@@ -80,7 +78,7 @@ export async function waitInstrumentsWithProgress() {
         loaded++;
         const percent = Math.floor((loaded / total) * 100);
         bar.style.width = percent + "%";
-        text.innerText = `Caricamento strumenti… ${percent}%`;
+        text.innerText = "Caricamento strumenti… " + percent + "%";
     }
 
     overlay.style.display = "none";
@@ -105,26 +103,25 @@ function transposeKey(key, semitones) {
 // 4) GENERATORE DEL BRANO COMPLETO
 // ======================================================
 
-export async function createMetalSongFromImage({ dna, brightness, img }) {
+export async function createMetalSongFromImage(obj) {
+
+    const dna = obj.dna;
+    const brightness = obj.brightness;
+    const img = obj.img;
 
     await Tone.loaded();
 
     const rand = createSeededRandom(dna);
-    
-    // Analisi immagine
-const baseParams = analyzeImage(img);
 
-// Stile metal
-const style = detectMetalStyle(baseParams.brightness, baseParams.dna);
+    const baseParams = analyzeImage(img);
 
-    // Durata totale 3–5 minuti
+    const style = detectMetalStyle(baseParams.brightness, baseParams.dna);
+
     const totalDuration = 180 + (dna % 60) + (brightness * 30);
 
-    // BPM
     const bpm = computeBPM(brightness, dna);
     Tone.Transport.bpm.value = bpm;
 
-    // Durate sezioni
     const introDur = totalDuration * 0.10;
     const verseDur = totalDuration * 0.20;
     const chorusDur = totalDuration * 0.20;
@@ -132,144 +129,133 @@ const style = detectMetalStyle(baseParams.brightness, baseParams.dna);
     const finalChorusDur = totalDuration * 0.20;
     const outroDur = totalDuration * 0.05;
 
-    // Tonalità con modulazioni
     const keyIntro = chooseKey(dna);
     const keyVerse = transposeKey(keyIntro, -2);
-    const keyChorus = transposeKey(keyVerse, +5);
-    const keyBridge = transposeKey(keyChorus, +7);
+    const keyChorus = transposeKey(keyVerse, 5);
+    const keyBridge = transposeKey(keyChorus, 7);
     const keyFinalChorus = transposeKey(keyBridge, -5);
     const keyOutro = transposeKey(keyFinalChorus, -2);
 
-    // Scale
     const scaleIntro = chooseScale(dna, keyIntro);
-    const scaleVerse = chooseScale(dna+1, keyVerse);
-    const scaleChorus = chooseScale(dna+2, keyChorus);
-    const scaleBridge = chooseScale(dna+3, keyBridge);
-    const scaleFinalChorus = chooseScale(dna+4, keyFinalChorus);
-    const scaleOutro = chooseScale(dna+5, keyOutro);
+    const scaleVerse = chooseScale(dna + 1, keyVerse);
+    const scaleChorus = chooseScale(dna + 2, keyChorus);
+    const scaleBridge = chooseScale(dna + 3, keyBridge);
+    const scaleFinalChorus = chooseScale(dna + 4, keyFinalChorus);
+    const scaleOutro = chooseScale(dna + 5, keyOutro);
 
-    // Riff
-    const riffIntro = generateMetalRiff(dna,   scaleIntro,       style, rand);
-    const riffVerse = generateMetalRiff(dna+1, scaleVerse,       style, rand);
-    const riffChorus = generateMetalRiff(dna+2, scaleChorus,     style, rand);
-    const riffBridge = generateMetalRiff(dna+3, scaleBridge,     style, rand);
-    const riffFinalChorus = generateMetalRiff(dna+4, scaleFinalChorus, style, rand);
-    const riffOutro = generateMetalRiff(dna+5, scaleOutro,       style, rand);
+    const riffIntro = generateMetalRiff(dna, scaleIntro, style, rand);
+    const riffVerse = generateMetalRiff(dna + 1, scaleVerse, style, rand);
+    const riffChorus = generateMetalRiff(dna + 2, scaleChorus, style, rand);
+    const riffBridge = generateMetalRiff(dna + 3, scaleBridge, style, rand);
+    const riffFinalChorus = generateMetalRiff(dna + 4, scaleFinalChorus, style, rand);
+    const riffOutro = generateMetalRiff(dna + 5, scaleOutro, style, rand);
 
-    // Lead
-    const leadIntro = generateMetalLead(dna,   scaleIntro,       style, rand);
-    const leadVerse = generateMetalLead(dna+1, scaleVerse,       style, rand);
-    const leadChorus = generateMetalLead(dna+2, scaleChorus,     style, rand);
-    const leadBridge = generateMetalLead(dna+3, scaleBridge,     style, rand);
-    const leadFinalChorus = generateMetalLead(dna+4, scaleFinalChorus, style, rand);
-    const leadOutro = generateMetalLead(dna+5, scaleOutro,       style, rand);
-    
-// Funzione clone
-function cloneParams(obj) {
-    return { ...obj };
-}
+    const leadIntro = generateMetalLead(dna, scaleIntro, style, rand);
+    const leadVerse = generateMetalLead(dna + 1, scaleVerse, style, rand);
+    const leadChorus = generateMetalLead(dna + 2, scaleChorus, style, rand);
+    const leadBridge = generateMetalLead(dna + 3, scaleBridge, style, rand);
+    const leadFinalChorus = generateMetalLead(dna + 4, scaleFinalChorus, style, rand);
+    const leadOutro = generateMetalLead(dna + 5, scaleOutro, style, rand);
 
-// Intro
-const introParams = cloneParams(baseParams);
-introParams.brightness *= 1.0;
-introParams.dna += 0;
-const drumsIntro = createDrumEngine(style, introParams);
+    function cloneParams(obj) {
+        return {
+            brightness: obj.brightness,
+            dna: obj.dna,
+            energy: obj.energy,
+            texture: obj.texture,
+            complexity: obj.complexity,
+            direction: obj.direction
+        };
+    }
 
-// Verse
-const verseParams = cloneParams(baseParams);
-verseParams.brightness *= 0.7;
-verseParams.dna += 1;
-const drumsVerse = createDrumEngine(style, verseParams);
+    const introParams = cloneParams(baseParams);
+    introParams.brightness = introParams.brightness * 1.0;
+    introParams.dna = introParams.dna + 0;
+    const drumsIntro = createDrumEngine(style, introParams);
 
-// Chorus
-const chorusParams = cloneParams(baseParams);
-chorusParams.brightness *= 1.2;
-chorusParams.dna += 2;
-const drumsChorus = createDrumEngine(style, chorusParams);
+    const verseParams = cloneParams(baseParams);
+    verseParams.brightness = verseParams.brightness * 0.7;
+    verseParams.dna = verseParams.dna + 1;
+    const drumsVerse = createDrumEngine(style, verseParams);
 
-// Bridge
-const bridgeParams = cloneParams(baseParams);
-bridgeParams.brightness *= 1.0;
-bridgeParams.dna += 3;
-const drumsBridge = createDrumEngine(style, bridgeParams);
+    const chorusParams = cloneParams(baseParams);
+    chorusParams.brightness = chorusParams.brightness * 1.2;
+    chorusParams.dna = chorusParams.dna + 2;
+    const drumsChorus = createDrumEngine(style, chorusParams);
 
-// Final Chorus
-const finalChorusParams = cloneParams(baseParams);
-finalChorusParams.brightness *= 1.3;
-finalChorusParams.dna += 4;
-const drumsFinalChorus = createDrumEngine(style, finalChorusParams);
+    const bridgeParams = cloneParams(baseParams);
+    bridgeParams.brightness = bridgeParams.brightness * 1.0;
+    bridgeParams.dna = bridgeParams.dna + 3;
+    const drumsBridge = createDrumEngine(style, bridgeParams);
 
-// Outro
-const outroParams = cloneParams(baseParams);
-outroParams.brightness *= 0.5;
-outroParams.dna += 5;
-const drumsOutro = createDrumEngine(style, outroParams);
+    const finalChorusParams = cloneParams(baseParams);
+    finalChorusParams.brightness = finalChorusParams.brightness * 1.3;
+    finalChorusParams.dna = finalChorusParams.dna + 4;
+    const drumsFinalChorus = createDrumEngine(style, finalChorusParams);
 
-    // Lead engine
-    const leadEngineIntro = createLeadEngine({ sampler: guitarLead, lead: leadIntro,        style, dna,     rand, master: masterEQ });
-    const leadEngineVerse = createLeadEngine({ sampler: guitarLead, lead: leadVerse,        style, dna: dna+1, rand, master: masterEQ });
-    const leadEngineChorus = createLeadEngine({ sampler: guitarLead, lead: leadChorus,      style, dna: dna+2, rand, master: masterEQ });
-    const leadEngineBridge = createLeadEngine({ sampler: guitarLead, lead: leadBridge,      style, dna: dna+3, rand, master: masterEQ });
-    const leadEngineFinalChorus = createLeadEngine({ sampler: guitarLead, lead: leadFinalChorus, style, dna: dna+4, rand, master: masterEQ });
-    const leadEngineOutro = createLeadEngine({ sampler: guitarLead, lead: leadOutro,        style, dna: dna+5, rand, master: masterEQ });
+    const outroParams = cloneParams(baseParams);
+    outroParams.brightness = outroParams.brightness * 0.5;
+    outroParams.dna = outroParams.dna + 5;
+    const drumsOutro = createDrumEngine(style, outroParams);
 
-    // Scheduling
+    const leadEngineIntro = createLeadEngine({ sampler: guitarLead, lead: leadIntro, style: style, dna: dna, rand: rand, master: masterEQ });
+    const leadEngineVerse = createLeadEngine({ sampler: guitarLead, lead: leadVerse, style: style, dna: dna + 1, rand: rand, master: masterEQ });
+    const leadEngineChorus = createLeadEngine({ sampler: guitarLead, lead: leadChorus, style: style, dna: dna + 2, rand: rand, master: masterEQ });
+    const leadEngineBridge = createLeadEngine({ sampler: guitarLead, lead: leadBridge, style: style, dna: dna + 3, rand: rand, master: masterEQ });
+    const leadEngineFinalChorus = createLeadEngine({ sampler: guitarLead, lead: leadFinalChorus, style: style, dna: dna + 4, rand: rand, master: masterEQ });
+    const leadEngineOutro = createLeadEngine({ sampler: guitarLead, lead: leadOutro, style: style, dna: dna + 5, rand: rand, master: masterEQ });
+
     let t = 0;
 
     function scheduleSection(riff, drumsEngine, leadEngine, duration) {
 
-    // --- BATTERIA ---
-    Tone.Transport.schedule((time) => {
-        if (drumsEngine && typeof drumsEngine.playSection === "function") {
-    drumsEngine.playSection(time, duration);
-        }
-    }, t);
-
-    // --- RIFF DI CHITARRA ---
-    Tone.Transport.schedule((time) => {
-
-        let step = 0;
-
-        const loop = new Tone.Loop((loopTime) => {
-            const note = riff[step];
-
-            if (note) {
-                try {
-                    guitarPalm.triggerAttackRelease(note + "2", "8n", loopTime);
-                } catch (e) {
-                    console.warn("Errore nota riff:", note, e);
-                }
+        Tone.Transport.schedule(function(time) {
+            if (drumsEngine && typeof drumsEngine.playSection === "function") {
+                drumsEngine.playSection(time, duration);
             }
-
-            step = (step + 1) % riff.length;
-
-        }, "8n").start(t);
-
-        Tone.Transport.scheduleOnce(() => {
-            loop.stop();
-        }, t + duration);
-
-    }, t);
-
-    // --- LEAD ENGINE ---
-    if (leadEngine && typeof leadEngine.playSection === "function") {
-        Tone.Transport.schedule((time) => {
-            leadEngine.playSection(time, duration);
         }, t);
+
+        Tone.Transport.schedule(function(time) {
+
+            let step = 0;
+
+            const loop = new Tone.Loop(function(loopTime) {
+                const note = riff[step];
+
+                if (note) {
+                    try {
+                        guitarPalm.triggerAttackRelease(note + "2", "8n", loopTime);
+                    } catch (e) {
+                        console.warn("Errore nota riff:", note, e);
+                    }
+                }
+
+                step = (step + 1) % riff.length;
+
+            }, "8n").start(t);
+
+            Tone.Transport.scheduleOnce(function() {
+                loop.stop();
+            }, t + duration);
+
+        }, t);
+
+        if (leadEngine && typeof leadEngine.playSection === "function") {
+            Tone.Transport.schedule(function(time) {
+                leadEngine.playSection(time, duration);
+            }, t);
+        }
+
+        t = t + duration;
     }
 
-    // Avanza il tempo globale
-    t += duration;
-}
+    scheduleSection(riffIntro, drumsIntro, leadEngineIntro, introDur);
+    scheduleSection(riffVerse, drumsVerse, leadEngineVerse, verseDur);
+    scheduleSection(riffChorus, drumsChorus, leadEngineChorus, chorusDur);
+    scheduleSection(riffBridge, drumsBridge, leadEngineBridge, bridgeDur);
+    scheduleSection(riffFinalChorus, drumsFinalChorus, leadEngineFinalChorus, finalChorusDur);
+    scheduleSection(riffOutro, drumsOutro, leadEngineOutro, outroDur);
 
-    scheduleSection(riffIntro,        drumsIntro,        leadEngineIntro,        introDur);
-    scheduleSection(riffVerse,        drumsVerse,        leadEngineVerse,        verseDur);
-    scheduleSection(riffChorus,       drumsChorus,       leadEngineChorus,       chorusDur);
-    scheduleSection(riffBridge,       drumsBridge,       leadEngineBridge,       bridgeDur);
-    scheduleSection(riffFinalChorus,  drumsFinalChorus,  leadEngineFinalChorus,  finalChorusDur);
-    scheduleSection(riffOutro,        drumsOutro,        leadEngineOutro,        outroDur);
-
-    // Metodi engine
     function play() {
         if (Tone.Transport.state !== "started") {
             Tone.Transport.start();
@@ -292,11 +278,10 @@ const drumsOutro = createDrumEngine(style, outroParams);
     }
 
     return {
-        play,
-        pause,
-        stop,
-        seek,
-        totalDuration
+        play: play,
+        pause: pause,
+        stop: stop,
+        seek: seek,
+        totalDuration: totalDuration
     };
 }
-
