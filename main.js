@@ -7,6 +7,12 @@ import { createMetalEngineFromImage, waitInstrumentsWithProgress } from "./metal
 let currentEngine = null;
 let currentGenre = null;
 
+window.onerror = function (msg, url, line, col, error) {
+    console.log("🔥 ERRORE:", msg, " @", url, ":", line, ":", col);
+    console.log("STACK:", error?.stack);
+};
+
+
 window.addEventListener("DOMContentLoaded", () => {
     initOrientation();
     initFileLoader();
