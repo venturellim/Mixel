@@ -12,7 +12,7 @@ import {
     createSeededRandom
 } from "./common.js";
 
-import { analyzeImage } from "./image.js";
+import { analyzeImage } from "./imageAnalysis.js";
 import { generateMetalRiff } from "./metalRiff.js";
 import { createBassEngine } from "./metalBass.js";
 import { createLeadEngine } from "./metalLead.js";
