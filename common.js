@@ -1,6 +1,16 @@
 // common.js — versione moderna per Tone.js 15
 import * as Tone from "https://esm.sh/tone@15.1.22";
 
+// LOGGER UNIVERSALE PER TONE.JS
+
+function logNote(instrumentName, note, time) {
+    console.log(
+        `%c🎵 ${instrumentName} → ${note} @ ${time}`,
+        "color:#4CAF50; font-weight:bold;"
+    );
+}
+
+
 // ==============================
 // MASTER BUS
 // ==============================
@@ -229,6 +239,32 @@ guitarOpen.volume.value = -6;
 guitarLead.volume.value = -12;
 bass.volume.value = -3;
 drums.volume.value = 0;
+
+function wrapSampler(name, sampler) {
+    const orig = sampler.triggerAttackRelease.bind(sampler);
+    sampler.triggerAttackRelease = (note, dur, time) => {
+        logNote(name, note, time);
+        return orig(note, dur, time);
+    };
+}
+
+wrapSampler("guitarPalm", guitarPalm);
+wrapSampler("guitarOpen", guitarOpen);
+wrapSampler("guitarLead", guitarLead);
+wrapSampler("bass", bass);
+
+function wrapPlayer(name, player) {
+    const orig = player.start.bind(player);
+    player.start = (time, offset, dur) => {
+        logNote(name, "(sample)", time);
+        return orig(time, offset, dur);
+    };
+}
+
+Object.keys(drums._players).forEach(key => {
+    wrapPlayer("drums." + key, drums.player(key));
+});
+
 
 // ==============================
 // UTILITIES
