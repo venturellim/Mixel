@@ -1,66 +1,84 @@
-// metalRiff.js — nuova versione compatibile con Tone.js 15
+// metalRiff.js — versione sicura compatibile con Tone.js 15
 // Riff engine basato su imageAnalysis + range sicuro C2–C3
 
 import { clampNote, pickFromScale, guitarPalm, guitarOpen } from "./common.js";
 
 export function generateMetalRiff(analysis, rand) {
 
-    const scale = analysis.scale;
-    const texture = analysis.texture;       // complessità ritmica
-    const contrast = analysis.contrast;     // palm vs open
-    const entropy = analysis.entropy;       // varietà melodica
-    const symmetry = analysis.symmetry;     // pattern ripetuti
-    const brightness = analysis.brightness; // energia
-    const edges = analysis.edges;           // aggressività
+    // ============================
+    // 1) SCALE FALLBACK SICURO
+    // ============================
+    let scale = analysis.scale;
 
+    if (!scale || !Array.isArray(scale) || scale.length === 0) {
+        console.warn("⚠️ SCALA VUOTA — uso fallback C minor");
+        scale = ["C", "D", "Eb", "F", "G", "Ab", "Bb"];
+    }
+
+    // ============================
+    // 2) PARAMETRI ANALISI
+    // ============================
+    const texture = analysis.texture;
+    const contrast = analysis.contrast;
+    const entropy = analysis.entropy;
+    const symmetry = analysis.symmetry;
+
+    // ============================
+    // 3) PARAMETRI MUSICALI
+    // ============================
     const length = 16; // 1 misura in 16th
     const riff = [];
 
-    // Range sicuro: C2–C3
     const octave = 2;
     const MIN = 36; // C2
     const MAX = 48; // C3
 
-    // Densità ritmica: più texture → più note
     const density = 1 + Math.floor(texture * 3); // 1–4
-
-    // Palm ratio: più contrasto → più palm mute
     const palmRatio = contrast;
-
-    // Varietà melodica: più entropy → più note diverse
     const melodicVariety = 1 + Math.floor(entropy * 3);
-
-    // Pattern base deterministico
     const patternType = Math.floor(symmetry * 3); // 0,1,2
+
+    // ============================
+    // 4) FUNZIONI DI SUPPORTO
+    // ============================
 
     function chooseNote(step) {
         // 70%: nota della scala
         if (rand() < 0.7) {
-            return pickFromScale(scale, step + Math.floor(rand() * melodicVariety));
+            const idx = step + Math.floor(rand() * melodicVariety);
+            const n = pickFromScale(scale, idx);
+
+            if (!n) return null;
+            return n;
         }
 
         // 30%: nota casuale della scala
-        return scale[Math.floor(rand() * scale.length)];
+        const n = scale[Math.floor(rand() * scale.length)];
+        return n || null;
     }
 
     function applyPattern(step, note) {
+        if (!note) return null;
+
         if (patternType === 0) {
-            // pedal pattern
-            return scale[0];
+            return scale[0] || note;
         }
         if (patternType === 1) {
-            // alternanza
-            return (step % 2 === 0) ? scale[0] : note;
+            return (step % 2 === 0) ? (scale[0] || note) : note;
         }
         if (patternType === 2) {
-            // gallop
-            if (step % 4 === 0) return scale[0];
-            if (step % 4 === 1) return scale[0];
+            if (step % 4 === 0) return scale[0] || note;
+            if (step % 4 === 1) return scale[0] || note;
             if (step % 4 === 2) return note;
-            return scale[0];
+            return scale[0] || note;
         }
+
         return note;
     }
+
+    // ============================
+    // 5) GENERAZIONE RIFF
+    // ============================
 
     for (let i = 0; i < length; i++) {
 
@@ -71,11 +89,28 @@ export function generateMetalRiff(analysis, rand) {
         }
 
         let note = chooseNote(i);
+        if (!note) {
+            riff.push(null);
+            continue;
+        }
+
         note = applyPattern(i, note);
+        if (!note) {
+            riff.push(null);
+            continue;
+        }
 
         const fullNote = note + octave;
+
+        // sicurezza: fullNote deve essere stringa valida
+        if (typeof fullNote !== "string") {
+            riff.push(null);
+            continue;
+        }
+
         const clamped = clampNote(fullNote, MIN, MAX);
 
+        // clampNote può restituire null → silenzio
         riff.push(clamped);
     }
 
