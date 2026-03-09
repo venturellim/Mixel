@@ -27,6 +27,8 @@ export async function createMetalEngineFromImage(previewImage) {
 
     // Analisi immagine completa
     const analysis = await analyzeImage(previewImage);
+    console.log("ANALYSIS:", analysis);
+
     const style = detectMetalStyle(analysis.brightness, analysis.entropy);
 analysis.style = style;
 
