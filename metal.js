@@ -97,13 +97,13 @@ export async function createMetalSongFromAnalysis(analysis, rand) {
     const drumEngine = createDrumEngine(analysis, rand);
 
     // Schedula loop
-    const riffLoop = new Tone.Loop((time) => riffEngine(time, riffLoop.iterations), "8n");
+    //const riffLoop = new Tone.Loop((time) => riffEngine(time, riffLoop.iterations), "8n");
     const bassLoop = new Tone.Loop((time) => bassEngine(time, bassLoop.iterations), "8n");
     const leadLoop = new Tone.Loop((time) => leadEngine(time, leadLoop.iterations), "8n");
     const drumLoop = new Tone.Loop((time) => drumEngine(time, drumLoop.iterations), "16n");
 
     function play() {
-        riffLoop.start(0);
+        //riffLoop.start(0);
         bassLoop.start(0);
         leadLoop.start(0);
         drumLoop.start(0);
@@ -120,7 +120,7 @@ export async function createMetalSongFromAnalysis(analysis, rand) {
     }
 
     function stop() {
-    riffLoop.stop();
+    //riffLoop.stop();
 bassLoop.stop();
 leadLoop.stop();
 drumLoop.stop();
