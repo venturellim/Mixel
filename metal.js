@@ -13,7 +13,7 @@ import {
 } from "./common.js";
 
 import { analyzeImage } from "./imageAnalysis.js";
-import { createRiffEngine } from "./metalRiff.js";
+import { generateMetalRiff } from "./metalRiff.js";
 import { createBassEngine } from "./metalBass.js";
 import { createLeadEngine } from "./metalLead.js";
 import { createDrumEngine } from "./metalDrums.js";
@@ -92,7 +92,7 @@ export async function createMetalSongFromAnalysis(analysis, rand) {
     const totalDuration = 120; // 2 minuti
 
     // Crea engine modulari
-    const riffEngine = createRiffEngine(analysis, rand);
+    const riffEngine = generateMetalRiff(analysis, rand);
     const bassEngine = createBassEngine(analysis, rand);
     const leadEngine = createLeadEngine(analysis, rand);
     const drumEngine = createDrumEngine(analysis, rand);
