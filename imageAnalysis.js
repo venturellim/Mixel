@@ -296,6 +296,7 @@ export function analyzeDirection(img) {
 // Funzione finale
 // -------------------------------------------------------------
 export function analyzeImage(img) {
+
     const brightness = analyzeImageBrightness(img);
     const dna = extractPhotoDNA(img);
     const energy = analyzeEnergy(img);
@@ -304,12 +305,15 @@ export function analyzeImage(img) {
     const direction = analyzeDirection(img);
 
     // Derivati per i nuovi engine
-    const entropy = complexity;   // alias più musicale
-    const edges = texture;        // densità bordi = edges
-    const symmetry = 0.5;         // placeholder neutro (0 = asimmetrico, 1 = molto simmetrico)
+    const entropy = complexity;
+    const edges = texture;
+    const symmetry = 0.5;
+
+    // Tonalità e scala (nuovo!)
+    const key = chooseKey(dna);
+    const scale = chooseScale(dna, key);
 
     return {
-        // valori originali
         brightness,
         dna,
         energy,
@@ -317,9 +321,12 @@ export function analyzeImage(img) {
         complexity,
         direction,
 
-        // alias/derivati per i nuovi engine
         entropy,
         edges,
-        symmetry
+        symmetry,
+
+        key,
+        scale
     };
 }
+
