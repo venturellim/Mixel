@@ -44,7 +44,7 @@ export async function createMetalEngineFromImage() {
 
     let t = 0;
 
-    function scheduleSection(duration, riffPattern, bassNote, leadPattern, drumsType) {
+    function scheduleSection(duration, riffPattern, bassNote, leadPattern) {
 
         // Riff
         const riffLoop = new Tone.Loop((time, step) => {
@@ -66,11 +66,11 @@ export async function createMetalEngineFromImage() {
             }, "8n").start(t);
         }
 
-        // Drums
+        // Drums (kick 1–3, snare 2–4, hihat 8n)
         const drumLoop = new Tone.Loop((time) => {
             drums.player("kick").start(time);
             drums.player("snare").start(time + Tone.Time("8n"));
-            drums.player("hihat_closed").start(time + Tone.Time("16n"));
+            drums.player("hihat").start(time + Tone.Time("16n"));
         }, "4n").start(t);
 
         // Stop alla fine
