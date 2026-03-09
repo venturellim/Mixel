@@ -1,4 +1,4 @@
-// metal.js — versione moderna, modulare, compatibile con Tone.js 15
+// metal.js — versione finta con sezioni vere per testare audio e struttura
 
 import * as Tone from "https://esm.sh/tone";
 
@@ -7,42 +7,141 @@ import {
     guitarOpen,
     guitarLead,
     bass,
-    drums,
-    masterEQ,
-    createSeededRandom
+    drums
 } from "./common.js";
 
-import { analyzeImage } from "./imageAnalysis.js";
-import { generateMetalRiff } from "./metalRiff.js";
-import { createBassEngine } from "./metalBass.js";
-import { createLeadEngine } from "./metalLead.js";
-import { createDrumEngine } from "./metalDrums.js";
-import { detectMetalStyle } from "./metalTheory.js";
-
 // ======================================================
-// 1) ENTRY POINT USATO DA main.js
+// ENGINE FISSO DI TEST CON SEZIONI
 // ======================================================
 
-export async function createMetalEngineFromImage(previewImage) {
+export async function createMetalEngineFromImage() {
 
-    // Analisi immagine completa
-    const analysis = await analyzeImage(previewImage);
-    const style = detectMetalStyle(analysis.brightness, analysis.entropy);
-analysis.style = style;
+    await Tone.loaded();
 
+    // BPM fisso
+    Tone.Transport.bpm.value = 120;
 
-    // Seed deterministico
-    const dna = Math.floor(analysis.brightness * 1000000);
-    const rand = createSeededRandom(dna);
+    // Scala fissa compatibile con i sample
+    const scale = ["C", "D", "Eb", "F", "G", "Ab", "Bb"];
 
-    // Crea engine completo
-    const engine = await createMetalSongFromAnalysis(analysis, rand);
+    // Durate sezioni (in secondi)
+    const introDur = 8;
+    const verseDur = 16;
+    const chorusDur = 16;
+    const soloDur = 8;
+    const chorus2Dur = 16;
+    const outroDur = 8;
 
-    return engine;
+    const totalDuration = introDur + verseDur + chorusDur + soloDur + chorus2Dur + outroDur;
+
+    // ======================================================
+    // LOOP SEMPLICI PER TEST
+    // ======================================================
+
+    function playRiff(time, note) {
+        guitarPalm.triggerAttackRelease(note, "8n", time);
+    }
+
+    function playBass(time, note) {
+        bass.triggerAttackRelease(note, "4n", time);
+    }
+
+    function playLead(time, note) {
+        guitarLead.triggerAttackRelease(note, "8n", time);
+    }
+
+    function playDrums(time) {
+        drums.player("kick").start(time);
+        drums.player("snare").start(time + Tone.Time("8n"));
+        drums.player("hihat").start(time + Tone.Time("16n"));
+    }
+
+    // ======================================================
+    // SCHEDULAZIONE SEZIONI
+    // ======================================================
+
+    let t = 0;
+
+    function scheduleSection(duration, riffNote, bassNote, leadNote) {
+
+        // Riff
+        const riffLoop = new Tone.Loop((time) => playRiff(time, riffNote), "8n").start(t);
+
+        // Bass
+        const bassLoop = new Tone.Loop((time) => playBass(time, bassNote), "4n").start(t);
+
+        // Lead (solo se leadNote non è null)
+        let leadLoop = null;
+        if (leadNote) {
+            leadLoop = new Tone.Loop((time) => playLead(time, leadNote), "8n").start(t);
+        }
+
+        // Drums
+        const drumLoop = new Tone.Loop((time) => playDrums(time), "4n").start(t);
+
+        // Stop loops alla fine della sezione
+        Tone.Transport.scheduleOnce(() => {
+            riffLoop.stop();
+            bassLoop.stop();
+            drumLoop.stop();
+            if (leadLoop) leadLoop.stop();
+        }, t + duration);
+
+        t += duration;
+    }
+
+    // Intro
+    scheduleSection(introDur, "C2", "C1", null);
+
+    // Verse
+    scheduleSection(verseDur, "C2", "C1", null);
+
+    // Chorus
+    scheduleSection(chorusDur, "G2", "C1", null);
+
+    // Solo
+    scheduleSection(soloDur, "C2", "C1", "C4");
+
+    // Chorus 2
+    scheduleSection(chorus2Dur, "G2", "C1", null);
+
+    // Outro
+    scheduleSection(outroDur, "C2", "C1", null);
+
+    // ======================================================
+    // CONTROLLI
+    // ======================================================
+
+    function play() {
+        if (Tone.Transport.state !== "started") {
+            Tone.Transport.start();
+        }
+    }
+
+    function pause() {
+        Tone.Transport.pause();
+    }
+
+    function stop() {
+        Tone.Transport.stop();
+        Tone.Transport.position = 0;
+    }
+
+    function seek(seconds) {
+        Tone.Transport.seconds = seconds;
+    }
+
+    return {
+        play,
+        pause,
+        stop,
+        seek,
+        totalDuration
+    };
 }
 
 // ======================================================
-// 2) LOADER STRUMENTI
+// LOADER STRUMENTI (rimane uguale)
 // ======================================================
 
 export async function waitInstrumentsWithProgress() {
@@ -73,72 +172,4 @@ export async function waitInstrumentsWithProgress() {
     }
 
     overlay.style.display = "none";
-}
-
-// ======================================================
-// 3) ENGINE COMPLETO
-// ======================================================
-
-export async function createMetalSongFromAnalysis(analysis, rand) {
-
-    await Tone.loaded();
-
-    // BPM dalla luminosità + edges
-    const bpm = 90 + analysis.brightness * 40 + analysis.edges * 30;
-    Tone.Transport.bpm.value = bpm;
-
-    // Durata fissa (per ora)
-    const totalDuration = 120; // 2 minuti
-
-    // Crea engine modulari
-    const riffEngine = generateMetalRiff(analysis, rand);
-    const bassEngine = createBassEngine(analysis, rand);
-    const leadEngine = createLeadEngine(analysis, rand);
-    const drumEngine = createDrumEngine(analysis, rand);
-
-    // Schedula loop
-    const riffLoop = new Tone.Loop((time) => riffEngine(time, riffLoop.iterations), "8n");
-    const bassLoop = new Tone.Loop((time) => bassEngine(time, bassLoop.iterations), "8n");
-    const leadLoop = new Tone.Loop((time) => leadEngine(time, leadLoop.iterations), "8n");
-    const drumLoop = new Tone.Loop((time) => drumEngine(time, drumLoop.iterations), "16n");
-
-    function play() {
-        riffLoop.start(0);
-        bassLoop.start(0);
-        leadLoop.start(0);
-        drumLoop.start(0);
-
-        if (Tone.Transport.state !== "started") {
-            Tone.Transport.start();
-        }
-    }
-
-    function pause() {
-        if (Tone.Transport.state === "started") {
-            Tone.Transport.pause();
-        }
-    }
-
-    function stop() {
-    riffLoop.stop();
-bassLoop.stop();
-leadLoop.stop();
-drumLoop.stop();
-
-        Tone.Transport.stop();
-        
-        Tone.Transport.position = 0;
-    }
-
-    function seek(seconds) {
-        Tone.Transport.seconds = seconds;
-    }
-
-    return {
-        play,
-        pause,
-        stop,
-        seek,
-        totalDuration
-    };
 }
