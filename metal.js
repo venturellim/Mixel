@@ -18,8 +18,6 @@ import { createBassEngine } from "./metalBass.js";
 import { createLeadEngine } from "./metalLead.js";
 import { createDrumEngine } from "./metalDrums.js";
 import { detectMetalStyle } from "./metalTheory.js";
-import { chooseKey, chooseScale } from "./musicTheory.js";
-
 
 // ======================================================
 // 1) ENTRY POINT USATO DA main.js
