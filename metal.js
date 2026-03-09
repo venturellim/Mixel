@@ -12,16 +12,12 @@ import {
     createSeededRandom
 } from "./common.js";
 
-import { analyzeImage } from "./imageAnalysis.js";
+import { analyzeImage } from "./image.js";
 import { generateMetalRiff } from "./metalRiff.js";
 import { createBassEngine } from "./metalBass.js";
 import { createLeadEngine } from "./metalLead.js";
 import { createDrumEngine } from "./metalDrums.js";
 import { detectMetalStyle } from "./metalTheory.js";
-
-const style = detectMetalStyle(analysis.brightness, analysis.entropy);
-analysis.style = style;
-
 
 // ======================================================
 // 1) ENTRY POINT USATO DA main.js
@@ -31,6 +27,9 @@ export async function createMetalEngineFromImage(previewImage) {
 
     // Analisi immagine completa
     const analysis = await analyzeImage(previewImage);
+    const style = detectMetalStyle(analysis.brightness, analysis.entropy);
+analysis.style = style;
+
 
     // Seed deterministico
     const dna = Math.floor(analysis.brightness * 1000000);
