@@ -127,7 +127,7 @@ const guitarUrls = {
 
 const palmFilter = new Tone.Filter({
     type: "lowpass",
-    frequency: 750,
+    frequency: 2500,
     Q: 1
 });
 
@@ -250,11 +250,11 @@ export const drums = new Tone.Players({
 // VOLUMI
 // ==============================
 
-guitarPalm.volume.value = -6;
-guitarOpen.volume.value = -6;
-guitarLead.volume.value = -12;
+guitarPalm.volume.value = 0;
+guitarOpen.volume.value = 0;
+guitarLead.volume.value = -3;
 bass.volume.value = -3;
-drums.volume.value = 0;
+drums.volume.value = -3;
 
 
 function wrapSampler(name, sampler) {
