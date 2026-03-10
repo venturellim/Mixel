@@ -73,6 +73,11 @@ export async function waitInstrumentsWithProgress() {
         bar.style.width = percent + "%";
         text.innerText = "Caricamento strumenti… " + percent + "%";
     }
+    
+    guitarPalm.loaded.then(() => console.log("PALM LOADED"));
+guitarOpen.loaded.then(() => console.log("OPEN LOADED"));
+guitarLead.loaded.then(() => console.log("LEAD LOADED"));
+bass.loaded.then(() => console.log("BASS LOADED"));
 
     overlay.style.display = "none";
 }

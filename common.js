@@ -240,11 +240,6 @@ guitarLead.volume.value = -12;
 bass.volume.value = -3;
 drums.volume.value = 0;
 
-guitarPalm.loaded.then(() => console.log("PALM LOADED"));
-guitarOpen.loaded.then(() => console.log("OPEN LOADED"));
-guitarLead.loaded.then(() => console.log("LEAD LOADED"));
-bass.loaded.then(() => console.log("BASS LOADED"));
-
 
 function wrapSampler(name, sampler) {
     const orig = sampler.triggerAttackRelease.bind(sampler);
