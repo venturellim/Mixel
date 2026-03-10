@@ -55,25 +55,19 @@ export async function waitInstrumentsWithProgress() {
 
     overlay.style.display = "flex";
 
-    let loaded = 0;
-    const total = 4; // 4 sampler (drums non serve)
+    const total = 4; // palm, open, lead, bass
 
-    function update() {
-        loaded++;
-        const percent = Math.floor((loaded / total) * 100);
+    while (window.__samplerLoadedCount < total) {
+        const percent = Math.floor((window.__samplerLoadedCount / total) * 100);
         bar.style.width = percent + "%";
         text.innerText = "Caricamento strumenti… " + percent + "%";
-    }
 
-    await Promise.all([
-        new Promise(res => guitarPalm.on("load", () => { update(); res(); })),
-        new Promise(res => guitarOpen.on("load", () => { update(); res(); })),
-        new Promise(res => guitarLead.on("load", () => { update(); res(); })),
-        new Promise(res => bass.on("load", () => { update(); res(); }))
-    ]);
+        await new Promise(res => setTimeout(res, 100));
+    }
 
     overlay.style.display = "none";
 }
+
 
 
 // ======================================================
@@ -99,24 +93,26 @@ export async function createMetalSongFromAnalysis(analysis, rand) {
 
     // Schedula loop
     let riffStep = 0;
+let bassStep = 0;
+let leadStep = 0;
+let drumStep = 0;
+
 const riffLoop = new Tone.Loop((time) => {
     riffEngine(time, riffStep++);
 }, "8n");
 
-    let bassStep = 0;
 const bassLoop = new Tone.Loop((time) => {
     bassEngine(time, bassStep++);
 }, "8n");
 
-    let leadStep = 0;
 const leadLoop = new Tone.Loop((time) => {
     leadEngine(time, leadStep++);
 }, "8n");
 
-    let drumStep = 0;
 const drumLoop = new Tone.Loop((time) => {
     drumEngine(time, drumStep++);
 }, "16n");
+
 
 
 

@@ -1,6 +1,17 @@
 // common.js — versione moderna per Tone.js 15
 import * as Tone from "https://esm.sh/tone@15.1.22";
 
+// ======================================================
+// CONTATORE GLOBALE PER IL CARICAMENTO
+// ======================================================
+
+window.__samplerLoadedCount = 0;
+window.__samplerLoaded = function(name) {
+    console.log(name.toUpperCase(), "LOADED");
+    window.__samplerLoadedCount++;
+};
+
+
 // LOGGER UNIVERSALE PER TONE.JS
 
 function logNote(instrumentName, note, time) {
@@ -131,7 +142,7 @@ export const guitarPalm = new Tone.Sampler({
     urls: guitarUrls,
     release: 1,
     baseUrl: "",
-    onload: () => console.log("PALM LOADED")
+    onload: () => window.__samplerLoaded("palm")
 });
 
 guitarPalm.set({
@@ -152,7 +163,7 @@ guitarPalm.chain(palmFilter, palmComp, masterEQ);
 export const guitarOpen = new Tone.Sampler({
     urls: guitarUrls,
     baseUrl: "",
-    onload: () => console.log("OPEN LOADED")
+    onload: () => window.__samplerLoaded("open")
 });
 
 guitarOpen.set({
@@ -173,7 +184,7 @@ guitarOpen.connect(masterEQ);
 export const guitarLead = new Tone.Sampler({
     urls: guitarUrls,
     baseUrl: "",
-    onload: () => console.log("LEAD LOADED")
+    onload: () => window.__samplerLoaded("lead")
 });
 
 guitarLead.connect(leadEQ);
@@ -210,7 +221,7 @@ export const bass = new Tone.Sampler({
         B2: "Samples/Bass/B2.mp3",
         C3: "Samples/Bass/C3.mp3"
     },
-    onload: () => console.log("BASS LOADED")
+    onload: () => window.__samplerLoaded("bass")
 }).connect(masterEQ);
 
 
