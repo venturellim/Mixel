@@ -189,6 +189,23 @@ export const guitarLead = new Tone.Sampler({
 
 guitarLead.connect(leadEQ);
 
+// Effetti per Palm e Open
+
+const guitarDelay = new Tone.FeedbackDelay(0.03, 0.2).toDestination();
+guitarPalm.connect(guitarDelay);
+guitarOpen.connect(guitarDelay);
+
+// 🎸 Riverbero per la chitarra ritmica (Palm + Open)
+export const guitarRiffReverb = new Tone.Reverb({
+    decay: 4,        // sustain lungo
+    preDelay: 0.01,  // attacco immediato
+    wet: 0.25        // mix 25% = Stratovarius style
+}).toDestination();
+
+guitarPalm.connect(guitarRiffReverb);
+guitarOpen.connect(guitarRiffReverb);
+
+
 // ==============================
 // 🎸 BASS (C1–C3)
 // ==============================

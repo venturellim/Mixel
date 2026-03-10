@@ -130,9 +130,11 @@ export function generateMetalRiff(analysis, rand) {
 
         // 3) Palm/open come prima
         if (rand() < contrast) {
-            guitarPalm.triggerAttackRelease(chord, "8n", time);
+            guitarPalm.triggerAttackRelease(chord, "4n", time);
         } else {
-            guitarOpen.triggerAttackRelease(chord, "8n", time);
+        
+ // erano entrambi 8n
+            guitarOpen.triggerAttackRelease(chord, "4n", time);
         }
     };
 }
