@@ -55,32 +55,26 @@ export async function waitInstrumentsWithProgress() {
 
     overlay.style.display = "flex";
 
-    const instruments = [
-        guitarPalm.loaded,
-        guitarOpen.loaded,
-        guitarLead.loaded,
-        bass.loaded,
-        drums.loaded
-    ];
-
     let loaded = 0;
-    const total = instruments.length;
+    const total = 4; // 4 sampler (drums non serve)
 
-    for (const inst of instruments) {
-        await inst;
+    function update() {
         loaded++;
         const percent = Math.floor((loaded / total) * 100);
         bar.style.width = percent + "%";
         text.innerText = "Caricamento strumenti… " + percent + "%";
     }
-    
-    guitarPalm.loaded.then(() => console.log("PALM LOADED"));
-guitarOpen.loaded.then(() => console.log("OPEN LOADED"));
-guitarLead.loaded.then(() => console.log("LEAD LOADED"));
-bass.loaded.then(() => console.log("BASS LOADED"));
+
+    await Promise.all([
+        new Promise(res => guitarPalm.on("load", () => { update(); res(); })),
+        new Promise(res => guitarOpen.on("load", () => { update(); res(); })),
+        new Promise(res => guitarLead.on("load", () => { update(); res(); })),
+        new Promise(res => bass.on("load", () => { update(); res(); }))
+    ]);
 
     overlay.style.display = "none";
 }
+
 
 // ======================================================
 // 3) ENGINE COMPLETO
