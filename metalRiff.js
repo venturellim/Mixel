@@ -1,3 +1,5 @@
+import * as Tone from "https://esm.sh/tone";
+
 import { clampNote, pickFromScale, guitarPalm, guitarOpen } from "./common.js";
 
 export function generateMetalRiff(analysis, rand) {
