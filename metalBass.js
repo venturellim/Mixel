@@ -4,6 +4,7 @@
 import { bass } from "./common.js";
 import { clampNote, pickFromScale } from "./common.js";
 
+console.log("BASS STEP", step);
 
 export function createBassEngine(analysis, rand) {
 

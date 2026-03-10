@@ -1,6 +1,8 @@
 import { guitarLead } from "./common.js";
 import { clampNote, pickFromScale } from "./common.js";
 
+console.log("LEAD STEP", step);
+
 export function createLeadEngine(analysis, rand) {
 
     const scale = analysis.scale;
