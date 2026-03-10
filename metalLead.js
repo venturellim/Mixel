@@ -1,7 +1,6 @@
 import { guitarLead } from "./common.js";
 import { clampNote, pickFromScale } from "./common.js";
 
-console.log("LEAD STEP", step);
 
 export function createLeadEngine(analysis, rand) {
 
@@ -57,6 +56,8 @@ export function createLeadEngine(analysis, rand) {
         const clamped = clampNote(fullNote, MIN, MAX);
         if (!clamped) return;
 
+        console.log("LEAD STEP", step);
         guitarLead.triggerAttackRelease(clamped, "8n", time);
     };
+    
 }

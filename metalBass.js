@@ -4,8 +4,6 @@
 import { bass } from "./common.js";
 import { clampNote, pickFromScale } from "./common.js";
 
-console.log("BASS STEP", step);
-
 export function createBassEngine(analysis, rand) {
 
     const scale = analysis.scale;
@@ -37,6 +35,7 @@ export function createBassEngine(analysis, rand) {
         const clamped = clampNote(fullNote, MIN, MAX);
         if (!clamped) return;
 
+console.log("BASS STEP", step);
         bass.triggerAttackRelease(clamped, "4n", time);
     };
 }
