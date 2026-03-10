@@ -99,7 +99,7 @@ export async function createMetalSongFromAnalysis(analysis, rand) {
     const drumEngine = createDrumEngine(analysis, rand);
 
     // Schedula loop
-    const riffLoop = new Tone.let riffStep = 0;
+    let riffStep = 0;
 const riffLoop = new Tone.Loop((time) => {
     riffEngine(time, riffStep++);
 }, "8n");
