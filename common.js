@@ -303,3 +303,31 @@ export function createSeededRandom(seed) {
         return seed / 4294967296;
     };
 }
+
+export async function waitDownloadInstrumentsWithProgress() {
+
+    const overlay = document.getElementById("loadingOverlay");
+    const bar = document.getElementById("loadingBar");
+    const text = document.getElementById("loadingText");
+
+    overlay.style.display = "flex";
+
+    const total = 4; // palm, open, lead, bass
+    let loaded = 0;
+
+    function checkLoaded() {
+        loaded = window.__samplerLoadedCount;
+        const percent = Math.floor((loaded / total) * 100);
+        bar.style.width = percent + "%";
+        text.innerText = "Caricamento strumenti… " + percent + "%";
+    }
+
+    // Aggiorna ogni 100ms
+    while (loaded < total) {
+        checkLoaded();
+        await new Promise(res => setTimeout(res, 100));
+    }
+
+    overlay.style.display = "none";
+}
+

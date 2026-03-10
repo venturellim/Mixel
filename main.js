@@ -2,6 +2,14 @@ import * as Tone from "https://esm.sh/tone";
 
 console.log("MAIN.js PARTITO");
 
+import { waitDownloadInstrumentsWithProgress } from "./common.js";
+
+window.addEventListener("load", async () => {
+    await waitDownloadInstrumentsWithProgress();
+    console.log("🎸 Tutti gli strumenti sono pronti!");
+});
+
+
 import { createMetalEngineFromImage, waitInstrumentsWithProgress } from "./metal.js";
 
 let currentEngine = null;
