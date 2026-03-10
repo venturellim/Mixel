@@ -1,9 +1,11 @@
 import * as Tone from "https://esm.sh/tone";
-
 import { clampNote, pickFromScale, guitarPalm, guitarOpen } from "./common.js";
 
 export function generateMetalRiff(analysis, rand) {
 
+    // ============================
+    // SCALA E PARAMETRI DI BASE
+    // ============================
     let scale = analysis.scale;
     if (!scale || !Array.isArray(scale) || scale.length === 0) {
         console.warn("⚠️ SCALA VUOTA — fallback C minor");
@@ -26,6 +28,9 @@ export function generateMetalRiff(analysis, rand) {
     const melodicVariety = 1 + Math.floor(entropy * 3);
     const patternType = Math.floor(symmetry * 3);
 
+    // ============================
+    // FUNZIONI PER IL RIFF
+    // ============================
     function chooseNote(step) {
         if (rand() < 0.7) {
             const idx = step + Math.floor(rand() * melodicVariety);
@@ -47,6 +52,9 @@ export function generateMetalRiff(analysis, rand) {
         return note;
     }
 
+    // ============================
+    // GENERAZIONE RIFF
+    // ============================
     for (let i = 0; i < length; i++) {
 
         if (i % (4 - density) !== 0) {
@@ -76,10 +84,9 @@ export function generateMetalRiff(analysis, rand) {
         riff.push(clamped);
     }
 
-    // ----------------------------------------------------
-    // 🎸 ACCORDI DINAMICI (power / major / minor)
-    // ----------------------------------------------------
-
+    // ============================
+    // ACCORDI (power / major / minor)
+    // ============================
     function buildChord(root, type) {
         const rootMidi = Tone.Frequency(root).toMidi();
 
@@ -114,26 +121,50 @@ export function generateMetalRiff(analysis, rand) {
         return "minor";
     }
 
-    // ----------------------------------------------------
-    // 🔥 ENGINE: questa è la parte che metal.js si aspetta
-    // ----------------------------------------------------
+    // ============================
+    // PROGRESSIONE ARMONICA
+    // ============================
+    function generateChordProgression(scale, analysis, rand) {
+        const degrees = [0, 3, 4, 5, 2, 1]; // tonica, minore, maggiore, subdominante, dorico, frigio
+        const progression = [];
+
+        for (let i = 0; i < 4; i++) {
+            const degree = degrees[Math.floor(rand() * degrees.length)];
+            const root = scale[degree] + "2";
+            progression.push(root);
+        }
+
+        return progression;
+    }
+
+    const chordProgression = generateChordProgression(scale, analysis, rand);
+
+    // Durata armonica scelta dalla foto:
+    // Foto luminosa → progressione veloce (4 step)
+    // Foto scura → progressione lenta (8 step)
+    const chordLength = (analysis.brightness > 0.5) ? 4 : 8;
+
+    // ============================
+    // RIFF ENGINE (ritorna a metal.js)
+    // ============================
     return function riffEngine(time, step) {
 
         const note = riff[step % riff.length];
         if (!note) return;
 
-        // 1) Scegliamo il tipo di accordo in base all’immagine
+        // Scegli accordo dalla progressione
+        const chordRoot = chordProgression[Math.floor(step / chordLength) % chordProgression.length];
+
+        // Tipo di accordo basato sull’immagine
         const chordType = chooseChordType(analysis);
 
-        // 2) Costruiamo l’accordo
-        const chord = buildChord(note, chordType);
+        // Costruzione accordo
+        const chord = buildChord(chordRoot, chordType);
 
-        // 3) Palm/open come prima
+        // Palm/open + sustain lungo
         if (rand() < contrast) {
             guitarPalm.triggerAttackRelease(chord, "4n", time);
         } else {
-        
- // erano entrambi 8n
             guitarOpen.triggerAttackRelease(chord, "4n", time);
         }
     };
