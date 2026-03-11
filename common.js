@@ -272,9 +272,9 @@ guitarOpen.volume.value = -3;
 
 bass.volume.value = -3;
 
-guitarLead.volume.value = 0;
+guitarLead.volume.value = +3;
 
-drums.volume.value = -6;
+drums.volume.value = -9;
 
 
 
