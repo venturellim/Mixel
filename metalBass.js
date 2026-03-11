@@ -61,7 +61,7 @@ export function createBassEngine(analysis, params, riffData, rand) {
         }
 
         // Ghost notes su 16n (solo se la sezione è energica)
-        if (rand() < density * 0.3) {
+        if (rand() < density * 0.15) {
             const ghostTime = time + Tone.Time("16n").toSeconds() * 0.5;
             bass.triggerAttackRelease(clamped, "16n", ghostTime);
         }

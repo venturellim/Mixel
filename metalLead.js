@@ -30,8 +30,9 @@ export function createLeadEngine(analysis, params, riffData, rand) {
         const root = chord[0];
         const rootMidi = Tone.Frequency(root).toMidi();
 
-        // Base melodica: C5–C6
-        const baseOct = 5 + Math.floor(lead.range * 1.2); // 5 → C5, 6 → C6
+        // Base melodica: C4–C5
+        const baseOct = 4 + Math.floor(lead.range * 1.0); // C4–C5
+ 
         const baseMidi = Tone.Frequency(scale[0] + baseOct).toMidi();
 
         // Intervalli melodici più ampi
