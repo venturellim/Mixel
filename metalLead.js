@@ -1,7 +1,7 @@
-// metalLead.js — lead melodica, sezionale, coerente con riffData
+// metalLead.js — lead melodica, range corretto C4–C6
 
 import * as Tone from "https://esm.sh/tone";
-import { guitarLead, clampNote } from "./common.js";
+import { guitarLead } from "./common.js";
 
 export function createLeadEngine(analysis, params, riffData, rand) {
 
@@ -11,25 +11,33 @@ export function createLeadEngine(analysis, params, riffData, rand) {
     const beatsPerMeasure = riffData.beatsPerMeasure;
     const totalSteps = riffData.totalSteps;
 
-    const MIN = 60;  // C4 (lead deve stare più in alto)
-    const MAX = 88;  // E6
+    // Range corretto per i tuoi sample
+    const MIN = 60; // C4
+    const MAX = 84; // C6
 
     // ------------------------------------------------------------
-    // Utility: scegli una nota della scala vicina all’accordo
+    // Utility: clamp MIDI
+    // ------------------------------------------------------------
+    function clampMidi(m) {
+        return Math.max(MIN, Math.min(MAX, m));
+    }
+
+    // ------------------------------------------------------------
+    // Scegli una nota melodica coerente con l’accordo
     // ------------------------------------------------------------
     function pickMelodicNote(chord, section) {
 
         const root = chord[0];
         const rootMidi = Tone.Frequency(root).toMidi();
 
-        // Range melodico base
-        const baseOct = 4 + Math.floor(lead.range * 2); // C4–C6
+        // Base melodica: C5–C6
+        const baseOct = 5 + Math.floor(lead.range * 1.2); // 5 → C5, 6 → C6
         const baseMidi = Tone.Frequency(scale[0] + baseOct).toMidi();
 
-        // Intervalli tipici metal
+        // Intervalli melodici più ampi
         const intervals = section === "solo"
-            ? [0, 2, 3, 5, 7, 9, 12]  // più libertà
-            : [0, 2, 4, 5, 7];        // melodico
+            ? [0, 2, 3, 5, 7, 9, 12, 14]   // più libertà
+            : [0, 2, 4, 5, 7, 9];          // melodico classico
 
         const interval = intervals[Math.floor(rand() * intervals.length)];
 
@@ -38,22 +46,25 @@ export function createLeadEngine(analysis, params, riffData, rand) {
 
         const noteMidi = baseMidi + interval + slopeShift;
 
-        const clampedMidi = Math.max(MIN, Math.min(MAX, noteMidi));
-        return Tone.Frequency(clampedMidi, "midi").toNote();
+        const clamped = clampMidi(noteMidi);
+        return Tone.Frequency(clamped, "midi").toNote();
     }
 
     // ------------------------------------------------------------
-    // Pattern per sezione
+    // Densità per sezione
     // ------------------------------------------------------------
     function getLeadDensity(section) {
-        if (section === "intro")  return 0.4 + lead.density * 0.3;
-        if (section === "verse")  return 0.6 + lead.density * 0.3;
-        if (section === "chorus") return 0.8 + lead.density * 0.3;
-        if (section === "solo")   return 0.9;
-        if (section === "outro")  return 0.5;
-        return 0.6;
+        if (section === "intro")  return 0.5 + lead.density * 0.3;
+        if (section === "verse")  return 0.7 + lead.density * 0.3;
+        if (section === "chorus") return 0.85 + lead.density * 0.3;
+        if (section === "solo")   return 0.95;
+        if (section === "outro")  return 0.6;
+        return 0.7;
     }
 
+    // ------------------------------------------------------------
+    // Ritmica per sezione
+    // ------------------------------------------------------------
     function getLeadRhythm(section, stepInMeasure) {
         if (section === "chorus") return stepInMeasure % 1 === 0; // ogni 8n
         if (section === "verse")  return stepInMeasure % 2 === 0; // ogni 4n
@@ -64,7 +75,7 @@ export function createLeadEngine(analysis, params, riffData, rand) {
     }
 
     // ------------------------------------------------------------
-    // ENGINE ritornato a metal.js
+    // ENGINE
     // ------------------------------------------------------------
     return function leadEngine(time, step) {
 
@@ -75,19 +86,19 @@ export function createLeadEngine(analysis, params, riffData, rand) {
 
         const stepInMeasure = idx % beatsPerMeasure;
 
-        // Densità per sezione
+        // Densità
         const density = getLeadDensity(section);
         if (rand() > density) return;
 
-        // Ritmica per sezione
+        // Ritmica
         if (!getLeadRhythm(section, stepInMeasure)) return;
 
-        // Evita di suonare sopra i power chord forti
+        // Evita di coprire i power chord forti
         if (stepInMeasure === 0 && section !== "solo") {
-            if (rand() < 0.7) return;
+            if (rand() < 0.6) return;
         }
 
-        // Genera nota melodica
+        // Nota melodica
         const note = pickMelodicNote(chord, section);
         if (!note) return;
 
