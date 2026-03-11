@@ -15,40 +15,48 @@ export function createLeadEngine(analysis, params, riffData, rand) {
     const MIN = 60; // C4
     const MAX = 84; // C6
 
-    // ------------------------------------------------------------
-    // Utility: clamp MIDI
-    // ------------------------------------------------------------
     function clampMidi(m) {
         return Math.max(MIN, Math.min(MAX, m));
     }
 
     // ------------------------------------------------------------
-    // Note target sugli accordi (fondamentale, terza, quinta)
+    // Note target sugli accordi (fondamentale, terza, quinta, settima)
     // ------------------------------------------------------------
-    const chordTones = [0, 4, 7];
+    const chordTones = [0, 3, 4, 7, 10];
 
     // ------------------------------------------------------------
-    // Genera una frase melodica di 4 step
+    // Genera una frase melodica con direzione
     // ------------------------------------------------------------
     function generatePhrase(section) {
 
-        // Intervalli possibili
         const intervals = section === "solo"
             ? [0, 2, 3, 5, 7, 9, 12, 14]
             : [0, 2, 4, 5, 7, 9, 12];
 
-        // Frase di 4 note
         const phrase = [];
 
-        for (let i = 0; i < 4; i++) {
-            const interval = intervals[Math.floor(rand() * intervals.length)];
+        // Direzione: ascendente, discendente o onda
+        const direction = rand();
+
+        for (let i = 0; i < 8; i++) {
+
+            let interval = intervals[Math.floor(rand() * intervals.length)];
+
+            if (direction < 0.33) {
+                interval += i; // salita
+            } else if (direction < 0.66) {
+                interval -= i; // discesa
+            } else {
+                if (i % 2 === 0) interval += 2;
+                else interval -= 2; // onda
+            }
+
             phrase.push(interval);
         }
 
         return phrase;
     }
 
-    // Frase corrente
     let currentPhrase = generatePhrase("verse");
 
     // ------------------------------------------------------------
@@ -73,7 +81,7 @@ export function createLeadEngine(analysis, params, riffData, rand) {
 
         if (rand() > density) return;
 
-        // Ritmica per sezione
+        // Ritmica variabile
         const allow =
             (section === "chorus" && stepInMeasure % 1 === 0) ||
             (section === "verse"  && stepInMeasure % 2 === 0) ||
@@ -94,7 +102,7 @@ export function createLeadEngine(analysis, params, riffData, rand) {
 
         let noteMidi;
 
-        // Nota target sugli accordi all'inizio misura (tranne solo)
+        // Note target sugli accordi all'inizio misura
         if (stepInMeasure === 0 && section !== "solo") {
             const interval = chordTones[Math.floor(rand() * chordTones.length)];
             noteMidi = baseMidi + interval;
@@ -111,6 +119,12 @@ export function createLeadEngine(analysis, params, riffData, rand) {
         const clamped = clampMidi(noteMidi);
         const note = Tone.Frequency(clamped, "midi").toNote();
 
-        guitarLead.triggerAttackRelease(note, "8n", time);
+        // Durata variabile
+        let dur = "8n";
+        if (section === "chorus" && stepInMeasure === 0) dur = "4n";
+        if (section === "solo" && rand() < 0.3) dur = "16n";
+        if (section === "verse" && rand() < 0.2) dur = "4n";
+
+        guitarLead.triggerAttackRelease(note, dur, time);
     };
 }
