@@ -267,14 +267,14 @@ export const drums = new Tone.Players({
 // VOLUMI
 // ==============================
 
-guitarPalm.volume.value = -6;
-guitarOpen.volume.value = -6;
+guitarPalm.volume.value = -3;
+guitarOpen.volume.value = -3;
 
 bass.volume.value = -3;
 
-guitarLead.volume.value = -1;
+guitarLead.volume.value = 0;
 
-drums.volume.value = 0;
+drums.volume.value = -3;
 
 
 
