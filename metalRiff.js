@@ -1,4 +1,4 @@
-// metalRiff.js — versione sezionale con spartito completo per basso/lead/drums
+// metalRiff.js — versione ad alta densità, base metal solida
 
 import * as Tone from "https://esm.sh/tone";
 import { guitarPalm, guitarOpen, clampNote } from "./common.js";
@@ -8,7 +8,7 @@ export function generateMetalRiff(analysis, params, rand) {
     const scale = params.scale;
     const key = params.key;
 
-    const timeSig = params.timeSignature; // "4/4" o "6/8"
+    const timeSig = params.timeSignature;
     const beatsPerMeasure = (timeSig === "6/8") ? 6 : 4;
 
     const measures = params.measures;
@@ -61,36 +61,56 @@ export function generateMetalRiff(analysis, params, rand) {
     }
 
     // ------------------------------------------------------------
-    // Generazione note per sezione
+    // Generazione note per sezione (densità 75–100%)
     // ------------------------------------------------------------
-    function chooseNote(density) {
-        if (rand() > density) return null;
-        const idx = Math.floor(rand() * scale.length);
-        return scale[idx] + octave;
-    }
-
     function generateSectionRiff(sectionName, sectionMeasures, densityFactor) {
         const totalSteps = sectionMeasures * beatsPerMeasure;
         const notes = [];
         const sections = [];
 
         for (let i = 0; i < totalSteps; i++) {
-            const density = densityFactor * rhythm.attack;
-            const note = chooseNote(density);
-            const clamped = note ? clampNote(note, MIN, MAX) : null;
 
-            notes.push(clamped);
+            // Densità minima garantita
+            let density = densityFactor * rhythm.attack;
+            density = Math.max(0.75, density); // mai sotto 75%
+
+            // Accento forte su ogni battito (power chord)
+            if (i % beatsPerMeasure === 0) {
+                const root = scale[0] + octave;
+                notes.push(clampNote(root, MIN, MAX));
+                sections.push(sectionName);
+                continue;
+            }
+
+            // Nota su ogni 8n (obbligatoria)
+            if (i % 2 === 0) {
+                const idx = Math.floor(rand() * scale.length);
+                const note = scale[idx] + octave;
+                notes.push(clampNote(note, MIN, MAX));
+                sections.push(sectionName);
+                continue;
+            }
+
+            // Note aggiuntive su 16n (in base alla densità)
+            if (rand() < density) {
+                const idx = Math.floor(rand() * scale.length);
+                const note = scale[idx] + octave;
+                notes.push(clampNote(note, MIN, MAX));
+            } else {
+                notes.push(null);
+            }
+
             sections.push(sectionName);
         }
 
         return { notes, sections };
     }
 
-    const intro  = generateSectionRiff("intro",  measures.intro,  0.3);
-    const verse  = generateSectionRiff("verse",  measures.verse,  0.5);
-    const chorus = generateSectionRiff("chorus", measures.chorus, 0.8);
-    const solo   = generateSectionRiff("solo",   measures.solo,   0.4);
-    const outro  = generateSectionRiff("outro",  measures.outro,  0.2);
+    const intro  = generateSectionRiff("intro",  measures.intro,  0.6);
+    const verse  = generateSectionRiff("verse",  measures.verse,  0.8);
+    const chorus = generateSectionRiff("chorus", measures.chorus, 1.0);
+    const solo   = generateSectionRiff("solo",   measures.solo,   0.7);
+    const outro  = generateSectionRiff("outro",  measures.outro,  0.5);
 
     // ------------------------------------------------------------
     // Timeline completa
@@ -144,12 +164,9 @@ export function generateMetalRiff(analysis, params, rand) {
         const chord = chordTimeline[idx];
         const sound = pickSound();
 
-        playChord(sound, chord, "4n", time);
+        playChord(sound, chord, "8n", time);
     }
 
-    // ------------------------------------------------------------
-    // Ritorno: engine + spartito completo
-    // ------------------------------------------------------------
     return {
         engine: riffEngine,
         data: {

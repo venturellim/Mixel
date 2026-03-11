@@ -11,67 +11,56 @@ export function createLeadEngine(analysis, params, riffData, rand) {
     const beatsPerMeasure = riffData.beatsPerMeasure;
     const totalSteps = riffData.totalSteps;
 
-    const MIN = 48; // C3
-    const MAX = 84; // C6
+    const MIN = 60;  // C4 (lead deve stare più in alto)
+    const MAX = 88;  // E6
 
     // ------------------------------------------------------------
-    // Utility: scegli una nota dalla scala
+    // Utility: scegli una nota della scala vicina all’accordo
     // ------------------------------------------------------------
-    function pickScaleNote(rootMidi, interval = 0) {
-        const note = Tone.Frequency(rootMidi + interval, "midi").toNote();
-        return note;
-    }
-
-    // ------------------------------------------------------------
-    // Genera una frase melodica per sezione
-    // ------------------------------------------------------------
-    function generatePhrase(section, chord, stepInMeasure) {
+    function pickMelodicNote(chord, section) {
 
         const root = chord[0];
         const rootMidi = Tone.Frequency(root).toMidi();
 
-        // Range melodico
-        const baseOct = 3 + Math.floor(lead.range * 2); // C3–C5
+        // Range melodico base
+        const baseOct = 4 + Math.floor(lead.range * 2); // C4–C6
         const baseMidi = Tone.Frequency(scale[0] + baseOct).toMidi();
 
-        // Densità
-        if (rand() > lead.density) return null;
+        // Intervalli tipici metal
+        const intervals = section === "solo"
+            ? [0, 2, 3, 5, 7, 9, 12]  // più libertà
+            : [0, 2, 4, 5, 7];        // melodico
 
-        // Evita di suonare sopra i vuoti del riff
-        if (!riffData.fullRiff[stepInMeasure]) {
-            if (rand() < 0.4) return null;
-        }
-
-        // Pattern per sezione
-        let interval = 0;
-
-        if (section === "intro") {
-            interval = (rand() < 0.5) ? 0 : 2;
-        }
-
-        if (section === "verse") {
-            interval = (rand() < 0.5) ? 2 : 4;
-        }
-
-        if (section === "chorus") {
-            interval = (rand() < 0.5) ? 4 : 7;
-        }
-
-        if (section === "solo") {
-            interval = Math.floor(rand() * 12) - 6; // fraseggio libero
-        }
-
-        if (section === "outro") {
-            interval = (rand() < 0.5) ? 0 : -2;
-        }
+        const interval = intervals[Math.floor(rand() * intervals.length)];
 
         // Slope (ascendente/discendente)
-        interval += Math.floor(lead.slope * 3);
+        const slopeShift = Math.floor(lead.slope * 4) - 2;
 
-        const noteMidi = baseMidi + interval;
+        const noteMidi = baseMidi + interval + slopeShift;
+
         const clampedMidi = Math.max(MIN, Math.min(MAX, noteMidi));
-
         return Tone.Frequency(clampedMidi, "midi").toNote();
+    }
+
+    // ------------------------------------------------------------
+    // Pattern per sezione
+    // ------------------------------------------------------------
+    function getLeadDensity(section) {
+        if (section === "intro")  return 0.4 + lead.density * 0.3;
+        if (section === "verse")  return 0.6 + lead.density * 0.3;
+        if (section === "chorus") return 0.8 + lead.density * 0.3;
+        if (section === "solo")   return 0.9;
+        if (section === "outro")  return 0.5;
+        return 0.6;
+    }
+
+    function getLeadRhythm(section, stepInMeasure) {
+        if (section === "chorus") return stepInMeasure % 1 === 0; // ogni 8n
+        if (section === "verse")  return stepInMeasure % 2 === 0; // ogni 4n
+        if (section === "solo")   return true;                    // libero
+        if (section === "intro")  return stepInMeasure % 2 === 0;
+        if (section === "outro")  return stepInMeasure % 2 === 0;
+        return false;
     }
 
     // ------------------------------------------------------------
@@ -86,10 +75,20 @@ export function createLeadEngine(analysis, params, riffData, rand) {
 
         const stepInMeasure = idx % beatsPerMeasure;
 
-        // Non suonare troppo spesso
-        if (rand() > lead.density) return;
+        // Densità per sezione
+        const density = getLeadDensity(section);
+        if (rand() > density) return;
 
-        const note = generatePhrase(section, chord, stepInMeasure);
+        // Ritmica per sezione
+        if (!getLeadRhythm(section, stepInMeasure)) return;
+
+        // Evita di suonare sopra i power chord forti
+        if (stepInMeasure === 0 && section !== "solo") {
+            if (rand() < 0.7) return;
+        }
+
+        // Genera nota melodica
+        const note = pickMelodicNote(chord, section);
         if (!note) return;
 
         guitarLead.triggerAttackRelease(note, "8n", time);

@@ -1,4 +1,4 @@
-// metalBass.js — basso coerente con riffData, sezioni e accordi
+// metalBass.js — basso coerente con riffData, denso e musicale
 
 import { bass } from "./common.js";
 import * as Tone from "https://esm.sh/tone";
@@ -9,11 +9,9 @@ export function createBassEngine(analysis, params, riffData, rand) {
     const totalSteps = riffData.totalSteps;
 
     const rhythm = params.rhythm;
-    const scale = params.scale;
 
     const MIN = 24; // C1
     const MAX = 36; // C2
-    const octave = 1;
 
     // ------------------------------------------------------------
     // Utility: clamp nota
@@ -25,30 +23,37 @@ export function createBassEngine(analysis, params, riffData, rand) {
     }
 
     // ------------------------------------------------------------
-    // Pattern per sezione
+    // Densità per sezione (molto più alta)
     // ------------------------------------------------------------
     function getBassDensity(section) {
-        if (section === "intro")  return 0.3 * rhythm.attack;
-        if (section === "verse")  return 0.5 * rhythm.attack;
-        if (section === "chorus") return 0.8 * rhythm.attack;
-        if (section === "solo")   return 0.4 * rhythm.attack;
-        if (section === "outro")  return 0.2 * rhythm.attack;
-        return 0.5;
+        if (section === "intro")  return 0.6;
+        if (section === "verse")  return 0.75;
+        if (section === "chorus") return 0.9;
+        if (section === "solo")   return 0.7;
+        if (section === "outro")  return 0.5;
+        return 0.7;
     }
 
-    function getBassPattern(section, stepInMeasure) {
-        if (section === "chorus") {
-            return stepInMeasure % 1 === 0; // ogni battito
-        }
-        if (section === "verse") {
-            return stepInMeasure % 2 === 0; // metà densità
-        }
-        if (section === "intro" || section === "outro") {
-            return stepInMeasure === 0; // solo accento forte
-        }
-        if (section === "solo") {
-            return stepInMeasure % 3 === 0; // groove più libero
-        }
+    // ------------------------------------------------------------
+    // Pattern per sezione (molto più presenti)
+    // ------------------------------------------------------------
+    function shouldPlay(section, stepInMeasure) {
+
+        // Sempre su 1
+        if (stepInMeasure === 0) return true;
+
+        // Chorus → suona quasi sempre
+        if (section === "chorus") return stepInMeasure % 1 === 0;
+
+        // Verse → suona ogni 8n
+        if (section === "verse") return stepInMeasure % 2 === 0;
+
+        // Solo → groove libero
+        if (section === "solo") return stepInMeasure % 2 === 0 || rand() < 0.3;
+
+        // Intro/outro → più semplice
+        if (section === "intro" || section === "outro") return stepInMeasure % 2 === 0;
+
         return false;
     }
 
@@ -62,21 +67,27 @@ export function createBassEngine(analysis, params, riffData, rand) {
         const chord = riffData.chordTimeline[idx];
         const section = riffData.sectionTimeline[idx];
 
+        const stepInMeasure = idx % beatsPerMeasure;
+
         if (!chord) return;
 
-        const root = chord[0]; // fondamentale dell’accordo
+        // Fondamentale dell’accordo, un’ottava sotto
+        const root = chord[0];
         const rootMidi = Tone.Frequency(root).toMidi();
-        const bassNote = Tone.Frequency(rootMidi - 12, "midi").toNote(); // un'ottava sotto
+        const bassNote = Tone.Frequency(rootMidi - 12, "midi").toNote();
 
         const clamped = clamp(bassNote);
 
-        const stepInMeasure = idx % beatsPerMeasure;
-
+        // Densità per sezione
         const density = getBassDensity(section);
+
+        // Non suonare troppo poco
         if (rand() > density) return;
 
-        if (!getBassPattern(section, stepInMeasure)) return;
+        // Pattern ritmico
+        if (!shouldPlay(section, stepInMeasure)) return;
 
-        bass.triggerAttackRelease(clamped, "4n", time);
+        // Suona
+        bass.triggerAttackRelease(clamped, "8n", time);
     };
 }
