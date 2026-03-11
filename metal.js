@@ -13,6 +13,7 @@ import {
 } from "./common.js";
 
 import { analyzeImage } from "./imageAnalysis.js";
+import { photoToMusicParams } from "./photoToMusicParams.js";
 import { generateMetalRiff } from "./metalRiff.js";
 import { createBassEngine } from "./metalBass.js";
 import { createLeadEngine } from "./metalLead.js";
@@ -25,23 +26,28 @@ import { detectMetalStyle } from "./metalTheory.js";
 
 export async function createMetalEngineFromImage(previewImage) {
 
-    // Analisi immagine completa
+    // 1) Analisi immagine completa
     const analysis = await analyzeImage(previewImage);
     console.log("ANALYSIS:", analysis);
 
+    // 2) Parametri musicali derivati dalla foto (usa analysis, NON l’immagine)
+    const params = photoToMusicParams(analysis);
+    console.log("MUSIC PARAMS:", params);
+
+    // 3) Stile metal (può restare)
     const style = detectMetalStyle(analysis.brightness, analysis.entropy);
-analysis.style = style;
+    analysis.style = style;
 
-
-    // Seed deterministico
+    // 4) Seed deterministico
     const dna = Math.floor(analysis.brightness * 1000000);
     const rand = createSeededRandom(dna);
 
-    // Crea engine completo
-    const engine = await createMetalSongFromAnalysis(analysis, rand);
+    // 5) Crea engine completo
+    const engine = await createMetalSongFromAnalysis(analysis, params, rand);
 
     return engine;
 }
+
 
 // ======================================================
 // 2) LOADER STRUMENTI
@@ -74,47 +80,56 @@ export async function waitInstrumentsWithProgress() {
 // 3) ENGINE COMPLETO
 // ======================================================
 
-export async function createMetalSongFromAnalysis(analysis, rand) {
+export async function createMetalSongFromAnalysis(analysis, params, rand) {
 
     await Tone.loaded();
 
-    // BPM dalla luminosità + edges
-    const bpm = 90 + analysis.brightness * 40 + analysis.edges * 30;
-    Tone.Transport.bpm.value = bpm;
+    // BPM dalla foto
+    Tone.Transport.bpm.value = params.bpm;
 
-    // Durata fissa (per ora)
-    const totalDuration = 120; // 2 minuti
+    // Calcolo durata
+    const totalMeasures =
+        params.measures.intro +
+        params.measures.verse +
+        params.measures.chorus +
+        params.measures.solo +
+        params.measures.outro;
+
+    const beatsPerMeasure = (params.timeSignature === "6/8") ? 6 : 4;
+
+    const totalDuration = (totalMeasures * beatsPerMeasure) * (60 / params.bpm);
 
     // Crea engine modulari
-    const riffEngine = generateMetalRiff(analysis, rand);
-    const bassEngine = createBassEngine(analysis, rand);
-    const leadEngine = createLeadEngine(analysis, rand);
-    const drumEngine = createDrumEngine(analysis, rand);
+    const riff = generateMetalRiff(analysis, params, rand);
+const riffEngine = riff.engine;
+const riffData = riff.data;
+
+const bassEngine = createBassEngine(analysis, params, riffData, rand);
+const leadEngine = createLeadEngine(analysis, params, riffData, rand);
+const drumEngine = createDrumEngine(analysis, params, riffData, rand);
+
 
     // Schedula loop
     let riffStep = 0;
-let bassStep = 0;
-let leadStep = 0;
-let drumStep = 0;
+    let bassStep = 0;
+    let leadStep = 0;
+    let drumStep = 0;
 
-const riffLoop = new Tone.Loop((time) => {
-    riffEngine(time, riffStep++);
-}, "8n");
+    const riffLoop = new Tone.Loop((time) => {
+        riffEngine(time, riffStep++);
+    }, "8n");
 
-const bassLoop = new Tone.Loop((time) => {
-    bassEngine(time, bassStep++);
-}, "8n");
+    const bassLoop = new Tone.Loop((time) => {
+        bassEngine(time, bassStep++);
+    }, "8n");
 
-const leadLoop = new Tone.Loop((time) => {
-    leadEngine(time, leadStep++);
-}, "8n");
+    const leadLoop = new Tone.Loop((time) => {
+        leadEngine(time, leadStep++);
+    }, "8n");
 
-const drumLoop = new Tone.Loop((time) => {
-    drumEngine(time, drumStep++);
-}, "16n");
-
-
-
+    const drumLoop = new Tone.Loop((time) => {
+        drumEngine(time, drumStep++);
+    }, "16n");
 
     function play() {
         riffLoop.start(0);
@@ -134,13 +149,12 @@ const drumLoop = new Tone.Loop((time) => {
     }
 
     function stop() {
-    riffLoop.stop();
-bassLoop.stop();
-leadLoop.stop();
-drumLoop.stop();
+        riffLoop.stop();
+        bassLoop.stop();
+        leadLoop.stop();
+        drumLoop.stop();
 
         Tone.Transport.stop();
-        
         Tone.Transport.position = 0;
     }
 

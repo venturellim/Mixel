@@ -1,41 +1,82 @@
-// metalBass.js — nuovo engine basso per Tone.js 15
-// Range sicuro: C1–C2 (24–36 MIDI)
+// metalBass.js — basso coerente con riffData, sezioni e accordi
 
 import { bass } from "./common.js";
-import { clampNote, pickFromScale } from "./common.js";
+import * as Tone from "https://esm.sh/tone";
 
-export function createBassEngine(analysis, rand) {
+export function createBassEngine(analysis, params, riffData, rand) {
 
-    const scale = analysis.scale;
-    const root = analysis.key; // <-- FIX QUI
-    const brightness = analysis.brightness;
-    const entropy = analysis.entropy;
+    const beatsPerMeasure = riffData.beatsPerMeasure;
+    const totalSteps = riffData.totalSteps;
 
+    const rhythm = params.rhythm;
+    const scale = params.scale;
+
+    const MIN = 24; // C1
+    const MAX = 36; // C2
     const octave = 1;
-    const MIN = 24;
-    const MAX = 36;
 
-    const activity = 1 + Math.floor((1 - brightness) * 3);
-    const variety = 1 + Math.floor(entropy * 3);
+    // ------------------------------------------------------------
+    // Utility: clamp nota
+    // ------------------------------------------------------------
+    function clamp(note) {
+        const midi = Tone.Frequency(note).toMidi();
+        const clamped = Math.max(MIN, Math.min(MAX, midi));
+        return Tone.Frequency(clamped, "midi").toNote();
+    }
 
-    return function(time, step) {
+    // ------------------------------------------------------------
+    // Pattern per sezione
+    // ------------------------------------------------------------
+    function getBassDensity(section) {
+        if (section === "intro")  return 0.3 * rhythm.attack;
+        if (section === "verse")  return 0.5 * rhythm.attack;
+        if (section === "chorus") return 0.8 * rhythm.attack;
+        if (section === "solo")   return 0.4 * rhythm.attack;
+        if (section === "outro")  return 0.2 * rhythm.attack;
+        return 0.5;
+    }
 
-        if (step % activity !== 0) return;
-
-        let note;
-        if (rand() < 0.7) {
-            note = root; // "G"
-        } else {
-            note = pickFromScale(scale, step + Math.floor(rand() * variety));
+    function getBassPattern(section, stepInMeasure) {
+        if (section === "chorus") {
+            return stepInMeasure % 1 === 0; // ogni battito
         }
+        if (section === "verse") {
+            return stepInMeasure % 2 === 0; // metà densità
+        }
+        if (section === "intro" || section === "outro") {
+            return stepInMeasure === 0; // solo accento forte
+        }
+        if (section === "solo") {
+            return stepInMeasure % 3 === 0; // groove più libero
+        }
+        return false;
+    }
 
-        if (!note) return;
+    // ------------------------------------------------------------
+    // ENGINE ritornato a metal.js
+    // ------------------------------------------------------------
+    return function bassEngine(time, step) {
 
-        const fullNote = note + octave; // "G1"
-        const clamped = clampNote(fullNote, MIN, MAX);
-        if (!clamped) return;
+        const idx = step % totalSteps;
 
-console.log("BASS STEP", step);
+        const chord = riffData.chordTimeline[idx];
+        const section = riffData.sectionTimeline[idx];
+
+        if (!chord) return;
+
+        const root = chord[0]; // fondamentale dell’accordo
+        const rootMidi = Tone.Frequency(root).toMidi();
+        const bassNote = Tone.Frequency(rootMidi - 12, "midi").toNote(); // un'ottava sotto
+
+        const clamped = clamp(bassNote);
+
+        const stepInMeasure = idx % beatsPerMeasure;
+
+        const density = getBassDensity(section);
+        if (rand() > density) return;
+
+        if (!getBassPattern(section, stepInMeasure)) return;
+
         bass.triggerAttackRelease(clamped, "4n", time);
     };
 }

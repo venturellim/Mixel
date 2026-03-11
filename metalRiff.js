@@ -1,96 +1,39 @@
+// metalRiff.js — versione sezionale con spartito completo per basso/lead/drums
+
 import * as Tone from "https://esm.sh/tone";
-import { clampNote, pickFromScale, guitarPalm, guitarOpen } from "./common.js";
+import { guitarPalm, guitarOpen, clampNote } from "./common.js";
 
-export function generateMetalRiff(analysis, rand) {
+export function generateMetalRiff(analysis, params, rand) {
 
-    // ============================
-    // SCALA E PARAMETRI DI BASE
-    // ============================
-    let scale = analysis.scale;
-    if (!scale || !Array.isArray(scale) || scale.length === 0) {
-        console.warn("⚠️ SCALA VUOTA — fallback C minor");
-        scale = ["C", "D", "Eb", "F", "G", "Ab", "Bb"];
-    }
+    const scale = params.scale;
+    const key = params.key;
 
-    const texture = analysis.texture;
-    const entropy = analysis.entropy;
-    const symmetry = analysis.symmetry;
-    const contrast = analysis.contrast ?? 0.5;
+    const timeSig = params.timeSignature; // "4/4" o "6/8"
+    const beatsPerMeasure = (timeSig === "6/8") ? 6 : 4;
 
-    const length = 16;
-    const riff = [];
+    const measures = params.measures;
+    const rhythm = params.rhythm;
 
+    const MIN = 36; // C2
+    const MAX = 52; // E3
     const octave = 2;
-    const MIN = 36;
-    const MAX = 48;
 
-    const density = 1 + Math.floor(texture * 3);
-    const melodicVariety = 1 + Math.floor(entropy * 3);
-    const patternType = Math.floor(symmetry * 3);
-
-    // ============================
-    // FUNZIONI PER IL RIFF
-    // ============================
-    function chooseNote(step) {
-        if (rand() < 0.7) {
-            const idx = step + Math.floor(rand() * melodicVariety);
-            return pickFromScale(scale, idx) || null;
+    // ------------------------------------------------------------
+    // Utility: suona un accordo usando note singole
+    // ------------------------------------------------------------
+    function playChord(sampler, chordNotes, dur, time) {
+        for (const n of chordNotes) {
+            sampler.triggerAttackRelease(n, dur, time);
         }
-        return scale[Math.floor(rand() * scale.length)] || null;
     }
 
-    function applyPattern(step, note) {
-        if (!note) return null;
-        if (patternType === 0) return scale[0] || note;
-        if (patternType === 1) return (step % 2 === 0) ? (scale[0] || note) : note;
-        if (patternType === 2) {
-            if (step % 4 === 0) return scale[0] || note;
-            if (step % 4 === 1) return scale[0] || note;
-            if (step % 4 === 2) return note;
-            return scale[0] || note;
-        }
-        return note;
-    }
-
-    // ============================
-    // GENERAZIONE RIFF
-    // ============================
-    for (let i = 0; i < length; i++) {
-
-        if (i % (4 - density) !== 0) {
-            riff.push(null);
-            continue;
-        }
-
-        let note = chooseNote(i);
-        if (!note) {
-            riff.push(null);
-            continue;
-        }
-
-        note = applyPattern(i, note);
-        if (!note) {
-            riff.push(null);
-            continue;
-        }
-
-        const fullNote = note + octave;
-        if (typeof fullNote !== "string") {
-            riff.push(null);
-            continue;
-        }
-
-        const clamped = clampNote(fullNote, MIN, MAX);
-        riff.push(clamped);
-    }
-
-    // ============================
-    // ACCORDI (power / major / minor)
-    // ============================
-    function buildChord(root, type) {
+    // ------------------------------------------------------------
+    // Costruzione accordi
+    // ------------------------------------------------------------
+    function buildChord(root) {
         const rootMidi = Tone.Frequency(root).toMidi();
 
-        if (type === "power") {
+        if (analysis.energy > 0.6) {
             return [
                 root,
                 Tone.Frequency(rootMidi + 7, "midi").toNote(),
@@ -98,7 +41,7 @@ export function generateMetalRiff(analysis, rand) {
             ];
         }
 
-        if (type === "major") {
+        if (analysis.brightness > 0.6) {
             return [
                 root,
                 Tone.Frequency(rootMidi + 4, "midi").toNote(),
@@ -106,66 +49,115 @@ export function generateMetalRiff(analysis, rand) {
             ];
         }
 
-        if (type === "minor") {
-            return [
-                root,
-                Tone.Frequency(rootMidi + 3, "midi").toNote(),
-                Tone.Frequency(rootMidi + 7, "midi").toNote()
-            ];
+        return [
+            root,
+            Tone.Frequency(rootMidi + 3, "midi").toNote(),
+            Tone.Frequency(rootMidi + 7, "midi").toNote()
+        ];
+    }
+
+    function pickSound() {
+        return rhythm.palmMute ? guitarPalm : guitarOpen;
+    }
+
+    // ------------------------------------------------------------
+    // Generazione note per sezione
+    // ------------------------------------------------------------
+    function chooseNote(density) {
+        if (rand() > density) return null;
+        const idx = Math.floor(rand() * scale.length);
+        return scale[idx] + octave;
+    }
+
+    function generateSectionRiff(sectionName, sectionMeasures, densityFactor) {
+        const totalSteps = sectionMeasures * beatsPerMeasure;
+        const notes = [];
+        const sections = [];
+
+        for (let i = 0; i < totalSteps; i++) {
+            const density = densityFactor * rhythm.attack;
+            const note = chooseNote(density);
+            const clamped = note ? clampNote(note, MIN, MAX) : null;
+
+            notes.push(clamped);
+            sections.push(sectionName);
         }
+
+        return { notes, sections };
     }
 
-    function chooseChordType(analysis) {
-        if (analysis.energy > 0.6) return "power";
-        if (analysis.brightness > 0.6) return "major";
-        return "minor";
+    const intro  = generateSectionRiff("intro",  measures.intro,  0.3);
+    const verse  = generateSectionRiff("verse",  measures.verse,  0.5);
+    const chorus = generateSectionRiff("chorus", measures.chorus, 0.8);
+    const solo   = generateSectionRiff("solo",   measures.solo,   0.4);
+    const outro  = generateSectionRiff("outro",  measures.outro,  0.2);
+
+    // ------------------------------------------------------------
+    // Timeline completa
+    // ------------------------------------------------------------
+    const fullRiff = [
+        ...intro.notes,
+        ...verse.notes,
+        ...chorus.notes,
+        ...solo.notes,
+        ...chorus.notes,
+        ...outro.notes
+    ];
+
+    const sectionTimeline = [
+        ...intro.sections,
+        ...verse.sections,
+        ...chorus.sections,
+        ...solo.sections,
+        ...chorus.sections,
+        ...outro.sections
+    ];
+
+    const totalSteps = fullRiff.length;
+
+    // ------------------------------------------------------------
+    // Progressione armonica coerente
+    // ------------------------------------------------------------
+    const chordRoots = [
+        scale[0] + octave,
+        scale[5 % scale.length] + octave,
+        scale[6 % scale.length] + octave,
+        scale[4 % scale.length] + octave
+    ];
+
+    const chordTimeline = [];
+    for (let i = 0; i < totalSteps; i++) {
+        const chordIndex = Math.floor(i / beatsPerMeasure) % chordRoots.length;
+        const chord = buildChord(chordRoots[chordIndex]);
+        chordTimeline.push(chord);
     }
 
-    // ============================
-    // PROGRESSIONE ARMONICA
-    // ============================
-    function generateChordProgression(scale, analysis, rand) {
-        const degrees = [0, 3, 4, 5, 2, 1]; // tonica, minore, maggiore, subdominante, dorico, frigio
-        const progression = [];
+    // ------------------------------------------------------------
+    // ENGINE ritornato a metal.js
+    // ------------------------------------------------------------
+    function riffEngine(time, step) {
 
-        for (let i = 0; i < 4; i++) {
-            const degree = degrees[Math.floor(rand() * degrees.length)];
-            const root = scale[degree] + "2";
-            progression.push(root);
-        }
-
-        return progression;
-    }
-
-    const chordProgression = generateChordProgression(scale, analysis, rand);
-
-    // Durata armonica scelta dalla foto:
-    // Foto luminosa → progressione veloce (4 step)
-    // Foto scura → progressione lenta (8 step)
-    const chordLength = (analysis.brightness > 0.5) ? 4 : 8;
-
-    // ============================
-    // RIFF ENGINE (ritorna a metal.js)
-    // ============================
-    return function riffEngine(time, step) {
-
-        const note = riff[step % riff.length];
+        const idx = step % totalSteps;
+        const note = fullRiff[idx];
         if (!note) return;
 
-        // Scegli accordo dalla progressione
-        const chordRoot = chordProgression[Math.floor(step / chordLength) % chordProgression.length];
+        const chord = chordTimeline[idx];
+        const sound = pickSound();
 
-        // Tipo di accordo basato sull’immagine
-        const chordType = chooseChordType(analysis);
+        playChord(sound, chord, "4n", time);
+    }
 
-        // Costruzione accordo
-        const chord = buildChord(chordRoot, chordType);
-
-        // Palm/open + sustain lungo
-        if (rand() < contrast) {
-            guitarPalm.triggerAttackRelease(chord, "4n", time);
-        } else {
-            guitarOpen.triggerAttackRelease(chord, "4n", time);
+    // ------------------------------------------------------------
+    // Ritorno: engine + spartito completo
+    // ------------------------------------------------------------
+    return {
+        engine: riffEngine,
+        data: {
+            fullRiff,
+            chordTimeline,
+            sectionTimeline,
+            beatsPerMeasure,
+            totalSteps
         }
     };
 }

@@ -1,63 +1,97 @@
-import { guitarLead } from "./common.js";
-import { clampNote, pickFromScale } from "./common.js";
+// metalLead.js — lead melodica, sezionale, coerente con riffData
 
+import * as Tone from "https://esm.sh/tone";
+import { guitarLead, clampNote } from "./common.js";
 
-export function createLeadEngine(analysis, rand) {
+export function createLeadEngine(analysis, params, riffData, rand) {
 
-    const scale = analysis.scale;
-    const root = analysis.key; // FIX: usa la tonica
-    const entropy = analysis.entropy;
-    const edges = analysis.edges;
-    const texture = analysis.texture;
-    const brightness = analysis.brightness;
-    const symmetry = analysis.symmetry;
+    const scale = params.scale;
+    const lead = params.lead;
+
+    const beatsPerMeasure = riffData.beatsPerMeasure;
+    const totalSteps = riffData.totalSteps;
 
     const MIN = 48; // C3
     const MAX = 84; // C6
 
-    const baseOctave = 3 + Math.floor(entropy * 1.5); // C3–C4–C5
-    const speed = 1 + Math.floor(edges * 3);
-    const variety = 1 + Math.floor(texture * 3);
-    const patternType = Math.floor(symmetry * 3);
-
-    function applyPattern(step, note) {
-        if (!note) return null;
-
-        if (patternType === 0) {
-            return pickFromScale(scale, step % scale.length);
-        }
-        if (patternType === 1) {
-            return (step % 2 === 0)
-                ? note
-                : pickFromScale(scale, step + 1);
-        }
-        if (patternType === 2) {
-            const idx = (step + Math.floor(rand() * variety)) % scale.length;
-            return scale[idx];
-        }
+    // ------------------------------------------------------------
+    // Utility: scegli una nota dalla scala
+    // ------------------------------------------------------------
+    function pickScaleNote(rootMidi, interval = 0) {
+        const note = Tone.Frequency(rootMidi + interval, "midi").toNote();
         return note;
     }
 
-    return function(time, step) {
+    // ------------------------------------------------------------
+    // Genera una frase melodica per sezione
+    // ------------------------------------------------------------
+    function generatePhrase(section, chord, stepInMeasure) {
 
-        if (step % speed !== 0) return;
-        if (rand() > entropy) return;
+        const root = chord[0];
+        const rootMidi = Tone.Frequency(root).toMidi();
 
-        let note = pickFromScale(scale, step + Math.floor(rand() * variety));
+        // Range melodico
+        const baseOct = 3 + Math.floor(lead.range * 2); // C3–C5
+        const baseMidi = Tone.Frequency(scale[0] + baseOct).toMidi();
+
+        // Densità
+        if (rand() > lead.density) return null;
+
+        // Evita di suonare sopra i vuoti del riff
+        if (!riffData.fullRiff[stepInMeasure]) {
+            if (rand() < 0.4) return null;
+        }
+
+        // Pattern per sezione
+        let interval = 0;
+
+        if (section === "intro") {
+            interval = (rand() < 0.5) ? 0 : 2;
+        }
+
+        if (section === "verse") {
+            interval = (rand() < 0.5) ? 2 : 4;
+        }
+
+        if (section === "chorus") {
+            interval = (rand() < 0.5) ? 4 : 7;
+        }
+
+        if (section === "solo") {
+            interval = Math.floor(rand() * 12) - 6; // fraseggio libero
+        }
+
+        if (section === "outro") {
+            interval = (rand() < 0.5) ? 0 : -2;
+        }
+
+        // Slope (ascendente/discendente)
+        interval += Math.floor(lead.slope * 3);
+
+        const noteMidi = baseMidi + interval;
+        const clampedMidi = Math.max(MIN, Math.min(MAX, noteMidi));
+
+        return Tone.Frequency(clampedMidi, "midi").toNote();
+    }
+
+    // ------------------------------------------------------------
+    // ENGINE ritornato a metal.js
+    // ------------------------------------------------------------
+    return function leadEngine(time, step) {
+
+        const idx = step % totalSteps;
+
+        const chord = riffData.chordTimeline[idx];
+        const section = riffData.sectionTimeline[idx];
+
+        const stepInMeasure = idx % beatsPerMeasure;
+
+        // Non suonare troppo spesso
+        if (rand() > lead.density) return;
+
+        const note = generatePhrase(section, chord, stepInMeasure);
         if (!note) return;
 
-        note = applyPattern(step, note);
-        if (!note) return;
-
-        let octave = baseOctave;
-        if (rand() < brightness * 0.3) octave++;
-
-        const fullNote = note + octave;
-        const clamped = clampNote(fullNote, MIN, MAX);
-        if (!clamped) return;
-
-        console.log("LEAD STEP", step);
-        guitarLead.triggerAttackRelease(clamped, "8n", time);
+        guitarLead.triggerAttackRelease(note, "8n", time);
     };
-    
 }

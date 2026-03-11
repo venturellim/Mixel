@@ -1,174 +1,144 @@
-// drumsEngine.js — versione moderna per Tone.js 15
+// metalDrums.js — batteria sincronizzata con riffData, sezioni e timeSignature
+
 import { drums } from "./common.js";
 import * as Tone from "https://esm.sh/tone";
 
-// -------------------------------------------------------------
-// Utility
-// -------------------------------------------------------------
-function seededRand(seed) {
-    seed = (seed * 1664525 + 1013904223) % 4294967296;
-    return seed / 4294967296;
-}
+export function createDrumEngine(analysis, params, riffData, rand) {
 
-function humanize(time, amount = 0.005) {
-    return time + (Math.random() * amount - amount / 2);
-}
+    const beatsPerMeasure = riffData.beatsPerMeasure;
+    const totalSteps = riffData.totalSteps;
 
-// -------------------------------------------------------------
-// Pattern base per stile (1 misura = 16 step)
-// -------------------------------------------------------------
-function getBasePattern(style, params) {
-    const energy = params.energy;
-    const brightness = params.brightness;
+    const energy = analysis.energy;
+    const brightness = analysis.brightness;
+    const texture = analysis.texture;
+    const entropy = analysis.entropy;
 
-    if (style === "thrash") {
-        return {
-            kickDensity: 0.6 + energy * 0.4,
-            snareBeats: [4, 12],
-            cymbal: "ride",
-            cymbalRate: "16n"
-        };
+    // ------------------------------------------------------------
+    // Pattern per sezione
+    // ------------------------------------------------------------
+    function getKickDensity(section) {
+        if (section === "intro")  return 0.2 + energy * 0.2;
+        if (section === "verse")  return 0.4 + energy * 0.3;
+        if (section === "chorus") return 0.6 + energy * 0.4;
+        if (section === "solo")   return 0.3 + energy * 0.3;
+        if (section === "outro")  return 0.15 + energy * 0.2;
+        return 0.4;
     }
 
-    if (style === "power") {
-        return {
-            kickDensity: 0.4 + energy * 0.3,
-            snareBeats: [4, 12],
-            cymbal: brightness > 0.75 ? "openhat" : "ride",
-            cymbalRate: "8n"
-        };
-    }
-
-    if (style === "doom") {
-        return {
-            kickDensity: 0.15 + energy * 0.2,
-            snareBeats: [8],
-            cymbal: "ride",
-            cymbalRate: "4n"
-        };
-    }
-
-    // heavy default
-    return {
-        kickDensity: 0.3 + energy * 0.3,
-        snareBeats: [4, 12],
-        cymbal: "hihat",
-        cymbalRate: "8n"
-    };
-}
-
-// -------------------------------------------------------------
-// Genera una misura di 16 step
-// -------------------------------------------------------------
-function generateMeasure(style, params, seed) {
-    const base = getBasePattern(style, params);
-    const events = Array.from({ length: 16 }, () => []);
-
-    // Kick
-    for (let step = 0; step < 16; step++) {
-        const r = seededRand(seed + step);
-        if (r < base.kickDensity) {
-            events[step].push("kick");
+    function getSnareBeats(section) {
+        if (beatsPerMeasure === 6) {
+            // 6/8 → accenti su 3 e 6
+            return [2, 5];
         }
+        // 4/4 → accenti su 2 e 4
+        return [1, 3];
     }
 
-    // Snare
-    for (let s of base.snareBeats) {
-        events[s].push("snare");
+    function getCymbal(section) {
+        if (section === "chorus") return brightness > 0.6 ? "openhat" : "ride";
+        if (section === "verse")  return "hihat";
+        if (section === "intro")  return "ride";
+        if (section === "solo")   return "ride";
+        if (section === "outro")  return "hihat";
+        return "hihat";
     }
 
-    // Ghost notes
-    if (params.texture > 0.4) {
-        for (let step = 1; step < 16; step += 4) {
-            const r = seededRand(seed + step * 2);
-            if (r < params.texture) {
-                events[step].push("ghost");
-            }
+    function getCymbalRate(section) {
+        if (section === "chorus") return "8n";
+        if (section === "verse")  return "8n";
+        if (section === "intro")  return "4n";
+        if (section === "solo")   return "8n";
+        if (section === "outro")  return "4n";
+        return "8n";
+    }
+
+    // ------------------------------------------------------------
+    // Fill generator
+    // ------------------------------------------------------------
+    function generateFill(stepInMeasure) {
+        const events = [];
+
+        if (entropy < 0.3) {
+            if (stepInMeasure === beatsPerMeasure - 2) events.push("snare");
+            if (stepInMeasure === beatsPerMeasure - 1) events.push("crash1");
+            return events;
         }
-    }
 
-    // Cymbal pattern
-    const cym = base.cymbal;
-    const rate = base.cymbalRate;
+        if (entropy < 0.6) {
+            if (stepInMeasure === beatsPerMeasure - 4) events.push("tom2");
+            if (stepInMeasure === beatsPerMeasure - 3) events.push("tom3");
+            if (stepInMeasure === beatsPerMeasure - 1) events.push("crash2");
+            return events;
+        }
 
-    if (rate === "16n") {
-        for (let i = 0; i < 16; i++) events[i].push(cym);
-    } else if (rate === "8n") {
-        for (let i = 0; i < 8; i++) events[i * 2].push(cym);
-    } else if (rate === "4n") {
-        for (let i = 0; i < 4; i++) events[i * 4].push(cym);
-    }
+        if (stepInMeasure === beatsPerMeasure - 6) events.push("tom1");
+        if (stepInMeasure === beatsPerMeasure - 5) events.push("tom2");
+        if (stepInMeasure === beatsPerMeasure - 3) events.push("tom3");
+        if (stepInMeasure === beatsPerMeasure - 2) events.push("tom4");
+        if (stepInMeasure === beatsPerMeasure - 1) events.push("china");
 
-    return events;
-}
-
-// -------------------------------------------------------------
-// Fill generator (1 misura)
-// -------------------------------------------------------------
-function generateFill(params, seed) {
-    const complexity = params.entropy;
-    const events = Array.from({ length: 16 }, () => []);
-
-    if (complexity < 0.3) {
-        events[14].push("snare");
-        events[15].push("crash1");
         return events;
     }
 
-    if (complexity < 0.6) {
-        events[10].push("tom2");
-        events[11].push("tom3");
-        events[14].push("snare");
-        events[15].push("crash2");
-        return events;
-    }
+    // ------------------------------------------------------------
+    // ENGINE ritornato a metal.js
+    // ------------------------------------------------------------
+    return function drumEngine(time, step) {
 
-    events[6].push("tom1");
-    events[7].push("tom2");
-    events[10].push("tom3");
-    events[11].push("tom4");
-    events[14].push("snare");
-    events[15].push("china");
-    return events;
-}
+        const idx = step % totalSteps;
 
-// -------------------------------------------------------------
-// Drum Engine continuo (step-based)
-// -------------------------------------------------------------
-export function createDrumEngine(analysis, rand) {
-    const style = analysis.style || "heavy";
-    let seed = Math.floor(analysis.brightness * 1000000);
+        const section = riffData.sectionTimeline[idx];
+        const chord = riffData.chordTimeline[idx];
 
-    let currentMeasure = generateMeasure(style, analysis, seed);
-    let nextMeasure = generateMeasure(style, analysis, seed + 999);
+        const stepInMeasure = idx % beatsPerMeasure;
 
-    let step = 0;
-    let measureCount = 0;
+        const kickDensity = getKickDensity(section);
+        const snareBeats = getSnareBeats(section);
+        const cymbal = getCymbal(section);
+        const cymbalRate = getCymbalRate(section);
 
-    return function(time, globalStep) {
-
-        const events = currentMeasure[step];
-
-        // Suona gli eventi dello step
-        for (let sample of events) {
-            drums.player(sample).start(humanize(time), 0, 1);
+        // --------------------------------------------------------
+        // Kick
+        // --------------------------------------------------------
+        if (rand() < kickDensity) {
+            drums.player("kick").start(time);
         }
 
-        step++;
+        // --------------------------------------------------------
+        // Snare
+        // --------------------------------------------------------
+        if (snareBeats.includes(stepInMeasure)) {
+            drums.player("snare").start(time);
+        }
 
-        // Fine misura → passa alla successiva
-        if (step >= 16) {
-            step = 0;
-            measureCount++;
-
-            // Ogni 4 misure → fill
-            if (measureCount % 4 === 0) {
-                currentMeasure = generateFill(analysis, seed + measureCount * 1234);
-            } else {
-                currentMeasure = nextMeasure;
+        // --------------------------------------------------------
+        // Ghost notes (texture)
+        // --------------------------------------------------------
+        if (texture > 0.4 && rand() < texture * 0.3) {
+            if (!snareBeats.includes(stepInMeasure)) {
+                drums.player("ghost").start(time);
             }
+        }
 
-            nextMeasure = generateMeasure(style, analysis, seed + measureCount * 999);
+        // --------------------------------------------------------
+        // Cymbals
+        // --------------------------------------------------------
+        if (cymbalRate === "16n") {
+            drums.player(cymbal).start(time);
+        } else if (cymbalRate === "8n" && stepInMeasure % 2 === 0) {
+            drums.player(cymbal).start(time);
+        } else if (cymbalRate === "4n" && stepInMeasure === 0) {
+            drums.player(cymbal).start(time);
+        }
+
+        // --------------------------------------------------------
+        // Fill at end of measure
+        // --------------------------------------------------------
+        if (stepInMeasure >= beatsPerMeasure - 6) {
+            const fillEvents = generateFill(stepInMeasure);
+            for (const f of fillEvents) {
+                drums.player(f).start(time);
+            }
         }
     };
 }
