@@ -1,26 +1,32 @@
-// metalRiff.js — riff principale con palm mute realistico per pezzi veloci
+// metalRiff.js — versione con palm mute realistici, compatibile con il tuo sistema
 
 import * as Tone from "https://esm.sh/tone";
-import { guitarPalm, guitarOpen } from "./common.js";
+import { guitarPalm, guitarOpen, clampNote } from "./common.js";
 
-export function generateMetalRiff(analysis, params, riffData, rand) {
+export function generateMetalRiff(analysis, params, rand) {
 
-    const beatsPerMeasure = riffData.beatsPerMeasure;
-    const totalSteps = riffData.totalSteps;
+    const scale = params.scale;
+    const key = params.key;
 
-    // Stato palm mute
+    const timeSig = params.timeSignature;
+    const beatsPerMeasure = (timeSig === "6/8") ? 6 : 4;
+
+    const measures = params.measures;
+    const rhythm = params.rhythm;
+
+    const MIN = 36; // C2
+    const MAX = 52; // E3
+    const octave = 2;
+
+    // ------------------------------------------------------------
+    // Palm mute state
+    // ------------------------------------------------------------
     let palmMuteActive = false;
     let palmMuteMeasuresLeft = 0;
 
-    // ------------------------------------------------------------
-    // Decide se iniziare un blocco di palm mute
-    // ------------------------------------------------------------
     function maybeStartPalmMute(section) {
-
-        // niente palm nell’intro
         if (section === "intro") return;
 
-        // probabilità diversa per sezione
         const prob =
             section === "verse"  ? 0.25 :
             section === "chorus" ? 0.40 :
@@ -29,112 +35,178 @@ export function generateMetalRiff(analysis, params, riffData, rand) {
 
         if (!palmMuteActive && rand() < prob) {
             palmMuteActive = true;
-            // blocco di 2–4 misure
-            palmMuteMeasuresLeft = 2 + Math.floor(rand() * 3);
+            palmMuteMeasuresLeft = 2 + Math.floor(rand() * 3); // 2–4 misure
         }
     }
 
-    // ------------------------------------------------------------
-    // Aggiorna stato palm mute a inizio misura
-    // ------------------------------------------------------------
     function updatePalmMuteState(stepInMeasure) {
         if (stepInMeasure === 0 && palmMuteActive) {
             palmMuteMeasuresLeft--;
-            if (palmMuteMeasuresLeft <= 0) {
-                palmMuteActive = false;
-            }
+            if (palmMuteMeasuresLeft <= 0) palmMuteActive = false;
         }
     }
 
     // ------------------------------------------------------------
-    // Scegli se usare palm o open in questo step
+    // Power chord builder
     // ------------------------------------------------------------
-    function pickSoundForStep(section, stepInMeasure) {
-
-        if (palmMuteActive) {
-            // palm denso: almeno 4 per misura, spesso 8
-            if (stepInMeasure % 1 === 0) return "palm";      // ogni 8n
-            if (stepInMeasure % 0.5 === 0 && rand() < 0.5) return "palm"; // alcuni 16n
-            return null;
-        }
-
-        // nessun palm attivo → open
-        // ma non per forza ogni step
-        if (section === "intro") {
-            // intro più ariosa
-            return stepInMeasure === 0 ? "open" : null;
-        }
-
-        if (section === "verse") {
-            return stepInMeasure % 2 === 0 ? "open" : null; // ogni 4n
-        }
-
-        if (section === "chorus") {
-            return stepInMeasure % 1 === 0 ? "open" : null; // ogni 8n
-        }
-
-        if (section === "solo") {
-            return stepInMeasure % 1 === 0 ? "open" : null;
-        }
-
-        if (section === "outro") {
-            return stepInMeasure % 2 === 0 ? "open" : null;
-        }
-
-        return null;
-    }
-
-    // ------------------------------------------------------------
-    // Suona un power chord (root + quinta + opzionale ottava)
-    // ------------------------------------------------------------
-    function triggerPowerChord(time, chord, soundType) {
-
-        if (!chord || chord.length === 0) return;
-
-        const root = chord[0];
+    function buildChord(root) {
         const rootMidi = Tone.Frequency(root).toMidi();
+        return [
+            root,
+            Tone.Frequency(rootMidi + 7, "midi").toNote(),
+            Tone.Frequency(rootMidi + 12, "midi").toNote()
+        ];
+    }
 
-        const fifthMidi = rootMidi + 7;
-        const octaveMidi = rootMidi + 12;
+    // ------------------------------------------------------------
+    // Sezione riff con palm mute realistici
+    // ------------------------------------------------------------
+    function generateSectionRiff(sectionName, sectionMeasures, densityFactor) {
 
-        const rootNote = Tone.Frequency(rootMidi, "midi").toNote();
-        const fifthNote = Tone.Frequency(fifthMidi, "midi").toNote();
-        const octaveNote = Tone.Frequency(octaveMidi, "midi").toNote();
+        const totalSteps = sectionMeasures * beatsPerMeasure;
+        const notes = [];
+        const sections = [];
 
-        const synth = soundType === "palm" ? guitarPalm : guitarOpen;
-        const dur = soundType === "palm" ? "16n" : "8n";
+        for (let i = 0; i < totalSteps; i++) {
 
-        synth.triggerAttackRelease(rootNote, dur, time);
-        synth.triggerAttackRelease(fifthNote, dur, time);
-        if (soundType === "open") {
-            synth.triggerAttackRelease(octaveNote, dur, time);
+            const stepInMeasure = i % beatsPerMeasure;
+
+            // Aggiorna palm mute
+            updatePalmMuteState(stepInMeasure);
+
+            // Possibile inizio blocco palm
+            if (stepInMeasure === 0) {
+                maybeStartPalmMute(sectionName);
+            }
+
+            // Palm mute attivo → pattern denso
+            if (palmMuteActive) {
+
+                if (stepInMeasure % 1 === 0) {
+                    // ogni 8n
+                    const root = scale[0] + octave;
+                    notes.push(clampNote(root, MIN, MAX));
+                }
+                else if (stepInMeasure % 0.5 === 0 && rand() < 0.5) {
+                    // alcuni 16n
+                    const root = scale[0] + octave;
+                    notes.push(clampNote(root, MIN, MAX));
+                }
+                else {
+                    notes.push(null);
+                }
+
+                sections.push(sectionName);
+                continue;
+            }
+
+            // ----------------------------------------------------
+            // OPEN (nessun palm attivo)
+            // ----------------------------------------------------
+
+            // Accento forte su ogni misura
+            if (stepInMeasure === 0) {
+                const root = scale[0] + octave;
+                notes.push(clampNote(root, MIN, MAX));
+                sections.push(sectionName);
+                continue;
+            }
+
+            // Ritmica per sezione
+            let allow =
+                (sectionName === "intro"  && stepInMeasure === 0) ||
+                (sectionName === "verse"  && stepInMeasure % 2 === 0) ||
+                (sectionName === "chorus" && stepInMeasure % 1 === 0) ||
+                (sectionName === "solo"   && stepInMeasure % 1 === 0) ||
+                (sectionName === "outro"  && stepInMeasure % 2 === 0);
+
+            if (allow) {
+                const idx = Math.floor(rand() * scale.length);
+                const note = scale[idx] + octave;
+                notes.push(clampNote(note, MIN, MAX));
+            } else {
+                notes.push(null);
+            }
+
+            sections.push(sectionName);
         }
+
+        return { notes, sections };
+    }
+
+    // ------------------------------------------------------------
+    // Generazione sezioni
+    // ------------------------------------------------------------
+    const intro  = generateSectionRiff("intro",  measures.intro,  0.6);
+    const verse  = generateSectionRiff("verse",  measures.verse,  0.8);
+    const chorus = generateSectionRiff("chorus", measures.chorus, 1.0);
+    const solo   = generateSectionRiff("solo",   measures.solo,   0.7);
+    const outro  = generateSectionRiff("outro",  measures.outro,  0.5);
+
+    // ------------------------------------------------------------
+    // Timeline completa
+    // ------------------------------------------------------------
+    const fullRiff = [
+        ...intro.notes,
+        ...verse.notes,
+        ...chorus.notes,
+        ...solo.notes,
+        ...chorus.notes,
+        ...outro.notes
+    ];
+
+    const sectionTimeline = [
+        ...intro.sections,
+        ...verse.sections,
+        ...chorus.sections,
+        ...solo.sections,
+        ...chorus.sections,
+        ...outro.sections
+    ];
+
+    const totalSteps = fullRiff.length;
+
+    // ------------------------------------------------------------
+    // Progressione armonica coerente
+    // ------------------------------------------------------------
+    const chordRoots = [
+        scale[0] + octave,
+        scale[5 % scale.length] + octave,
+        scale[6 % scale.length] + octave,
+        scale[4 % scale.length] + octave
+    ];
+
+    const chordTimeline = [];
+    for (let i = 0; i < totalSteps; i++) {
+        const chordIndex = Math.floor(i / beatsPerMeasure) % chordRoots.length;
+        const chord = buildChord(chordRoots[chordIndex]);
+        chordTimeline.push(chord);
     }
 
     // ------------------------------------------------------------
     // ENGINE ritornato a metal.js
     // ------------------------------------------------------------
-    return function riffEngine(time, step) {
-
+    function riffEngine(time, step) {
         const idx = step % totalSteps;
+        const note = fullRiff[idx];
+        if (!note) return;
 
-        const chord = riffData.chordTimeline[idx];
-        const section = riffData.sectionTimeline[idx];
+        const chord = chordTimeline[idx];
+        const sound = palmMuteActive ? guitarPalm : guitarOpen;
 
-        const stepInMeasure = idx % beatsPerMeasure;
-
-        // aggiorna stato palm a inizio misura
-        updatePalmMuteState(stepInMeasure);
-
-        // forse inizia un nuovo blocco palm
-        if (stepInMeasure === 0) {
-            maybeStartPalmMute(section);
+        for (const n of chord) {
+            sound.triggerAttackRelease(n, "8n", time);
         }
+    }
 
-        const soundType = pickSoundForStep(section, stepInMeasure);
-        if (!soundType) return;
-
-        triggerPowerChord(time, chord, soundType);
+    return {
+        engine: riffEngine,
+        data: {
+            fullRiff,
+            chordTimeline,
+            sectionTimeline,
+            beatsPerMeasure,
+            totalSteps
+        }
     };
 }
-
