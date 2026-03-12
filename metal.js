@@ -9,7 +9,11 @@ import {
     bass,
     drums,
     masterEQ,
-    createSeededRandom
+    createSeededRandom,
+    leadChorus,
+    leadDelay,
+    leadReverb,
+    guitarRiffReverb
 } from "./common.js";
 
 import { analyzeImage } from "./imageAnalysis.js";
@@ -20,37 +24,144 @@ import { createLeadEngine } from "./metalLead.js";
 import { createDrumEngine } from "./metalDrums.js";
 import { detectMetalStyle } from "./metalTheory.js";
 
+
 // ======================================================
-// 1) ENTRY POINT USATO DA main.js
+// AUTOMAZIONI MIX
 // ======================================================
 
-export async function createMetalEngineFromImage(previewImage) {
+function applyMixAutomation(section) {
 
-    // 1) Analisi immagine completa
-    const analysis = await analyzeImage(previewImage);
-    console.log("ANALYSIS:", analysis);
+    // Lead
+    if (section === "intro")  guitarLead.volume.value = +2;
+    if (section === "verse")  guitarLead.volume.value = +4;
+    if (section === "chorus") guitarLead.volume.value = +6;
+    if (section === "solo")   guitarLead.volume.value = +8;
+    if (section === "outro")  guitarLead.volume.value = +2;
 
-    // 2) Parametri musicali derivati dalla foto (usa analysis, NON l’immagine)
-    const params = photoToMusicParams(analysis);
-    console.log("MUSIC PARAMS:", params);
+    // Riff (open + palm)
+    if (section === "intro")  { guitarOpen.volume.value = -5; guitarPalm.volume.value = -6; }
+    if (section === "verse")  { guitarOpen.volume.value = -4; guitarPalm.volume.value = -5; }
+    if (section === "chorus") { guitarOpen.volume.value = -3; guitarPalm.volume.value = -4; }
+    if (section === "solo")   { guitarOpen.volume.value = -6; guitarPalm.volume.value = -7; }
+    if (section === "outro")  { guitarOpen.volume.value = -5; guitarPalm.volume.value = -6; }
 
-    // 3) Stile metal (può restare)
-    const style = detectMetalStyle(analysis.brightness, analysis.entropy);
-    analysis.style = style;
+    // Batteria
+    if (section === "intro")  drums.volume.value = -12;
+    if (section === "verse")  drums.volume.value = -10;
+    if (section === "chorus") drums.volume.value = -9;
+    if (section === "solo")   drums.volume.value = -9;
+    if (section === "outro")  drums.volume.value = -12;
 
-    // 4) Seed deterministico
-    const dna = Math.floor(analysis.brightness * 1000000);
-    const rand = createSeededRandom(dna);
-
-    // 5) Crea engine completo
-    const engine = await createMetalSongFromAnalysis(analysis, params, rand);
-
-    return engine;
+    // Basso
+    if (section === "intro")  bass.volume.value = -5;
+    if (section === "verse")  bass.volume.value = -4;
+    if (section === "chorus") bass.volume.value = -3;
+    if (section === "solo")   bass.volume.value = -4;
+    if (section === "outro")  bass.volume.value = -5;
 }
 
 
 // ======================================================
-// 2) LOADER STRUMENTI
+// AUTOMAZIONI FX
+// ======================================================
+
+function applyFXAutomation(section) {
+
+    // LEAD FX
+    if (section === "intro") {
+        leadChorus.depth = 0.35;
+        leadChorus.frequency = 3;
+        leadDelay.wet.value = 0.15;
+        leadReverb.wet.value = 0.35;
+    }
+
+    if (section === "verse") {
+        leadChorus.depth = 0.20;
+        leadChorus.frequency = 4;
+        leadDelay.wet.value = 0.10;
+        leadReverb.wet.value = 0.20;
+    }
+
+    if (section === "chorus") {
+        leadChorus.depth = 0.30;
+        leadChorus.frequency = 5;
+        leadDelay.wet.value = 0.25;
+        leadReverb.wet.value = 0.25;
+    }
+
+    if (section === "solo") {
+        leadChorus.depth = 0.40;
+        leadChorus.frequency = 4;
+        leadDelay.wet.value = 0.35;
+        leadReverb.wet.value = 0.30;
+    }
+
+    if (section === "outro") {
+        leadChorus.depth = 0.35;
+        leadChorus.frequency = 3;
+        leadDelay.wet.value = 0.15;
+        leadReverb.wet.value = 0.35;
+    }
+
+    // RITMICA
+    if (section === "intro")  guitarRiffReverb.wet.value = 0.30;
+    if (section === "verse")  guitarRiffReverb.wet.value = 0.20;
+    if (section === "chorus") guitarRiffReverb.wet.value = 0.25;
+    if (section === "solo")   guitarRiffReverb.wet.value = 0.15;
+    if (section === "outro")  guitarRiffReverb.wet.value = 0.30;
+
+    // BATTERIA
+    if (section === "intro") {
+        drums.player("crash1").volume.value = -6;
+        drums.player("ride").volume.value = -6;
+    }
+
+    if (section === "verse") {
+        drums.player("crash1").volume.value = -4;
+        drums.player("ride").volume.value = -4;
+    }
+
+    if (section === "chorus") {
+        drums.player("crash1").volume.value = -2;
+        drums.player("ride").volume.value = -2;
+    }
+
+    if (section === "solo") {
+        drums.player("crash1").volume.value = -3;
+        drums.player("ride").volume.value = -3;
+    }
+
+    if (section === "outro") {
+        drums.player("crash1").volume.value = -6;
+        drums.player("ride").volume.value = -6;
+    }
+}
+
+
+
+// ======================================================
+// ENTRY POINT
+// ======================================================
+
+export async function createMetalEngineFromImage(previewImage) {
+
+    const analysis = await analyzeImage(previewImage);
+    const params = photoToMusicParams(analysis);
+
+    const style = detectMetalStyle(analysis.brightness, analysis.entropy);
+    analysis.style = style;
+
+    const dna = Math.floor(analysis.brightness * 1000000);
+    const rand = createSeededRandom(dna);
+
+    const engine = await createMetalSongFromAnalysis(analysis, params, rand);
+    return engine;
+}
+
+
+
+// ======================================================
+// LOADER STRUMENTI
 // ======================================================
 
 export async function waitInstrumentsWithProgress() {
@@ -61,13 +172,12 @@ export async function waitInstrumentsWithProgress() {
 
     overlay.style.display = "flex";
 
-    const total = 4; // palm, open, lead, bass
+    const total = 4;
 
     while (window.__samplerLoadedCount < total) {
         const percent = Math.floor((window.__samplerLoadedCount / total) * 100);
         bar.style.width = percent + "%";
         text.innerText = "Caricamento strumenti… " + percent + "%";
-
         await new Promise(res => setTimeout(res, 100));
     }
 
@@ -77,17 +187,15 @@ export async function waitInstrumentsWithProgress() {
 
 
 // ======================================================
-// 3) ENGINE COMPLETO
+// ENGINE COMPLETO
 // ======================================================
 
 export async function createMetalSongFromAnalysis(analysis, params, rand) {
 
     await Tone.loaded();
 
-    // BPM dalla foto
     Tone.Transport.bpm.value = params.bpm;
 
-    // Calcolo durata
     const totalMeasures =
         params.measures.intro +
         params.measures.verse +
@@ -99,17 +207,16 @@ export async function createMetalSongFromAnalysis(analysis, params, rand) {
 
     const totalDuration = (totalMeasures * beatsPerMeasure) * (60 / params.bpm);
 
-    // Crea engine modulari
+    // ENGINE MODULARI
     const riff = generateMetalRiff(analysis, params, rand);
-const riffEngine = riff.engine;
-const riffData = riff.data;
+    const riffEngine = riff.engine;
+    const riffData = riff.data;
 
-const bassEngine = createBassEngine(analysis, params, riffData, rand);
-const leadEngine = createLeadEngine(analysis, params, riffData, rand);
-const drumEngine = createDrumEngine(analysis, params, riffData, rand);
+    const bassEngine = createBassEngine(analysis, params, riffData, rand);
+    const leadEngine = createLeadEngine(analysis, params, riffData, rand);
+    const drumEngine = createDrumEngine(analysis, params, riffData, rand);
 
-
-    // Schedula loop
+    // LOOP
     let riffStep = 0;
     let bassStep = 0;
     let leadStep = 0;
@@ -127,8 +234,16 @@ const drumEngine = createDrumEngine(analysis, params, riffData, rand);
         leadEngine(time, leadStep++);
     }, "8n");
 
+    // AUTOMAZIONI QUI
     const drumLoop = new Tone.Loop((time) => {
+
+        const section = riffData.sectionTimeline[drumStep % riffData.totalSteps];
+
+        applyMixAutomation(section);
+        applyFXAutomation(section);
+
         drumEngine(time, drumStep++);
+
     }, "16n");
 
     function play() {
