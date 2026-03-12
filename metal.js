@@ -62,7 +62,7 @@ function applyMixAutomation(section) {
 
 
 // ======================================================
-// AUTOMAZIONI FX
+// AUTOMAZIONI FX (corrette)
 // ======================================================
 
 function applyFXAutomation(section) {
@@ -71,44 +71,44 @@ function applyFXAutomation(section) {
     if (section === "intro") {
         leadChorus.depth = 0.35;
         leadChorus.frequency = 3;
-        leadDelay.wet.value = 0.15;
-        leadReverb.wet.value = 0.35;
+        leadDelay.wet = 0.15;
+        leadReverb.wet = 0.35;
     }
 
     if (section === "verse") {
         leadChorus.depth = 0.20;
         leadChorus.frequency = 4;
-        leadDelay.wet.value = 0.10;
-        leadReverb.wet.value = 0.20;
+        leadDelay.wet = 0.10;
+        leadReverb.wet = 0.20;
     }
 
     if (section === "chorus") {
         leadChorus.depth = 0.30;
         leadChorus.frequency = 5;
-        leadDelay.wet.value = 0.25;
-        leadReverb.wet.value = 0.25;
+        leadDelay.wet = 0.25;
+        leadReverb.wet = 0.25;
     }
 
     if (section === "solo") {
         leadChorus.depth = 0.40;
         leadChorus.frequency = 4;
-        leadDelay.wet.value = 0.35;
-        leadReverb.wet.value = 0.30;
+        leadDelay.wet = 0.35;
+        leadReverb.wet = 0.30;
     }
 
     if (section === "outro") {
         leadChorus.depth = 0.35;
         leadChorus.frequency = 3;
-        leadDelay.wet.value = 0.15;
-        leadReverb.wet.value = 0.35;
+        leadDelay.wet = 0.15;
+        leadReverb.wet = 0.35;
     }
 
     // RITMICA
-    if (section === "intro")  guitarRiffReverb.wet.value = 0.30;
-    if (section === "verse")  guitarRiffReverb.wet.value = 0.20;
-    if (section === "chorus") guitarRiffReverb.wet.value = 0.25;
-    if (section === "solo")   guitarRiffReverb.wet.value = 0.15;
-    if (section === "outro")  guitarRiffReverb.wet.value = 0.30;
+    if (section === "intro")  guitarRiffReverb.wet = 0.30;
+    if (section === "verse")  guitarRiffReverb.wet = 0.20;
+    if (section === "chorus") guitarRiffReverb.wet = 0.25;
+    if (section === "solo")   guitarRiffReverb.wet = 0.15;
+    if (section === "outro")  guitarRiffReverb.wet = 0.30;
 
     // BATTERIA
     if (section === "intro") {
