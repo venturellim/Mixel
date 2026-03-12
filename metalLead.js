@@ -16,6 +16,9 @@ export function createLeadEngine(analysis, params, riffData, rand) {
         return Math.max(MIN, Math.min(MAX, m));
     }
 
+console.log("LEAD SAMPLER", guitarLead);
+
+
     // ------------------------------------------------------------
     // Note target sugli accordi (fondamentale, terza, quinta, settima)
     // ------------------------------------------------------------
@@ -153,11 +156,38 @@ export function createLeadEngine(analysis, params, riffData, rand) {
         // --------------------------------------------------------
         // Durata variabile
         // --------------------------------------------------------
-        let dur = "8n";
-        if (section === "chorus" && stepInMeasure === 0) dur = "4n";
-        if (section === "solo" && rand() < 0.3) dur = "16n";
-        if (section === "verse" && rand() < 0.2) dur = "4n";
+        // --------------------------------------------------------
+// Durata variabile con molto più sustain
+// --------------------------------------------------------
+let dur;
 
-        guitarLead.triggerAttackRelease(note, dur, time);
+if (section === "chorus") {
+    if (stepInMeasure === 0 && rand() < 0.7) dur = "2n";   // nota lunga
+    else if (rand() < 0.4) dur = "4n";
+    else dur = "8n";
+}
+
+else if (section === "verse") {
+    if (rand() < 0.25) dur = "4n";
+    else dur = "8n";
+}
+
+else if (section === "solo") {
+    if (rand() < 0.2) dur = "4n";   // risoluzioni
+    else if (rand() < 0.5) dur = "16n"; // gruppi veloci
+    else dur = "8n";
+}
+
+else if (section === "intro" || section === "outro") {
+    if (stepInMeasure === 0) dur = "2n";
+    else dur = "4n";
+}
+
+else {
+    dur = "8n";
+}
+
+guitarLead.triggerAttackRelease(note, dur, time);
+
     };
 }

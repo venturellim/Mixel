@@ -1,4 +1,4 @@
-// metalRiff.js — versione con palm mute realistici, compatibile con il tuo sistema
+// metalRiff.js — versione con palm mute realistici, accordi lunghi sicuri, dinamica vera
 
 import * as Tone from "https://esm.sh/tone";
 import { guitarPalm, guitarOpen, clampNote } from "./common.js";
@@ -79,16 +79,16 @@ export function generateMetalRiff(analysis, params, rand) {
                 maybeStartPalmMute(sectionName);
             }
 
-            // Palm mute attivo → pattern denso
+            // ----------------------------------------------------
+            // PALM MUTE ATTIVO
+            // ----------------------------------------------------
             if (palmMuteActive) {
 
                 if (stepInMeasure % 1 === 0) {
-                    // ogni 8n
                     const root = scale[0] + octave;
                     notes.push(clampNote(root, MIN, MAX));
                 }
                 else if (stepInMeasure % 0.5 === 0 && rand() < 0.5) {
-                    // alcuni 16n
                     const root = scale[0] + octave;
                     notes.push(clampNote(root, MIN, MAX));
                 }
@@ -104,11 +104,41 @@ export function generateMetalRiff(analysis, params, rand) {
             // OPEN (nessun palm attivo)
             // ----------------------------------------------------
 
+            // 20%: accordo lungo per 1–2 battute (con protezione)
+            if (stepInMeasure === 0 && rand() < 0.20) {
+
+                const root = scale[0] + octave;
+                const longDur = (rand() < 0.5) ? beatsPerMeasure : beatsPerMeasure * 2;
+
+                const remaining = totalSteps - i;
+                const safeDur = Math.min(longDur, remaining);
+
+                for (let k = 0; k < safeDur; k++) {
+                    notes.push(clampNote(root, MIN, MAX));
+                    sections.push(sectionName);
+                    i++;
+                }
+                i--; 
+                continue;
+            }
+
             // Accento forte su ogni misura
             if (stepInMeasure === 0) {
                 const root = scale[0] + octave;
                 notes.push(clampNote(root, MIN, MAX));
                 sections.push(sectionName);
+                continue;
+            }
+
+            // 15%: due note nella stessa battuta (solo se c’è spazio)
+            if (rand() < 0.15 && stepInMeasure < beatsPerMeasure - 1) {
+                const idx1 = Math.floor(rand() * scale.length);
+                const idx2 = Math.floor(rand() * scale.length);
+                notes.push(clampNote(scale[idx1] + octave, MIN, MAX));
+                sections.push(sectionName);
+                notes.push(clampNote(scale[idx2] + octave, MIN, MAX));
+                sections.push(sectionName);
+                i++;
                 continue;
             }
 
@@ -194,8 +224,15 @@ export function generateMetalRiff(analysis, params, rand) {
         const chord = chordTimeline[idx];
         const sound = palmMuteActive ? guitarPalm : guitarOpen;
 
+        // Durata dinamica
+        let dur;
+        if (palmMuteActive) dur = "16n";
+        else if (rand() < 0.2) dur = "2n";
+        else if (rand() < 0.4) dur = "4n";
+        else dur = "8n";
+
         for (const n of chord) {
-            sound.triggerAttackRelease(n, "8n", time);
+            sound.triggerAttackRelease(n, dur, time);
         }
     }
 
