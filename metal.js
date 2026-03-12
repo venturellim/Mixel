@@ -70,35 +70,35 @@ function applyFXAutomation(section) {
     // LEAD FX
     if (section === "intro") {
         leadChorus.depth = 0.35;
-        leadChorus.frequency = 3;
+        leadChorus.frequency.value = 3;
         leadDelay.wet = 0.15;
         leadReverb.wet = 0.35;
     }
 
     if (section === "verse") {
         leadChorus.depth = 0.20;
-        leadChorus.frequency = 4;
+        leadChorus.frequency.value = 4;
         leadDelay.wet = 0.10;
         leadReverb.wet = 0.20;
     }
 
     if (section === "chorus") {
         leadChorus.depth = 0.30;
-        leadChorus.frequency = 5;
+        leadChorus.frequency.value = 5;
         leadDelay.wet = 0.25;
         leadReverb.wet = 0.25;
     }
 
     if (section === "solo") {
         leadChorus.depth = 0.40;
-        leadChorus.frequency = 4;
+        leadChorus.frequency.value = 4;
         leadDelay.wet = 0.35;
         leadReverb.wet = 0.30;
     }
 
     if (section === "outro") {
         leadChorus.depth = 0.35;
-        leadChorus.frequency = 3;
+        leadChorus.frequency.value = 3;
         leadDelay.wet = 0.15;
         leadReverb.wet = 0.35;
     }
