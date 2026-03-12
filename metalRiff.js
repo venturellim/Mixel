@@ -3,7 +3,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { guitarPalm, guitarOpen } from "./common.js";
 
-export function createRiffEngine(analysis, params, riffData, rand) {
+export function generateMetalRiff(analysis, params, riffData, rand) {
 
     const beatsPerMeasure = riffData.beatsPerMeasure;
     const totalSteps = riffData.totalSteps;
