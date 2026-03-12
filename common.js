@@ -205,7 +205,7 @@ leadEQ.chain(leadChorus, leadDelay, leadReverb, masterEQ);
 
 // Impostazioni iniziali FX
 leadChorus.depth = 0.2;
-leadReverb.wet = 0.2;
+leadReverb.wet.value = 0.2;
 leadDelay.feedback = 0.25;
 
 
