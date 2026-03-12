@@ -32,34 +32,6 @@ export const masterEQ = new Tone.EQ3({
     high: 0
 }).toDestination();
 
-// ==============================
-// LEAD FX CHAIN
-// ==============================
-
-export const leadEQ = new Tone.EQ3({
-    low: -2,
-    mid: 1,
-    high: 3
-});
-
-export const leadChorus = new Tone.Chorus({
-    frequency: 4,
-    delayTime: 2.5,
-    depth: 0.4,
-    spread: 180
-}).start();
-
-export const leadDelay = new Tone.FeedbackDelay({
-    delayTime: "8n",
-    feedback: 0.35
-});
-
-export const leadReverb = new Tone.Reverb({
-    decay: 3,
-    wet: 0.3
-});
-
-leadEQ.chain(leadChorus, leadDelay, leadReverb, masterEQ);
 
 // ==============================
 // GUITAR URL MAP (C2–E6)
@@ -121,6 +93,7 @@ const guitarUrls = {
     E6: "Samples/Guitar/E6.mp3"
 };
 
+
 // ==============================
 // 🎸 GUITAR PALM (C2–C3)
 // ==============================
@@ -156,6 +129,7 @@ guitarPalm.set({
 
 guitarPalm.chain(palmFilter, palmComp, masterEQ);
 
+
 // ==============================
 // 🎸 GUITAR OPEN (C2–C3)
 // ==============================
@@ -177,6 +151,7 @@ guitarOpen.set({
 
 guitarOpen.connect(masterEQ);
 
+
 // ==============================
 // 🎸 GUITAR LEAD (C2–E6)
 // ==============================
@@ -187,19 +162,65 @@ export const guitarLead = new Tone.Sampler({
     onload: () => window.__samplerLoaded("lead")
 });
 
-guitarLead.connect(leadEQ);
+guitarLead.set({
+    envelope: {
+        attack: 0.005,
+        decay: 0.15,
+        sustain: 0.6,
+        release: 0.25
+    }
+});
 
-// Effetti per Palm e Open
+
+// ==============================
+// LEAD FX CHAIN (corretto e funzionante)
+// ==============================
+
+export const leadEQ = new Tone.EQ3({
+    low: -2,
+    mid: 1,
+    high: 3
+});
+
+export const leadChorus = new Tone.Chorus({
+    frequency: 4,
+    delayTime: 2.5,
+    depth: 0.4,
+    spread: 180
+}).start();
+
+export const leadDelay = new Tone.FeedbackDelay({
+    delayTime: "8n",
+    feedback: 0.35
+});
+
+export const leadReverb = new Tone.Reverb({
+    decay: 3,
+    wet: 0.3
+});
+
+// Collegamento corretto (ora guitarLead ESISTE)
+guitarLead.connect(leadEQ);
+leadEQ.chain(leadChorus, leadDelay, leadReverb, masterEQ);
+
+// Impostazioni iniziali FX
+leadChorus.depth = 0.2;
+leadReverb.wet = 0.2;
+leadDelay.feedback = 0.25;
+
+
+// ==============================
+// 🎸 RITMIC FX (Palm + Open)
+// ==============================
 
 const guitarDelay = new Tone.FeedbackDelay(0.03, 0.2).toDestination();
 guitarPalm.connect(guitarDelay);
 guitarOpen.connect(guitarDelay);
 
-// 🎸 Riverbero per la chitarra ritmica (Palm + Open)
 export const guitarRiffReverb = new Tone.Reverb({
-    decay: 4,        // sustain lungo
-    preDelay: 0.01,  // attacco immediato
-    wet: 0.25        // mix 25% = Stratovarius style
+    decay: 4,
+    preDelay: 0.01,
+    wet: 0.25
 }).toDestination();
 
 guitarPalm.connect(guitarRiffReverb);
@@ -263,6 +284,7 @@ export const drums = new Tone.Players({
     china: "Samples/Drums/china.mp3"
 }).connect(masterEQ);
 
+
 // ==============================
 // VOLUMI
 // ==============================
@@ -277,6 +299,9 @@ guitarLead.volume.value = +9;
 drums.volume.value = -9;
 
 
+// ==============================
+// LOG WRAPPERS
+// ==============================
 
 function wrapSampler(name, sampler) {
     const orig = sampler.triggerAttackRelease.bind(sampler);
@@ -333,7 +358,7 @@ export async function waitDownloadInstrumentsWithProgress() {
 
     overlay.style.display = "flex";
 
-    const total = 4; // palm, open, lead, bass
+    const total = 4;
     let loaded = 0;
 
     function checkLoaded() {
@@ -343,7 +368,6 @@ export async function waitDownloadInstrumentsWithProgress() {
         text.innerText = "Caricamento strumenti… " + percent + "%";
     }
 
-    // Aggiorna ogni 100ms
     while (loaded < total) {
         checkLoaded();
         await new Promise(res => setTimeout(res, 100));
@@ -351,4 +375,3 @@ export async function waitDownloadInstrumentsWithProgress() {
 
     overlay.style.display = "none";
 }
-
