@@ -169,30 +169,60 @@ function drawSpectrum() {
     const values = fft.getValue();
     ctx.clearRect(0, 0, W, H);
 
-    const barWidth = W / values.length;
+    const step = 4; // usa 1 barra ogni 4 → 256 barre invece di 1024
+const barWidth = W / (values.length / step);
 
-    for (let i = 0; i < values.length; i++) {
-        const v = values[i];
-        const magnitude = (v + 140) / 140;
-        const barHeight = magnitude * H;
 
-        const startHue = 320;
-        const endHue = 220;
-        const hue = startHue + (endHue - startHue) * magnitude;
-        ctx.fillStyle = `hsl(${hue}, 100%, 60%)`;
+    for (let i = 0; i < values.length; i += step) {
+    const v = values[i];
+    const magnitude = (v + 140) / 140;
+    const barHeight = magnitude * H;
 
-        const x = i * barWidth;
-        const y = H - barHeight;
-        ctx.fillRect(x, y, barWidth - 1, barHeight);
+    const startHue = 320;
+    const endHue = 220;
+    const hue = startHue + (endHue - startHue) * magnitude;
+    ctx.fillStyle = `hsl(${hue}, 100%, 60%)`;
 
-        if (barHeight > peaks[i]) peaks[i] = barHeight;
-        else peaks[i] *= 0.98;
+    const x = (i / step) * barWidth;
+    const y = H - barHeight;
+    ctx.fillRect(x, y, barWidth - 1, barHeight);
 
-        ctx.fillStyle = "#FFFFFF";
-        const peakY = H - peaks[i];
-        ctx.fillRect(x, peakY, barWidth - 1, 3);
-    }
+    if (barHeight > peaks[i]) peaks[i] = barHeight;
+    else peaks[i] *= 0.98;
+
+    ctx.fillStyle = "#FFFFFF";
+    const peakY = H - peaks[i];
+    ctx.fillRect(x, peakY, barWidth - 1, 3);
 }
+}
+
+function centerSpectrum() {
+    const preview = document.getElementById("previewImage");
+    const spectrum = document.getElementById("spectrumPanel");
+    const player = document.getElementById("playerPanel");
+
+    const previewRect = preview.getBoundingClientRect();
+    const playerRect = player.getBoundingClientRect();
+    const spectrumWidth = spectrum.offsetWidth;
+    const spectrumHeight = spectrum.offsetHeight;
+
+    // SPAZIO ORIZZONTALE
+    const freeLeft = previewRect.right;
+    const freeRight = window.innerWidth;
+    const freeWidth = freeRight - freeLeft;
+    const centerX = freeLeft + freeWidth / 2 - spectrumWidth / 2;
+
+    // SPAZIO VERTICALE
+    const freeTop = 0;
+    const freeBottom = playerRect.top;
+    const freeHeight = freeBottom - freeTop;
+    const centerY = freeTop + freeHeight / 2 - spectrumHeight / 2;
+
+    // APPLICA POSIZIONE
+    spectrum.style.left = centerX + "px";
+    spectrum.style.top = centerY + "px";
+}
+
 
 // 🎚 FX Panel
 function initFxPanel() {
@@ -215,6 +245,8 @@ function openMetalUI() {
     document.getElementById("playerPanel").classList.add("open");
     document.getElementById("previewImage").classList.add("shift-left");
     document.getElementById("spectrumPanel").classList.add("active");
+
+    setTimeout(centerSpectrum, 350); // aspetta animazioni
 }
 
 function closeMetalUI() {

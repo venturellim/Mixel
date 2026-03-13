@@ -498,28 +498,16 @@
 /* SPECTRUM PANEL — contenitore invisibile, centrato */
 #spectrumPanel {
     position: fixed;
-    top: -220px;
-
-    /* centrato rispetto alla preview */
-    left: 50%;
-    transform: translateX(-50%);
-
-    width: 42%;
-    max-width: 420px;
-    height: 160px;
+    width: 36%;
+    max-width: 360px;
+    height: 140px;
     padding: 0;
-
     background: rgba(20,20,20,0.85);
-
-    /* bordo grigio invisibile */
     border: none;
-
-    /* glow verde come il player */
     box-shadow: 0 0 15px rgba(0,255,0,0.2);
-
-    transition: top 0.45s ease;
     z-index: 999;
 }
+
 
 #spectrumPanel.active {
     top: 40px;
