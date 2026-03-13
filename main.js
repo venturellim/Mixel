@@ -71,7 +71,7 @@ function initGenrePanel() {
     const closeGenrePanel = document.getElementById("closeGenrePanel");
 
     btnElabora.addEventListener("click", () => {
-        closePlayerPanel();
+        closeMetalUI();
         genrePanel.classList.add("show");
         genrePanel.classList.remove("hidden");
     });
@@ -109,7 +109,7 @@ async function selectGenre(genre) {
 
 // 🎧 Player UI
 function initPlayerUI() {
-    openPlayerPanel();
+    openMetalUI();
 
     const playBtn = document.getElementById("btnPlay");
     const pauseBtn = document.getElementById("btnPause");
@@ -208,18 +208,17 @@ function initFxPanel() {
 function resetAppState() {
     currentEngine?.stop();
     currentEngine = null;
-    closePlayerPanel();
+    closeMetalUI();
 }
 
-function openPlayerPanel() {
-    document.getElementById("playerPanel").classList.add("active");
+function openMetalUI() {
+    document.getElementById("playerPanel").classList.add("open");
     document.getElementById("previewImage").classList.add("shift-left");
     document.getElementById("spectrumPanel").classList.add("active");
 }
 
-function closePlayerPanel() {
+function closeMetalUI() {
     document.getElementById("spectrumPanel").classList.remove("active");
     document.getElementById("previewImage").classList.remove("shift-left");
-    document.getElementById("playerPanel").classList.remove("active");
+    document.getElementById("playerPanel").classList.remove("open");
 }
-

@@ -453,7 +453,7 @@
     z-index: 20;
 }
 
-#playerPanel.active {
+#playerPanel.open {
     bottom: 0;
 }
 
@@ -478,13 +478,13 @@
    ANALIZZATORE: scende dall’alto
    ================================ */
 #spectrumPanel {
-    position: absolute;
-    top: -260px; /* nascosto */
+    position: fixed;
+    top: -260px;
     right: 20px;
     width: 40%;
     height: 240px;
     transition: top 0.45s ease;
-    z-index: 15;
+    z-index: 999; /* sopra il contenuto */
 }
 
 #spectrumPanel.active {
