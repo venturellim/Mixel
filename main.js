@@ -212,9 +212,14 @@ function resetAppState() {
 }
 
 function openPlayerPanel() {
-    document.getElementById("playerPanel")?.classList.add("open");
+    document.getElementById("playerPanel").classList.add("active");
+    document.getElementById("previewImage").classList.add("shift-left");
+    document.getElementById("spectrumPanel").classList.add("active");
 }
 
 function closePlayerPanel() {
-    document.getElementById("playerPanel")?.classList.remove("open");
+    document.getElementById("spectrumPanel").classList.remove("active");
+    document.getElementById("previewImage").classList.remove("shift-left");
+    document.getElementById("playerPanel").classList.remove("active");
 }
+
