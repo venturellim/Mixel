@@ -12,7 +12,6 @@
         console.log("🟦 Eruda inizializzato");
     </script>
 </head>
-
 <body>
 
 <div id="loadingOverlay" style="
@@ -67,6 +66,7 @@
         </button>
 
         <button id="btnConsigliato" class="side-btn hidden">
+            Metal-like
         </button>
 
     </aside>
@@ -86,9 +86,8 @@
              class="preview hidden"
              alt="MIXEL - Ascolta le tue foto!">
 
-        <!-- GENRE PANEL -->
+        <!-- GENRE PANEL (slide-in) -->
         <div id="genrePanel" class="genre-panel hidden">
-
             <h2>Scegli il genere musicale</h2>
 
             <button class="genre-btn" data-genre="ambient">Ambient</button>
@@ -98,7 +97,12 @@
             <button id="closeGenrePanel" class="close-panel-btn">
                 Chiudi
             </button>
+        </div>
 
+        <!-- CONTAINER PER LO SPETTRO (verrà popolato da JS) -->
+        <div id="spectrumContainer" class="spectrum-container hidden">
+            <div class="spectrum-title">🎸 Frequency Analyzer</div>
+            <canvas id="spectrumCanvas" class="spectrum-canvas" width="500" height="200"></canvas>
         </div>
 
         <!-- PLAYER SLIDE-UP -->
@@ -126,7 +130,8 @@
                     <span id="totalTime">0:00</span>
                 </div>
 
-                <canvas id="spectrumCanvas"
+                <!-- Questo canvas verrà nascosto quando siamo in modalità grid -->
+                <canvas id="playerSpectrumCanvas"
                         width="600"
                         height="120"
                         class="spectrum">

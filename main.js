@@ -14,6 +14,7 @@ import { createMetalEngineFromImage, waitInstrumentsWithProgress } from "./metal
 
 let currentEngine = null;
 let currentGenre = null;
+let isPlayerOpen = false; // Nuovo: stato del player
 
 window.onerror = function (msg, url, line, col, error) {
     console.log("🔥 ERRORE:", msg, " @", url, ":", line, ":", col);
@@ -45,6 +46,7 @@ function initFileLoader() {
     const previewImage = document.getElementById("previewImage");
     const heroLogoContainer = document.getElementById("heroLogoContainer");
     const btnElabora = document.getElementById("btnElabora");
+    const btnConsigliato = document.getElementById("btnConsigliato");
 
     fileInput.addEventListener("change", function () {
         const file = this.files[0];
@@ -59,6 +61,7 @@ function initFileLoader() {
         previewImage.classList.remove("hidden");
         heroLogoContainer.style.display = "none";
         btnElabora.classList.remove("hidden");
+        btnConsigliato.classList.remove("hidden");
 
         resetAppState();
     });
@@ -69,9 +72,10 @@ function initGenrePanel() {
     const btnElabora = document.getElementById("btnElabora");
     const genrePanel = document.getElementById("genrePanel");
     const closeGenrePanel = document.getElementById("closeGenrePanel");
+    const btnConsigliato = document.getElementById("btnConsigliato");
 
     btnElabora.addEventListener("click", () => {
-        closePlayerPanel();
+        closePlayerWithAnimation(); // Chiudi tutto prima di aprire il pannello
         genrePanel.classList.add("show");
         genrePanel.classList.remove("hidden");
     });
@@ -85,6 +89,18 @@ function initGenrePanel() {
         btn.addEventListener("click", () => {
             selectGenre(btn.dataset.genre);
         });
+    });
+
+    // NUOVO: Gestione click sul bottone Metal-like
+    btnConsigliato.addEventListener("click", () => {
+        if (isPlayerOpen) {
+            closePlayerWithAnimation();
+        } else {
+            openPlayerWithAnimation();
+            if (currentGenre === "metal" && currentEngine) {
+                currentEngine.play();
+            }
+        }
     });
 }
 
@@ -102,6 +118,9 @@ async function selectGenre(genre) {
         initPlayerUI();
         drawSpectrum();
         initFxPanel();
+        
+        // Apri automaticamente con animazione
+        openPlayerWithAnimation();
     }
 
     document.getElementById("genrePanel").classList.remove("show");
@@ -109,8 +128,6 @@ async function selectGenre(genre) {
 
 // 🎧 Player UI
 function initPlayerUI() {
-    openPlayerPanel();
-
     const playBtn = document.getElementById("btnPlay");
     const pauseBtn = document.getElementById("btnPause");
     const stopBtn = document.getElementById("btnStop");
@@ -158,23 +175,40 @@ function initPlayerUI() {
 const fft = new Tone.Analyser("fft", 256);
 Tone.Destination.connect(fft);
 
-const canvas = document.getElementById("spectrumCanvas");
-const ctx = canvas.getContext("2d");
-const W = canvas.width;
-const H = canvas.height;
+// Canvas per lo spettro NEL PLAYER (quello che si nasconde)
+const playerCanvas = document.getElementById("playerSpectrumCanvas");
+const playerCtx = playerCanvas?.getContext("2d");
+
+// Canvas per lo spettro NEL CONTAINER SEPARATO
+const spectrumCanvas = document.getElementById("spectrumCanvas");
+const spectrumCtx = spectrumCanvas?.getContext("2d");
+
+const W = 600;
+const H = 120;
 let peaks = new Array(256).fill(0);
 
 function drawSpectrum() {
     requestAnimationFrame(drawSpectrum);
     const values = fft.getValue();
-    ctx.clearRect(0, 0, W, H);
+    
+    // Disegna su ENTRAMBI i canvas se esistono
+    if (playerCtx && playerCanvas) {
+        drawOnCanvas(playerCtx, playerCanvas.width, playerCanvas.height, values);
+    }
+    
+    if (spectrumCtx && spectrumCanvas) {
+        drawOnCanvas(spectrumCtx, spectrumCanvas.width, spectrumCanvas.height, values);
+    }
+}
 
-    const barWidth = W / values.length;
+function drawOnCanvas(ctx, width, height, values) {
+    ctx.clearRect(0, 0, width, height);
+    const barWidth = width / values.length;
 
     for (let i = 0; i < values.length; i++) {
         const v = values[i];
         const magnitude = (v + 140) / 140;
-        const barHeight = magnitude * H;
+        const barHeight = magnitude * height;
 
         const startHue = 320;
         const endHue = 220;
@@ -182,14 +216,14 @@ function drawSpectrum() {
         ctx.fillStyle = `hsl(${hue}, 100%, 60%)`;
 
         const x = i * barWidth;
-        const y = H - barHeight;
+        const y = height - barHeight;
         ctx.fillRect(x, y, barWidth - 1, barHeight);
 
         if (barHeight > peaks[i]) peaks[i] = barHeight;
         else peaks[i] *= 0.98;
 
         ctx.fillStyle = "#FFFFFF";
-        const peakY = H - peaks[i];
+        const peakY = height - peaks[i];
         ctx.fillRect(x, peakY, barWidth - 1, 3);
     }
 }
@@ -208,13 +242,87 @@ function initFxPanel() {
 function resetAppState() {
     currentEngine?.stop();
     currentEngine = null;
-    closePlayerPanel();
+    closePlayerWithAnimation();
 }
 
+// ======================================================
+// 🆕 NUOVE FUNZIONI DI ANIMAZIONE
+// ======================================================
+
+function openPlayerWithAnimation() {
+    const content = document.querySelector('.content');
+    const playerSlideup = document.getElementById('playerPanel');
+    const heroLogo = document.getElementById('heroLogoContainer');
+    const spectrumContainer = document.getElementById('spectrumContainer');
+    const playerUI = document.querySelector('.player-ui');
+    
+    if (!content || !playerSlideup) return;
+    
+    // Cambia layout a griglia
+    content.classList.add('grid-layout');
+    
+    // Rimpicciolisci logo
+    heroLogo?.classList.add('shrink');
+    
+    // Mostra e resetta animazione spettro
+    if (spectrumContainer) {
+        spectrumContainer.classList.remove('hidden', 'closing');
+    }
+    
+    // Rimuovi spettro dal player
+    playerUI?.classList.add('no-spectrum');
+    
+    // Apri player
+    setTimeout(() => {
+        playerSlideup.classList.add('open');
+    }, 100);
+    
+    isPlayerOpen = true;
+}
+
+function closePlayerWithAnimation() {
+    const content = document.querySelector('.content');
+    const playerSlideup = document.getElementById('playerPanel');
+    const heroLogo = document.getElementById('heroLogoContainer');
+    const spectrumContainer = document.getElementById('spectrumContainer');
+    const playerUI = document.querySelector('.player-ui');
+    
+    if (!content || !playerSlideup) return;
+    
+    // Ferma la riproduzione
+    currentEngine?.stop();
+    
+    // Anima uscita spettro
+    if (spectrumContainer) {
+        spectrumContainer.classList.add('closing');
+    }
+    
+    // Dopo l'animazione, rimuovi layout grid
+    setTimeout(() => {
+        content.classList.remove('grid-layout');
+        heroLogo?.classList.remove('shrink');
+        
+        // Nascondi spettro
+        if (spectrumContainer) {
+            spectrumContainer.classList.add('hidden');
+            spectrumContainer.classList.remove('closing');
+        }
+        
+        // Ripristina spettro nel player
+        playerUI?.classList.remove('no-spectrum');
+        
+        // Chiudi player
+        playerSlideup.classList.remove('open');
+    }, 350); // Poco meno della durata dell'animazione (400ms)
+    
+    isPlayerOpen = false;
+}
+
+// Funzioni vecchie mantenute per compatibilità ma aggiornate
 function openPlayerPanel() {
-    document.getElementById("playerPanel")?.classList.add("open");
+    openPlayerWithAnimation();
 }
 
 function closePlayerPanel() {
-    document.getElementById("playerPanel")?.classList.remove("open");
+    closePlayerWithAnimation();
 }
