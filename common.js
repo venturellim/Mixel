@@ -204,9 +204,15 @@ guitarLead.connect(leadEQ);
 leadEQ.chain(leadChorus, leadDelay, leadReverb, masterEQ);
 
 // Impostazioni iniziali FX
-leadChorus.depth = 0.2;
-leadReverb.wet.value = 0.2;
-leadDelay.feedback = 0.25;
+// INVECE DI:
+// leadChorus.depth = 0.2;
+// leadReverb.wet.value = 0.2;
+// leadDelay.feedback = 0.25;
+
+// USA:
+leadChorus.set({ depth: 0.2 });
+leadReverb.set({ wet: 0.2 });
+leadDelay.set({ feedback: 0.25 });
 
 
 // ==============================

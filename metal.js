@@ -67,50 +67,50 @@ function applyMixAutomation(section) {
 
 function applyFXAutomation(section) {
 
-    // LEAD FX
+    // LEAD FX - CORRETTO
     if (section === "intro") {
-        leadChorus.depth = 0.35;
-        leadChorus.frequency.value = 3;
-        leadDelay.wet = 0.15;
-        leadReverb.wet = 0.35;
+        leadChorus.set({ depth: 0.35 });                    // invece di leadChorus.depth = 0.35
+        leadChorus.frequency.value = 3;                      // .value è ok per frequency
+        leadDelay.set({ wet: 0.15 });                        // invece di leadDelay.wet = 0.15
+        leadReverb.set({ wet: 0.35 });                       // invece di leadReverb.wet = 0.35
     }
 
     if (section === "verse") {
-        leadChorus.depth = 0.20;
+        leadChorus.set({ depth: 0.20 });
         leadChorus.frequency.value = 4;
-        leadDelay.wet = 0.10;
-        leadReverb.wet = 0.20;
+        leadDelay.set({ wet: 0.10 });
+        leadReverb.set({ wet: 0.20 });
     }
 
     if (section === "chorus") {
-        leadChorus.depth = 0.30;
+        leadChorus.set({ depth: 0.30 });
         leadChorus.frequency.value = 5;
-        leadDelay.wet = 0.25;
-        leadReverb.wet = 0.25;
+        leadDelay.set({ wet: 0.25 });
+        leadReverb.set({ wet: 0.25 });
     }
 
     if (section === "solo") {
-        leadChorus.depth = 0.40;
+        leadChorus.set({ depth: 0.40 });
         leadChorus.frequency.value = 4;
-        leadDelay.wet = 0.35;
-        leadReverb.wet = 0.30;
+        leadDelay.set({ wet: 0.35 });
+        leadReverb.set({ wet: 0.30 });
     }
 
     if (section === "outro") {
-        leadChorus.depth = 0.35;
+        leadChorus.set({ depth: 0.35 });
         leadChorus.frequency.value = 3;
-        leadDelay.wet = 0.15;
-        leadReverb.wet = 0.35;
+        leadDelay.set({ wet: 0.15 });
+        leadReverb.set({ wet: 0.35 });
     }
 
-    // RITMICA
-    if (section === "intro")  guitarRiffReverb.wet = 0.30;
-    if (section === "verse")  guitarRiffReverb.wet = 0.20;
-    if (section === "chorus") guitarRiffReverb.wet = 0.25;
-    if (section === "solo")   guitarRiffReverb.wet = 0.15;
-    if (section === "outro")  guitarRiffReverb.wet = 0.30;
+    // RITMICA - CORRETTO
+    if (section === "intro")  guitarRiffReverb.set({ wet: 0.30 });
+    if (section === "verse")  guitarRiffReverb.set({ wet: 0.20 });
+    if (section === "chorus") guitarRiffReverb.set({ wet: 0.25 });
+    if (section === "solo")   guitarRiffReverb.set({ wet: 0.15 });
+    if (section === "outro")  guitarRiffReverb.set({ wet: 0.30 });
 
-    // BATTERIA
+    // BATTERIA - usa .value (che esiste)
     if (section === "intro") {
         drums.player("crash1").volume.value = -6;
         drums.player("ride").volume.value = -6;
