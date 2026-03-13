@@ -54,15 +54,34 @@ function initFileLoader() {
             return;
         }
 
-        const url = URL.createObjectURL(file);
-        previewImage.src = url;
-        previewImage.classList.remove("hidden");
-        heroLogoContainer.style.display = "none";
-        btnElabora.classList.remove("hidden");
+        // ⬇️ QUI: ridimensionamento intelligente PRIMA di mostrare la preview
+        const img = new Image();
+        img.src = URL.createObjectURL(file);
 
-        resetAppState();
+        img.onload = () => {
+            const containerHeight = window.innerHeight;
+
+            if (img.width > img.height) {
+                // FOTO ORIZZONTALE → più bassa
+                previewImage.style.height = (containerHeight * 0.45) + "px";
+                previewImage.style.width = "auto";
+            } else {
+                // FOTO VERTICALE → più alta
+                previewImage.style.height = (containerHeight * 0.70) + "px";
+                previewImage.style.width = "auto";
+            }
+
+            // ora che le dimensioni sono pronte, mostriamo la preview
+            previewImage.src = img.src;
+            previewImage.classList.remove("hidden");
+            heroLogoContainer.style.display = "none";
+            btnElabora.classList.remove("hidden");
+
+            resetAppState();
+        };
     });
 }
+
 
 // 🎛 Pannello Generi
 function initGenrePanel() {
@@ -196,34 +215,6 @@ const barWidth = W / (values.length / step);
 }
 }
 
-function centerSpectrum() {
-    const preview = document.getElementById("previewImage");
-    const spectrum = document.getElementById("spectrumPanel");
-    const player = document.getElementById("playerPanel");
-
-    const previewRect = preview.getBoundingClientRect();
-    const playerRect = player.getBoundingClientRect();
-    const spectrumWidth = spectrum.offsetWidth;
-    const spectrumHeight = spectrum.offsetHeight;
-
-    // SPAZIO ORIZZONTALE
-    const freeLeft = previewRect.right;
-    const freeRight = window.innerWidth;
-    const freeWidth = freeRight - freeLeft;
-    const centerX = freeLeft + freeWidth / 2 - spectrumWidth / 2;
-
-    // SPAZIO VERTICALE
-    const freeTop = 0;
-    const freeBottom = playerRect.top;
-    const freeHeight = freeBottom - freeTop;
-    const centerY = freeTop + freeHeight / 2 - spectrumHeight / 2;
-
-    // APPLICA POSIZIONE
-    spectrum.style.left = centerX + "px";
-    spectrum.style.top = centerY + "px";
-}
-
-
 // 🎚 FX Panel
 function initFxPanel() {
     const fxPanel = document.getElementById("fxPanel");
@@ -242,12 +233,22 @@ function resetAppState() {
 }
 
 function openMetalUI() {
-    document.getElementById("playerPanel").classList.add("open");
-    document.getElementById("previewImage").classList.add("shift-left");
-    document.getElementById("spectrumPanel").classList.add("active");
+    const player = document.getElementById("playerPanel");
+    const preview = document.getElementById("previewImage");
+    const spectrum = document.getElementById("spectrumPanel");
 
-    setTimeout(centerSpectrum, 350); // aspetta animazioni
+    // 1. la foto scorre
+    preview.classList.add("shift-left");
+
+    // 2. il player sale
+    player.classList.add("open");
+
+    // 3. lo spectrum scende dall’alto con un piccolo ritardo
+    setTimeout(() => {
+        spectrum.classList.add("active");
+    }, 250);
 }
+
 
 function closeMetalUI() {
     document.getElementById("spectrumPanel").classList.remove("active");

@@ -115,6 +115,17 @@
             border-radius: 10px;
             box-shadow: 0 0 15px rgba(255,255,255,0.2);
         }
+        
+        #previewImage {
+    position: absolute;
+    left: 50%;
+    top: 40px;
+    transform: translateX(-50%);
+    transition: left 0.45s ease;
+    max-width: 90%;
+    object-fit: contain;
+}
+
 
         /* Player */
         #audioPlayer {
@@ -498,17 +509,29 @@
 /* SPECTRUM PANEL — contenitore invisibile, centrato */
 #spectrumPanel {
     position: fixed;
+
+    /* POSIZIONE INIZIALE: nascosto sopra */
+    top: -200px;
+
+    /* POSIZIONE ORIZZONTALE: centrato */
+    left: 50%;
+    transform: translateX(-50%);
+
     width: 36%;
     max-width: 360px;
     height: 140px;
     padding: 0;
+
     background: rgba(20,20,20,0.85);
-    border: none;
-    box-shadow: 0 0 15px rgba(0,255,0,0.2);
+
+    border: none; /* pannello invisibile */
+    box-shadow: 0 0 15px rgba(0,255,0,0.2); /* glow verde */
+
+    transition: top 0.45s ease;
     z-index: 999;
 }
 
-
+/* POSIZIONE FINALE: visibile */
 #spectrumPanel.active {
     top: 40px;
 }
