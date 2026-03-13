@@ -513,19 +513,18 @@
     /* POSIZIONE INIZIALE: nascosto sopra */
     top: -200px;
 
-    /* POSIZIONE ORIZZONTALE: centrato */
-    left: 50%;
-    transform: translateX(-50%);
+    /* POSIZIONE ORIZZONTALE: fisso a destra */
+    right: 20px;
+    left: auto;
+    transform: none;
 
     width: 36%;
     max-width: 360px;
     height: 140px;
-    padding: 0;
 
     background: rgba(20,20,20,0.85);
-
-    border: none; /* pannello invisibile */
-    box-shadow: 0 0 15px rgba(0,255,0,0.2); /* glow verde */
+    border: none;
+    box-shadow: 0 0 15px rgba(0,255,0,0.2);
 
     transition: top 0.45s ease;
     z-index: 999;
