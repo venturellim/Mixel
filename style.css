@@ -519,8 +519,8 @@
     transform: none;
 
     width: 36%;
-    max-width: 360px;
-    height: 140px;
+    max-width: 300px;
+    height: 200px;
 
     background: rgba(20,20,20,0.85);
     border: none;
@@ -532,5 +532,5 @@
 
 /* POSIZIONE FINALE: visibile */
 #spectrumPanel.active {
-    top: 40px;
+    top: 60px;
 }
