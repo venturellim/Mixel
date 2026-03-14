@@ -3,9 +3,28 @@
 import * as Tone from "https://esm.sh/tone";
 import { guitarPalm, guitarOpen, clampNote, humanizeTime } from "./common.js";
 
-export function generateMetalRiff(analysis, params, timeline, rand) {
+export function generateMetalRiff(
+    analysis,
+    params,
+    timeline,
+    rand,
+    theme
+) {
 
     const scale = params.scale;
+    
+    // ------------------------------------------------------------
+// NOTE DERIVATE DAL TEMA
+// ------------------------------------------------------------
+
+const themeNotes = [];
+
+for (const t of theme) {
+
+    const idx = t % scale.length;
+    themeNotes.push(scale[idx]);
+
+}
 
     const {
         stepsPerMeasure,
@@ -98,13 +117,31 @@ export function generateMetalRiff(analysis, params, timeline, rand) {
 
         else if (stepInMeasure % 2 === 0) {
 
-            // usa note dell'accordo
-            const chordTone =
-                chord[Math.floor(rand() * chord.length)];
+    let note;
 
-            fullRiff[step] = clampNote(chordTone, MIN, MAX);
+    // 40% usa il tema
+    if (rand() < 0.4 && themeNotes.length) {
 
-        }
+        note =
+            themeNotes[
+                Math.floor(rand() * themeNotes.length)
+            ];
+
+    }
+
+    // altrimenti usa accordo
+    else {
+
+        note =
+            chord[
+                Math.floor(rand() * chord.length)
+            ];
+
+    }
+
+    fullRiff[step] = clampNote(note, MIN, MAX);
+
+}
 
         else {
 

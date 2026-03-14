@@ -92,7 +92,15 @@ export async function createMetalSongFromAnalysis(analysis, params, rand) {
     // Generazione moduli musicali
     // --------------------------------------------------
 
-const riff = generateMetalRiff(analysis, params, timeline, rand);
+const theme = generateLeadTheme(params, rand);
+
+const riff = generateMetalRiff(
+    analysis,
+    params,
+    timeline,
+    rand,
+    theme
+);
 const riffEngine = riff.engine;
 const riffData = riff.data;
 
