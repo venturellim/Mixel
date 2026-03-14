@@ -1,132 +1,162 @@
-// metalDrums.js — batteria con transizioni di sezione, fill intelligenti e pattern musicali
+// metalDrums.js — batteria sincronizzata con metalTimeline
 
-import { drums } from "./common.js";
+import { drums, humanizeTime } from "./common.js";
 import * as Tone from "https://esm.sh/tone";
 
-export function createDrumEngine(analysis, params, riffData, rand) {
+export function createDrumEngine(analysis, params, timeline, riffData, rand) {
 
-    const beatsPerMeasure = riffData.beatsPerMeasure;
-    const totalSteps = riffData.totalSteps;
+    const {
+        stepsPerMeasure,
+        totalSteps
+    } = timeline;
 
     // ------------------------------------------------------------
-    // Pattern base per sezione
+    // FILL TRA SEZIONI
     // ------------------------------------------------------------
+
+    function playFill(time, stepInMeasure) {
+
+        if (stepInMeasure === stepsPerMeasure - 3)
+            drums.player("tom1").start(
+    humanizeTime(time, rand)
+    );
+
+        if (stepInMeasure === stepsPerMeasure - 2)
+            drums.player("tom2").start(
+    humanizeTime(time, rand)
+    );
+
+        if (stepInMeasure === stepsPerMeasure - 1) {
+
+            drums.player("snare").start(
+    humanizeTime(time, rand)
+    );
+            drums.player("crash1").start(
+    humanizeTime(time, rand)
+    );
+        }
+
+    }
+
+    // ------------------------------------------------------------
+    // KICK PATTERN
+    // ------------------------------------------------------------
+
+    function getKickPattern(section) {
+
+        if (section === "intro")
+            return [1,0,0,0,1,0,0,0];
+
+        if (section === "verse")
+            return [1,0,0,0,1,0,0,0];
+
+        if (section === "chorus")
+            return [1,0,1,0,1,0,1,0];
+
+        if (section === "solo")
+            return [1,0,1,1,1,0,1,1];
+
+        if (section === "outro")
+            return [1,0,0,0,0,0,0,0];
+
+        return [1,0,0,0,1,0,0,0];
+
+    }
+
+    // ------------------------------------------------------------
+    // SNARE
+    // ------------------------------------------------------------
+
+    function getSnarePattern() {
+
+        return [4,12];
+
+    }
+
+    // ------------------------------------------------------------
+    // CYMBAL
+    // ------------------------------------------------------------
+
     function getCymbal(section) {
-        if (section === "intro")  return "ride";
-        if (section === "verse")  return "hihat";
+
+        if (section === "intro") return "ride";
+        if (section === "verse") return "hihat";
         if (section === "chorus") return "openhat";
-        if (section === "solo")   return "ride";
-        if (section === "outro")  return "hihat";
+        if (section === "solo") return "ride";
+        if (section === "outro") return "hihat";
+
         return "hihat";
-    }
 
-    function getCymbalRate(section) {
-        if (section === "intro")  return "4n";
-        if (section === "verse")  return "8n";
-        if (section === "chorus") return "8n";
-        if (section === "solo")   return "8n";
-        if (section === "outro")  return "4n";
-        return "8n";
-    }
-
-    function getKickDensity(section) {
-        if (section === "intro")  return 0.3;
-        if (section === "verse")  return 0.6;
-        if (section === "chorus") return 0.85;
-        if (section === "solo")   return 0.5;
-        if (section === "outro")  return 0.4;
-        return 0.6;
-    }
-
-    function getSnareBeats(section) {
-        if (beatsPerMeasure === 6) return [2, 5];
-        return [1, 3];
-    }
-
-    // ------------------------------------------------------------
-    // Fill intelligenti (non casuali)
-    // ------------------------------------------------------------
-    function generateFill(stepInMeasure, section) {
-
-        const events = [];
-
-        // Fill più aggressivi prima del chorus
-        if (section === "verse") {
-            if (stepInMeasure === beatsPerMeasure - 4) events.push("tom2");
-            if (stepInMeasure === beatsPerMeasure - 3) events.push("tom3");
-            if (stepInMeasure === beatsPerMeasure - 2) events.push("snare");
-            if (stepInMeasure === beatsPerMeasure - 1) events.push("crash1");
-            return events;
-        }
-
-        // Fill più melodici prima del solo
-        if (section === "chorus") {
-            if (stepInMeasure === beatsPerMeasure - 4) events.push("tom1");
-            if (stepInMeasure === beatsPerMeasure - 3) events.push("tom2");
-            if (stepInMeasure === beatsPerMeasure - 2) events.push("tom3");
-            if (stepInMeasure === beatsPerMeasure - 1) events.push("china");
-            return events;
-        }
-
-        // Fill più semplici nell’outro
-        if (section === "outro") {
-            if (stepInMeasure === beatsPerMeasure - 2) events.push("snare");
-            if (stepInMeasure === beatsPerMeasure - 1) events.push("crash2");
-            return events;
-        }
-
-        return events;
     }
 
     // ------------------------------------------------------------
     // ENGINE
     // ------------------------------------------------------------
+
     return function drumEngine(time, step) {
 
         const idx = step % totalSteps;
 
-        const section = riffData.sectionTimeline[idx];
-        const nextSection = riffData.sectionTimeline[idx + beatsPerMeasure];
-        const stepInMeasure = idx % beatsPerMeasure;
+        const { stepInMeasure, section } =
+            timeline.getStepData(step);
+            const riffNote = riffData.fullRiff[idx];
 
+        const nextSection =
+            timeline.sectionTimeline[(idx + 1) % totalSteps];
+
+        const kickPattern = getKickPattern(section);
+        const snarePattern = getSnarePattern();
         const cymbal = getCymbal(section);
-        const cymbalRate = getCymbalRate(section);
-        const kickDensity = getKickDensity(section);
-        const snareBeats = getSnareBeats(section);
 
-        // --------------------------------------------------------
-        // CYMBALS
-        // --------------------------------------------------------
-        if (cymbalRate === "16n") {
-            drums.player(cymbal).start(time);
-        } else if (cymbalRate === "8n" && stepInMeasure % 1 === 0) {
-            drums.player(cymbal).start(time);
-        } else if (cymbalRate === "4n" && stepInMeasure === 0) {
-            drums.player(cymbal).start(time);
+        const kickStep =
+            stepInMeasure % kickPattern.length;
+
+        // CYMBAL
+
+        if (stepInMeasure % 2 === 0) {
+
+           
+drums.player(cymbal).start(
+    humanizeTime(time, rand)
+);
         }
 
-        // --------------------------------------------------------
         // KICK
-        // --------------------------------------------------------
-        if (rand() < kickDensity) {
-            drums.player("kick").start(time);
-        }
 
-        // --------------------------------------------------------
+        if (kickPattern[kickStep] || riffNote) {
+
+    drums.player("kick").start(
+    humanizeTime(time, rand)
+);
+
+}
+
         // SNARE
-        // --------------------------------------------------------
-        if (snareBeats.includes(stepInMeasure)) {
-            drums.player("snare").start(time);
+
+        if (snarePattern.includes(stepInMeasure)) {
+
+    drums.player("snare").start(
+        humanizeTime(time, rand)
+    );
+
+}
+
+if (stepInMeasure === 0 && section === "chorus") {
+
+    drums.player("crash1").start(
+        humanizeTime(time, rand)
+    );
+
+}
+
+        // FILL TRA SEZIONI
+
+        if (nextSection !== section) {
+
+            playFill(time, stepInMeasure);
+
         }
 
-        // --------------------------------------------------------
-        // TRANSIZIONI DI SEZIONE
-        // --------------------------------------------------------
-        if (nextSection && nextSection !== section) {
-            const fillEvents = generateFill(stepInMeasure, section);
-            for (const f of fillEvents) {
-                drums.player(f).start(time);
-            }
-        }
     };
+
 }

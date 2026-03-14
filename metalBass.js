@@ -1,69 +1,120 @@
-// metalBass.js — basso coerente con riffData, molto più presente
+// metalBass.js — basso sincronizzato con metalTimeline
 
-import { bass } from "./common.js";
+import { bass, humanizeTime } from "./common.js";
 import * as Tone from "https://esm.sh/tone";
 
-export function createBassEngine(analysis, params, riffData, rand) {
+export function createBassEngine(analysis, params, timeline, riffData, rand) {
 
-    const beatsPerMeasure = riffData.beatsPerMeasure;
-    const totalSteps = riffData.totalSteps;
+    const {
+        stepsPerMeasure,
+        totalSteps
+    } = timeline;
 
     const MIN = 24; // C1
     const MAX = 36; // C2
 
     // ------------------------------------------------------------
-    // Utility: clamp nota
+    // Clamp nota nel range basso
     // ------------------------------------------------------------
+
     function clamp(note) {
+
         const midi = Tone.Frequency(note).toMidi();
         const clamped = Math.max(MIN, Math.min(MAX, midi));
+
         return Tone.Frequency(clamped, "midi").toNote();
+
     }
 
     // ------------------------------------------------------------
-    // Densità per sezione (molto più alta)
+    // Pattern basso (simili al kick)
     // ------------------------------------------------------------
-    function getBassDensity(section) {
-        if (section === "intro")  return 0.7;
-        if (section === "verse")  return 0.85;
-        if (section === "chorus") return 0.95;
-        if (section === "solo")   return 0.8;
-        if (section === "outro")  return 0.6;
-        return 0.8;
+
+    function getBassPattern(section) {
+
+        if (section === "intro")
+            return [0];
+
+        if (section === "verse")
+            return [0, 4, 8, 12];
+
+        if (section === "chorus")
+            return [0, 3, 6, 8, 11, 14];
+
+        if (section === "solo")
+            return [0, 4, 8, 12];
+
+        if (section === "outro")
+            return [0, 8];
+
+        return [0, 4, 8, 12];
+
     }
 
     // ------------------------------------------------------------
     // ENGINE
     // ------------------------------------------------------------
+
     return function bassEngine(time, step) {
 
         const idx = step % totalSteps;
 
-        const chord = riffData.chordTimeline[idx];
-        const section = riffData.sectionTimeline[idx];
+        const { stepInMeasure, section } =
+            timeline.getStepData(step);
 
-        const stepInMeasure = idx % beatsPerMeasure;
+        const chord = riffData.chordTimeline[idx];
 
         if (!chord) return;
 
-        // Fondamentale dell’accordo, un’ottava sotto
         const root = chord[0];
-        const rootMidi = Tone.Frequency(root).toMidi();
-        const bassNote = Tone.Frequency(rootMidi - 12, "midi").toNote();
-        const clamped = clamp(bassNote);
+        
+        const riffNote = riffData.fullRiff[idx];
 
-        // Densità per sezione
-        const density = getBassDensity(section);
+        let bassSource = root;
 
-        // Suona SEMPRE su ogni 8n (stepInMeasure % 1 === 0)
-        if (stepInMeasure % 1 === 0) {
-            bass.triggerAttackRelease(clamped, "8n", time);
+// PEDAL TONE nelle parti epiche
+if (section === "chorus" || section === "intro") {
+
+    if (rand() < 0.6) {
+
+        bassSource = riffData.chordTimeline[0][0];
+
+    }
+
+}
+
+// altrimenti segue il riff
+else if (riffNote && rand() < 0.7) {
+
+    bassSource = riffNote;
+
+}
+
+const sourceMidi =
+    Tone.Frequency(bassSource).toMidi();
+
+const bassMidi = sourceMidi - 12;
+
+const note = clamp(
+    Tone.Frequency(bassMidi, "midi").toNote()
+);
+
+        const pattern = getBassPattern(section);
+
+        // --------------------------------------------------------
+        // Trigger basso
+        // --------------------------------------------------------
+
+        if (pattern.includes(stepInMeasure)) {
+
+            bass.triggerAttackRelease(
+    note,
+    "8n",
+    humanizeTime(time, rand)
+);
+
         }
 
-        // Ghost notes su 16n (solo se la sezione è energica)
-        if (rand() < density * 0.15) {
-            const ghostTime = time + Tone.Time("16n").toSeconds() * 0.5;
-            bass.triggerAttackRelease(clamped, "16n", ghostTime);
-        }
     };
+
 }

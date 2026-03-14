@@ -1,56 +1,47 @@
-// metalRiff.js — versione con palm mute realistici, accordi lunghi sicuri, dinamica vera
+// metalRiff.js — versione sincronizzata con metalTimeline
 
 import * as Tone from "https://esm.sh/tone";
-import { guitarPalm, guitarOpen, clampNote } from "./common.js";
+import { guitarPalm, guitarOpen, clampNote, humanizeTime } from "./common.js";
 
-export function generateMetalRiff(analysis, params, rand) {
+export function generateMetalRiff(analysis, params, timeline, rand) {
 
     const scale = params.scale;
-    const key = params.key;
 
-    const timeSig = params.timeSignature;
-    const beatsPerMeasure = (timeSig === "6/8") ? 6 : 4;
-
-    const measures = params.measures;
-    const rhythm = params.rhythm;
+    const {
+        stepsPerMeasure,
+        totalSteps,
+        sectionTimeline
+    } = timeline;
 
     const MIN = 36; // C2
     const MAX = 52; // E3
     const octave = 2;
+    
+    function chooseChordRoot(scale, rand) {
+
+    const r = rand();
+
+    if (r < 0.55)
+        return scale[0]; // tonica
+
+    if (r < 0.8)
+        return scale[4 % scale.length]; // dominante
+
+    if (r < 0.95)
+        return scale[5 % scale.length]; // sottodominante
+
+    return scale[Math.floor(rand() * scale.length)];
+
+}
 
     // ------------------------------------------------------------
-    // Palm mute state
+    // COSTRUZIONE POWER CHORD
     // ------------------------------------------------------------
-    let palmMuteActive = false;
-    let palmMuteMeasuresLeft = 0;
 
-    function maybeStartPalmMute(section) {
-        if (section === "intro") return;
-
-        const prob =
-            section === "verse"  ? 0.25 :
-            section === "chorus" ? 0.40 :
-            section === "solo"   ? 0.15 :
-            section === "outro"  ? 0.10 : 0.20;
-
-        if (!palmMuteActive && rand() < prob) {
-            palmMuteActive = true;
-            palmMuteMeasuresLeft = 2 + Math.floor(rand() * 3); // 2–4 misure
-        }
-    }
-
-    function updatePalmMuteState(stepInMeasure) {
-        if (stepInMeasure === 0 && palmMuteActive) {
-            palmMuteMeasuresLeft--;
-            if (palmMuteMeasuresLeft <= 0) palmMuteActive = false;
-        }
-    }
-
-    // ------------------------------------------------------------
-    // Power chord builder
-    // ------------------------------------------------------------
     function buildChord(root) {
+
         const rootMidi = Tone.Frequency(root).toMidi();
+
         return [
             root,
             Tone.Frequency(rootMidi + 7, "midi").toNote(),
@@ -59,191 +50,135 @@ export function generateMetalRiff(analysis, params, rand) {
     }
 
     // ------------------------------------------------------------
-    // Sezione riff con palm mute realistici
+    // PROGRESSIONE POWER METAL
+    // I–VI–VII–V (molto usata nel power)
     // ------------------------------------------------------------
-    function generateSectionRiff(sectionName, sectionMeasures, densityFactor) {
 
-        const totalSteps = sectionMeasures * beatsPerMeasure;
-        const notes = [];
-        const sections = [];
+    const progression = [
 
-        for (let i = 0; i < totalSteps; i++) {
-
-            const stepInMeasure = i % beatsPerMeasure;
-
-            // Aggiorna palm mute
-            updatePalmMuteState(stepInMeasure);
-
-            // Possibile inizio blocco palm
-            if (stepInMeasure === 0) {
-                maybeStartPalmMute(sectionName);
-            }
-
-            // ----------------------------------------------------
-            // PALM MUTE ATTIVO
-            // ----------------------------------------------------
-            if (palmMuteActive) {
-
-                if (stepInMeasure % 1 === 0) {
-                    const root = scale[0] + octave;
-                    notes.push(clampNote(root, MIN, MAX));
-                }
-                else if (stepInMeasure % 0.5 === 0 && rand() < 0.5) {
-                    const root = scale[0] + octave;
-                    notes.push(clampNote(root, MIN, MAX));
-                }
-                else {
-                    notes.push(null);
-                }
-
-                sections.push(sectionName);
-                continue;
-            }
-
-            // ----------------------------------------------------
-            // OPEN (nessun palm attivo)
-            // ----------------------------------------------------
-
-            // 20%: accordo lungo per 1–2 battute (con protezione)
-            if (stepInMeasure === 0 && rand() < 0.20) {
-
-                const root = scale[0] + octave;
-                const longDur = (rand() < 0.5) ? beatsPerMeasure : beatsPerMeasure * 2;
-
-                const remaining = totalSteps - i;
-                const safeDur = Math.min(longDur, remaining);
-
-                for (let k = 0; k < safeDur; k++) {
-                    notes.push(clampNote(root, MIN, MAX));
-                    sections.push(sectionName);
-                    i++;
-                }
-                i--; 
-                continue;
-            }
-
-            // Accento forte su ogni misura
-            if (stepInMeasure === 0) {
-                const root = scale[0] + octave;
-                notes.push(clampNote(root, MIN, MAX));
-                sections.push(sectionName);
-                continue;
-            }
-
-            // 15%: due note nella stessa battuta (solo se c’è spazio)
-            if (rand() < 0.15 && stepInMeasure < beatsPerMeasure - 1) {
-                const idx1 = Math.floor(rand() * scale.length);
-                const idx2 = Math.floor(rand() * scale.length);
-                notes.push(clampNote(scale[idx1] + octave, MIN, MAX));
-                sections.push(sectionName);
-                notes.push(clampNote(scale[idx2] + octave, MIN, MAX));
-                sections.push(sectionName);
-                i++;
-                continue;
-            }
-
-            // Ritmica per sezione
-            let allow =
-                (sectionName === "intro"  && stepInMeasure === 0) ||
-                (sectionName === "verse"  && stepInMeasure % 2 === 0) ||
-                (sectionName === "chorus" && stepInMeasure % 1 === 0) ||
-                (sectionName === "solo"   && stepInMeasure % 1 === 0) ||
-                (sectionName === "outro"  && stepInMeasure % 2 === 0);
-
-            if (allow) {
-                const idx = Math.floor(rand() * scale.length);
-                const note = scale[idx] + octave;
-                notes.push(clampNote(note, MIN, MAX));
-            } else {
-                notes.push(null);
-            }
-
-            sections.push(sectionName);
-        }
-
-        return { notes, sections };
-    }
-
-    // ------------------------------------------------------------
-    // Generazione sezioni
-    // ------------------------------------------------------------
-    const intro  = generateSectionRiff("intro",  measures.intro,  0.6);
-    const verse  = generateSectionRiff("verse",  measures.verse,  0.8);
-    const chorus = generateSectionRiff("chorus", measures.chorus, 1.0);
-    const solo   = generateSectionRiff("solo",   measures.solo,   0.7);
-    const outro  = generateSectionRiff("outro",  measures.outro,  0.5);
-
-    // ------------------------------------------------------------
-    // Timeline completa
-    // ------------------------------------------------------------
-    const fullRiff = [
-        ...intro.notes,
-        ...verse.notes,
-        ...chorus.notes,
-        ...solo.notes,
-        ...chorus.notes,
-        ...outro.notes
-    ];
-
-    const sectionTimeline = [
-        ...intro.sections,
-        ...verse.sections,
-        ...chorus.sections,
-        ...solo.sections,
-        ...chorus.sections,
-        ...outro.sections
-    ];
-
-    const totalSteps = fullRiff.length;
-
-    // ------------------------------------------------------------
-    // Progressione armonica coerente
-    // ------------------------------------------------------------
-    const chordRoots = [
         scale[0] + octave,
         scale[5 % scale.length] + octave,
         scale[6 % scale.length] + octave,
         scale[4 % scale.length] + octave
+
     ];
 
-    const chordTimeline = [];
-    for (let i = 0; i < totalSteps; i++) {
-        const chordIndex = Math.floor(i / beatsPerMeasure) % chordRoots.length;
-        const chord = buildChord(chordRoots[chordIndex]);
-        chordTimeline.push(chord);
+    // ------------------------------------------------------------
+    // COSTRUZIONE RIFF
+    // ------------------------------------------------------------
+
+    const fullRiff = new Array(totalSteps);
+    const chordTimeline = new Array(totalSteps);
+
+    for (let step = 0; step < totalSteps; step++) {
+
+        const { stepInMeasure } = timeline.getStepData(step);
+
+        const measure =
+            Math.floor(step / stepsPerMeasure);
+
+        //const chordRoot =
+          //  progression[measure % progression.length];
+          
+          const chordRoots = [];
+
+for (let i = 0; i < 4; i++) {
+
+    const root = chooseChordRoot(scale, rand) + octave;
+    chordRoots.push(root);
+
+}
+
+        const chord = buildChord(chordRoot);
+
+        chordTimeline[step] = chord;
+
+        // --------------------------------------------------------
+        // RIFF LOGIC
+        // --------------------------------------------------------
+
+        if (stepInMeasure === 0) {
+
+            // forte su inizio misura
+            fullRiff[step] = clampNote(chordRoot, MIN, MAX);
+
+        }
+
+        else if (stepInMeasure % 2 === 0) {
+
+            // usa note dell'accordo
+            const chordTone =
+                chord[Math.floor(rand() * chord.length)];
+
+            fullRiff[step] = clampNote(chordTone, MIN, MAX);
+
+        }
+
+        else {
+
+            fullRiff[step] = null;
+
+        }
+
     }
 
     // ------------------------------------------------------------
-    // ENGINE ritornato a metal.js
+    // ENGINE
     // ------------------------------------------------------------
+
     function riffEngine(time, step) {
+
         const idx = step % totalSteps;
+
         const note = fullRiff[idx];
+
         if (!note) return;
 
         const chord = chordTimeline[idx];
-        const sound = palmMuteActive ? guitarPalm : guitarOpen;
 
-        // Durata dinamica
-        let dur;
-        if (palmMuteActive) dur = "16n";
-        else if (rand() < 0.2) dur = "2n";
-        else if (rand() < 0.4) dur = "4n";
-        else dur = "8n";
+        const { section } = timeline.getStepData(step);
+        const energy =
+    section === "chorus" ? 1 :
+    section === "solo" ? 0.9 :
+    section === "verse" ? 0.7 :
+    section === "intro" ? 0.5 :
+    0.4;
+    
+    if (rand() > energy) return;
+
+        const sound =
+            section === "verse" || section === "chorus"
+                ? guitarPalm
+                : guitarOpen;
+
+        const dur =
+            section === "chorus"
+                ? "4n"
+                : "8n";
 
         for (const n of chord) {
-            sound.triggerAttackRelease(n, dur, time);
+
+            sound.triggerAttackRelease(
+    n,
+    dur,
+    humanizeTime(time, rand)
+);
         }
+
     }
 
     return {
+
         engine: riffEngine,
+
         data: {
             fullRiff,
             chordTimeline,
             sectionTimeline,
-            beatsPerMeasure,
+            stepsPerMeasure,
             totalSteps
         }
+
     };
+
 }

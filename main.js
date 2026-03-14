@@ -54,34 +54,15 @@ function initFileLoader() {
             return;
         }
 
-        // ⬇️ QUI: ridimensionamento intelligente PRIMA di mostrare la preview
-        const img = new Image();
-        img.src = URL.createObjectURL(file);
+        const url = URL.createObjectURL(file);
+        previewImage.src = url;
+        previewImage.classList.remove("hidden");
+        heroLogoContainer.style.display = "none";
+        btnElabora.classList.remove("hidden");
 
-        img.onload = () => {
-            const containerHeight = window.innerHeight;
-
-            if (img.width > img.height) {
-                // FOTO ORIZZONTALE → più bassa
-                previewImage.style.height = (containerHeight * 0.45) + "px";
-                previewImage.style.width = "auto";
-            } else {
-                // FOTO VERTICALE → più alta
-                previewImage.style.height = (containerHeight * 0.70) + "px";
-                previewImage.style.width = "auto";
-            }
-
-            // ora che le dimensioni sono pronte, mostriamo la preview
-            previewImage.src = img.src;
-            previewImage.classList.remove("hidden");
-            heroLogoContainer.style.display = "none";
-            btnElabora.classList.remove("hidden");
-
-            resetAppState();
-        };
+        resetAppState();
     });
 }
-
 
 // 🎛 Pannello Generi
 function initGenrePanel() {
@@ -90,7 +71,7 @@ function initGenrePanel() {
     const closeGenrePanel = document.getElementById("closeGenrePanel");
 
     btnElabora.addEventListener("click", () => {
-        closeMetalUI();
+        closePlayerPanel();
         genrePanel.classList.add("show");
         genrePanel.classList.remove("hidden");
     });
@@ -128,7 +109,7 @@ async function selectGenre(genre) {
 
 // 🎧 Player UI
 function initPlayerUI() {
-    openMetalUI();
+    openPlayerPanel();
 
     const playBtn = document.getElementById("btnPlay");
     const pauseBtn = document.getElementById("btnPause");
@@ -188,31 +169,29 @@ function drawSpectrum() {
     const values = fft.getValue();
     ctx.clearRect(0, 0, W, H);
 
-    const step = 4; // usa 1 barra ogni 4 → 256 barre invece di 1024
-const barWidth = W / (values.length / step);
+    const barWidth = W / values.length;
 
+    for (let i = 0; i < values.length; i++) {
+        const v = values[i];
+        const magnitude = (v + 140) / 140;
+        const barHeight = magnitude * H;
 
-    for (let i = 0; i < values.length; i += step) {
-    const v = values[i];
-    const magnitude = (v + 140) / 140;
-    const barHeight = magnitude * H;
+        const startHue = 320;
+        const endHue = 220;
+        const hue = startHue + (endHue - startHue) * magnitude;
+        ctx.fillStyle = `hsl(${hue}, 100%, 60%)`;
 
-    const startHue = 320;
-    const endHue = 220;
-    const hue = startHue + (endHue - startHue) * magnitude;
-    ctx.fillStyle = `hsl(${hue}, 100%, 60%)`;
+        const x = i * barWidth;
+        const y = H - barHeight;
+        ctx.fillRect(x, y, barWidth - 1, barHeight);
 
-    const x = (i / step) * barWidth;
-    const y = H - barHeight;
-    ctx.fillRect(x, y, barWidth - 1, barHeight);
+        if (barHeight > peaks[i]) peaks[i] = barHeight;
+        else peaks[i] *= 0.98;
 
-    if (barHeight > peaks[i]) peaks[i] = barHeight;
-    else peaks[i] *= 0.98;
-
-    ctx.fillStyle = "#FFFFFF";
-    const peakY = H - peaks[i];
-    ctx.fillRect(x, peakY, barWidth - 1, 3);
-}
+        ctx.fillStyle = "#FFFFFF";
+        const peakY = H - peaks[i];
+        ctx.fillRect(x, peakY, barWidth - 1, 3);
+    }
 }
 
 // 🎚 FX Panel
@@ -229,29 +208,13 @@ function initFxPanel() {
 function resetAppState() {
     currentEngine?.stop();
     currentEngine = null;
-    closeMetalUI();
+    closePlayerPanel();
 }
 
-function openMetalUI() {
-    const player = document.getElementById("playerPanel");
-    const preview = document.getElementById("previewImage");
-    const spectrum = document.getElementById("spectrumPanel");
-
-    // 1. la foto scorre
-    preview.classList.add("shift-left");
-
-    // 2. il player sale
-    player.classList.add("open");
-
-    // 3. lo spectrum scende dall’alto con un piccolo ritardo
-    setTimeout(() => {
-        spectrum.classList.add("active");
-    }, 250);
+function openPlayerPanel() {
+    document.getElementById("playerPanel")?.classList.add("open");
 }
 
-
-function closeMetalUI() {
-    document.getElementById("spectrumPanel").classList.remove("active");
-    document.getElementById("previewImage").classList.remove("shift-left");
-    document.getElementById("playerPanel").classList.remove("open");
+function closePlayerPanel() {
+    document.getElementById("playerPanel")?.classList.remove("open");
 }

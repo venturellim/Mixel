@@ -32,6 +32,34 @@ export const masterEQ = new Tone.EQ3({
     high: 0
 }).toDestination();
 
+// ==============================
+// LEAD FX CHAIN
+// ==============================
+
+export const leadEQ = new Tone.EQ3({
+    low: -2,
+    mid: 1,
+    high: 3
+});
+
+export const leadChorus = new Tone.Chorus({
+    frequency: 4,
+    delayTime: 2.5,
+    depth: 0.4,
+    spread: 180
+}).start();
+
+export const leadDelay = new Tone.FeedbackDelay({
+    delayTime: "8n",
+    feedback: 0.35
+});
+
+export const leadReverb = new Tone.Reverb({
+    decay: 3,
+    wet: 0.3
+});
+
+leadEQ.chain(leadChorus, leadDelay, leadReverb, masterEQ);
 
 // ==============================
 // GUITAR URL MAP (C2–E6)
@@ -93,7 +121,6 @@ const guitarUrls = {
     E6: "Samples/Guitar/E6.mp3"
 };
 
-
 // ==============================
 // 🎸 GUITAR PALM (C2–C3)
 // ==============================
@@ -129,7 +156,6 @@ guitarPalm.set({
 
 guitarPalm.chain(palmFilter, palmComp, masterEQ);
 
-
 // ==============================
 // 🎸 GUITAR OPEN (C2–C3)
 // ==============================
@@ -151,6 +177,9 @@ guitarOpen.set({
 
 guitarOpen.connect(masterEQ);
 
+// ==============================
+// 🎸 GUITAR LEAD (C2–E6)
+// ==============================
 
 // ==============================
 // 🎸 GUITAR LEAD (C2–E6)
@@ -162,6 +191,8 @@ export const guitarLead = new Tone.Sampler({
     onload: () => window.__samplerLoaded("lead")
 });
 
+guitarLead.connect(leadEQ);
+
 guitarLead.set({
     envelope: {
         attack: 0.005,
@@ -171,67 +202,21 @@ guitarLead.set({
     }
 });
 
+leadChorus.depth = 0.2;
+leadReverb.wet = 0.2;
+leadDelay.feedback = 0.25;
 
-// ==============================
-// LEAD FX CHAIN (corretto e funzionante)
-// ==============================
+// Effetti per Palm e Open
 
-export const leadEQ = new Tone.EQ3({
-    low: -2,
-    mid: 1,
-    high: 3
-});
-
-export const leadChorus = new Tone.Chorus({
-    frequency: 4,
-    delayTime: 2.5,
-    depth: 0.4,
-    spread: 180
-}).start();
-
-export const leadDelay = new Tone.FeedbackDelay({
-    delayTime: "8n",
-    feedback: 0.35
-});
-
-export const leadReverb = new Tone.Reverb({
-    decay: 3,
-    wet: 0.3
-});
-
-// Collegamento corretto (ora guitarLead ESISTE)
-guitarLead.connect(leadEQ);
-leadEQ.chain(leadChorus, leadDelay, leadReverb, masterEQ);
-
-// Impostazioni iniziali FX
-// INVECE DI:
-// leadChorus.depth = 0.2;
-// leadReverb.wet.value = 0.2;
-// leadDelay.feedback = 0.25;
-
-// USA:
-leadChorus.set({ depth: 0.2 });
-leadReverb.set({ wet: 0.2 });
-leadDelay.set({ feedback: 0.25 });
-
-
-// ==============================
-// 🎸 RITMIC FX (Palm + Open)
-// ==============================
-
-const guitarDelay = new Tone.FeedbackDelay(0.03, 0.2).toDestination();
-guitarPalm.connect(guitarDelay);
-guitarOpen.connect(guitarDelay);
-
+const guitarDelay = new Tone.FeedbackDelay(0.03, 0.2);
 export const guitarRiffReverb = new Tone.Reverb({
     decay: 4,
     preDelay: 0.01,
     wet: 0.25
-}).toDestination();
+});
 
-guitarPalm.connect(guitarRiffReverb);
-guitarOpen.connect(guitarRiffReverb);
-
+guitarPalm.chain(guitarDelay, guitarRiffReverb, masterEQ);
+guitarOpen.chain(guitarDelay, guitarRiffReverb, masterEQ);
 
 // ==============================
 // 🎸 BASS (C1–C3)
@@ -290,7 +275,6 @@ export const drums = new Tone.Players({
     china: "Samples/Drums/china.mp3"
 }).connect(masterEQ);
 
-
 // ==============================
 // VOLUMI
 // ==============================
@@ -305,9 +289,6 @@ guitarLead.volume.value = +9;
 drums.volume.value = -9;
 
 
-// ==============================
-// LOG WRAPPERS
-// ==============================
 
 function wrapSampler(name, sampler) {
     const orig = sampler.triggerAttackRelease.bind(sampler);
@@ -330,8 +311,14 @@ function wrapPlayer(name, player) {
     };
 }
 
-Object.keys(drums._players).forEach(key => {
-    wrapPlayer("drums." + key, drums.player(key));
+const drumKeys = [
+"kick","snare","ghost","hihat","openhat",
+"crash1","crash2","tom1","tom2","tom3","tom4",
+"ride","ridebell","china"
+];
+
+drumKeys.forEach(key=>{
+    wrapPlayer("drums."+key, drums.player(key));
 });
 
 
@@ -356,6 +343,13 @@ export function createSeededRandom(seed) {
     };
 }
 
+export function humanizeTime(time, rand, amount = 0.015) {
+
+    const offset = (rand() - 0.5) * amount;
+    return time + offset;
+
+}
+
 export async function waitDownloadInstrumentsWithProgress() {
 
     const overlay = document.getElementById("loadingOverlay");
@@ -364,7 +358,7 @@ export async function waitDownloadInstrumentsWithProgress() {
 
     overlay.style.display = "flex";
 
-    const total = 4;
+    const total = 4; // palm, open, lead, bass
     let loaded = 0;
 
     function checkLoaded() {
@@ -374,6 +368,7 @@ export async function waitDownloadInstrumentsWithProgress() {
         text.innerText = "Caricamento strumenti… " + percent + "%";
     }
 
+    // Aggiorna ogni 100ms
     while (loaded < total) {
         checkLoaded();
         await new Promise(res => setTimeout(res, 100));
@@ -381,3 +376,4 @@ export async function waitDownloadInstrumentsWithProgress() {
 
     overlay.style.display = "none";
 }
+
