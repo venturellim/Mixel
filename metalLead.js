@@ -43,25 +43,31 @@ export function createLeadEngine(analysis, params, timeline, riffData, rand) {
     const riffNotes = extractRiffNotes();
 
     // ------------------------------------------------------------
-    // TEMA PRINCIPALE (voce)
+    // TEMA PRINCIPALE
     // ------------------------------------------------------------
 
     const theme = generateLeadTheme(params, rand);
-    
+
     // ------------------------------------------------------------
-// HOOK MELODICO (frase memorabile)
-// ------------------------------------------------------------
+    // HOOK MELODICO
+    // ------------------------------------------------------------
 
-const hook = [];
+    const hook = [];
 
-const hookLength = 3 + Math.floor(rand() * 3);
+    const hookLength = 3 + Math.floor(rand() * 3);
 
-for (let i = 0; i < hookLength; i++) {
+    for (let i = 0; i < hookLength; i++) {
 
-    const idx = Math.floor(rand() * scale.length);
-    hook.push(scale[idx]);
+        const idx = Math.floor(rand() * scale.length);
 
-}
+        if (scale[idx]) {
+            hook.push(scale[idx]);
+        }
+
+    }
+
+    // fallback sicurezza
+    if (hook.length === 0) hook.push(scale[0]);
 
     // ------------------------------------------------------------
     // MOTIVI SECONDARI
@@ -75,11 +81,12 @@ for (let i = 0; i < hookLength; i++) {
         for (let i = 0; i < len; i++) {
 
             const idx = Math.floor(rand() * scale.length);
-            motif.push(scale[idx]);
+
+            if (scale[idx]) motif.push(scale[idx]);
 
         }
 
-        return motif;
+        return motif.length ? motif : [scale[0]];
 
     }
 
@@ -90,11 +97,12 @@ for (let i = 0; i < hookLength; i++) {
         for (let i = 0; i < stepsPerMeasure; i++) {
 
             const idx = Math.floor(rand() * scale.length);
-            phrase.push(scale[idx]);
+
+            if (scale[idx]) phrase.push(scale[idx]);
 
         }
 
-        return phrase;
+        return phrase.length ? phrase : [scale[0]];
 
     }
 
@@ -113,11 +121,13 @@ for (let i = 0; i < hookLength; i++) {
             timeline.getStepData(step);
 
         const chord = riffData.chordTimeline[idx];
+        const nextChord =
+            riffData.chordTimeline[(idx + 1) % totalSteps];
 
         if (!chord) return;
 
         // --------------------------------------------------------
-        // Cambia variazioni ogni misura
+        // NUOVA VARIAZIONE OGNI MISURA
         // --------------------------------------------------------
 
         if (stepInMeasure === 0) {
@@ -144,15 +154,12 @@ for (let i = 0; i < hookLength; i++) {
         // SELEZIONE NOTA
         // --------------------------------------------------------
 
-        let noteName;
-        
-        const nextChord =
-riffData.chordTimeline[(idx + 1) % totalSteps];
+        let noteName = null;
 
-        // nota forte sull'accordo
+        // forte su inizio misura
         if (stepInMeasure === 0) {
 
-            const chordChoice = [1,2,0,1,2];
+            const chordChoice = [0,1,2,1];
 
             noteName =
                 chord[
@@ -162,20 +169,17 @@ riffData.chordTimeline[(idx + 1) % totalSteps];
                 ];
 
         }
-        
-        // --------------------------------------------------------
-// ANTICIPAZIONE ARMONICA
-// --------------------------------------------------------
 
-if (
-    stepInMeasure === stepsPerMeasure - 1 &&
-    nextChord &&
-    rand() < 0.6
-) {
+        // anticipazione accordo successivo
+        else if (
+            stepInMeasure === stepsPerMeasure - 1 &&
+            nextChord &&
+            rand() < 0.6
+        ) {
 
-    noteName = nextChord[0];
+            noteName = nextChord[0];
 
-}
+        }
 
         // SOLO → frase improvvisata
         else if (section === "solo") {
@@ -187,7 +191,7 @@ if (
 
         }
 
-        // VERSE → variazione
+        // VERSE → motivo
         else if (section === "verse") {
 
             noteName =
@@ -197,26 +201,31 @@ if (
 
         }
 
-        // INTRO / CHORUS / OUTRO → tema
+        // CHORUS → hook
         else if (section === "chorus") {
 
-    const hookIdx =
-        stepInMeasure % hook.length;
+            noteName =
+                hook[
+                    stepInMeasure % hook.length
+                ];
 
-    noteName = hook[hookIdx];
+        }
 
-}
-else {
+        // INTRO / OUTRO → tema principale
+        else {
 
-    const themeIdx =
-        (step % theme.length);
+            const themeIdx =
+                step % theme.length;
 
-    const scaleIndex =
-        theme[themeIdx] % scale.length;
+            const scaleIndex =
+                theme[themeIdx] % scale.length;
 
-    noteName = scale[scaleIndex];
+            noteName = scale[scaleIndex];
 
-}
+        }
+
+        // sicurezza anti-bug
+        if (!noteName) return;
 
         // --------------------------------------------------------
         // CONVERSIONE MIDI
@@ -240,7 +249,7 @@ else {
             Tone.Frequency(midi, "midi").toNote();
 
         // --------------------------------------------------------
-        // DURATA MUSICALE
+        // DURATA
         // --------------------------------------------------------
 
         let dur;
@@ -260,12 +269,15 @@ else {
         else
             dur = "8n";
 
+        // --------------------------------------------------------
+        // PLAY
+        // --------------------------------------------------------
+
         guitarLead.triggerAttackRelease(
     note,
     dur,
-    humanizeTime(time, rand)
+    humanizeTime(time, rand, 0.012)
 );
-
     };
 
 }

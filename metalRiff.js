@@ -190,7 +190,7 @@ for (const t of theme) {
             sound.triggerAttackRelease(
     n,
     dur,
-    humanizeTime(time, rand)
+    humanizeTime(time, rand, 0.006)
 );
         }
 

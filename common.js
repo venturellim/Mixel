@@ -343,10 +343,21 @@ export function createSeededRandom(seed) {
     };
 }
 
-export function humanizeTime(time, rand, amount = 0.015) {
+export function humanizeTime(time, rand, amount = 0.008) {
 
-    const offset = (rand() - 0.5) * amount;
+    const offset =
+        (rand() - 0.5) * amount;
+
     return time + offset;
+
+}
+
+export function humanizeVelocity(rand, base = 1) {
+
+    const variation =
+        0.85 + rand() * 0.3;
+
+    return base * variation;
 
 }
 

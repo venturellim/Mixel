@@ -117,7 +117,7 @@ export function createDrumEngine(analysis, params, timeline, riffData, rand) {
 
            
 drums.player(cymbal).start(
-    humanizeTime(time, rand)
+    humanizeTime(time, rand, 0.01)
 );
         }
 
@@ -126,7 +126,7 @@ drums.player(cymbal).start(
         if (kickPattern[kickStep] || riffNote) {
 
     drums.player("kick").start(
-    humanizeTime(time, rand)
+    humanizeTime(time, rand, 0.004)
 );
 
 }
@@ -136,7 +136,7 @@ drums.player(cymbal).start(
         if (snarePattern.includes(stepInMeasure)) {
 
     drums.player("snare").start(
-        humanizeTime(time, rand)
+        humanizeTime(time, rand, 0.006)
     );
 
 }
