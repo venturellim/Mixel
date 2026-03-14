@@ -80,7 +80,7 @@ export async function createMetalSongFromAnalysis(analysis, params, rand) {
     Tone.Transport.bpm.value = params.bpm;
 
     // 🎛️ NUOVA TIMELINE CENTRALE
-    const timeline = createMetalTimeline(params);
+    const timeline = createMetalTimeline(params, rand);
 
     const beatsPerMeasure = timeline.beatsPerMeasure;
     const totalMeasures = timeline.totalMeasures;
@@ -176,7 +176,7 @@ const drumEngine = createDrumEngine(
         drumLoop.stop();
 
         Tone.Transport.stop();
-        Tone.Transport.position = 0;
+        //Tone.Transport.position = 0;
     }
 
     function seek(seconds) {
