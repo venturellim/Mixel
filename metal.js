@@ -45,6 +45,29 @@ export async function createMetalEngineFromImage(previewImage) {
     return engine;
 }
 
+// ======================================================
+// LOADER STRUMENTI
+// ======================================================
+
+export async function waitInstrumentsWithProgress() {
+
+    const overlay = document.getElementById("loadingOverlay");
+    const bar = document.getElementById("loadingBar");
+    const text = document.getElementById("loadingText");
+
+    overlay.style.display = "flex";
+
+    const total = 4;
+
+    while (window.__samplerLoadedCount < total) {
+        const percent = Math.floor((window.__samplerLoadedCount / total) * 100);
+        bar.style.width = percent + "%";
+        text.innerText = "Caricamento strumenti… " + percent + "%";
+        await new Promise(res => setTimeout(res, 100));
+    }
+
+    overlay.style.display = "none";
+}
 
 // ======================================================
 // ENGINE PRINCIPALE
