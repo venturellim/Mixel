@@ -28,7 +28,7 @@ export function photoToMusicParams(analysis) {
     bpm += energy * 40;
     bpm += entropy * 20;
     bpm += edges * 10;
-    bpm = Math.max(80, Math.min(160, bpm));
+    bpm = Math.round(Math.max(80, Math.min(160, bpm)));
 
     // ---------------------------------------------------------
     // Misure per sezione
