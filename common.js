@@ -97,12 +97,6 @@ export const masterEQ = new Tone.EQ3({
 // LEAD FX CHAIN
 // ==============================
 
-export const leadEQ = new Tone.EQ3({
-    low: -2,
-    mid: 1,
-    high: 3
-});
-
 export const leadChorus = new Tone.Chorus({
     frequency: 4,
     delayTime: 2.5,
