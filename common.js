@@ -70,6 +70,12 @@ const drumComp = new Tone.Compressor({
     release: 0.2
 });
 
+export const masterEQ = new Tone.EQ3({
+    low: 0,
+    mid: 0,
+    high: 0
+}).toDestination();
+
 // ------------------------------------------------------------
 // SIGNAL CHAIN
 // ------------------------------------------------------------
@@ -86,12 +92,6 @@ drumComp.connect(masterEQ);
 
 leadBus.connect(leadEQ);
 leadEQ.connect(masterEQ);
-
-export const masterEQ = new Tone.EQ3({
-    low: 0,
-    mid: 0,
-    high: 0
-}).toDestination();
 
 // ==============================
 // LEAD FX CHAIN
