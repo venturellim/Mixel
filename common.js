@@ -1,5 +1,5 @@
 // common.js — versione moderna per Tone.js 15
-import * as Tone from "https://esm.sh/tone@15.1.22";
+import * as Tone from "https://esm.sh/tone";
 
 // ======================================================
 // CONTATORE GLOBALE PER IL CARICAMENTO
