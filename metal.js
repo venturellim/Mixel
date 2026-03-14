@@ -142,8 +142,8 @@ const drumEngine = createDrumEngine(
     }, "8n");
 
     const drumLoop = new Tone.Loop((time) => {
-        drumEngine(time, drumStep++);
-    }, "16n");
+    drumEngine(time, drumStep++);
+}, "8n");
 
 
     // --------------------------------------------------
@@ -180,7 +180,7 @@ const drumEngine = createDrumEngine(
     }
 
     function seek(seconds) {
-        Tone.Transport.seconds = seconds;
+        Tone.Transport.start(undefined, seconds);
     }
 
     return {
