@@ -67,7 +67,7 @@ export function createBassEngine(analysis, params, timeline, riffData, rand) {
         if (!chord) return;
 
         const root = chord[0];
-        
+        if (!root) return;
         const riffNote = riffData.fullRiff[idx];
 
         let bassSource = root;
@@ -75,9 +75,9 @@ export function createBassEngine(analysis, params, timeline, riffData, rand) {
 // PEDAL TONE nelle parti epiche
 if (section === "chorus" || section === "intro") {
 
-    if (rand() < 0.6) {
+    if (rand() < 0.6 && riffData.chordTimeline[0]) {
 
-        bassSource = riffData.chordTimeline[0][0];
+        bassSource = riffData.chordTimeline[0][0] || root;
 
     }
 
@@ -90,14 +90,22 @@ else if (riffNote && rand() < 0.7) {
 
 }
 
+// sicurezza finale
+if (!bassSource) return;
+
 const sourceMidi =
     Tone.Frequency(bassSource).toMidi();
 
-const bassMidi = sourceMidi - 12;
+const bassMidi =
+    rand() < 0.25
+        ? sourceMidi - 24
+        : sourceMidi - 12;
 
 const note = clamp(
     Tone.Frequency(bassMidi, "midi").toNote()
 );
+
+if (!note) return;
 
         const pattern = getBassPattern(section);
 
