@@ -77,17 +77,9 @@ export function generateMetalRiff(analysis, params, timeline, rand) {
         const measure =
             Math.floor(step / stepsPerMeasure);
 
-        //const chordRoot =
-          //  progression[measure % progression.length];
+        const chordRoot =
+          progression[measure % progression.length];
           
-          const chordRoots = [];
-
-for (let i = 0; i < 4; i++) {
-
-    const root = chooseChordRoot(scale, rand) + octave;
-    chordRoots.push(root);
-
-}
 
         const chord = buildChord(chordRoot);
 
