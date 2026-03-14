@@ -26,6 +26,67 @@ function logNote(instrumentName, note, time) {
 // MASTER BUS
 // ==============================
 
+// ------------------------------------------------------------
+// MIX BUS
+// ------------------------------------------------------------
+
+export const guitarBus = new Tone.Gain(1);
+export const bassBus = new Tone.Gain(1);
+export const drumBus = new Tone.Gain(1);
+export const leadBus = new Tone.Gain(1);
+
+// ------------------------------------------------------------
+// EQ
+// ------------------------------------------------------------
+
+const guitarEQ = new Tone.EQ3({
+    low: -4,
+    mid: 2,
+    high: 3
+});
+
+const bassEQ = new Tone.EQ3({
+    low: 4,
+    mid: -2,
+    high: -4
+});
+
+const drumEQ = new Tone.EQ3({
+    low: 2,
+    mid: 1,
+    high: 3
+});
+
+const leadEQ = new Tone.EQ3({
+    low: -3,
+    mid: 2,
+    high: 4
+});
+
+const drumComp = new Tone.Compressor({
+    threshold: -18,
+    ratio: 4,
+    attack: 0.01,
+    release: 0.2
+});
+
+// ------------------------------------------------------------
+// SIGNAL CHAIN
+// ------------------------------------------------------------
+
+guitarBus.connect(guitarEQ);
+guitarEQ.connect(masterEQ);
+
+bassBus.connect(bassEQ);
+bassEQ.connect(masterEQ);
+
+drumBus.connect(drumEQ);
+drumEQ.connect(drumComp);
+drumComp.connect(masterEQ);
+
+leadBus.connect(leadEQ);
+leadEQ.connect(masterEQ);
+
 export const masterEQ = new Tone.EQ3({
     low: 0,
     mid: 0,
@@ -175,7 +236,7 @@ guitarOpen.set({
     }
 });
 
-guitarOpen.connect(masterEQ);
+guitarOpen.connect(guitarBus);
 
 // ==============================
 // 🎸 GUITAR LEAD (C2–E6)
@@ -191,7 +252,7 @@ export const guitarLead = new Tone.Sampler({
     onload: () => window.__samplerLoaded("lead")
 });
 
-guitarLead.connect(leadEQ);
+guitarLead.connect(leadBus);
 
 guitarLead.set({
     envelope: {
@@ -260,7 +321,7 @@ export const bass = new Tone.Sampler({
         C3: "Samples/Bass/C3.mp3"
     },
     onload: () => window.__samplerLoaded("bass")
-}).connect(masterEQ);
+}).connect(bassBus);
 
 
 // ==============================
@@ -282,7 +343,7 @@ export const drums = new Tone.Players({
     ride: "Samples/Drums/ride.mp3",
     ridebell: "Samples/Drums/ride_bell.mp3",
     china: "Samples/Drums/china.mp3"
-}).connect(masterEQ);
+}).connect(drumBus);
 
 // ==============================
 // VOLUMI
