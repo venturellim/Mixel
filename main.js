@@ -71,7 +71,7 @@ function initGenrePanel() {
     const closeGenrePanel = document.getElementById("closeGenrePanel");
 
     btnElabora.addEventListener("click", () => {
-        closePlayerPanel();
+        closeMetalUI();
         genrePanel.classList.add("show");
         genrePanel.classList.remove("hidden");
     });
@@ -109,7 +109,7 @@ async function selectGenre(genre) {
 
 // 🎧 Player UI
 function initPlayerUI() {
-    openPlayerPanel();
+    openMetalUI();
 
     const playBtn = document.getElementById("btnPlay");
     const pauseBtn = document.getElementById("btnPause");
@@ -208,13 +208,31 @@ function initFxPanel() {
 function resetAppState() {
     currentEngine?.stop();
     currentEngine = null;
-    closePlayerPanel();
+    closeMetalUI();
+   
 }
 
-function openPlayerPanel() {
-    document.getElementById("playerPanel")?.classList.add("open");
+function openMetalUI() {
+    const player = document.getElementById("playerPanel");
+    const preview = document.getElementById("previewImage");
+    const spectrum = document.getElementById("spectrumPanel");
+
+    // 1. la foto scorre
+    preview.classList.add("shift-left");
+
+    // 2. il player sale
+    player.classList.add("open");
+
+    // 3. lo spectrum scende dall’alto con un piccolo ritardo
+    setTimeout(() => {
+        spectrum.classList.add("active");
+    }, 250);
 }
 
-function closePlayerPanel() {
-    document.getElementById("playerPanel")?.classList.remove("open");
+
+function closeMetalUI() {
+    document.getElementById("spectrumPanel").classList.remove("active");
+    document.getElementById("previewImage").classList.remove("shift-left");
+    document.getElementById("playerPanel").classList.remove("open");
 }
+
