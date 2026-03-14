@@ -206,6 +206,15 @@ leadChorus.set({ depth: 0.2 });
 leadReverb.set({ wet: 0.2 });
 leadDelay.set({ feedback: 0.25 });
 
+const guitarBusL = new Tone.Panner(-0.35).connect(masterEQ);
+const guitarBusR = new Tone.Panner(0.35).connect(masterEQ);
+
+guitarPalm.connect(guitarBusL);
+guitarPalm.connect(guitarBusR);
+
+guitarOpen.connect(guitarBusL);
+guitarOpen.connect(guitarBusR);
+
 // Effetti per Palm e Open
 
 const guitarDelay = new Tone.FeedbackDelay(0.03, 0.2);

@@ -69,19 +69,29 @@ for (const t of theme) {
     }
 
     // ------------------------------------------------------------
-    // PROGRESSIONE POWER METAL
-    // I–VI–VII–V (molto usata nel power)
-    // ------------------------------------------------------------
+// PROGRESSIONI METAL
+// ------------------------------------------------------------
 
-    const progression = [
+const progressions = [
 
-        scale[0] + octave,
-        scale[5 % scale.length] + octave,
-        scale[6 % scale.length] + octave,
-        scale[4 % scale.length] + octave
+    [0,5,6,4], // power metal classico
+    [0,6,5,6], // epico
+    [0,4,5,0], // heavy classico
+    [0,3,4,5], // più oscuro
+    [0,6,4,5]  // cinematico
 
+];
+
+const chosenProg =
+    progressions[
+        Math.floor(rand() * progressions.length)
     ];
 
+const progression =
+    chosenProg.map(
+        i => scale[i % scale.length] + octave
+    );
+    
     // ------------------------------------------------------------
     // COSTRUZIONE RIFF
     // ------------------------------------------------------------
@@ -96,8 +106,16 @@ for (const t of theme) {
         const measure =
             Math.floor(step / stepsPerMeasure);
 
-        const chordRoot =
-          progression[measure % progression.length];
+        let chordRoot =
+    progression[measure % progression.length];
+
+// 25% variazione armonica
+if (rand() < 0.25) {
+
+    chordRoot =
+        chooseChordRoot(scale, rand) + octave;
+
+}
           
 
         const chord = buildChord(chordRoot);
@@ -187,11 +205,11 @@ for (const t of theme) {
 
         for (const n of chord) {
 
-            sound.triggerAttackRelease(
-    n,
-    dur,
-    humanizeTime(time, rand, 0.006)
-);
+            const t1 = humanizeTime(time, rand, 0.004);
+const t2 = humanizeTime(time, rand, 0.009);
+
+sound.triggerAttackRelease(n, dur, t1, 0.9 + rand()*0.2);
+sound.triggerAttackRelease(n, dur, t2, 0.9 + rand()*0.2);
         }
 
     }
