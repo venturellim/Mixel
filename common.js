@@ -202,9 +202,9 @@ guitarLead.set({
     }
 });
 
-leadChorus.depth = 0.2;
-leadReverb.wet = 0.2;
-leadDelay.feedback = 0.25;
+leadChorus.set({ depth: 0.2 });
+leadReverb.set({ wet: 0.2 });
+leadDelay.set({ feedback: 0.25 });
 
 // Effetti per Palm e Open
 
