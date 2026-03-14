@@ -20,7 +20,7 @@ import { createLeadEngine } from "./metalLead.js";
 import { createDrumEngine } from "./metalDrums.js";
 import { detectMetalStyle } from "./metalTheory.js";
 import { createMetalTimeline } from "./metalTimeline.js";
-
+import { generateLeadTheme } from "./leadTheme.js";
 
 // ======================================================
 // ENTRY POINT
