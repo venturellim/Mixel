@@ -460,6 +460,30 @@
 }
 
 /* ================================
+   PLAYER: sale dal basso
+   ================================ */
+/* PLAYER PANEL — contenitore invisibile, solo glow verde */
+#playerPanel {
+    position: absolute;
+    left: 0;
+    bottom: -220px;   /* altezza chiusura */
+    width: 100%;
+    height: 220px;    /* altezza apertura */
+    padding-top: 0;
+    background: rgba(20,20,20,0.9);
+    box-shadow: 0 0 15px rgba(0,255,0,0.2);
+    /* bordo grigio invisibile */
+    border: none;
+    transition: bottom 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+    z-index: 20;
+}
+
+#playerPanel.open {
+    bottom: 0;
+}
+
+
+/* ================================
    PREVIEW: si sposta a sinistra
    ================================ */
 #previewImage {
