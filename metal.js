@@ -18,9 +18,10 @@ import { generateMetalRiff } from "./metalRiff.js";
 import { createBassEngine } from "./metalBass.js";
 import { createLeadEngine } from "./metalLead.js";
 import { createDrumEngine } from "./metalDrums.js";
-import { detectMetalStyle } from "./metalTheory.js";
+import { detectMetalStyle, normalizeMetalScale } from "./metalTheory.js";
 import { createMetalTimeline } from "./metalTimeline.js";
 import { generateLeadTheme } from "./leadTheme.js";
+
 
 // ======================================================
 // ENTRY POINT
@@ -33,11 +34,19 @@ export async function createMetalEngineFromImage(previewImage) {
 
     const params = photoToMusicParams(analysis);
     console.log("MUSIC PARAMS:", params);
+    params.scale = normalizeMetalScale(params.scale, analysis);
 
     const style = detectMetalStyle(analysis.brightness, analysis.entropy);
     analysis.style = style;
 
-    const dna = Math.floor(analysis.brightness * 1000000);
+    const dna = Math.floor(
+
+    analysis.brightness * 100000 +
+    analysis.energy * 200000 +
+    analysis.texture * 300000 +
+    analysis.complexity * 400000
+
+);
     const rand = createSeededRandom(dna);
 
     const engine = await createMetalSongFromAnalysis(analysis, params, rand);
