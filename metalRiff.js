@@ -1,30 +1,21 @@
-// metalRiff.js — versione sincronizzata con metalTimeline
+// metalRiff.js — riff engine migliorato
 
 import * as Tone from "https://esm.sh/tone";
 import { guitarPalm, guitarOpen, clampNote, humanizeTime } from "./common.js";
 
-export function generateMetalRiff(
-    analysis,
-    params,
-    timeline,
-    rand,
-    theme
-) {
+const powerMetalProgressions = [
+
+    [0,4,5,3],   // I V vi IV
+    [0,5,3,4],   // I vi IV V
+    [0,3,4,3],   // I IV V IV
+    [0,4,3,5],   // I V IV vi
+    [0,3,5,4]    // I IV vi V
+
+];
+
+export function generateMetalRiff(analysis, params, timeline, rand) {
 
     const scale = params.scale;
-    
-    // ------------------------------------------------------------
-// NOTE DERIVATE DAL TEMA
-// ------------------------------------------------------------
-
-const themeNotes = [];
-
-for (const t of theme) {
-
-    const idx = t % scale.length;
-    themeNotes.push(scale[idx]);
-
-}
 
     const {
         stepsPerMeasure,
@@ -35,23 +26,31 @@ for (const t of theme) {
     const MIN = 36; // C2
     const MAX = 52; // E3
     const octave = 2;
-    
+    const progression =
+    powerMetalProgressions[
+        Math.floor(rand() * powerMetalProgressions.length)
+    ];
+
+    // ------------------------------------------------------------
+    // SCELTA TONICA ACCORDO
+    // ------------------------------------------------------------
+
     function chooseChordRoot(scale, rand) {
 
-    const r = rand();
+        const r = rand();
 
-    if (r < 0.55)
-        return scale[0]; // tonica
+        if (r < 0.55)
+            return scale[0];
 
-    if (r < 0.8)
-        return scale[4 % scale.length]; // dominante
+        if (r < 0.8)
+            return scale[4 % scale.length];
 
-    if (r < 0.95)
-        return scale[5 % scale.length]; // sottodominante
+        if (r < 0.95)
+            return scale[5 % scale.length];
 
-    return scale[Math.floor(rand() * scale.length)];
+        return scale[Math.floor(rand() * scale.length)];
 
-}
+    }
 
     // ------------------------------------------------------------
     // COSTRUZIONE POWER CHORD
@@ -62,36 +61,48 @@ for (const t of theme) {
         const rootMidi = Tone.Frequency(root).toMidi();
 
         return [
+
             root,
+
             Tone.Frequency(rootMidi + 7, "midi").toNote(),
+
             Tone.Frequency(rootMidi + 12, "midi").toNote()
+
         ];
+
     }
 
     // ------------------------------------------------------------
-// PROGRESSIONI METAL
+    // PEDAL PATTERN
+    // ------------------------------------------------------------
+
+    function generatePedalPattern(bpm) {
+
+        if (bpm < 100)
+            return [0,4,8,12];
+
+        if (bpm < 130)
+            return [0,3,6,8,12];
+
+        return [0,2,4,6,8,10,12];
+
+    }
+
+    const pedalPattern =
+        generatePedalPattern(params.bpm);
+
+// ------------------------------------------------------------
+// RIFF BASE (2 MISURE)
 // ------------------------------------------------------------
 
-const progressions = [
+const riffMeasures = 2;
 
-    [0,5,6,4], // power metal classico
-    [0,6,5,6], // epico
-    [0,4,5,0], // heavy classico
-    [0,3,4,5], // più oscuro
-    [0,6,4,5]  // cinematico
+const riffLength =
+    riffMeasures * stepsPerMeasure;
 
-];
+const baseRiff =
+    new Array(riffLength);
 
-const chosenProg =
-    progressions[
-        Math.floor(rand() * progressions.length)
-    ];
-
-const progression =
-    chosenProg.map(
-        i => scale[i % scale.length] + octave
-    );
-    
     // ------------------------------------------------------------
     // COSTRUZIONE RIFF
     // ------------------------------------------------------------
@@ -99,75 +110,119 @@ const progression =
     const fullRiff = new Array(totalSteps);
     const chordTimeline = new Array(totalSteps);
 
-    for (let step = 0; step < totalSteps; step++) {
+    // ------------------------------------------------------------
+// COSTRUZIONE RIFF BASE
+// ------------------------------------------------------------
 
-        const { stepInMeasure } = timeline.getStepData(step);
+let chordRoot =
+    chooseChordRoot(scale, rand) + octave;
 
-        const measure =
-            Math.floor(step / stepsPerMeasure);
+let chord =
+    buildChord(chordRoot);
 
-        let chordRoot =
-    progression[measure % progression.length];
+for (let step = 0; step < riffLength; step++) {
 
-// 25% variazione armonica
-if (rand() < 0.25) {
+    const stepInMeasure =
+        step % stepsPerMeasure;
+
+    if (stepInMeasure === 0) {
+
+    const measure =
+        Math.floor(step / stepsPerMeasure);
+
+    const degree =
+        progression[
+            measure % progression.length
+        ];
 
     chordRoot =
-        chooseChordRoot(scale, rand) + octave;
+        scale[degree] + octave;
+
+    chord =
+        buildChord(chordRoot);
 
 }
-          
 
-        const chord = buildChord(chordRoot);
+    if (pedalPattern.includes(stepInMeasure)) {
 
-        chordTimeline[step] = chord;
-
-        // --------------------------------------------------------
-        // RIFF LOGIC
-        // --------------------------------------------------------
-
-        if (stepInMeasure === 0) {
-
-            // forte su inizio misura
-            fullRiff[step] = clampNote(chordRoot, MIN, MAX);
-
-        }
-
-        else if (stepInMeasure % 2 === 0) {
-
-    let note;
-
-    // 40% usa il tema
-    if (rand() < 0.4 && themeNotes.length) {
-
-        note =
-            themeNotes[
-                Math.floor(rand() * themeNotes.length)
-            ];
+        baseRiff[step] =
+            clampNote(chordRoot, MIN, MAX);
 
     }
 
-    // altrimenti usa accordo
+    else if (stepInMeasure === stepsPerMeasure - 1) {
+
+        const chordTone =
+            chord[Math.floor(rand()*chord.length)];
+
+        baseRiff[step] =
+            clampNote(chordTone, MIN, MAX);
+
+    }
+
     else {
 
-        note =
-            chord[
-                Math.floor(rand() * chord.length)
-            ];
+        baseRiff[step] = null;
 
     }
-
-    fullRiff[step] = clampNote(note, MIN, MAX);
 
 }
 
-        else {
+// ------------------------------------------------------------
+// RIFF COMPLETO (ripetizione con variazioni)
+// ------------------------------------------------------------
 
-            fullRiff[step] = null;
+for (let step = 0; step < totalSteps; step++) {
 
-        }
+    const baseStep =
+        step % riffLength;
+
+    let note =
+        baseRiff[baseStep];
+
+    // piccola variazione
+    if (note && rand() < 0.1) {
+
+        const idx =
+            Math.floor(rand()*scale.length);
+
+        note =
+            clampNote(
+                scale[idx] + octave,
+                MIN,
+                MAX
+            );
 
     }
+
+    fullRiff[step] = note;
+    
+    let currentChord =
+    buildChord(
+        chooseChordRoot(scale, rand) + octave
+    );
+
+for (let step = 0; step < totalSteps; step++) {
+
+    const stepInMeasure =
+        step % stepsPerMeasure;
+
+    if (stepInMeasure === 0) {
+
+        currentChord =
+            buildChord(
+                chooseChordRoot(scale, rand) + octave
+            );
+
+    }
+
+    chordTimeline[step] = currentChord;
+
+}
+
+}
+
+let pickDirection = 1;
 
     // ------------------------------------------------------------
     // ENGINE
@@ -175,41 +230,96 @@ if (rand() < 0.25) {
 
     function riffEngine(time, step) {
 
-        const idx = step % totalSteps;
+        const idx =
+            step % totalSteps;
 
-        const note = fullRiff[idx];
+        const note =
+            fullRiff[idx];
 
         if (!note) return;
 
-        const chord = chordTimeline[idx];
+        const chord =
+            chordTimeline[idx];
 
-        const { section } = timeline.getStepData(step);
+        const { section, stepInMeasure } =
+            timeline.getStepData(step);
+
         const energy =
-    section === "chorus" ? 1 :
-    section === "solo" ? 0.9 :
-    section === "verse" ? 0.7 :
-    section === "intro" ? 0.5 :
-    0.4;
-    
-    if (rand() > energy) return;
+            section === "chorus" ? 1 :
+            section === "solo" ? 0.9 :
+            section === "verse" ? 0.7 :
+            section === "intro" ? 0.5 :
+            0.4;
 
-        const sound =
-            section === "verse" || section === "chorus"
-                ? guitarPalm
-                : guitarOpen;
+        if (rand() > energy) return;
 
-        const dur =
-            section === "chorus"
-                ? "4n"
-                : "8n";
+        // --------------------------------------------------------
+        // SCELTA SUONO
+        // --------------------------------------------------------
 
-        for (const n of chord) {
+        let sound;
 
-            const t1 = humanizeTime(time, rand, 0.004);
-const t2 = humanizeTime(time, rand, 0.009);
+        if (section === "chorus")
 
-sound.triggerAttackRelease(n, dur, t1, 0.9 + rand()*0.2);
-sound.triggerAttackRelease(n, dur, t2, 0.9 + rand()*0.2);
+    sound = guitarOpen;
+
+else if (stepInMeasure === stepsPerMeasure - 1)
+
+    sound = guitarOpen;
+
+else
+
+    sound = guitarPalm;
+
+        // --------------------------------------------------------
+        // DURATA
+        // --------------------------------------------------------
+
+        let dur;
+
+if (section === "chorus")
+
+    dur = "4n";
+
+else
+
+    dur =
+        params.bpm > 130
+            ? "16n"
+            : "8n";
+
+        // --------------------------------------------------------
+        // TRIGGER
+        // --------------------------------------------------------
+
+        if (sound === guitarOpen) {
+
+    for (const n of chord) {
+
+        sound.triggerAttackRelease(
+
+            n,
+            dur,
+            humanizeTime(time, rand)
+
+        );
+
+    }
+
+}
+
+        else {
+
+            sound.triggerAttackRelease(
+
+                note,
+
+                dur,
+
+                humanizeTime(time, rand)
+
+            );
+
         }
 
     }
@@ -219,11 +329,13 @@ sound.triggerAttackRelease(n, dur, t2, 0.9 + rand()*0.2);
         engine: riffEngine,
 
         data: {
+
             fullRiff,
             chordTimeline,
             sectionTimeline,
             stepsPerMeasure,
             totalSteps
+
         }
 
     };
