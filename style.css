@@ -486,14 +486,18 @@
 /* ================================
    PREVIEW: si sposta a sinistra
    ================================ */
+
 #previewImage {
     position: absolute;
     left: 50%;
     top: 40px;
     transform: translateX(-50%);
-    transition: all 0.45s ease;
-    z-index: 10;
+    transition: left 0.45s ease;
+    max-width: 90%;
+    object-fit: contain;
 }
+
+
 
 #previewImage.shift-left {
     left: 40px;

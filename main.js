@@ -54,15 +54,34 @@ function initFileLoader() {
             return;
         }
 
-        const url = URL.createObjectURL(file);
-        previewImage.src = url;
-        previewImage.classList.remove("hidden");
-        heroLogoContainer.style.display = "none";
-        btnElabora.classList.remove("hidden");
+        // ⬇️ QUI: ridimensionamento intelligente PRIMA di mostrare la preview
+        const img = new Image();
+        img.src = URL.createObjectURL(file);
 
-        resetAppState();
+        img.onload = () => {
+            const containerHeight = window.innerHeight;
+
+            if (img.width > img.height) {
+                // FOTO ORIZZONTALE → più bassa
+                previewImage.style.height = (containerHeight * 0.45) + "px";
+                previewImage.style.width = "auto";
+            } else {
+                // FOTO VERTICALE → più alta
+                previewImage.style.height = (containerHeight * 0.70) + "px";
+                previewImage.style.width = "auto";
+            }
+
+            // ora che le dimensioni sono pronte, mostriamo la preview
+            previewImage.src = img.src;
+            previewImage.classList.remove("hidden");
+            heroLogoContainer.style.display = "none";
+            btnElabora.classList.remove("hidden");
+
+            resetAppState();
+        };
     });
 }
+
 
 // 🎛 Pannello Generi
 function initGenrePanel() {
