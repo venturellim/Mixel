@@ -91,7 +91,7 @@ drumEQ.connect(drumComp);
 drumComp.connect(masterEQ);
 
 leadBus.connect(leadEQ);
-leadEQ.connect(masterEQ);
+leadEQ.chain(leadChorus, leadDelay, leadReverb, masterEQ);
 
 // ==============================
 // LEAD FX CHAIN
@@ -209,7 +209,7 @@ guitarPalm.set({
     }
 });
 
-guitarPalm.chain(palmFilter, palmComp, masterEQ);
+guitarPalm.chain(palmFilter, palmComp, guitarBus);
 
 // ==============================
 // 🎸 GUITAR OPEN (C2–C3)
@@ -279,8 +279,8 @@ export const guitarRiffReverb = new Tone.Reverb({
     wet: 0.25
 });
 
-guitarPalm.chain(guitarDelay, guitarRiffReverb, masterEQ);
-guitarOpen.chain(guitarDelay, guitarRiffReverb, masterEQ);
+guitarPalm.chain(guitarDelay, guitarRiffReverb, guitarBus);
+guitarOpen.chain(guitarDelay, guitarRiffReverb, guitarBus);
 
 // ==============================
 // 🎸 BASS (C1–C3)
@@ -343,12 +343,12 @@ export const drums = new Tone.Players({
 // VOLUMI
 // ==============================
 
-guitarPalm.volume.value = -3;
-guitarOpen.volume.value = -3;
+guitarPalm.volume.value = 0;
+guitarOpen.volume.value = 0;
 
-bass.volume.value = -3;
+bass.volume.value = 0;
 
-guitarLead.volume.value = +9;
+guitarLead.volume.value = +3;
 
 drums.volume.value = -9;
 
