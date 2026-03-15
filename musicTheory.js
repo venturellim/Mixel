@@ -9,12 +9,36 @@ export function chooseKey(dna){
 }
 
 
-export function chooseScale(dna,key){
+export function chooseScale(dna,key,avgColor){
 
     const minor = [0,2,3,5,7,8,10];
     const harmonicMinor = [0,2,3,5,7,8,11];
 
-    const scaleType = (dna % 2 === 0) ? minor : harmonicMinor;
+    let scaleType;
+
+if(avgColor){
+
+    const {r,g,b} = avgColor;
+
+    if(b > r && b > g)
+
+        scaleType = [0,2,3,5,7,8,10]; // minor
+
+    else if(r > g && r > b)
+
+        scaleType = [0,1,3,5,7,8,10]; // phrygian
+
+    else if(g > r && g > b)
+
+        scaleType = [0,2,3,5,7,9,10]; // dorian
+
+    else
+
+        scaleType = (dna % 2 === 0)
+            ? [0,2,3,5,7,8,10]
+            : [0,2,3,5,7,8,11];
+
+}
 
     const notes = [];
 

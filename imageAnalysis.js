@@ -46,6 +46,39 @@ export function analyzeImageBrightness(img) {
     return avg / 255;
 }
 
+export function analyzeAverageColor(img){
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+
+    canvas.width = 64;
+    canvas.height = 64;
+
+    ctx.drawImage(img,0,0,64,64);
+
+    const data = ctx.getImageData(0,0,64,64).data;
+
+    let r=0,g=0,b=0;
+    let count = data.length/4;
+
+    for(let i=0;i<data.length;i+=4){
+
+        r += data[i];
+        g += data[i+1];
+        b += data[i+2];
+
+    }
+
+    return {
+
+        r: r/count,
+        g: g/count,
+        b: b/count
+
+    };
+
+}
+
 // -------------------------------------------------------------
 // DNA (già tua)
 // -------------------------------------------------------------
@@ -295,6 +328,20 @@ export function analyzeDirection(img) {
     return maxIdx / 179;
 }
 
+function detectDominantColor(analysis) {
+
+    const { r, g, b } = analysis.avgColor;
+
+    if (r > g && r > b) return "red";
+    if (g > r && g > b) return "green";
+    if (b > r && b > g) return "blue";
+
+    if (r > 200 && g > 200) return "yellow";
+
+    return "neutral";
+
+}
+
 // -------------------------------------------------------------
 // Funzione finale
 // -------------------------------------------------------------
@@ -306,6 +353,7 @@ export function analyzeImage(img) {
     const texture = analyzeTexture(img);
     const complexity = analyzeComplexity(img);
     const direction = analyzeDirection(img);
+    const avgColor = analyzeAverageColor(img);
 
     // Derivati per i nuovi engine
     const entropy = complexity;
@@ -314,7 +362,7 @@ export function analyzeImage(img) {
 
     // Tonalità e scala (nuovo!)
     const key = chooseKey(dna);
-    const scale = chooseScale(dna, key);
+    const scale = chooseScale(dna, key, avgColor);
 
     return {
         brightness,

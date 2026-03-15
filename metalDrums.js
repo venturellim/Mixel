@@ -3,157 +3,166 @@
 import { drums, humanizeTime } from "./common.js";
 import * as Tone from "https://esm.sh/tone";
 
-export function createDrumEngine(analysis, params, timeline, riffData, rand) {
+// ------------------------------------------------
+// ANALISI FOTO → STILE BATTERIA
+// ------------------------------------------------
 
-    const {
-        stepsPerMeasure,
-        totalSteps
-    } = timeline;
+const brightness =
+    analysis.brightness || 0.5;
 
-    // ------------------------------------------------------------
-    // FILL TRA SEZIONI
-    // ------------------------------------------------------------
+const complexity =
+    analysis.complexity || 0.5;
 
-    function playFill(time, stepInMeasure) {
+const aggression =
+    (complexity * 0.6) +
+    ((1 - brightness) * 0.4);
 
-        if (stepInMeasure === stepsPerMeasure - 3)
-            drums.player("tom1").start(
-    humanizeTime(time, rand)
-    );
+export function createDrumEngine(params, timeline, riffData, rand) {
 
-        if (stepInMeasure === stepsPerMeasure - 2)
-            drums.player("tom2").start(
-    humanizeTime(time, rand)
-    );
-
-        if (stepInMeasure === stepsPerMeasure - 1) {
-
-            drums.player("snare").start(
-    humanizeTime(time, rand)
-    );
-            drums.player("crash1").start(
-    humanizeTime(time, rand)
-    );
-        }
-
-    }
-
-    // ------------------------------------------------------------
-    // KICK PATTERN
-    // ------------------------------------------------------------
-
-    function getKickPattern(section) {
-
-        if (section === "intro")
-            return [1,0,0,0,1,0,0,0];
-
-        if (section === "verse")
-            return [1,0,0,0,1,0,0,0];
-
-        if (section === "chorus")
-            return [1,0,1,0,1,0,1,0];
-
-        if (section === "solo")
-            return [1,0,1,1,1,0,1,1];
-
-        if (section === "outro")
-            return [1,0,0,0,0,0,0,0];
-
-        return [1,0,0,0,1,0,0,0];
-
-    }
-
-    // ------------------------------------------------------------
-    // SNARE
-    // ------------------------------------------------------------
-
-    function getSnarePattern() {
-
-        return [4,12];
-
-    }
-
-    // ------------------------------------------------------------
-    // CYMBAL
-    // ------------------------------------------------------------
-
-    function getCymbal(section) {
-
-        if (section === "intro") return "ride";
-        if (section === "verse") return "hihat";
-        if (section === "chorus") return "openhat";
-        if (section === "solo") return "ride";
-        if (section === "outro") return "hihat";
-
-        return "hihat";
-
-    }
-
-    // ------------------------------------------------------------
-    // ENGINE
-    // ------------------------------------------------------------
+    const { stepsPerMeasure, totalSteps } = timeline;
 
     return function drumEngine(time, step) {
 
         const idx = step % totalSteps;
 
+        const riffNote =
+            riffData.fullRiff[idx];
+
         const { stepInMeasure, section } =
             timeline.getStepData(step);
-            const riffNote = riffData.fullRiff[idx];
 
-        const nextSection =
-            timeline.sectionTimeline[(idx + 1) % totalSteps];
+        // ------------------------------------------------
+        // HIHAT BASE
+        // ------------------------------------------------
 
-        const kickPattern = getKickPattern(section);
-        const snarePattern = getSnarePattern();
-        const cymbal = getCymbal(section);
+        if (section !== "solo") {
 
-        const kickStep =
-            stepInMeasure % kickPattern.length;
+            const hatDensity =
+    aggression > 0.6 ? 1 : 2;
 
-        // CYMBAL
+if (step % hatDensity === 0) {
 
-        if (stepInMeasure % 2 === 0) {
+                drums.player("hihat").start(
+                    humanizeTime(time, rand)
+                );
 
-           
-drums.player(cymbal).start(
-    humanizeTime(time, rand, 0.01)
-);
+            }
+
         }
 
+        // ------------------------------------------------
+        // RIDE NEL SOLO
+        // ------------------------------------------------
+
+        if (section === "solo") {
+
+            if (step % 2 === 0) {
+
+                drums.player("ride").start(
+                    humanizeTime(time, rand)
+                );
+
+            }
+
+        }
+
+        // ------------------------------------------------
+        // SNARE BACKBEAT
+        // ------------------------------------------------
+
+        if (
+            stepInMeasure ===
+            Math.floor(stepsPerMeasure / 2)
+        ) {
+
+            drums.player("snare").start(
+                humanizeTime(time, rand)
+            );
+
+        }
+
+        // ------------------------------------------------
         // KICK
+        // ------------------------------------------------
 
-        if (kickPattern[kickStep] || riffNote) {
+        if (section === "chorus") {
 
-    drums.player("kick").start(
-    humanizeTime(time, rand, 0.004)
-);
+            // segue il riff
 
-}
+            if (
+    riffNote &&
+    rand() < (0.6 + aggression * 0.4)
+) {
 
-        // SNARE
+                drums.player("kick").start(
+                    humanizeTime(time, rand)
+                );
 
-        if (snarePattern.includes(stepInMeasure)) {
+            }
 
-    drums.player("snare").start(
-        humanizeTime(time, rand, 0.006)
-    );
+        }
 
-}
+        else if (section === "verse") {
 
-if (stepInMeasure === 0 && section === "chorus") {
+            // groove classico
 
-    drums.player("crash1").start(
-        humanizeTime(time, rand)
-    );
+            if (
+                stepInMeasure === 0 ||
+                stepInMeasure === 4 ||
+                stepInMeasure === 8
+            ) {
 
-}
+                drums.player("kick").start(
+                    humanizeTime(time, rand)
+                );
 
-        // FILL TRA SEZIONI
+            }
 
-        if (nextSection !== section) {
+        }
 
-            playFill(time, stepInMeasure);
+        else if (section === "solo") {
+
+            // doppia cassa
+
+            if (step % 2 === 0) {
+
+                drums.player("kick").start(
+                    humanizeTime(time, rand)
+                );
+
+            }
+
+        }
+
+        else if (section === "intro") {
+
+            if (stepInMeasure === 0) {
+
+                drums.player("kick").start(
+                    humanizeTime(time, rand)
+                );
+
+            }
+
+        }
+
+        // ------------------------------------------------
+        // CRASH
+        // ------------------------------------------------
+
+        if (stepInMeasure === 0) {
+
+            if (
+    section === "chorus" ||
+    section === "outro" ||
+    (aggression > 0.7 && rand() < 0.3)
+) {
+
+                drums.player("crash1").start(
+                    humanizeTime(time, rand)
+                );
+
+            }
 
         }
 

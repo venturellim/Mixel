@@ -5,6 +5,18 @@ import { guitarLead, humanizeTime } from "./common.js";
 import { generateLeadTheme } from "./leadTheme.js";
 
 export function createLeadEngine(analysis, params, timeline, riffData, rand) {
+const direction = analysis.direction ?? 0.5;
+
+// ------------------------------------------------------------
+// DIREZIONE MELODICA DERIVATA DALL'IMMAGINE
+// ------------------------------------------------------------
+
+const melodicSlope = (direction - 0.5) * 2;
+
+// range circa:
+// -1 = discendente
+//  0 = neutra
+// +1 = ascendente
 
     const { stepsPerMeasure, totalSteps } = timeline;
     const scale = params.scale;
@@ -49,22 +61,24 @@ export function createLeadEngine(analysis, params, timeline, riffData, rand) {
     const theme = generateLeadTheme(params, rand);
 
     // ------------------------------------------------------------
-    // HOOK MELODICO
-    // ------------------------------------------------------------
+// HOOK PRINCIPALE DELLA CANZONE
+// ------------------------------------------------------------
 
-    const hook = [];
+const hookLength = 4;
 
-    const hookLength = 3 + Math.floor(rand() * 3);
+const hook = [];
 
-    for (let i = 0; i < hookLength; i++) {
+for (let i = 0; i < hookLength; i++) {
 
-        const idx = Math.floor(rand() * scale.length);
+    // favorisce tonica e dominante
+    const choices = [0,0,4,2,5];
 
-        if (scale[idx]) {
-            hook.push(scale[idx]);
-        }
+    const idx =
+        choices[Math.floor(rand()*choices.length)] % scale.length;
 
-    }
+    hook.push(scale[idx]);
+
+}
 
     // fallback sicurezza
     if (hook.length === 0) hook.push(scale[0]);
@@ -75,39 +89,101 @@ export function createLeadEngine(analysis, params, timeline, riffData, rand) {
 
     function generateMotif() {
 
-        const motif = [];
-        const len = 2 + Math.floor(rand() * 3);
+    const motif = [];
+    const len = 2 + Math.floor(rand() * 3);
 
-        for (let i = 0; i < len; i++) {
+    let pos =
+        Math.floor(rand() * scale.length);
 
-            const idx = Math.floor(rand() * scale.length);
+    for (let i = 0; i < len; i++) {
 
-            if (scale[idx]) motif.push(scale[idx]);
+        motif.push(scale[pos]);
 
-        }
+        // movimento influenzato dall'immagine
+        let stepMove;
 
-        return motif.length ? motif : [scale[0]];
+        if (melodicSlope > 0.3)
+            stepMove = rand() < 0.7 ? 1 : -1;
+
+        else if (melodicSlope < -0.3)
+            stepMove = rand() < 0.7 ? -1 : 1;
+
+        else
+            stepMove = rand() < 0.5 ? 1 : -1;
+
+        pos =
+            (pos + stepMove + scale.length)
+            % scale.length;
 
     }
+
+    return motif;
+
+}
 
     function generatePhrase() {
 
-        const phrase = [];
+    const phrase = [];
 
-        for (let i = 0; i < stepsPerMeasure; i++) {
+    let pos =
+        Math.floor(rand() * scale.length);
 
-            const idx = Math.floor(rand() * scale.length);
+    for (let i = 0; i < stepsPerMeasure; i++) {
 
-            if (scale[idx]) phrase.push(scale[idx]);
+        phrase.push(scale[pos]);
 
-        }
+        let move;
 
-        return phrase.length ? phrase : [scale[0]];
+        if (melodicSlope > 0.3)
+            move = rand() < 0.65 ? 1 : -1;
+
+        else if (melodicSlope < -0.3)
+            move = rand() < 0.65 ? -1 : 1;
+
+        else
+            move = rand() < 0.5 ? 1 : -1;
+
+        pos =
+            (pos + move + scale.length)
+            % scale.length;
 
     }
 
+    return phrase;
+
+}
+
     let motif = generateMotif();
     let phrase = generatePhrase();
+    
+    // direzione melodica
+let melodicDirection =
+    rand() < 0.5 ? 1 : -1;
+
+let melodicIndex =
+    Math.floor(rand() * scale.length);
+    
+    function nextScaleNote() {
+
+    melodicIndex += melodicDirection;
+
+    if (melodicIndex >= scale.length) {
+
+        melodicIndex = scale.length - 1;
+        melodicDirection = -1;
+
+    }
+
+    if (melodicIndex < 0) {
+
+        melodicIndex = 0;
+        melodicDirection = 1;
+
+    }
+
+    return scale[melodicIndex];
+
+}
 
     // ------------------------------------------------------------
     // ENGINE
@@ -156,6 +232,8 @@ export function createLeadEngine(analysis, params, timeline, riffData, rand) {
 
         let noteName = null;
 
+
+
         // forte su inizio misura
         if (stepInMeasure === 0) {
 
@@ -184,12 +262,18 @@ export function createLeadEngine(analysis, params, timeline, riffData, rand) {
         // SOLO → frase improvvisata
         else if (section === "solo") {
 
-            noteName =
-                phrase[
-                    stepInMeasure % phrase.length
-                ];
+    if (rand() < 0.7)
 
-        }
+        noteName = nextScaleNote();
+
+    else
+
+        noteName =
+            phrase[
+                stepInMeasure % phrase.length
+            ];
+
+}
 
         // VERSE → motivo
         else if (section === "verse") {
@@ -204,12 +288,22 @@ export function createLeadEngine(analysis, params, timeline, riffData, rand) {
         // CHORUS → hook
         else if (section === "chorus") {
 
-            noteName =
-                hook[
-                    stepInMeasure % hook.length
-                ];
+    const hookIdx =
+        stepInMeasure % hook.length;
 
-        }
+    noteName = hook[hookIdx];
+
+    // variazione melodica leggera
+    if (rand() < 0.2) {
+
+        const idx =
+            Math.floor(rand() * scale.length);
+
+        noteName = scale[idx];
+
+    }
+
+}
 
         // INTRO / OUTRO → tema principale
         else {
@@ -224,8 +318,21 @@ export function createLeadEngine(analysis, params, timeline, riffData, rand) {
 
         }
 
-        // sicurezza anti-bug
-        if (!noteName) return;
+        // --------------------------------------------------------
+// FALLBACK → usa nota dell'accordo
+// --------------------------------------------------------
+
+if (!noteName && chord) {
+
+    noteName =
+        chord[
+            Math.floor(rand() * chord.length)
+        ];
+
+}
+
+// sicurezza finale
+if (!noteName) return;
 
         // --------------------------------------------------------
         // CONVERSIONE MIDI

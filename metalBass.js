@@ -12,6 +12,9 @@ export function createBassEngine(analysis, params, timeline, riffData, rand) {
 
     const MIN = 24; // C1
     const MAX = 36; // C2
+    
+    const chordTimeline = riffData.chordTimeline;
+const fullRiff = riffData.fullRiff;
 
     // ------------------------------------------------------------
     // Clamp nota nel range basso
@@ -57,12 +60,14 @@ export function createBassEngine(analysis, params, timeline, riffData, rand) {
 
     return function bassEngine(time, step) {
 
-        const idx = step % totalSteps;
+        const idx = step % chordTimeline.length;
 
-        const { stepInMeasure, section } =
-            timeline.getStepData(step);
+const chord = chordTimeline[idx];
 
-        const chord = riffData.chordTimeline[idx];
+const riffNote = fullRiff[idx];
+
+const { section, stepInMeasure } =
+    timeline.getStepData(step);
 
         if (!chord) return;
 
@@ -77,7 +82,33 @@ if (section === "chorus" || section === "intro") {
 
     if (rand() < 0.6 && riffData.chordTimeline[0]) {
 
-        bassSource = riffData.chordTimeline[0][0] || root;
+        let bassSource = root;
+
+// PEDAL TONE
+if (section === "chorus" || section === "intro") {
+
+    if (rand() < 0.6) {
+
+        const firstChord = riffData.chordTimeline[0];
+
+        if (firstChord && firstChord[0]) {
+
+            bassSource = firstChord[0];
+
+        }
+
+    }
+
+}
+
+// segue il riff
+else if (riffNote && rand() < 0.7) {
+
+    bassSource = riffNote;
+
+}
+
+if (!bassSource) return;
 
     }
 
@@ -93,19 +124,74 @@ else if (riffNote && rand() < 0.7) {
 // sicurezza finale
 if (!bassSource) return;
 
-const sourceMidi =
-    Tone.Frequency(bassSource).toMidi();
+if (!bassSource) return;
+
+let sourceMidi;
+
+try {
+
+    sourceMidi = Tone.Frequency(bassSource).toMidi();
+
+} catch {
+
+    return;
+
+}
 
 const bassMidi =
     rand() < 0.25
         ? sourceMidi - 24
         : sourceMidi - 12;
 
-const note = clamp(
-    Tone.Frequency(bassMidi, "midi").toNote()
-);
+let note = null;
 
-if (!note) return;
+// ------------------------------------------------
+// CHORUS → segue accordi
+// ------------------------------------------------
+
+if(section === "chorus"){
+
+    note = chord[0];
+
+}
+
+// ------------------------------------------------
+// SOLO → raddoppia chitarra
+// ------------------------------------------------
+
+else if(section === "solo" && riffNote){
+
+    note = riffNote;
+
+}
+
+// ------------------------------------------------
+// VERSE → pedal tone
+// ------------------------------------------------
+
+else if(section === "verse"){
+
+    note = chord[0];
+
+}
+
+// ------------------------------------------------
+// INTRO / OUTRO → note lunghe
+// ------------------------------------------------
+
+else{
+
+    if(stepInMeasure === 0)
+        note = chord[0];
+
+}
+
+if(!note) return;
+
+const bassNote =
+    Tone.Frequency(note)
+        .transpose(-12)
+        .toNote();
 
         const pattern = getBassPattern(section);
 
@@ -116,9 +202,11 @@ if (!note) return;
         if (pattern.includes(stepInMeasure)) {
 
             bass.triggerAttackRelease(
-    note,
-    "8n",
+
+    bassNote,
+    section === "intro" ? "2n" : "8n",
     humanizeTime(time, rand)
+
 );
 
         }

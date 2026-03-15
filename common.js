@@ -76,6 +76,23 @@ export const masterEQ = new Tone.EQ3({
     high: 0
 }).toDestination();
 
+// ------------------------------------------------------------
+// SIGNAL CHAIN
+// ------------------------------------------------------------
+
+guitarBus.connect(guitarEQ);
+guitarEQ.connect(masterEQ);
+
+bassBus.connect(bassEQ);
+bassEQ.connect(masterEQ);
+
+drumBus.connect(drumEQ);
+drumEQ.connect(drumComp);
+drumComp.connect(masterEQ);
+
+leadBus.connect(leadEQ);
+leadEQ.chain(leadChorus, leadDelay, leadReverb, masterEQ);
+
 // ==============================
 // LEAD FX CHAIN
 // ==============================
@@ -97,23 +114,6 @@ export const leadReverb = new Tone.Reverb({
     wet: 0.3
 });
 
-leadEQ.chain(leadChorus, leadDelay, leadReverb, masterEQ);
-
-// ------------------------------------------------------------
-// SIGNAL CHAIN
-// ------------------------------------------------------------
-
-guitarBus.connect(guitarEQ);
-guitarEQ.connect(masterEQ);
-
-bassBus.connect(bassEQ);
-bassEQ.connect(masterEQ);
-
-drumBus.connect(drumEQ);
-drumEQ.connect(drumComp);
-drumComp.connect(masterEQ);
-
-leadBus.connect(leadEQ);
 leadEQ.chain(leadChorus, leadDelay, leadReverb, masterEQ);
 
 // ==============================
@@ -343,15 +343,44 @@ export const drums = new Tone.Players({
 // VOLUMI
 // ==============================
 
-guitarPalm.volume.value = 0;
-guitarOpen.volume.value = 0;
+guitarPalm.volume.value = -3;
+guitarOpen.volume.value = -3;
 
-bass.volume.value = 0;
+bass.volume.value = -3;
 
-guitarLead.volume.value = +3;
+guitarLead.volume.value = +9;
 
 drums.volume.value = -9;
 
+// ==============================
+// 🎹 ORCHESTRAL PAD
+// ==============================
+
+export const orchestraPad = new Tone.PolySynth(Tone.Synth, {
+    oscillator: {
+        type: "sawtooth"
+    },
+    envelope: {
+        attack: 1.2,
+        decay: 0.5,
+        sustain: 0.8,
+        release: 3
+    }
+});
+
+const padFilter = new Tone.Filter({
+    type: "lowpass",
+    frequency: 2500
+});
+
+const padReverb = new Tone.Reverb({
+    decay: 6,
+    wet: 0.6
+});
+
+orchestraPad.chain(padFilter, padReverb, masterEQ);
+
+orchestraPad.volume.value = -14;
 
 
 function wrapSampler(name, sampler) {
