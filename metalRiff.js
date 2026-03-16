@@ -34,19 +34,6 @@ const powerMetalProgressions = [
 export function generateMetalRiff(analysis, params, timeline, rand) {
 
     const scale = params.scale;
-    
-    // ------------------------------------------------------------
-// FOTO → COMPORTAMENTO RIFF
-// ------------------------------------------------------------
-
-const palmProbability =
-    0.8 - analysis.brightness * 0.5;
-
-const fillProbability =
-    0.4 + analysis.texture * 0.5;
-
-const variationProbability =
-    0.05 + analysis.complexity * 0.15;
 
     const {
         stepsPerMeasure,
@@ -213,13 +200,6 @@ else{
 
     }else{
 
-    if(rand() < fillProbability){
-
-        baseRiff[step] =
-            clampNote(chordRoot, MIN, MAX);
-
-    }else{
-
         baseRiff[step] = null;
 
     }
@@ -249,21 +229,25 @@ if(!note){
 
 }
 
-    if(rand() < variationProbability){
+    if(note && rand() < 0.1){
 
-    const idx =
-        Math.floor(rand()*scale.length);
+        const idx =
+            Math.floor(rand()*scale.length);
 
-    note =
-        clampNote(
-            scale[idx] + octave,
-            MIN,
-            MAX
-        );
+        note =
+            clampNote(
+                scale[idx] + octave,
+                MIN,
+                MAX
+            );
+
+    }
+
+    fullRiff[step] = note;
+    
 
 }
 
-fullRiff[step] = note;
 
 // ------------------------------------------------------------
 // TIMELINE ACCORDI
@@ -394,22 +378,17 @@ if(rand() > energy) return;
 
 let sound;
 
-if(section === "chorus"){
+if(section === "chorus")
 
     sound = guitarOpen;
 
-}
-else{
+else if(stepInMeasure === stepsPerMeasure - 1)
 
-    if(rand() < palmProbability)
+    sound = guitarOpen;
 
-        sound = guitarPalm;
+else
 
-    else
-
-        sound = guitarOpen;
-
-}
+    sound = guitarPalm;
 
 
 // ------------------------------------------------------------
@@ -472,6 +451,9 @@ else{
     );
 
 }
+
+}
+
 
 // ------------------------------------------------------------
 
