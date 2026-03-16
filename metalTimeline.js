@@ -9,7 +9,8 @@ export function createMetalTimeline(params, rand) {
     // TIME SIGNATURE
     // ------------------------------------------------------------
 
-    const meter = rand() < 0.2 ? 6 : 4;
+    const meter =
+    params.timeSignature === "6/8" ? 6 : 4;
 
     const beatsPerMeasure = meter;
     const stepsPerBeat = meter === 6 ? 3 : 2;

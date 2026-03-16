@@ -69,6 +69,8 @@ export function photoToMusicParams(analysis) {
         timeSignature,
         bpm,
 
+entropy: analysis.entropy,
+
         measures: {
             intro: introMeasures,
             verse: verseMeasures,

@@ -212,6 +212,7 @@ for(let step = 0; step < totalSteps; step++){
 
     let note =
         baseRiff[baseStep];
+        if(!note) return;
 
     if(note && rand() < 0.1){
 
@@ -228,6 +229,7 @@ for(let step = 0; step < totalSteps; step++){
     }
 
     fullRiff[step] = note;
+    
 
 }
 
@@ -282,6 +284,7 @@ function riffEngine(time, step){
 
     const note =
         fullRiff[idx];
+        if(!note) return;
 
     const {
         section,
@@ -291,7 +294,7 @@ function riffEngine(time, step){
 
     let chord;
 
-    if(section === "chorus"){
+    if(section === "chorus" && stepInMeasure === 0){{
 
         const measure =
             Math.floor(step / stepsPerMeasure);

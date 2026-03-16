@@ -4,7 +4,7 @@ import * as Tone from "https://esm.sh/tone";
 import { guitarLead, humanizeTime } from "./common.js";
 import { generateLeadTheme } from "./leadTheme.js";
 
-export function createLeadEngine(analysis, params, timeline, riffData, rand) {
+export function createLeadEngine(analysis, params, timeline, riffData, rand, theme) {
 const direction = analysis.direction ?? 0.5;
 
 // ------------------------------------------------------------
@@ -53,12 +53,6 @@ const melodicSlope = (direction - 0.5) * 2;
     }
 
     const riffNotes = extractRiffNotes();
-
-    // ------------------------------------------------------------
-    // TEMA PRINCIPALE
-    // ------------------------------------------------------------
-
-    const theme = generateLeadTheme(params, rand);
 
     // ------------------------------------------------------------
 // HOOK PRINCIPALE DELLA CANZONE

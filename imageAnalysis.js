@@ -375,6 +375,8 @@ export function analyzeImage(img) {
         entropy,
         edges,
         symmetry,
+        
+        acgColor,
 
         key,
         scale

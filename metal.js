@@ -29,8 +29,11 @@ import { generateLeadTheme } from "./leadTheme.js";
 
 export async function createMetalEngineFromImage(previewImage) {
 
-    const analysis = await analyzeImage(previewImage);
-    console.log("ANALYSIS:", analysis);
+    console.log("IMAGE RECEIVED", previewImage);
+
+const analysis = await analyzeImage(previewImage);
+
+console.log("ANALYSIS", analysis);
 
     const params = photoToMusicParams(analysis);
     console.log("MUSIC PARAMS:", params);
@@ -126,7 +129,8 @@ const leadEngine = createLeadEngine(
     params,
     timeline,
     riffData,
-    rand
+    rand,
+    theme
 );
 
 const drumEngine = createDrumEngine(
