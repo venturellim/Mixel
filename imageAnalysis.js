@@ -377,7 +377,7 @@ export function analyzeImage(img) {
         edges,
         symmetry,
         
-        acgColor,
+        avgColor,
 
         key,
         scale
