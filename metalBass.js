@@ -64,8 +64,6 @@ const fullRiff = riffData.fullRiff;
 
 const chord = chordTimeline[idx];
 
-const riffNote = fullRiff[idx];
-
 const { section, stepInMeasure } =
     timeline.getStepData(step);
 
