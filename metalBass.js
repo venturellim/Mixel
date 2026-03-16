@@ -3,6 +3,8 @@
 import { bass, humanizeTime } from "./common.js";
 import * as Tone from "https://esm.sh/tone";
 
+console.log("metalBass.js loaded");
+
 export function createBassEngine(analysis, params, timeline, riffData, rand) {
 
     const {

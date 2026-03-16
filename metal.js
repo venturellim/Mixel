@@ -2,6 +2,8 @@
 
 import * as Tone from "https://esm.sh/tone";
 
+console.log("metal.js loaded");
+
 import {
     guitarPalm,
     guitarOpen,

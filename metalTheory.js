@@ -2,6 +2,8 @@
 
 import * as Tone from "https://esm.sh/tone";
 
+console.log("metalTheory.js loaded");
+
 export function detectMetalStyle(brightness,dna){
 
     if(brightness > 0.7) return "power";

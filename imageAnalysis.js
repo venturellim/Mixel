@@ -1,5 +1,5 @@
 //
-// analyzeImage.js
+// imageAnalysis.js
 // Analisi visiva accurata per generatore musicale metal
 // Estrae: brightness, dna, energy, texture, complexity, direction
 // Risoluzione: 64×64
@@ -7,6 +7,7 @@
 
 import { chooseKey, chooseScale } from "./musicTheory.js";
 
+console.log("imageAnalysis.js loaded");
 
 // -------------------------------------------------------------
 // Utility

@@ -1,5 +1,7 @@
 // metalTimeline.js — timeline musicale intelligente
 
+console.log("metalTimeline.js loaded");
+
 export function createMetalTimeline(params, rand) {
 
     const bpm = params.bpm;

@@ -1,6 +1,8 @@
 // leadTheme.js
 import * as Tone from "https://esm.sh/tone";
 
+console.log("leadTheme.js loaded");
+
 export function generateLeadTheme(params, rand) {
 
     const scale = params.scale;

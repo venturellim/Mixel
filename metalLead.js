@@ -4,6 +4,8 @@ import * as Tone from "https://esm.sh/tone";
 import { guitarLead, humanizeTime } from "./common.js";
 import { generateLeadTheme } from "./leadTheme.js";
 
+console.log("metalLead.js loaded");
+
 export function createLeadEngine(analysis, params, timeline, riffData, rand, theme) {
 const direction = analysis.direction ?? 0.5;
 

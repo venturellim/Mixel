@@ -9,6 +9,8 @@ import {
     humanizeTime
 } from "./common.js";
 
+console.log("metalRiff.js loaded");
+
 
 // ------------------------------------------------------------
 // PROGRESSIONI POWER METAL

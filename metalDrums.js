@@ -3,6 +3,8 @@
 import { drums, humanizeTime } from "./common.js";
 import * as Tone from "https://esm.sh/tone";
 
+console.log("metalDrums.js loaded");
+
 // ------------------------------------------------
 // ANALISI FOTO → STILE BATTERIA
 // ------------------------------------------------

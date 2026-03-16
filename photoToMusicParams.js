@@ -3,6 +3,8 @@
 // Converte i valori di analyzeImage() in parametri musicali
 // -------------------------------------------------------------
 
+console.log("photoToMusicParams.js loaded");
+
 export function photoToMusicParams(analysis) {
 
 

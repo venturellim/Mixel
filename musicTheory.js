@@ -1,5 +1,7 @@
 import * as Tone from "https://esm.sh/tone";
 
+console.log("musicTheory.js loaded");
+
 export function chooseKey(dna){
 
     const keys = ["E","F","Gb","G","Ab","A","Bb","B","C","Db","D","Eb"];

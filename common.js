@@ -1,6 +1,8 @@
 // common.js — versione moderna per Tone.js 15
 import * as Tone from "https://esm.sh/tone";
 
+console.log("common.js loaded");
+
 // ======================================================
 // CONTATORE GLOBALE PER IL CARICAMENTO
 // ======================================================

@@ -2,6 +2,8 @@
 
 import * as Tone from "https://esm.sh/tone";
 
+console.log("leadEngine.js loaded");
+
 export function createLeadEngine(obj) {
 
     const sampler = obj.sampler;
