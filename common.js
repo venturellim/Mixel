@@ -76,23 +76,6 @@ export const masterEQ = new Tone.EQ3({
     high: 0
 }).toDestination();
 
-// ------------------------------------------------------------
-// SIGNAL CHAIN
-// ------------------------------------------------------------
-
-guitarBus.connect(guitarEQ);
-guitarEQ.connect(masterEQ);
-
-bassBus.connect(bassEQ);
-bassEQ.connect(masterEQ);
-
-drumBus.connect(drumEQ);
-drumEQ.connect(drumComp);
-drumComp.connect(masterEQ);
-
-leadBus.connect(leadEQ);
-leadEQ.chain(leadChorus, leadDelay, leadReverb, masterEQ);
-
 // ==============================
 // LEAD FX CHAIN
 // ==============================
@@ -114,6 +97,23 @@ export const leadReverb = new Tone.Reverb({
     wet: 0.3
 });
 
+leadEQ.chain(leadChorus, leadDelay, leadReverb, masterEQ);
+
+// ------------------------------------------------------------
+// SIGNAL CHAIN
+// ------------------------------------------------------------
+
+guitarBus.connect(guitarEQ);
+guitarEQ.connect(masterEQ);
+
+bassBus.connect(bassEQ);
+bassEQ.connect(masterEQ);
+
+drumBus.connect(drumEQ);
+drumEQ.connect(drumComp);
+drumComp.connect(masterEQ);
+
+leadBus.connect(leadEQ);
 leadEQ.chain(leadChorus, leadDelay, leadReverb, masterEQ);
 
 // ==============================
