@@ -176,22 +176,29 @@ for(let step = 0; step < riffLength; step++){
 
     if(pedalPattern.includes(stepInMeasure)){
 
+    baseRiff[step] =
+        clampNote(chordRoot, MIN, MAX);
+
+}
+else if(stepInMeasure === stepsPerMeasure - 1){
+
+    const chordTone =
+        chord[Math.floor(rand()*chord.length)];
+
+    baseRiff[step] =
+        clampNote(chordTone, MIN, MAX);
+
+}
+else{
+
+    // palm mute riempitivo
+
+    if(rand() < 0.6){
+
         baseRiff[step] =
             clampNote(chordRoot, MIN, MAX);
 
-    }
-
-    else if(stepInMeasure === stepsPerMeasure - 1){
-
-        const chordTone =
-            chord[Math.floor(rand()*chord.length)];
-
-        baseRiff[step] =
-            clampNote(chordTone, MIN, MAX);
-
-    }
-
-    else{
+    }else{
 
         baseRiff[step] = null;
 
@@ -290,9 +297,21 @@ function riffEngine(time, step){
     const idx =
         step % totalSteps;
 
-    const note =
-        fullRiff[idx];
-        if(!note) return;
+    let note = fullRiff[idx];
+
+if(!note){
+
+    if(section === "chorus" || section === "verse"){
+
+        note = chord[0]; // pedal tone
+
+    }else{
+
+        return;
+
+    }
+
+}
 
     const {
         section,
@@ -345,10 +364,10 @@ if(section === "chorus" && stepInMeasure === 0){
 const energy =
 
     section === "chorus" ? 1 :
-    section === "solo" ? 0.9 :
-    section === "verse" ? 0.7 :
-    section === "intro" ? 0.5 :
-    0.4;
+    section === "solo" ? 0.95 :
+    section === "verse" ? 0.9 :
+    section === "intro" ? 0.8 :
+    0.7;
 
 if(rand() > energy) return;
 
