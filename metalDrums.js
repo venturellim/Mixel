@@ -5,21 +5,14 @@ import * as Tone from "https://esm.sh/tone";
 
 console.log("metalDrums.js loaded");
 
-// ------------------------------------------------
-// ANALISI FOTO → STILE BATTERIA
-// ------------------------------------------------
+export function createDrumEngine(analysis, params, timeline, riffData, rand) {
 
-const brightness =
-    analysis.brightness || 0.5;
+    const brightness = analysis.brightness || 0.5;
+    const complexity = analysis.complexity || 0.5;
 
-const complexity =
-    analysis.complexity || 0.5;
-
-const aggression =
-    (complexity * 0.6) +
-    ((1 - brightness) * 0.4);
-
-export function createDrumEngine(params, timeline, riffData, rand) {
+    const aggression =
+        (complexity * 0.6) +
+        ((1 - brightness) * 0.4);
 
     const { stepsPerMeasure, totalSteps } = timeline;
 
@@ -40,9 +33,9 @@ export function createDrumEngine(params, timeline, riffData, rand) {
         if (section !== "solo") {
 
             const hatDensity =
-    aggression > 0.6 ? 1 : 2;
+                aggression > 0.6 ? 1 : 2;
 
-if (step % hatDensity === 0) {
+            if (step % hatDensity === 0) {
 
                 drums.player("hihat").start(
                     humanizeTime(time, rand)
@@ -89,12 +82,10 @@ if (step % hatDensity === 0) {
 
         if (section === "chorus") {
 
-            // segue il riff
-
             if (
-    riffNote &&
-    rand() < (0.6 + aggression * 0.4)
-) {
+                riffNote &&
+                rand() < (0.6 + aggression * 0.4)
+            ) {
 
                 drums.player("kick").start(
                     humanizeTime(time, rand)
@@ -105,8 +96,6 @@ if (step % hatDensity === 0) {
         }
 
         else if (section === "verse") {
-
-            // groove classico
 
             if (
                 stepInMeasure === 0 ||
@@ -123,8 +112,6 @@ if (step % hatDensity === 0) {
         }
 
         else if (section === "solo") {
-
-            // doppia cassa
 
             if (step % 2 === 0) {
 
@@ -155,10 +142,10 @@ if (step % hatDensity === 0) {
         if (stepInMeasure === 0) {
 
             if (
-    section === "chorus" ||
-    section === "outro" ||
-    (aggression > 0.7 && rand() < 0.3)
-) {
+                section === "chorus" ||
+                section === "outro" ||
+                (aggression > 0.7 && rand() < 0.3)
+            ) {
 
                 drums.player("crash1").start(
                     humanizeTime(time, rand)
