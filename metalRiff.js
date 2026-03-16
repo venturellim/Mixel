@@ -213,8 +213,14 @@ for(let step = 0; step < totalSteps; step++){
         step % riffLength;
 
     let note =
-        baseRiff[baseStep];
-        if(!note) return;
+    baseRiff[baseStep];
+
+if(!note){
+
+    fullRiff[step] = null;
+    continue;
+
+}
 
     if(note && rand() < 0.1){
 
