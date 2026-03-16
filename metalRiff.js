@@ -294,7 +294,7 @@ function riffEngine(time, step){
 
     let chord;
 
-    if(section === "chorus" && stepInMeasure === 0){{
+    if(section === "chorus" && stepInMeasure === 0){
 
         const measure =
             Math.floor(step / stepsPerMeasure);
