@@ -1,4 +1,4 @@
-// metalRiff.js — riff engine power metal
+// metalRiff.js — riff engine power metal (DNA rhythm)
 
 import * as Tone from "https://esm.sh/tone";
 import {
@@ -11,7 +11,6 @@ import {
 
 console.log("metalRiff.js loaded");
 
-
 // ------------------------------------------------------------
 // PROGRESSIONI POWER METAL
 // ------------------------------------------------------------
@@ -23,7 +22,6 @@ const powerMetalProgressions = [
     [0,4,3,5],
     [0,3,5,4]
 ];
-
 
 // ------------------------------------------------------------
 // ENGINE
@@ -41,7 +39,6 @@ export function generateMetalRiff(analysis, params, timeline, rand) {
 
     const MIN = 36;
     const MAX = 52;
-
     const octave = 2;
 
     const progression =
@@ -49,6 +46,31 @@ export function generateMetalRiff(analysis, params, timeline, rand) {
             Math.floor(rand() * powerMetalProgressions.length)
         ];
 
+    // ------------------------------------------------------------
+    // DNA → RHYTHM PATTERN
+    // ------------------------------------------------------------
+
+    function generateRhythmPattern(dna, stepsPerMeasure) {
+
+        const pattern = [];
+
+        for (let i = 0; i < stepsPerMeasure; i++) {
+
+            const bit = (dna >> i) & 1;
+
+            pattern.push(bit === 1);
+
+        }
+
+        return pattern;
+
+    }
+
+    const rhythmPattern =
+        generateRhythmPattern(
+            analysis.dna || 123456,
+            stepsPerMeasure
+        );
 
     // ------------------------------------------------------------
     // COSTRUZIONE POWER CHORD
@@ -62,7 +84,6 @@ export function generateMetalRiff(analysis, params, timeline, rand) {
             Tone.Frequency(rootMidi + 12, "midi").toNote()
         ];
     }
-
 
     // ------------------------------------------------------------
     // CHORUS PROGRESSION
@@ -88,7 +109,6 @@ export function generateMetalRiff(analysis, params, timeline, rand) {
 
     const chorusProgression = generateChorusProgression();
 
-
     // ------------------------------------------------------------
     // PEDAL PATTERN
     // ------------------------------------------------------------
@@ -100,75 +120,6 @@ export function generateMetalRiff(analysis, params, timeline, rand) {
     }
 
     const pedalPattern = generatePedalPattern(params.bpm);
-
-
-    // ------------------------------------------------------------
-    // RIFF BASE
-    // ------------------------------------------------------------
-
-    const riffMeasures = 2;
-    const riffLength = riffMeasures * stepsPerMeasure;
-    const baseRiff = new Array(riffLength);
-
-
-    // ------------------------------------------------------------
-    // COSTRUZIONE RIFF BASE
-    // ------------------------------------------------------------
-
-    let chordRoot = scale[0] + octave;
-    let chord = buildChord(chordRoot);
-
-    for (let step = 0; step < riffLength; step++) {
-        const stepInMeasure = step % stepsPerMeasure;
-
-        if (stepInMeasure === 0) {
-            const measure = Math.floor(step / stepsPerMeasure);
-            const degree = progression[measure % progression.length];
-            chordRoot = scale[degree] + octave;
-            chord = buildChord(chordRoot);
-        }
-
-        if (pedalPattern.includes(stepInMeasure)) {
-            baseRiff[step] = clampNote(chordRoot, MIN, MAX);
-        }
-        else if (stepInMeasure === stepsPerMeasure - 1) {
-            const chordTone = chord[Math.floor(rand() * chord.length)];
-            baseRiff[step] = clampNote(chordTone, MIN, MAX);
-        }
-        else {
-            // palm mute riempitivo
-            if (rand() < 0.6) {
-                baseRiff[step] = clampNote(chordRoot, MIN, MAX);
-            } else {
-                baseRiff[step] = null;
-            }
-        }
-    }
-
-
-    // ------------------------------------------------------------
-    // RIFF COMPLETO
-    // ------------------------------------------------------------
-
-    const fullRiff = new Array(totalSteps);
-
-    for (let step = 0; step < totalSteps; step++) {
-        const baseStep = step % riffLength;
-        let note = baseRiff[baseStep];
-
-        if (!note) {
-            fullRiff[step] = null;
-            continue;
-        }
-
-        if (note && rand() < 0.1) {
-            const idx = Math.floor(rand() * scale.length);
-            note = clampNote(scale[idx] + octave, MIN, MAX);
-        }
-
-        fullRiff[step] = note;
-    }
-
 
     // ------------------------------------------------------------
     // TIMELINE ACCORDI
@@ -190,12 +141,123 @@ export function generateMetalRiff(analysis, params, timeline, rand) {
         chordTimeline[step] = currentChord;
     }
 
+    // ------------------------------------------------------------
+    // RIFF BASE
+    // ------------------------------------------------------------
+
+    const riffMeasures = 2;
+    const riffLength = riffMeasures * stepsPerMeasure;
+    const baseRiff = new Array(riffLength);
+
+    let chordRoot = scale[0] + octave;
+    let chord = buildChord(chordRoot);
+    let palmStreak = 0;
+
+    for (let step = 0; step < riffLength; step++) {
+
+        const stepInMeasure = step % stepsPerMeasure;
+
+        if (stepInMeasure === 0) {
+            const measure = Math.floor(step / stepsPerMeasure);
+            const degree = progression[measure % progression.length];
+            chordRoot = scale[degree] + octave;
+            chord = buildChord(chordRoot);
+        }
+
+        if (pedalPattern.includes(stepInMeasure)) {
+
+            baseRiff[step] = clampNote(chordRoot, MIN, MAX);
+
+        }
+        else if (stepInMeasure === stepsPerMeasure - 1) {
+
+            const chordTone =
+                chord[Math.floor(rand() * chord.length)];
+
+            baseRiff[step] =
+                clampNote(chordTone, MIN, MAX);
+
+        }
+        else {
+
+            // ------------------------------------------------
+            // DNA RHYTHM + VARIAZIONE
+            // ------------------------------------------------
+
+            const energyBoost =
+                analysis.energy > 0.6 ? 0.2 : 0;
+
+            const shouldPlay =
+                rhythmPattern[stepInMeasure] ||
+                rand() < (0.1 + energyBoost);
+
+            if (palmStreak > 0) {
+
+                baseRiff[step] =
+                    clampNote(chordRoot, MIN, MAX);
+
+                palmStreak--;
+
+            }
+            else if (shouldPlay) {
+
+                palmStreak =
+                    1 + Math.floor(rand() * 3);
+
+                baseRiff[step] =
+                    clampNote(chordRoot, MIN, MAX);
+
+            }
+            else {
+
+                baseRiff[step] = null;
+
+            }
+        }
+    }
+
+    // ------------------------------------------------------------
+    // RIFF COMPLETO
+    // ------------------------------------------------------------
+
+    const fullRiff = new Array(totalSteps);
+
+    for (let step = 0; step < totalSteps; step++) {
+
+        const baseStep = step % riffLength;
+        let note = baseRiff[baseStep];
+
+        if (!note) {
+            fullRiff[step] = null;
+            continue;
+        }
+
+        if (rand() < 0.1) {
+
+            const chord = chordTimeline[step];
+
+            const pool = [
+                chord[0],
+                chord[1],
+                chord[2]
+            ];
+
+            note = clampNote(
+                pool[Math.floor(rand() * pool.length)],
+                MIN,
+                MAX
+            );
+        }
+
+        fullRiff[step] = note;
+    }
 
     // ------------------------------------------------------------
     // ENGINE
     // ------------------------------------------------------------
 
     function riffEngine(time, step) {
+
         const idx = step % totalSteps;
         let note = fullRiff[idx];
 
@@ -207,39 +269,43 @@ export function generateMetalRiff(analysis, params, timeline, rand) {
         let chord;
 
         if (section === "chorus" && stepInMeasure === 0) {
-            const measure = Math.floor(step / stepsPerMeasure);
-            chord = chorusProgression[measure % chorusProgression.length];
+
+            const measure =
+                Math.floor(step / stepsPerMeasure);
+
+            chord =
+                chorusProgression[
+                    measure % chorusProgression.length
+                ];
+
         } else {
+
             chord = chordTimeline[idx];
+
         }
 
         if (!note) {
+
             if (section === "chorus" || section === "verse") {
-                note = chord[0]; // pedal tone
+                note = chord[0];
             } else {
                 return;
             }
+
         }
 
-
-        // ------------------------------------------------------------
-        // PAD ORCHESTRALE
-        // ------------------------------------------------------------
-
+        // PAD
         if (section === "chorus" && stepInMeasure === 0) {
+
             orchestraPad.triggerAttackRelease(
                 chord,
                 "1m",
                 time
             );
+
         }
 
-
-        // ------------------------------------------------------------
-        // ENERGIA
-        // ------------------------------------------------------------
-
-        const energy = 
+        const energy =
             section === "chorus" ? 1 :
             section === "solo" ? 0.95 :
             section === "verse" ? 0.9 :
@@ -247,11 +313,6 @@ export function generateMetalRiff(analysis, params, timeline, rand) {
             0.7;
 
         if (rand() > energy) return;
-
-
-        // ------------------------------------------------------------
-        // SUONO
-        // ------------------------------------------------------------
 
         let sound;
 
@@ -262,50 +323,35 @@ export function generateMetalRiff(analysis, params, timeline, rand) {
         else
             sound = guitarPalm;
 
-
-        // ------------------------------------------------------------
-        // DURATA
-        // ------------------------------------------------------------
-
-        let dur;
-
-        if (section === "chorus")
-            dur = "4n";
-        else
-            dur = params.bpm > 130 ? "16n" : "8n";
-
-
-        // ------------------------------------------------------------
-        // TRIGGER
-        // ------------------------------------------------------------
+        let dur =
+            section === "chorus"
+                ? "4n"
+                : (params.bpm > 130 ? "16n" : "8n");
 
         if (section === "chorus") {
+
+            const t = humanizeTime(time, rand);
+
             for (const n of chord) {
+
                 guitarOpen.triggerAttackRelease(
                     n,
                     "4n",
-                    humanizeTime(time, rand)
+                    t
                 );
+
             }
-        }
-        else if (sound === guitarOpen) {
-            sound.triggerAttackRelease(
-                note,
-                dur,
-                humanizeTime(time, rand, 0.010),
-                0.95 + rand() * 0.1
-            );
-        }
-        else {
+
+        } else {
+
             sound.triggerAttackRelease(
                 note,
                 dur,
                 humanizeTime(time, rand)
             );
+
         }
     }
-
-    // ------------------------------------------------------------
 
     return {
         engine: riffEngine,

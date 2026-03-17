@@ -1,4 +1,4 @@
-// metalDrums.js — batteria sincronizzata con metalTimeline
+// metalDrums.js — batteria avanzata DNA-driven
 
 import { drums, humanizeTime } from "./common.js";
 import * as Tone from "https://esm.sh/tone";
@@ -7,6 +7,9 @@ console.log("metalDrums.js loaded");
 
 export function createDrumEngine(analysis, params, timeline, riffData, rand) {
 
+    const fullRiff = riffData.fullRiff;
+    const totalSteps = riffData.totalSteps;
+
     const brightness = analysis.brightness || 0.5;
     const complexity = analysis.complexity || 0.5;
 
@@ -14,39 +17,140 @@ export function createDrumEngine(analysis, params, timeline, riffData, rand) {
         (complexity * 0.6) +
         ((1 - brightness) * 0.4);
 
-    const { stepsPerMeasure, totalSteps } = timeline;
+    const { stepsPerMeasure } = timeline;
+
+    // ------------------------------------------------------------
+    // DNA RHYTHM PATTERN
+    // ------------------------------------------------------------
+
+    function generateRhythmPattern(dna, stepsPerMeasure) {
+
+        const pattern = [];
+
+        for (let i = 0; i < stepsPerMeasure; i++) {
+
+            const bit = (dna >> i) & 1;
+            pattern.push(bit === 1);
+
+        }
+
+        return pattern;
+    }
+
+    const groovePattern =
+        generateRhythmPattern(
+            analysis.dna || 123456,
+            stepsPerMeasure
+        );
+
+    // ------------------------------------------------------------
+    // FILL
+    // ------------------------------------------------------------
+
+    function playFill(time) {
+
+        const hits =
+            complexity > 0.7 ? 6 :
+            complexity > 0.4 ? 4 :
+            2;
+
+        for (let i = 0; i < hits; i++) {
+
+            const offset = i * 0.05;
+
+            const drumType =
+                rand() < 0.5 ? "snare" :
+                rand() < 0.5 ? "tom1" : "tom2";
+
+            const velocity =
+                0.7 + rand() * 0.3;
+
+            drums.player(drumType).start(
+                humanizeTime(time + offset, rand),
+                0,
+                undefined,
+                velocity
+            );
+
+        }
+    }
+
+    // ------------------------------------------------------------
+    // ENGINE
+    // ------------------------------------------------------------
 
     return function drumEngine(time, step) {
 
         const idx = step % totalSteps;
-
-        const riffNote =
-            riffData.fullRiff[idx];
+        const riffNote = fullRiff[idx];
 
         const { stepInMeasure, section } =
             timeline.getStepData(step);
 
         // ------------------------------------------------
-        // HIHAT BASE
+        // FILL LOGIC
         // ------------------------------------------------
 
-        if (section !== "solo") {
+        const isEndOfMeasure =
+            stepInMeasure === stepsPerMeasure - 1;
 
-            const hatDensity =
-                aggression > 0.6 ? 1 : 2;
+        const nextStepData =
+            timeline.getStepData(step + 1);
 
-            if (step % hatDensity === 0) {
+        const nextSection =
+            nextStepData.section;
 
-                drums.player("hihat").start(
-                    humanizeTime(time, rand)
-                );
+        if (
+            isEndOfMeasure &&
+            (
+                section !== nextSection ||
+                rand() < (0.2 + complexity * 0.3)
+            )
+        ) {
 
-            }
+            playFill(time);
+            return;
 
         }
 
         // ------------------------------------------------
-        // RIDE NEL SOLO
+        // HI-HAT INTELLIGENTE
+        // ------------------------------------------------
+
+        if (section !== "solo") {
+
+            const isAccent =
+                groovePattern[stepInMeasure];
+
+            const hatChance =
+                isAccent ? 1 : 0.6;
+
+            if (rand() < hatChance) {
+
+                const openHat =
+                    (section === "chorus" && rand() < 0.3) ||
+                    (aggression > 0.7 && rand() < 0.25);
+
+                const hatType =
+                    openHat ? "hihat_open" : "hihat";
+
+                const velocity =
+                    isAccent
+                        ? 1.0
+                        : 0.6 + rand() * 0.3;
+
+                drums.player(hatType).start(
+                    humanizeTime(time, rand),
+                    0,
+                    undefined,
+                    velocity
+                );
+
+            }
+        }
+
+        // ------------------------------------------------
+        // RIDE (SOLO)
         // ------------------------------------------------
 
         if (section === "solo") {
@@ -58,7 +162,6 @@ export function createDrumEngine(analysis, params, timeline, riffData, rand) {
                 );
 
             }
-
         }
 
         // ------------------------------------------------
@@ -77,61 +180,46 @@ export function createDrumEngine(analysis, params, timeline, riffData, rand) {
         }
 
         // ------------------------------------------------
-        // KICK
+        // KICK DNA GROOVE
         // ------------------------------------------------
 
+        let kick = false;
+
+        // groove DNA
+        if (groovePattern[stepInMeasure]) {
+            kick = true;
+        }
+
+        // segue riff (rafforza)
+        if (riffNote && rand() < (0.5 + aggression * 0.3)) {
+            kick = true;
+        }
+
+        // variazione umana
+        if (rand() < (0.15 + aggression * 0.2)) {
+            kick = true;
+        }
+
+        // rinforzi musicali
+
         if (section === "chorus") {
-
-            if (
-                riffNote &&
-                rand() < (0.6 + aggression * 0.4)
-            ) {
-
-                drums.player("kick").start(
-                    humanizeTime(time, rand)
-                );
-
-            }
-
+            kick = true;
         }
 
-        else if (section === "verse") {
-
-            if (
-                stepInMeasure === 0 ||
-                stepInMeasure === 4 ||
-                stepInMeasure === 8
-            ) {
-
-                drums.player("kick").start(
-                    humanizeTime(time, rand)
-                );
-
-            }
-
+        if (section === "intro" && stepInMeasure === 0) {
+            kick = true;
         }
 
-        else if (section === "solo") {
-
-            if (step % 2 === 0) {
-
-                drums.player("kick").start(
-                    humanizeTime(time, rand)
-                );
-
-            }
-
+        if (section === "solo" && step % 2 === 0) {
+            kick = true;
         }
 
-        else if (section === "intro") {
+        // trigger
+        if (kick) {
 
-            if (stepInMeasure === 0) {
-
-                drums.player("kick").start(
-                    humanizeTime(time, rand)
-                );
-
-            }
+            drums.player("kick").start(
+                humanizeTime(time, rand)
+            );
 
         }
 
@@ -152,9 +240,7 @@ export function createDrumEngine(analysis, params, timeline, riffData, rand) {
                 );
 
             }
-
         }
 
     };
-
 }
