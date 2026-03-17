@@ -117,7 +117,6 @@ export function generateMetalRiff(analysis, params, timeline, rand) {
 
     let chordRoot = scale[0] + octave;
     let chord = buildChord(chordRoot);
-    let palmStreak = 0;
 
     for (let step = 0; step < riffLength; step++) {
         const stepInMeasure = step % stepsPerMeasure;
@@ -137,39 +136,15 @@ export function generateMetalRiff(analysis, params, timeline, rand) {
             baseRiff[step] = clampNote(chordTone, MIN, MAX);
         }
         else {
-
-    // palm mute realistici (blocchi di plettrate)
-
-    if(palmStreak > 0){
-
-        baseRiff[step] =
-            clampNote(chordRoot, MIN, MAX);
-
-        palmStreak--;
-
-    }
-    else {
-    const palmDensity =
-    section === "intro" ? 0.75 :
-    section === "verse" ? 0.9 :
-    section === "solo" ? 0.85 :
-    0.9;
-    if(rand() < palmDensity){
-
-        palmStreak =
-            1 + Math.floor(rand()*3); // 2-4 colpi
-
-        baseRiff[step] =
-            clampNote(chordRoot, MIN, MAX);
-
-    }
-    else{
-
-        baseRiff[step] = null;
+            // palm mute riempitivo
+            if (rand() < 0.6) {
+                baseRiff[step] = clampNote(chordRoot, MIN, MAX);
+            } else {
+                baseRiff[step] = null;
+            }
         }
     }
 
-}
 
     // ------------------------------------------------------------
     // RIFF COMPLETO
@@ -186,20 +161,9 @@ export function generateMetalRiff(analysis, params, timeline, rand) {
             continue;
         }
 
-        if (rand() < 0.1) {
-            const chord = chordTimeline[step];
-
-const pool = [
-    chord[0],
-    chord[1],
-    chord[2]
-];
-
-note = clampNote(
-    pool[Math.floor(rand() * pool.length)],
-    MIN,
-    MAX
-);
+        if (note && rand() < 0.1) {
+            const idx = Math.floor(rand() * scale.length);
+            note = clampNote(scale[idx] + octave, MIN, MAX);
         }
 
         fullRiff[step] = note;
@@ -316,15 +280,13 @@ note = clampNote(
         // ------------------------------------------------------------
 
         if (section === "chorus") {
-            const t = humanizeTime(time, rand);
-
-for (const n of chord) {
-    guitarOpen.triggerAttackRelease(
-        n,
-        "4n",
-        t
-    );
-}
+            for (const n of chord) {
+                guitarOpen.triggerAttackRelease(
+                    n,
+                    "4n",
+                    humanizeTime(time, rand)
+                );
+            }
         }
         else if (sound === guitarOpen) {
             sound.triggerAttackRelease(
