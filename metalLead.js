@@ -31,30 +31,32 @@ export function createLeadEngine(analysis, params, timeline, riffData, rand, the
 
     function generateHook(scale, dna, stepsPerMeasure, octave) {
 
-        const hook = [];
+    const hook = [];
 
-        for (let i = 0; i < stepsPerMeasure; i++) {
+    for (let i = 0; i < stepsPerMeasure; i++) {
 
-            const bit = (dna >> i) & 1;
+        const bit = (dna >> i) & 1;
 
-            if (bit === 1) {
+        if (bit === 1) {
 
-                const noteIndex =
-                    (dna >> (i + 3)) % scale.length;
+            const safeIndex =
+                Math.abs((dna >> (i + 3))) % scale.length;
 
-                hook.push(
-                    scale[noteIndex] + octave
-                );
+            const note = scale[safeIndex];
 
+            if (note !== undefined) {
+                hook.push(note + octave);
             } else {
-
                 hook.push(null);
-
             }
-        }
 
-        return hook;
+        } else {
+            hook.push(null);
+        }
     }
+
+    return hook;
+}
 
     const hookPattern =
         generateHook(
@@ -240,14 +242,23 @@ export function createLeadEngine(analysis, params, timeline, riffData, rand, the
             const hookNote =
                 hookPattern[stepInMeasure];
 
-            if (hookNote) {
+            if (hookNote !== null && hookNote !== undefined) {
 
-                noteName = Tone.Frequency(
-                    hookNote,
-                    "midi"
-                ).toNote();
+    try {
 
-            }
+        noteName = Tone.Frequency(
+            hookNote,
+            "midi"
+        ).toNote();
+
+    } catch (e) {
+
+        console.warn("Hook error:", hookNote);
+        noteName = null;
+
+    }
+
+}
 
             // variazione leggera
             if (rand() < 0.15) {
@@ -265,10 +276,12 @@ export function createLeadEngine(analysis, params, timeline, riffData, rand, the
             const themeIdx =
                 step % theme.length;
 
-            const scaleIndex =
-                theme[themeIdx] % scale.length;
+            const raw = theme[themeIdx];
 
-            noteName = scale[scaleIndex];
+if (raw === undefined) return;
+
+const scaleIndex =
+    Math.abs(raw) % scale.length;
         }
 
         // --------------------------------------------------------
@@ -283,7 +296,9 @@ export function createLeadEngine(analysis, params, timeline, riffData, rand, the
                 ];
         }
 
-        if (!noteName) return;
+        if (!noteName || typeof noteName !== "string") {
+    return;
+}
 
         // --------------------------------------------------------
         // MIDI
