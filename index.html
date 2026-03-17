@@ -91,9 +91,9 @@
 
             <h2>Scegli il genere musicale</h2>
 
-             <button class="genre-btn" data-genre="ambient">Ambient</button>
-            <button class="genre-btn" data-genre="chiptune">Chiptune</button> 
-            <button class="genre-btn" data-genre="metal">Metal</button>
+            <button class="genre-btn" data-genre="ambient">Ambient</button>
+            <button class="genre-btn" data-genre="chiptune">Chiptune</button>
+            <button class="genre-btn" data-genre="metal">Metal-like</button>
 
             <button id="closeGenrePanel" class="close-panel-btn">
                 Chiudi
@@ -126,13 +126,15 @@
                     <span id="totalTime">0:00</span>
                 </div>
 
-                <canvas id="spectrumCanvas"
-                        width="600"
-                        height="120"
-                        class="spectrum">
-                </canvas>
-
             </div>
+        </div>
+
+        <!-- NUOVO: ANALIZZATORE SEPARATO -->
+        <div id="spectrumPanel">
+            <canvas id="spectrumCanvas"
+                    width="300"
+                    height="200">
+            </canvas>
         </div>
 
     </main>
