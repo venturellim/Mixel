@@ -143,31 +143,27 @@ const bassMidi =
         ? sourceMidi - 24
         : sourceMidi - 12;
 
-let note = null;
+let note;
 
 // ------------------------------------------------
-// CHORUS → segue accordi
+// segue il riff quando presente
 // ------------------------------------------------
 
-if(section === "chorus"){
-
-    note = chord[0];
-
-}
-
-// ------------------------------------------------
-// SOLO → raddoppia chitarra
-// ------------------------------------------------
-
-else if(section === "solo" && riffNote){
+if (riffNote && rand() < 0.75) {
 
     note = riffNote;
 
 }
 
 // ------------------------------------------------
-// VERSE → pedal tone
+// fallback sull'accordo
 // ------------------------------------------------
+
+else if(section === "chorus"){
+
+    note = chord[0];
+
+}
 
 else if(section === "verse"){
 
@@ -175,9 +171,11 @@ else if(section === "verse"){
 
 }
 
-// ------------------------------------------------
-// INTRO / OUTRO → note lunghe
-// ------------------------------------------------
+else if(section === "solo"){
+
+    note = chord[0];
+
+}
 
 else{
 
