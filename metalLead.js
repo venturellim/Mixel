@@ -1,24 +1,19 @@
-// metalLead.js — lead melodica con tema principale
+// metalLead.js — lead melodica con hook DNA-driven
 
 import * as Tone from "https://esm.sh/tone";
 import { guitarLead, humanizeTime } from "./common.js";
-import { generateLeadTheme } from "./leadTheme.js";
 
 console.log("metalLead.js loaded");
 
 export function createLeadEngine(analysis, params, timeline, riffData, rand, theme) {
-const direction = analysis.direction ?? 0.5;
 
-// ------------------------------------------------------------
-// DIREZIONE MELODICA DERIVATA DALL'IMMAGINE
-// ------------------------------------------------------------
+    const direction = analysis.direction ?? 0.5;
 
-const melodicSlope = (direction - 0.5) * 2;
+    // ------------------------------------------------------------
+    // DIREZIONE MELODICA
+    // ------------------------------------------------------------
 
-// range circa:
-// -1 = discendente
-//  0 = neutra
-// +1 = ascendente
+    const melodicSlope = (direction - 0.5) * 2;
 
     const { stepsPerMeasure, totalSteps } = timeline;
     const scale = params.scale;
@@ -31,155 +26,125 @@ const melodicSlope = (direction - 0.5) * 2;
     }
 
     // ------------------------------------------------------------
-    // NOTE DERIVATE DAL RIFF
+    // HOOK DNA (NUOVO)
     // ------------------------------------------------------------
 
-    function extractRiffNotes() {
+    function generateHook(scale, dna, stepsPerMeasure, octave) {
 
-        const notes = [];
+        const hook = [];
 
-        for (const n of riffData.fullRiff) {
+        for (let i = 0; i < stepsPerMeasure; i++) {
 
-            if (!n) continue;
+            const bit = (dna >> i) & 1;
 
-            const pitch = n.replace(/[0-9]/g, "");
+            if (bit === 1) {
 
-            if (!notes.includes(pitch)) {
-                notes.push(pitch);
+                const noteIndex =
+                    (dna >> (i + 3)) % scale.length;
+
+                hook.push(
+                    scale[noteIndex] + octave
+                );
+
+            } else {
+
+                hook.push(null);
+
             }
-
         }
 
-        return notes;
-
+        return hook;
     }
 
-    const riffNotes = extractRiffNotes();
+    const hookPattern =
+        generateHook(
+            scale,
+            analysis.dna || 123456,
+            stepsPerMeasure,
+            4
+        );
 
     // ------------------------------------------------------------
-// HOOK PRINCIPALE DELLA CANZONE
-// ------------------------------------------------------------
-
-const hookLength = 4;
-
-const hook = [];
-
-for (let i = 0; i < hookLength; i++) {
-
-    // favorisce tonica e dominante
-    const choices = [0,0,4,2,5];
-
-    const idx =
-        choices[Math.floor(rand()*choices.length)] % scale.length;
-
-    hook.push(scale[idx]);
-
-}
-
-    // fallback sicurezza
-    if (hook.length === 0) hook.push(scale[0]);
-
-    // ------------------------------------------------------------
-    // MOTIVI SECONDARI
+    // MOTIVI
     // ------------------------------------------------------------
 
     function generateMotif() {
 
-    const motif = [];
-    const len = 2 + Math.floor(rand() * 3);
+        const motif = [];
+        const len = 2 + Math.floor(rand() * 3);
 
-    let pos =
-        Math.floor(rand() * scale.length);
+        let pos = Math.floor(rand() * scale.length);
 
-    for (let i = 0; i < len; i++) {
+        for (let i = 0; i < len; i++) {
 
-        motif.push(scale[pos]);
+            motif.push(scale[pos]);
 
-        // movimento influenzato dall'immagine
-        let stepMove;
+            let stepMove;
 
-        if (melodicSlope > 0.3)
-            stepMove = rand() < 0.7 ? 1 : -1;
+            if (melodicSlope > 0.3)
+                stepMove = rand() < 0.7 ? 1 : -1;
+            else if (melodicSlope < -0.3)
+                stepMove = rand() < 0.7 ? -1 : 1;
+            else
+                stepMove = rand() < 0.5 ? 1 : -1;
 
-        else if (melodicSlope < -0.3)
-            stepMove = rand() < 0.7 ? -1 : 1;
+            pos = (pos + stepMove + scale.length) % scale.length;
+        }
 
-        else
-            stepMove = rand() < 0.5 ? 1 : -1;
-
-        pos =
-            (pos + stepMove + scale.length)
-            % scale.length;
-
+        return motif;
     }
-
-    return motif;
-
-}
 
     function generatePhrase() {
 
-    const phrase = [];
+        const phrase = [];
 
-    let pos =
-        Math.floor(rand() * scale.length);
+        let pos = Math.floor(rand() * scale.length);
 
-    for (let i = 0; i < stepsPerMeasure; i++) {
+        for (let i = 0; i < stepsPerMeasure; i++) {
 
-        phrase.push(scale[pos]);
+            phrase.push(scale[pos]);
 
-        let move;
+            let move;
 
-        if (melodicSlope > 0.3)
-            move = rand() < 0.65 ? 1 : -1;
+            if (melodicSlope > 0.3)
+                move = rand() < 0.65 ? 1 : -1;
+            else if (melodicSlope < -0.3)
+                move = rand() < 0.65 ? -1 : 1;
+            else
+                move = rand() < 0.5 ? 1 : -1;
 
-        else if (melodicSlope < -0.3)
-            move = rand() < 0.65 ? -1 : 1;
+            pos = (pos + move + scale.length) % scale.length;
+        }
 
-        else
-            move = rand() < 0.5 ? 1 : -1;
-
-        pos =
-            (pos + move + scale.length)
-            % scale.length;
-
+        return phrase;
     }
-
-    return phrase;
-
-}
 
     let motif = generateMotif();
     let phrase = generatePhrase();
-    
-    // direzione melodica
-let melodicDirection =
-    rand() < 0.5 ? 1 : -1;
 
-let melodicIndex =
-    Math.floor(rand() * scale.length);
-    
+    // ------------------------------------------------------------
+    // MOVIMENTO MELODICO CONTINUO
+    // ------------------------------------------------------------
+
+    let melodicDirection = rand() < 0.5 ? 1 : -1;
+    let melodicIndex = Math.floor(rand() * scale.length);
+
     function nextScaleNote() {
 
-    melodicIndex += melodicDirection;
+        melodicIndex += melodicDirection;
 
-    if (melodicIndex >= scale.length) {
+        if (melodicIndex >= scale.length) {
+            melodicIndex = scale.length - 1;
+            melodicDirection = -1;
+        }
 
-        melodicIndex = scale.length - 1;
-        melodicDirection = -1;
+        if (melodicIndex < 0) {
+            melodicIndex = 0;
+            melodicDirection = 1;
+        }
 
+        return scale[melodicIndex];
     }
-
-    if (melodicIndex < 0) {
-
-        melodicIndex = 0;
-        melodicDirection = 1;
-
-    }
-
-    return scale[melodicIndex];
-
-}
 
     // ------------------------------------------------------------
     // ENGINE
@@ -199,38 +164,34 @@ let melodicIndex =
         if (!chord) return;
 
         // --------------------------------------------------------
-        // NUOVA VARIAZIONE OGNI MISURA
+        // VARIAZIONE OGNI MISURA
         // --------------------------------------------------------
 
         if (stepInMeasure === 0) {
-
             motif = generateMotif();
             phrase = generatePhrase();
-
         }
 
         // --------------------------------------------------------
-        // DENSITÀ MUSICALE
+        // DENSITÀ
         // --------------------------------------------------------
 
         const density =
             section === "intro"  ? 0.5 :
             section === "verse"  ? 0.6 :
-            section === "chorus" ? 0.9 :
+            section === "chorus" ? 0.95 :
             section === "solo"   ? 1.0 :
             section === "outro"  ? 0.4 : 0.6;
 
         if (rand() > density) return;
 
         // --------------------------------------------------------
-        // SELEZIONE NOTA
+        // SCELTA NOTA
         // --------------------------------------------------------
 
         let noteName = null;
 
-
-
-        // forte su inizio misura
+        // accento forte
         if (stepInMeasure === 0) {
 
             const chordChoice = [0,1,2,1];
@@ -241,67 +202,64 @@ let melodicIndex =
                         Math.floor(rand() * chordChoice.length)
                     ]
                 ];
-
         }
 
-        // anticipazione accordo successivo
+        // anticipazione
         else if (
             stepInMeasure === stepsPerMeasure - 1 &&
             nextChord &&
             rand() < 0.6
         ) {
-
             noteName = nextChord[0];
-
         }
 
-        // SOLO → frase improvvisata
+        // SOLO
         else if (section === "solo") {
 
-    if (rand() < 0.7)
+            if (rand() < 0.7)
+                noteName = nextScaleNote();
+            else
+                noteName =
+                    phrase[
+                        stepInMeasure % phrase.length
+                    ];
+        }
 
-        noteName = nextScaleNote();
-
-    else
-
-        noteName =
-            phrase[
-                stepInMeasure % phrase.length
-            ];
-
-}
-
-        // VERSE → motivo
+        // VERSE
         else if (section === "verse") {
 
             noteName =
                 motif[
                     stepInMeasure % motif.length
                 ];
-
         }
 
-        // CHORUS → hook
+        // CHORUS → HOOK DNA
         else if (section === "chorus") {
 
-    const hookIdx =
-        stepInMeasure % hook.length;
+            const hookNote =
+                hookPattern[stepInMeasure];
 
-    noteName = hook[hookIdx];
+            if (hookNote) {
 
-    // variazione melodica leggera
-    if (rand() < 0.2) {
+                noteName = Tone.Frequency(
+                    hookNote,
+                    "midi"
+                ).toNote();
 
-        const idx =
-            Math.floor(rand() * scale.length);
+            }
 
-        noteName = scale[idx];
+            // variazione leggera
+            if (rand() < 0.15) {
 
-    }
+                const idx =
+                    Math.floor(rand() * scale.length);
 
-}
+                noteName = scale[idx];
+            }
+        }
 
-        // INTRO / OUTRO → tema principale
+        // INTRO / OUTRO
         else {
 
             const themeIdx =
@@ -311,39 +269,32 @@ let melodicIndex =
                 theme[themeIdx] % scale.length;
 
             noteName = scale[scaleIndex];
-
         }
 
         // --------------------------------------------------------
-// FALLBACK → usa nota dell'accordo
-// --------------------------------------------------------
+        // FALLBACK
+        // --------------------------------------------------------
 
-if (!noteName && chord) {
+        if (!noteName && chord) {
 
-    noteName =
-        chord[
-            Math.floor(rand() * chord.length)
-        ];
+            noteName =
+                chord[
+                    Math.floor(rand() * chord.length)
+                ];
+        }
 
-}
-
-// sicurezza finale
-if (!noteName) return;
+        if (!noteName) return;
 
         // --------------------------------------------------------
-        // CONVERSIONE MIDI
+        // MIDI
         // --------------------------------------------------------
 
         let midi;
 
         if (/[0-9]/.test(noteName)) {
-
             midi = Tone.Frequency(noteName).toMidi();
-
         } else {
-
             midi = Tone.Frequency(noteName + "4").toMidi();
-
         }
 
         midi = clampMidi(midi);
@@ -359,28 +310,38 @@ if (!noteName) return;
 
         if (section === "solo")
             dur = rand() < 0.5 ? "16n" : "8n";
-
         else if (section === "chorus")
-            dur = rand() < 0.6 ? "4n" : "8n";
-
+            dur = "8n";
         else if (section === "intro")
             dur = "4n";
-
         else if (section === "outro")
             dur = "2n";
-
         else
             dur = "8n";
+
+        // --------------------------------------------------------
+        // VELOCITY (ACCENTI)
+        // --------------------------------------------------------
+
+        const isAccent =
+            section === "chorus"
+                ? !!hookPattern[stepInMeasure]
+                : stepInMeasure === 0;
+
+        const velocity =
+            isAccent
+                ? 1.0
+                : 0.7 + rand() * 0.25;
 
         // --------------------------------------------------------
         // PLAY
         // --------------------------------------------------------
 
         guitarLead.triggerAttackRelease(
-    note,
-    dur,
-    humanizeTime(time, rand, 0.012)
-);
+            note,
+            dur,
+            humanizeTime(time, rand, 0.012),
+            velocity
+        );
     };
-
 }
