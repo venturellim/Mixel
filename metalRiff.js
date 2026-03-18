@@ -209,15 +209,17 @@ export function generateMetalRiff(analysis, params, timeline, rand) {
                 clampNote(chordRoot, MIN, MAX);
 
         }
-        else if (stepInMeasure === stepsPerMeasure - 2) {
+        else if (stepInMeasure >= stepsPerMeasure - 2) {
 
-            const chordTone =
-                chord[Math.floor(rand() * chord.length)];
+    const pool = [chord[0], chord[1], chord[2]];
 
-            baseRiff[step] =
-                clampNote(chordTone, MIN, MAX);
-
-        }
+    baseRiff[step] =
+        clampNote(
+            pool[Math.floor(rand() * pool.length)],
+            MIN,
+            MAX
+        );
+}
         else {
 
             const energyBoost =
@@ -264,10 +266,31 @@ export function generateMetalRiff(analysis, params, timeline, rand) {
                     clampNote(chordRoot, MIN, MAX);
 
             }
-            else {
+            else else {
 
-                baseRiff[step] = null;
-            }
+    const moveProb = 0.35;
+
+    let noteToPlay;
+
+    if (rand() < moveProb) {
+
+        const pool = [
+            chord[0],
+            chord[1],
+            chord[2]
+        ];
+
+        noteToPlay =
+            pool[Math.floor(rand() * pool.length)];
+
+    } else {
+
+        noteToPlay = chordRoot;
+    }
+
+    baseRiff[step] =
+        clampNote(noteToPlay, MIN, MAX);
+}
         }
     }
 
@@ -373,17 +396,44 @@ export function generateMetalRiff(analysis, params, timeline, rand) {
 
         let sound;
 
-        if (section === "chorus")
-            sound = guitarOpen;
-        else if (stepInMeasure % 4 === 0)
-            sound = guitarOpen; // accenti
-        else
-            sound = guitarPalm;
+        let useOpen = false;
+
+// chorus = sempre open
+if (section === "chorus") {
+    useOpen = true;
+}
+
+// accenti forti
+else if (
+    stepInMeasure === 0 ||
+    stepInMeasure === Math.floor(stepsPerMeasure / 2)
+) {
+    useOpen = rand() < 0.7;
+}
+
+// ogni tanto spezza il palm
+else if (rand() < 0.15) {
+    useOpen = true;
+}
+
+const sound = useOpen ? guitarOpen : guitarPalm;
 
         let dur =
             section === "chorus"
                 ? "2n"
                 : (params.bpm > 130 ? "16n" : "8n");
+                
+if (section === "solo" && stepInMeasure % 4 === 0) {
+
+    const root = mapToAvailableSample(chord[0]);
+    if (root) {
+        guitarOpen.triggerAttackRelease(
+            root,
+            "4n",
+            humanizeTime(time, rand)
+        );
+    }
+}
 
         // ------------------------------------------------
         // CHORUS (POWER CHORD REALI)
