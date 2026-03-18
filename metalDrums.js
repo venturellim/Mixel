@@ -80,7 +80,7 @@ export function createDrumEngine(analysis, params, timeline, riffData, rand) {
 
             // apertura ogni tanto
             if (rand() < 0.05) {
-                drums.player("hihat_open")?.start(
+                drums.player("openhat")?.start(
                     humanizeTime(time, rand)
                 );
             }
