@@ -96,10 +96,8 @@ export const leadDelay = new Tone.FeedbackDelay({
 
 export const leadReverb = new Tone.Reverb({
     decay: 3,
-    wet: 0.3
+    wet: 0.18
 });
-
-leadEQ.chain(leadChorus, leadDelay, leadReverb, masterEQ);
 
 // ------------------------------------------------------------
 // SIGNAL CHAIN
@@ -119,34 +117,77 @@ leadBus.connect(leadEQ);
 leadEQ.chain(leadChorus, leadDelay, leadReverb, masterEQ);
 
 // ==============================
-// GUITAR URL MAP (C2–E6)
+// 🎸 GUITAR PALM (C2–C3)
 // ==============================
 
-const guitarUrls = {
-    C2: "Samples/Guitar/C2.mp3",
-    Db2: "Samples/Guitar/Db2.mp3",
-    D2: "Samples/Guitar/D2.mp3",
-    Eb2: "Samples/Guitar/Eb2.mp3",
-    E2: "Samples/Guitar/E2.mp3",
-    F2: "Samples/Guitar/F2.mp3",
-    Gb2: "Samples/Guitar/Gb2.mp3",
-    G2: "Samples/Guitar/G2.mp3",
-    Ab2: "Samples/Guitar/Ab2.mp3",
-    A2: "Samples/Guitar/A2.mp3",
-    Bb2: "Samples/Guitar/Bb2.mp3",
-    B2: "Samples/Guitar/B2.mp3",
-    C3: "Samples/Guitar/C3.mp3",
-    Db3: "Samples/Guitar/Db3.mp3",
-    D3: "Samples/Guitar/D3.mp3",
-    Eb3: "Samples/Guitar/Eb3.mp3",
-    E3: "Samples/Guitar/E3.mp3",
-    F3: "Samples/Guitar/F3.mp3",
-    Gb3: "Samples/Guitar/Gb3.mp3",
-    G3: "Samples/Guitar/G3.mp3",
-    Ab3: "Samples/Guitar/Ab3.mp3",
-    A3: "Samples/Guitar/A3.mp3",
-    Bb3: "Samples/Guitar/Bb3.mp3",
-    B3: "Samples/Guitar/B3.mp3",
+const palmFilter = new Tone.Filter({
+    type: "lowpass",
+    frequency: 2500,
+    Q: 1
+});
+
+const palmComp = new Tone.Compressor({
+    threshold: -18,
+    ratio: 4,
+    attack: 0.003,
+    release: 0.15
+});
+
+export const guitarPalm = new Tone.Sampler({
+    urls: {
+    C2: "Samples/GuitarPalm/C.mp3",
+    D2: "Samples/GuitarPalm/D.mp3",
+    E2: "Samples/GuitarPalm/E.mp3",
+    F2: "Samples/GuitarPalm/F.mp3",
+    G2: "Samples/GuitarPalm/G.mp3",
+    A2: "Samples/GuitarPalm/A.mp3",
+    B2: "Samples/GuitarPalm/B.mp3"
+    },
+    onload: () => window.__samplerLoaded("palm")
+});
+
+guitarPalm.set({
+    envelope: {
+        attack: 0.001,
+        decay: 0.09,
+        sustain: 0.15,
+        release: 0.05
+    }
+});
+
+// ==============================
+// 🎸 GUITAR OPEN (C2–C3)
+// ==============================
+
+export const guitarOpen = new Tone.Sampler({
+    urls: {
+    C2: "Samples/GuitarOpen/C.mp3",
+    D2: "Samples/GuitarOpen/D.mp3",
+    E2: "Samples/GuitarOpen/E.mp3",
+    F2: "Samples/GuitarOpen/F.mp3",
+    G2: "Samples/GuitarOpen/G.mp3",
+    A2: "Samples/GuitarOpen/A.mp3",
+    B2: "Samples/GuitarOpen/B.mp3"
+    },
+    onload: () => window.__samplerLoaded("open")
+});
+
+guitarOpen.set({
+    envelope: {
+        attack: 0.01,
+        decay: 0.3,
+        sustain: 0.8,
+        release: 0.4
+    }
+});
+
+
+// ==============================
+// 🎸 GUITAR LEAD (C2–E6)
+// ==============================
+
+export const guitarLead = new Tone.Sampler({
+    urls: {
     C4: "Samples/Guitar/C4.mp3",
     Db4: "Samples/Guitar/Db4.mp3",
     D4: "Samples/Guitar/D4.mp3",
@@ -171,80 +212,8 @@ const guitarUrls = {
     A5: "Samples/Guitar/A5.mp3",
     Bb5: "Samples/Guitar/Bb5.mp3",
     B5: "Samples/Guitar/B5.mp3",
-    C6: "Samples/Guitar/C6.mp3",
-    Db6: "Samples/Guitar/Db6.mp3",
-    D6: "Samples/Guitar/D6.mp3",
-    Eb6: "Samples/Guitar/Eb6.mp3",
-    E6: "Samples/Guitar/E6.mp3"
-};
-
-// ==============================
-// 🎸 GUITAR PALM (C2–C3)
-// ==============================
-
-const palmFilter = new Tone.Filter({
-    type: "lowpass",
-    frequency: 2500,
-    Q: 1
-});
-
-const palmComp = new Tone.Compressor({
-    threshold: -18,
-    ratio: 4,
-    attack: 0.003,
-    release: 0.15
-});
-
-export const guitarPalm = new Tone.Sampler({
-    urls: guitarUrls,
-    release: 1,
-    baseUrl: "",
-    onload: () => window.__samplerLoaded("palm")
-});
-
-guitarPalm.set({
-    envelope: {
-        attack: 0.001,
-        decay: 0.09,
-        sustain: 0.15,
-        release: 0.05
-    }
-});
-
-guitarPalm.chain(palmFilter, palmComp, guitarBus);
-
-// ==============================
-// 🎸 GUITAR OPEN (C2–C3)
-// ==============================
-
-export const guitarOpen = new Tone.Sampler({
-    urls: guitarUrls,
-    baseUrl: "",
-    onload: () => window.__samplerLoaded("open")
-});
-
-guitarOpen.set({
-    envelope: {
-        attack: 0.01,
-        decay: 0.3,
-        sustain: 0.8,
-        release: 0.4
-    }
-});
-
-guitarOpen.connect(guitarBus);
-
-// ==============================
-// 🎸 GUITAR LEAD (C2–E6)
-// ==============================
-
-// ==============================
-// 🎸 GUITAR LEAD (C2–E6)
-// ==============================
-
-export const guitarLead = new Tone.Sampler({
-    urls: guitarUrls,
-    baseUrl: "",
+    C6: "Samples/Guitar/C6.mp3"
+    },
     onload: () => window.__samplerLoaded("lead")
 });
 
@@ -266,12 +235,6 @@ leadDelay.set({ feedback: 0.25 });
 const guitarBusL = new Tone.Panner(-0.35).connect(masterEQ);
 const guitarBusR = new Tone.Panner(0.35).connect(masterEQ);
 
-guitarPalm.connect(guitarBusL);
-guitarPalm.connect(guitarBusR);
-
-guitarOpen.connect(guitarBusL);
-guitarOpen.connect(guitarBusR);
-
 // Effetti per Palm e Open
 
 const guitarDelay = new Tone.FeedbackDelay(0.03, 0.2);
@@ -281,8 +244,41 @@ export const guitarRiffReverb = new Tone.Reverb({
     wet: 0.25
 });
 
-guitarPalm.chain(guitarDelay, guitarRiffReverb, guitarBus);
-guitarOpen.chain(guitarDelay, guitarRiffReverb, guitarBus);
+// CHAIN UNICA CHITARRE
+
+const guitarFX = new Tone.Gain();
+
+guitarPalm.chain(
+    palmFilter,
+    palmComp,
+    guitarDelay,
+    guitarRiffReverb,
+    guitarFX
+);
+
+guitarOpen.chain(
+    guitarDelay,
+    guitarRiffReverb,
+    guitarFX
+);
+
+// pseudo stereo (leggero)
+const panL = new Tone.Panner(-0.2);
+const panR = new Tone.Panner(0.2);
+
+const detuneL = new Tone.PitchShift({ pitch: -0.05 });
+const detuneR = new Tone.PitchShift({ pitch: 0.05 });
+
+// SOLO DETUNE → PAN (niente segnale diretto)
+
+guitarFX.connect(detuneL);
+guitarFX.connect(detuneR);
+
+detuneL.connect(panL);
+detuneR.connect(panR);
+
+panL.connect(guitarBus);
+panR.connect(guitarBus);
 
 // ==============================
 // 🎸 BASS (C1–C3)
@@ -302,19 +298,7 @@ export const bass = new Tone.Sampler({
         A1: "Samples/Bass/A1.mp3",
         Bb1: "Samples/Bass/Bb1.mp3",
         B1: "Samples/Bass/B1.mp3",
-        C2: "Samples/Bass/C2.mp3",
-        Db2: "Samples/Bass/Db2.mp3",
-        D2: "Samples/Bass/D2.mp3",
-        Eb2: "Samples/Bass/Eb2.mp3",
-        E2: "Samples/Bass/E2.mp3",
-        F2: "Samples/Bass/F2.mp3",
-        Gb2: "Samples/Bass/Gb2.mp3",
-        G2: "Samples/Bass/G2.mp3",
-        Ab2: "Samples/Bass/Ab2.mp3",
-        A2: "Samples/Bass/A2.mp3",
-        Bb2: "Samples/Bass/Bb2.mp3",
-        B2: "Samples/Bass/B2.mp3",
-        C3: "Samples/Bass/C3.mp3"
+        C2: "Samples/Bass/C2.mp3"
     },
     onload: () => window.__samplerLoaded("bass")
 }).connect(bassBus);
@@ -350,7 +334,7 @@ guitarOpen.volume.value = -3;
 
 bass.volume.value = -3;
 
-guitarLead.volume.value = +9;
+guitarLead.volume.value = +3;
 
 drums.volume.value = -9;
 
