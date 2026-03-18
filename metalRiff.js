@@ -209,7 +209,7 @@ export function generateMetalRiff(analysis, params, timeline, rand) {
                 clampNote(chordRoot, MIN, MAX);
 
         }
-        else if (stepInMeasure === stepsPerMeasure - 1) {
+        else if (stepInMeasure === stepsPerMeasure - 2) {
 
             const chordTone =
                 chord[Math.floor(rand() * chord.length)];
@@ -229,16 +229,36 @@ export function generateMetalRiff(analysis, params, timeline, rand) {
 
             if (palmStreak > 0) {
 
-                baseRiff[step] =
-                    clampNote(chordRoot, MIN, MAX);
+    const moveProb = 0.4;
 
-                palmStreak--;
+    let noteToPlay;
 
-            }
+    if (rand() < moveProb) {
+
+        const pool = [
+            chord[0], // root
+            chord[1], // fifth
+            chord[2]  // octave
+        ];
+
+        noteToPlay =
+            pool[Math.floor(rand() * pool.length)];
+
+    } else {
+
+        noteToPlay = chordRoot;
+    }
+
+    baseRiff[step] =
+        clampNote(noteToPlay, MIN, MAX);
+
+    palmStreak--;
+
+}
             else if (shouldPlay) {
 
                 palmStreak =
-                    1 + Math.floor(rand() * 3);
+                    2 + Math.floor(rand() * 3);
 
                 baseRiff[step] =
                     clampNote(chordRoot, MIN, MAX);
