@@ -1,4 +1,4 @@
-// metal.js — versione con timeline unificata
+// metal.js — engine completo sincronizzato (VERSIONE PRO)
 
 import * as Tone from "https://esm.sh/tone";
 
@@ -24,7 +24,6 @@ import { detectMetalStyle, normalizeMetalScale } from "./metalTheory.js";
 import { createMetalTimeline } from "./metalTimeline.js";
 import { generateLeadTheme } from "./leadTheme.js";
 
-
 // ======================================================
 // ENTRY POINT
 // ======================================================
@@ -33,28 +32,37 @@ export async function createMetalEngineFromImage(previewImage) {
 
     console.log("IMAGE RECEIVED", previewImage);
 
-const analysis = await analyzeImage(previewImage);
-
-console.log("ANALYSIS", analysis);
+    const analysis = await analyzeImage(previewImage);
+    console.log("ANALYSIS", analysis);
 
     const params = photoToMusicParams(analysis);
     console.log("MUSIC PARAMS:", params);
+
     params.scale = normalizeMetalScale(params.scale, analysis);
 
-    const style = detectMetalStyle(analysis.brightness, analysis.entropy);
+    const style = detectMetalStyle(
+        analysis.brightness,
+        analysis.entropy
+    );
+
     analysis.style = style;
 
+    // 🎯 DNA → RANDOM SEED
     const dna = Math.floor(
+        analysis.brightness * 100000 +
+        analysis.energy * 200000 +
+        analysis.texture * 300000 +
+        analysis.complexity * 400000
+    );
 
-    analysis.brightness * 100000 +
-    analysis.energy * 200000 +
-    analysis.texture * 300000 +
-    analysis.complexity * 400000
-
-);
     const rand = createSeededRandom(dna);
 
-    const engine = await createMetalSongFromAnalysis(analysis, params, rand);
+    const engine =
+        await createMetalSongFromAnalysis(
+            analysis,
+            params,
+            rand
+        );
 
     return engine;
 }
@@ -74,9 +82,15 @@ export async function waitInstrumentsWithProgress() {
     const total = 4;
 
     while (window.__samplerLoadedCount < total) {
-        const percent = Math.floor((window.__samplerLoadedCount / total) * 100);
+
+        const percent = Math.floor(
+            (window.__samplerLoadedCount / total) * 100
+        );
+
         bar.style.width = percent + "%";
-        text.innerText = "Caricamento strumenti… " + percent + "%";
+        text.innerText =
+            "Caricamento strumenti… " + percent + "%";
+
         await new Promise(res => setTimeout(res, 100));
     }
 
@@ -87,87 +101,113 @@ export async function waitInstrumentsWithProgress() {
 // ENGINE PRINCIPALE
 // ======================================================
 
-export async function createMetalSongFromAnalysis(analysis, params, rand) {
+export async function createMetalSongFromAnalysis(
+    analysis,
+    params,
+    rand
+) {
 
     await Tone.loaded();
 
     Tone.Transport.bpm.value = params.bpm;
 
-    // 🎛️ NUOVA TIMELINE CENTRALE
+    // --------------------------------------------------
+    // TIMELINE
+    // --------------------------------------------------
+
     const timeline = createMetalTimeline(params, rand);
 
     const beatsPerMeasure = timeline.beatsPerMeasure;
     const totalMeasures = timeline.totalMeasures;
 
     const totalDuration =
-        (totalMeasures * beatsPerMeasure) * (60 / params.bpm);
+        (totalMeasures * beatsPerMeasure) *
+        (60 / params.bpm);
 
     // --------------------------------------------------
-    // Generazione moduli musicali
+    // MODULI MUSICALI
     // --------------------------------------------------
 
-const theme = generateLeadTheme(params, rand);
+    const theme = generateLeadTheme(params, rand);
 
-const riff = generateMetalRiff(
-    analysis,
-    params,
-    timeline,
-    rand,
-    theme
-);
-const riffEngine = riff.engine;
-const riffData = riff.data;
+    const riff = generateMetalRiff(
+        analysis,
+        params,
+        timeline,
+        rand,
+        theme
+    );
 
-const bassEngine = createBassEngine(
-    analysis,
-    params,
-    timeline,
-    riffData,
-    rand
-);
+    const riffEngine = riff.engine;
+    const riffData = riff.data;
 
-const leadEngine = createLeadEngine(
-    analysis,
-    params,
-    timeline,
-    riffData,
-    rand,
-    theme
-);
+    const bassEngine = createBassEngine(
+        analysis,
+        params,
+        timeline,
+        riffData,
+        rand
+    );
 
-const drumEngine = createDrumEngine(
-    analysis,
-    params,
-    timeline,
-    riffData,
-    rand
-);
+    const leadEngine = createLeadEngine(
+        analysis,
+        params,
+        timeline,
+        riffData,
+        rand,
+        theme
+    );
+
+    const drumEngine = createDrumEngine(
+        analysis,
+        params,
+        timeline,
+        riffData,
+        rand
+    );
 
     // --------------------------------------------------
-    // LOOP ENGINE
+    // 🎯 LOOP CENTRALE (SYNC TOTALE)
     // --------------------------------------------------
 
-    let riffStep = 0;
-    let bassStep = 0;
-    let leadStep = 0;
-    let drumStep = 0;
+    let globalStep = 0;
+    let lastSection = null;
 
-    const riffLoop = new Tone.Loop((time) => {
-        riffEngine(time, riffStep++);
+    const mainLoop = new Tone.Loop((time) => {
+
+        const step = globalStep++;
+
+        const { section, stepInMeasure } =
+            timeline.getStepData(step);
+
+        // ------------------------------------------------
+        // LOG SEZIONI
+        // ------------------------------------------------
+
+        if (section !== lastSection) {
+
+            console.log(
+                `\n===== 🎵 SECTION: ${section.toUpperCase()} =====`
+            );
+
+            lastSection = section;
+        }
+
+        // DEBUG BATTUTE
+        if (stepInMeasure === 0) {
+            console.log("---- MEASURE ----");
+        }
+
+        // ------------------------------------------------
+        // ENGINE SINCRONIZZATI
+        // ------------------------------------------------
+
+        riffEngine(time, step);
+        bassEngine(time, step);
+        leadEngine(time, step);
+        drumEngine(time, step);
+
     }, "8n");
-
-    const bassLoop = new Tone.Loop((time) => {
-        bassEngine(time, bassStep++);
-    }, "8n");
-
-    const leadLoop = new Tone.Loop((time) => {
-        leadEngine(time, leadStep++);
-    }, "8n");
-
-    const drumLoop = new Tone.Loop((time) => {
-    drumEngine(time, drumStep++);
-}, "8n");
-
 
     // --------------------------------------------------
     // CONTROLLI PLAYER
@@ -175,10 +215,9 @@ const drumEngine = createDrumEngine(
 
     function play() {
 
-        riffLoop.start(0);
-        bassLoop.start(0);
-        leadLoop.start(0);
-        drumLoop.start(0);
+        globalStep = 0;
+
+        mainLoop.start(0);
 
         if (Tone.Transport.state !== "started") {
             Tone.Transport.start();
@@ -186,6 +225,7 @@ const drumEngine = createDrumEngine(
     }
 
     function pause() {
+
         if (Tone.Transport.state === "started") {
             Tone.Transport.pause();
         }
@@ -193,17 +233,22 @@ const drumEngine = createDrumEngine(
 
     function stop() {
 
-        riffLoop.stop();
-        bassLoop.stop();
-        leadLoop.stop();
-        drumLoop.stop();
+        mainLoop.stop();
 
         Tone.Transport.stop();
-        //Tone.Transport.position = 0;
+        Tone.Transport.position = 0;
+
+        globalStep = 0;
+        lastSection = null;
     }
 
     function seek(seconds) {
-        Tone.Transport.start(undefined, seconds);
+
+        Tone.Transport.seconds = seconds;
+
+        globalStep = Math.floor(
+            seconds / Tone.Time("8n").toSeconds()
+        );
     }
 
     return {

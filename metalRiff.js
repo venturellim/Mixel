@@ -1,4 +1,4 @@
-// metalRiff.js — riff engine power metal (DNA rhythm + real samples)
+// metalRiff.js — riff engine modern metal (DNA rhythm + real samples)
 
 import * as Tone from "https://esm.sh/tone";
 import {
@@ -12,7 +12,7 @@ import {
 console.log("metalRiff.js loaded");
 
 // ------------------------------------------------------------
-// SAMPLE MAP (NOTE → SAMPLE DISPONIBILI)
+// SAMPLE MAP
 // ------------------------------------------------------------
 
 const AVAILABLE_NOTES = [
@@ -29,7 +29,6 @@ function mapToAvailableSample(note) {
     let minDiff = Infinity;
 
     for (const n of AVAILABLE_NOTES) {
-
         const m = Tone.Frequency(n).toMidi();
         const diff = Math.abs(midi - m);
 
@@ -46,7 +45,7 @@ function mapToAvailableSample(note) {
 // PROGRESSIONI
 // ------------------------------------------------------------
 
-const powerMetalProgressions = [
+const progressions = [
     [0,4,5,3],
     [0,5,3,4],
     [0,3,4,3],
@@ -73,16 +72,13 @@ export function generateMetalRiff(analysis, params, timeline, rand) {
     const octave = 2;
 
     const progression =
-        powerMetalProgressions[
-            Math.floor(rand() * powerMetalProgressions.length)
-        ];
+        progressions[Math.floor(rand() * progressions.length)];
 
     // ------------------------------------------------------------
     // DNA → RHYTHM
     // ------------------------------------------------------------
 
     function generateRhythmPattern(dna, stepsPerMeasure) {
-
         const pattern = [];
 
         for (let i = 0; i < stepsPerMeasure; i++) {
@@ -117,7 +113,6 @@ export function generateMetalRiff(analysis, params, timeline, rand) {
     // ------------------------------------------------------------
 
     function generateChorusProgression() {
-
         const patterns = [
             [0,5,6,4],
             [0,3,4,5],
@@ -176,7 +171,7 @@ export function generateMetalRiff(analysis, params, timeline, rand) {
     const riffLength = riffMeasures * stepsPerMeasure;
 
     const baseRiff = new Array(riffLength);
-    const accentMap = new Array(riffLength).fill(false);
+    const openMap = new Array(riffLength).fill(false);
 
     let chordRoot = scale[0] + octave;
     let chord = buildChord(chordRoot);
@@ -199,15 +194,20 @@ export function generateMetalRiff(analysis, params, timeline, rand) {
 
             const isAccent = rand() < 0.75;
 
-            if (isAccent && rand() < 0.5) {
-                accentMap[step] = true;
-            }
-
             if (isAccent) {
+
                 baseRiff[step] =
                     clampNote(chordRoot, MIN, MAX);
+
+                // 🎯 OPEN GUIDATO
+                if (rand() < 0.6) {
+                    openMap[step] = true;
+                }
+
             } else {
+
                 const pool = [chord[0], chord[1], chord[2]];
+
                 baseRiff[step] =
                     clampNote(
                         pool[Math.floor(rand() * pool.length)],
@@ -217,23 +217,15 @@ export function generateMetalRiff(analysis, params, timeline, rand) {
             }
         }
 
-        // ---------------- FINE BATTUTA ----------------
+        // ---------------- BREAK METAL ----------------
 
-        else if (stepInMeasure >= stepsPerMeasure - 2) {
-
-            const pool = [chord[0], chord[1], chord[2]];
-
-            baseRiff[step] =
-                clampNote(
-                    pool[Math.floor(rand() * pool.length)],
-                    MIN,
-                    MAX
-                );
+        if (stepInMeasure === stepsPerMeasure - 1 && rand() < 0.7) {
+            openMap[step] = true;
         }
 
         // ---------------- GROOVE ----------------
 
-        else {
+        if (!baseRiff[step]) {
 
             const energyBoost =
                 analysis.energy > 0.6 ? 0.2 : 0;
@@ -244,17 +236,14 @@ export function generateMetalRiff(analysis, params, timeline, rand) {
 
             if (palmStreak > 0) {
 
-                const moveProb = 0.4;
-
                 const pool = [chord[0], chord[1], chord[2]];
 
-                const noteToPlay =
-                    rand() < moveProb
-                        ? pool[Math.floor(rand() * pool.length)]
-                        : chordRoot;
-
                 baseRiff[step] =
-                    clampNote(noteToPlay, MIN, MAX);
+                    clampNote(
+                        pool[Math.floor(rand() * pool.length)],
+                        MIN,
+                        MAX
+                    );
 
                 palmStreak--;
 
@@ -265,18 +254,6 @@ export function generateMetalRiff(analysis, params, timeline, rand) {
 
                 baseRiff[step] =
                     clampNote(chordRoot, MIN, MAX);
-
-            } else {
-
-                const pool = [chord[0], chord[1], chord[2]];
-
-                const noteToPlay =
-                    rand() < 0.35
-                        ? pool[Math.floor(rand() * pool.length)]
-                        : chordRoot;
-
-                baseRiff[step] =
-                    clampNote(noteToPlay, MIN, MAX);
             }
         }
     }
@@ -288,29 +265,8 @@ export function generateMetalRiff(analysis, params, timeline, rand) {
     const fullRiff = new Array(totalSteps);
 
     for (let step = 0; step < totalSteps; step++) {
-
         const baseStep = step % riffLength;
-        let note = baseRiff[baseStep];
-
-        if (!note) {
-            fullRiff[step] = null;
-            continue;
-        }
-
-        if (rand() < 0.1) {
-
-            const chord = chordTimeline[step];
-            const pool = [chord[0], chord[1], chord[2]];
-
-            note =
-                clampNote(
-                    pool[Math.floor(rand() * pool.length)],
-                    MIN,
-                    MAX
-                );
-        }
-
-        fullRiff[step] = note;
+        fullRiff[step] = baseRiff[baseStep];
     }
 
     // ------------------------------------------------------------
@@ -335,17 +291,11 @@ export function generateMetalRiff(analysis, params, timeline, rand) {
                   ]
                 : chordTimeline[idx];
 
-        if (!note) {
-            if (section === "chorus" || section === "verse") {
-                note = chord[0];
-            } else return;
-        }
+        if (!note) return;
 
         // PAD
         if (section === "chorus" && stepInMeasure === 0) {
-            orchestraPad.triggerAttackRelease(
-                chord, "1m", time
-            );
+            orchestraPad.triggerAttackRelease(chord, "1m", time);
         }
 
         // ENERGY
@@ -357,26 +307,12 @@ export function generateMetalRiff(analysis, params, timeline, rand) {
 
         if (rand() > energy) return;
 
-        // SOUND
-        let useOpen = false;
+        // 🎯 OPEN GUIDATO (NO RANDOM)
+        const isOpen =
+            section === "chorus" ||
+            openMap[baseStep];
 
-        if (section === "chorus") useOpen = true;
-        else if (
-            stepInMeasure === 0 ||
-            stepInMeasure === Math.floor(stepsPerMeasure / 2)
-        ) {
-            useOpen = rand() < 0.7;
-        }
-        else if (rand() < 0.15) {
-            useOpen = true;
-        }
-
-        const isAccent = accentMap[baseStep];
-
-        const sound =
-            (useOpen || isAccent)
-                ? guitarOpen
-                : guitarPalm;
+        const sound = isOpen ? guitarOpen : guitarPalm;
 
         const dur =
             section === "chorus"
