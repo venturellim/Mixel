@@ -394,7 +394,7 @@ export function generateMetalRiff(analysis, params, timeline, rand) {
         // SOUND SELECTION
         // ------------------------------------------------
 
-        let sound;
+        // let sound;
 
         let useOpen = false;
 
