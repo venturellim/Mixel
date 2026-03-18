@@ -266,7 +266,7 @@ export function generateMetalRiff(analysis, params, timeline, rand) {
                     clampNote(chordRoot, MIN, MAX);
 
             }
-            else else {
+            else {
 
     const moveProb = 0.35;
 
