@@ -1,4 +1,4 @@
-// metalDrums.js — batteria evoluta con fill e transizioni
+// metalDrums.js — batteria sincronizzata con metalTimeline
 
 import { drums, humanizeTime } from "./common.js";
 import * as Tone from "https://esm.sh/tone";
@@ -16,8 +16,6 @@ export function createDrumEngine(analysis, params, timeline, riffData, rand) {
 
     const { stepsPerMeasure, totalSteps } = timeline;
 
-    let lastSection = null;
-
     return function drumEngine(time, step) {
 
         const idx = step % totalSteps;
@@ -28,42 +26,8 @@ export function createDrumEngine(analysis, params, timeline, riffData, rand) {
         const { stepInMeasure, section } =
             timeline.getStepData(step);
 
-        const isNewSection = section !== lastSection;
-
         // ------------------------------------------------
-        // 🎯 FILL CAMBIO SEZIONE
-        // ------------------------------------------------
-
-        if (isNewSection) {
-
-            // crash + kick subito
-            drums.player("crash1").start(time);
-            drums.player("kick").start(time);
-
-            // rullata veloce
-            for (let i = 0; i < 4; i++) {
-                drums.player("snare").start(
-                    time + i * Tone.Time("16n").toSeconds()
-                );
-            }
-
-            // tom fill (se esistono)
-            const toms = ["tom1", "tom2", "tom3"];
-
-            toms.forEach((tom, i) => {
-                if (drums._players && drums._players.get(tom)) {
-                    drums.player(tom).start(
-                        time + (i + 4) * Tone.Time("16n").toSeconds()
-                    );
-                }
-            });
-
-            lastSection = section;
-            return; // evita sovrapposizioni strane
-        }
-
-        // ------------------------------------------------
-        // HIHAT
+        // HIHAT BASE
         // ------------------------------------------------
 
         if (section !== "solo") {
@@ -76,18 +40,13 @@ export function createDrumEngine(analysis, params, timeline, riffData, rand) {
                 drums.player("hihat").start(
                     humanizeTime(time, rand)
                 );
+
             }
 
-            // apertura ogni tanto
-            if (rand() < 0.05) {
-                drums.player("openhat")?.start(
-                    humanizeTime(time, rand)
-                );
-            }
         }
 
         // ------------------------------------------------
-        // RIDE (SOLO)
+        // RIDE NEL SOLO
         // ------------------------------------------------
 
         if (section === "solo") {
@@ -97,11 +56,13 @@ export function createDrumEngine(analysis, params, timeline, riffData, rand) {
                 drums.player("ride").start(
                     humanizeTime(time, rand)
                 );
+
             }
+
         }
 
         // ------------------------------------------------
-        // SNARE
+        // SNARE BACKBEAT
         // ------------------------------------------------
 
         if (
@@ -112,38 +73,26 @@ export function createDrumEngine(analysis, params, timeline, riffData, rand) {
             drums.player("snare").start(
                 humanizeTime(time, rand)
             );
-        }
 
-        // ghost notes
-        if (rand() < 0.1 && section !== "intro") {
-
-            drums.player("snare").start(
-                humanizeTime(time, rand, 0.02),
-                0,
-                0.3
-            );
         }
 
         // ------------------------------------------------
-        // KICK (MIGLIORATO)
+        // KICK
         // ------------------------------------------------
 
         if (section === "chorus") {
 
-            if (riffNote) {
+            if (
+                riffNote &&
+                rand() < (0.6 + aggression * 0.4)
+            ) {
 
-                // segue il riff (tight)
                 drums.player("kick").start(
                     humanizeTime(time, rand)
                 );
+
             }
 
-            // doppia cassa ogni tanto
-            if (rand() < 0.25) {
-                drums.player("kick").start(
-                    time + Tone.Time("16n").toSeconds()
-                );
-            }
         }
 
         else if (section === "verse") {
@@ -157,14 +106,9 @@ export function createDrumEngine(analysis, params, timeline, riffData, rand) {
                 drums.player("kick").start(
                     humanizeTime(time, rand)
                 );
+
             }
 
-            // variazione leggera
-            if (rand() < 0.2) {
-                drums.player("kick").start(
-                    time + Tone.Time("16n").toSeconds()
-                );
-            }
         }
 
         else if (section === "solo") {
@@ -174,7 +118,9 @@ export function createDrumEngine(analysis, params, timeline, riffData, rand) {
                 drums.player("kick").start(
                     humanizeTime(time, rand)
                 );
+
             }
+
         }
 
         else if (section === "intro") {
@@ -184,7 +130,9 @@ export function createDrumEngine(analysis, params, timeline, riffData, rand) {
                 drums.player("kick").start(
                     humanizeTime(time, rand)
                 );
+
             }
+
         }
 
         // ------------------------------------------------
@@ -202,25 +150,11 @@ export function createDrumEngine(analysis, params, timeline, riffData, rand) {
                 drums.player("crash1").start(
                     humanizeTime(time, rand)
                 );
+
             }
+
         }
 
-        // ------------------------------------------------
-        // MINI FILL FINE BATTUTA
-        // ------------------------------------------------
-
-        if (
-            stepInMeasure === stepsPerMeasure - 2 &&
-            rand() < 0.3
-        ) {
-
-            drums.player("snare").start(
-                time,
-            );
-
-            drums.player("snare").start(
-                time + Tone.Time("16n").toSeconds()
-            );
-        }
     };
+
 }
