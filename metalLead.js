@@ -1,4 +1,4 @@
-// metalLead.js — lead melodica avanzata (solo + hook + chord aware)
+// metalLead.js — lead melodica con hook DNA-driven
 
 import * as Tone from "https://esm.sh/tone";
 import { guitarLead, humanizeTime } from "./common.js";
@@ -7,98 +7,146 @@ console.log("metalLead.js loaded");
 
 export function createLeadEngine(analysis, params, timeline, riffData, rand, theme) {
 
+    const direction = analysis.direction ?? 0.5;
+
+    // ------------------------------------------------------------
+    // DIREZIONE MELODICA
+    // ------------------------------------------------------------
+
+    const melodicSlope = (direction - 0.5) * 2;
+
     const { stepsPerMeasure, totalSteps } = timeline;
     const scale = params.scale;
 
-    const MIN = 60;
-    const MAX = 84;
+    const MIN = 60; // C4
+    const MAX = 84; // C6
 
     function clampMidi(m) {
         return Math.max(MIN, Math.min(MAX, m));
     }
 
     // ------------------------------------------------------------
-    // DEBUG SEZIONI
+    // HOOK DNA (NUOVO)
     // ------------------------------------------------------------
 
-    let lastSection = null;
+    function generateHook(scale, dna, stepsPerMeasure, octave) {
 
-    // ------------------------------------------------------------
-    // CHORD HELPERS
-    // ------------------------------------------------------------
+    const hook = [];
 
-    function getChordTones(chord) {
-        return [chord[0], chord[1], chord[2]];
-    }
+    for (let i = 0; i < stepsPerMeasure; i++) {
 
-    function getScaleNotes(scale, octave = 4) {
-        return scale.map(n => n + octave);
-    }
+        const bit = (dna >> i) & 1;
 
-    // ------------------------------------------------------------
-    // SOLO PHRASES
-    // ------------------------------------------------------------
+        if (bit === 1) {
 
-    function createSoloPhrase(scale, chord) {
+            const safeIndex =
+                Math.abs((dna >> (i + 3))) % scale.length;
 
-        const chordTones = getChordTones(chord);
-        const passing = getScaleNotes(scale);
+            const note = scale[safeIndex];
 
-        const r = rand();
-
-        // HOLD
-        if (r < 0.25) {
-            return {
-                type: "hold",
-                note: chordTones[Math.floor(rand()*chordTones.length)],
-                duration: rand() < 0.5 ? "1m" : "2m"
-            };
-        }
-
-        // RUN
-        if (r < 0.65) {
-
-            const len = [4,6,8][Math.floor(rand()*3)];
-            const start = Math.floor(rand() * passing.length);
-
-            const notes = [];
-
-            for (let i = 0; i < len; i++) {
-                notes.push(passing[(start + i) % passing.length]);
+            if (note !== undefined) {
+                hook.push(note + octave);
+            } else {
+                hook.push(null);
             }
 
-            // chiudi su chord tone
-            notes[notes.length - 1] =
-                chordTones[Math.floor(rand()*chordTones.length)];
-
-            return {
-                type: "run",
-                notes,
-                duration: "16n"
-            };
+        } else {
+            hook.push(null);
         }
-
-        // MELODY
-        return {
-            type: "melody",
-            notes: [
-                chordTones[Math.floor(rand()*chordTones.length)],
-                passing[Math.floor(rand()*passing.length)],
-                chordTones[Math.floor(rand()*chordTones.length)]
-            ],
-            duration: "8n"
-        };
     }
 
-    let currentPhrase = null;
-    let phraseStep = 0;
+    return hook;
+}
+
+    const hookPattern =
+        generateHook(
+            scale,
+            analysis.dna || 123456,
+            stepsPerMeasure,
+            4
+        );
 
     // ------------------------------------------------------------
-    // CHORUS HOOK
+    // MOTIVI
     // ------------------------------------------------------------
 
-    let chorusHoldNote = null;
-    let chorusHoldTimer = 0;
+    function generateMotif() {
+
+        const motif = [];
+        const len = 2 + Math.floor(rand() * 3);
+
+        let pos = Math.floor(rand() * scale.length);
+
+        for (let i = 0; i < len; i++) {
+
+            motif.push(scale[pos]);
+
+            let stepMove;
+
+            if (melodicSlope > 0.3)
+                stepMove = rand() < 0.7 ? 1 : -1;
+            else if (melodicSlope < -0.3)
+                stepMove = rand() < 0.7 ? -1 : 1;
+            else
+                stepMove = rand() < 0.5 ? 1 : -1;
+
+            pos = (pos + stepMove + scale.length) % scale.length;
+        }
+
+        return motif;
+    }
+
+    function generatePhrase() {
+
+        const phrase = [];
+
+        let pos = Math.floor(rand() * scale.length);
+
+        for (let i = 0; i < stepsPerMeasure; i++) {
+
+            phrase.push(scale[pos]);
+
+            let move;
+
+            if (melodicSlope > 0.3)
+                move = rand() < 0.65 ? 1 : -1;
+            else if (melodicSlope < -0.3)
+                move = rand() < 0.65 ? -1 : 1;
+            else
+                move = rand() < 0.5 ? 1 : -1;
+
+            pos = (pos + move + scale.length) % scale.length;
+        }
+
+        return phrase;
+    }
+
+    let motif = generateMotif();
+    let phrase = generatePhrase();
+
+    // ------------------------------------------------------------
+    // MOVIMENTO MELODICO CONTINUO
+    // ------------------------------------------------------------
+
+    let melodicDirection = rand() < 0.5 ? 1 : -1;
+    let melodicIndex = Math.floor(rand() * scale.length);
+
+    function nextScaleNote() {
+
+        melodicIndex += melodicDirection;
+
+        if (melodicIndex >= scale.length) {
+            melodicIndex = scale.length - 1;
+            melodicDirection = -1;
+        }
+
+        if (melodicIndex < 0) {
+            melodicIndex = 0;
+            melodicDirection = 1;
+        }
+
+        return scale[melodicIndex];
+    }
 
     // ------------------------------------------------------------
     // ENGINE
@@ -112,143 +160,203 @@ export function createLeadEngine(analysis, params, timeline, riffData, rand, the
             timeline.getStepData(step);
 
         const chord = riffData.chordTimeline[idx];
+        const nextChord =
+            riffData.chordTimeline[(idx + 1) % totalSteps];
+
         if (!chord) return;
 
         // --------------------------------------------------------
-        // LOG SEZIONE
+        // VARIAZIONE OGNI MISURA
         // --------------------------------------------------------
 
-        if (section !== lastSection) {
-            console.log(`\n===== 🎵 SECTION: ${section.toUpperCase()} =====`);
-            lastSection = section;
+        if (stepInMeasure === 0) {
+            motif = generateMotif();
+            phrase = generatePhrase();
         }
 
         // --------------------------------------------------------
-        // CHORUS → HOOK LUNGO
-        // --------------------------------------------------------
-
-        if (section === "chorus") {
-
-            if (chorusHoldTimer <= 0) {
-
-                const chordTones = getChordTones(chord);
-
-                chorusHoldNote =
-                    chordTones[Math.floor(rand()*chordTones.length)];
-
-                chorusHoldTimer =
-                    (rand() < 0.5 ? 1 : 2) * stepsPerMeasure;
-
-                guitarLead.triggerAttackRelease(
-                    chorusHoldNote,
-                    "1m",
-                    time,
-                    0.9
-                );
-            }
-
-            chorusHoldTimer--;
-
-            // sotto possiamo ancora mettere qualche nota leggera
-            if (rand() < 0.2) {
-
-                const passing = getScaleNotes(scale);
-                const note =
-                    passing[Math.floor(rand()*passing.length)];
-
-                guitarLead.triggerAttackRelease(
-                    note,
-                    "8n",
-                    humanizeTime(time, rand),
-                    0.6
-                );
-            }
-
-            return;
-        }
-
-        // --------------------------------------------------------
-        // SOLO → PHRASE ENGINE
-        // --------------------------------------------------------
-
-        if (section === "solo") {
-
-            if (stepInMeasure === 0 || !currentPhrase) {
-                currentPhrase =
-                    createSoloPhrase(scale, chord);
-                phraseStep = 0;
-            }
-
-            if (currentPhrase.type === "hold") {
-
-                if (phraseStep === 0) {
-                    guitarLead.triggerAttackRelease(
-                        currentPhrase.note,
-                        currentPhrase.duration,
-                        time,
-                        1
-                    );
-                }
-
-                phraseStep++;
-                return;
-            }
-
-            if (phraseStep < currentPhrase.notes.length) {
-
-                const noteName =
-                    currentPhrase.notes[phraseStep];
-
-                let midi =
-                    Tone.Frequency(noteName).toMidi();
-
-                midi = clampMidi(midi);
-
-                const note =
-                    Tone.Frequency(midi, "midi").toNote();
-
-                guitarLead.triggerAttackRelease(
-                    note,
-                    currentPhrase.duration,
-                    humanizeTime(time, rand),
-                    0.9
-                );
-
-                phraseStep++;
-            }
-
-            return;
-        }
-
-        // --------------------------------------------------------
-        // VERSE / INTRO / OUTRO → LIGHT LEAD
+        // DENSITÀ
         // --------------------------------------------------------
 
         const density =
-            section === "intro" ? 0.4 :
-            section === "verse" ? 0.6 :
-            section === "outro" ? 0.3 : 0.5;
+            section === "intro"  ? 0.5 :
+            section === "verse"  ? 0.6 :
+            section === "chorus" ? 0.95 :
+            section === "solo"   ? 1.0 :
+            section === "outro"  ? 0.4 : 0.6;
 
         if (rand() > density) return;
 
-        const chordTones = getChordTones(chord);
+        // --------------------------------------------------------
+        // SCELTA NOTA
+        // --------------------------------------------------------
 
-        const noteName =
-            chordTones[Math.floor(rand()*chordTones.length)];
+        let noteName = null;
 
-        let midi =
-            Tone.Frequency(noteName).toMidi();
+        // accento forte
+        if (stepInMeasure === 0) {
+
+            const chordChoice = [0,1,2,1];
+
+            noteName =
+                chord[
+                    chordChoice[
+                        Math.floor(rand() * chordChoice.length)
+                    ]
+                ];
+        }
+
+        // anticipazione
+        else if (
+            stepInMeasure === stepsPerMeasure - 1 &&
+            nextChord &&
+            rand() < 0.6
+        ) {
+            noteName = nextChord[0];
+        }
+
+        // SOLO
+        else if (section === "solo") {
+
+            if (rand() < 0.7)
+                noteName = nextScaleNote();
+            else
+                noteName =
+                    phrase[
+                        stepInMeasure % phrase.length
+                    ];
+        }
+
+        // VERSE
+        else if (section === "verse") {
+
+            noteName =
+                motif[
+                    stepInMeasure % motif.length
+                ];
+        }
+
+        // CHORUS → HOOK DNA
+        else if (section === "chorus") {
+
+            const hookNote =
+                hookPattern[stepInMeasure];
+
+            if (hookNote !== null && hookNote !== undefined) {
+
+    try {
+
+        noteName = Tone.Frequency(
+            hookNote,
+            "midi"
+        ).toNote();
+
+    } catch (e) {
+
+        console.warn("Hook error:", hookNote);
+        noteName = null;
+
+    }
+
+}
+
+            // variazione leggera
+            if (rand() < 0.15) {
+
+                const idx =
+                    Math.floor(rand() * scale.length);
+
+                noteName = scale[idx];
+            }
+        }
+
+        // INTRO / OUTRO
+        else {
+
+            const themeIdx =
+                step % theme.length;
+
+            const raw = theme[themeIdx];
+
+if (raw === undefined) return;
+
+const scaleIndex =
+    Math.abs(raw) % scale.length;
+        }
+
+        // --------------------------------------------------------
+        // FALLBACK
+        // --------------------------------------------------------
+
+        if (!noteName && chord) {
+
+            noteName =
+                chord[
+                    Math.floor(rand() * chord.length)
+                ];
+        }
+
+        if (!noteName || typeof noteName !== "string") {
+    return;
+}
+
+        // --------------------------------------------------------
+        // MIDI
+        // --------------------------------------------------------
+
+        let midi;
+
+        if (/[0-9]/.test(noteName)) {
+            midi = Tone.Frequency(noteName).toMidi();
+        } else {
+            midi = Tone.Frequency(noteName + "4").toMidi();
+        }
 
         midi = clampMidi(midi);
 
         const note =
             Tone.Frequency(midi, "midi").toNote();
 
+        // --------------------------------------------------------
+        // DURATA
+        // --------------------------------------------------------
+
+        let dur;
+
+        if (section === "solo")
+            dur = rand() < 0.5 ? "16n" : "8n";
+        else if (section === "chorus")
+            dur = "8n";
+        else if (section === "intro")
+            dur = "4n";
+        else if (section === "outro")
+            dur = "2n";
+        else
+            dur = "8n";
+
+        // --------------------------------------------------------
+        // VELOCITY (ACCENTI)
+        // --------------------------------------------------------
+
+        const isAccent =
+            section === "chorus"
+                ? !!hookPattern[stepInMeasure]
+                : stepInMeasure === 0;
+
+        const velocity =
+            isAccent
+                ? 1.0
+                : 0.7 + rand() * 0.25;
+
+        // --------------------------------------------------------
+        // PLAY
+        // --------------------------------------------------------
+
         guitarLead.triggerAttackRelease(
             note,
-            "8n",
-            humanizeTime(time, rand),
-            0.7
+            dur,
+            humanizeTime(time, rand, 0.012),
+            velocity
         );
     };
 }
