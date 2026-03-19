@@ -22,7 +22,8 @@ import { initBassEngine } from "./bassEngine.js";
 import { initDrumEngine } from "./drumEngine.js";
 import { initThemeEngine } from "./themeEngine.js";
 
-import { waitForInstruments } from "./common.js";
+import { waitForInstruments } from "../../common.js";
+
 
 console.log("metalEngine.js loaded");
 
