@@ -12,7 +12,7 @@ console.log("MAIN.js avviato");
 // -------------------------------------------------------------
 // Import fondamentali
 // -------------------------------------------------------------
-import { waitDownloadInstrumentsWithProgress } from "./common.js";
+import { waitForInstruments } from "./common.js";
 import { analyzeImage } from "./imageAnalysis.js";
 import { photoToMusicParams } from "./photoToMusicParams.js";
 
