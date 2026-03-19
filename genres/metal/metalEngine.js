@@ -5,9 +5,6 @@
 // inizializza strumenti, struttura, scale, seed,
 // e orchestra tutti gli engine del metal.
 //
-// Nessuna logica musicale diretta qui.
-// Solo coordinamento.
-//
 
 import * as Tone from "https://esm.sh/tone";
 
@@ -25,7 +22,21 @@ import { initBassEngine } from "./bassEngine.js";
 import { initDrumEngine } from "./drumEngine.js";
 import { initThemeEngine } from "./themeEngine.js";
 
+import { waitForInstruments } from "./common.js";
+
 console.log("metalEngine.js loaded");
+
+// ============================================================
+// 🎧 LOADER STRUMENTI METAL
+// ============================================================
+//
+// Questa funzione aspetta che i 4 sampler del metal
+// (palm, open, lead, bass) siano completamente caricati.
+// Viene chiamata da Main.js PRIMA di aprire il player.
+//
+export async function waitMetalInstruments() {
+    await waitForInstruments(4);
+}
 
 // ============================================================
 // 🎼 CREAZIONE ENGINE METAL
@@ -46,7 +57,10 @@ export async function createMetalEngine(params) {
     // --------------------------------------------------------
     // 3) Costruzione struttura del brano
     // --------------------------------------------------------
-    const structure = buildSongStructure(metalParams.structureProfile, metalParams.bpm);
+    const structure = buildSongStructure(
+        metalParams.structureProfile,
+        metalParams.bpm
+    );
 
     // --------------------------------------------------------
     // 4) Costruzione scala
