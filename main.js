@@ -34,7 +34,7 @@ window.onerror = function (msg, url, line, col, error) {
 // Avvio strumenti
 // -------------------------------------------------------------
 window.addEventListener("load", async () => {
-    await waitDownloadInstrumentsWithProgress();
+    await waitForInstruments();
     console.log("🎵 Tutti gli strumenti sono pronti!");
 });
 
