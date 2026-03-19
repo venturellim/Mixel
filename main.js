@@ -5,6 +5,7 @@
 // Nessuna logica musicale. Nessuna logica di genere.
 // Tutto il resto vive nei moduli dei generi.
 //
+
 import * as Tone from "https://esm.sh/tone";
 
 console.log("MAIN.js avviato");
@@ -17,7 +18,7 @@ import { analyzeImage } from "./imageAnalysis.js";
 import { photoToMusicParams } from "./photoToMusicParams.js";
 
 // Import dei generi (solo entry point, non logica interna)
-import { createMetalEngine } from "./genres/metal/metalEngine.js";
+import { createMetalEngine, waitMetalInstruments } from "./genres/metal/metalEngine.js";
 
 let currentEngine = null;
 let currentGenre = null;
@@ -113,7 +114,7 @@ function initGenrePanel() {
     const closeGenrePanel = document.getElementById("closeGenrePanel");
 
     btnElabora.addEventListener("click", () => {
-        closeGenreUI();
+        closeMixelUI();
         genrePanel.classList.add("show");
         genrePanel.classList.remove("hidden");
     });
@@ -146,6 +147,7 @@ async function selectGenre(genre) {
     // 3) Creazione engine del genere
     if (genre === "metal") {
         currentEngine = await createMetalEngine(params);
+await waitMetalInstruments();   // <-- strumenti pronti
     }
 
     if (!currentEngine) {
@@ -165,7 +167,7 @@ async function selectGenre(genre) {
 // Player UI
 // -------------------------------------------------------------
 function initPlayerUI() {
-    openGenreUI();
+    openMixelUI();
 
     const playBtn = document.getElementById("btnPlay");
     const pauseBtn = document.getElementById("btnPause");
@@ -269,13 +271,13 @@ function initFxPanel() {
 function resetAppState() {
     currentEngine?.stop();
     currentEngine = null;
-    closeGenreUI();
+    closeMixelUI();
 }
 
 // -------------------------------------------------------------
 // UI animazioni generiche (non legate al metal)
 // -------------------------------------------------------------
-function openGenreUI() {
+function openMixelUI() {
     const player = document.getElementById("playerPanel");
     const preview = document.getElementById("previewImage");
     const spectrum = document.getElementById("spectrumPanel");
@@ -288,7 +290,7 @@ function openGenreUI() {
     }, 250);
 }
 
-function closeGenreUI() {
+function closeMixelUI() {
     document.getElementById("spectrumPanel").classList.remove("active");
     document.getElementById("previewImage").classList.remove("shift-left");
     document.getElementById("playerPanel").classList.remove("open");
