@@ -19,15 +19,18 @@ console.log("common.js loaded");
 // 🎚 MASTER BUS & MASTERING
 // ======================================================
 
-// Bus principale (tutti i generi confluiscono qui)
+// EQ principale
 export const masterEQ = new Tone.EQ3({
     low: 0,
     mid: 0,
     high: 0
-}).toDestination();
+});
 
-// (Opzionale) Limiter globale per sicurezza
-export const masterLimiter = new Tone.Limiter(-1).connect(masterEQ);
+// Limiter globale (ultimo anello della catena)
+export const masterLimiter = new Tone.Limiter(-1);
+
+// Catena corretta: EQ → Limiter → Destination
+masterEQ.chain(masterLimiter, Tone.Destination);
 
 
 // ======================================================
