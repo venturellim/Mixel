@@ -1,5 +1,5 @@
 //
-// genres/metal/instruments.js
+// instruments.js
 // Tutti gli strumenti, effetti e routing del genere metal.
 // Nessuna logica musicale. Nessuna struttura. Nessun engine.
 // Solo strumenti + effetti + routing.
@@ -8,7 +8,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("metal/instruments.js loaded");
+console.log("instruments.js loaded");
 
 // ============================================================
 // 🎚 BUS SPECIFICI DEL METAL
