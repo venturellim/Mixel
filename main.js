@@ -13,7 +13,6 @@ console.log("MAIN.js avviato");
 // -------------------------------------------------------------
 // Import fondamentali
 // -------------------------------------------------------------
-import { waitForInstruments } from "./common.js";
 import { analyzeImage } from "./imageAnalysis.js";
 import { photoToMusicParams } from "./photoToMusicParams.js";
 
@@ -31,13 +30,6 @@ window.onerror = function (msg, url, line, col, error) {
     console.log("STACK:", error?.stack);
 };
 
-// -------------------------------------------------------------
-// Avvio strumenti
-// -------------------------------------------------------------
-window.addEventListener("load", async () => {
-    await waitForInstruments();
-    console.log("🎵 Tutti gli strumenti sono pronti!");
-});
 
 // -------------------------------------------------------------
 // Inizializzazione UI
