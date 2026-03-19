@@ -131,7 +131,7 @@ async function selectGenre(genre) {
     const previewImage = document.getElementById("previewImage");
 
     // 1) Analisi immagine
-    const analysis = analyzeImage(previewImage);
+        const analysis = await analyzeImage(previewImage);
 
     // 2) Parametri musicali astratti
     const params = photoToMusicParams(analysis);
