@@ -39,12 +39,13 @@ export function initRiffEngine(instruments, params, scale, rand, structure, opti
     // 2) Pattern ritmici base
     // --------------------------------------------------------
     const patterns = {
-        intro:  [1,0,1,0, 1,0,1,0],
-        verse:  [1,1,1,1, 1,0,1,0],
-        chorus: [1,0,1,1, 1,0,1,1],
-        solo:   [1,0,1,0, 0,0,1,0],
-        outro:  [1,0,1,0, 1,0,0,0]
-    };
+    intro:  [1,1,1,1, 1,1,1,1], // straight 16th
+    verse:  [1,1,1,1, 1,1,1,1],
+    chorus: [1,1,1,1, 1,1,1,1],
+    solo:   [1,1,1,1, 1,1,1,1],
+    outro:  [1,1,1,1, 1,1,1,1]
+};
+
 
     // --------------------------------------------------------
     // 3) Funzione per scegliere una nota della scala
