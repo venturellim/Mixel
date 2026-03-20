@@ -9,29 +9,21 @@ console.log("powerMetalParams.js loaded");
 
 export function buildPowerMetalParams(rand) {
 
-    // Se rand è un oggetto, lo trasformiamo in funzione
-    const rnd = (typeof rand === "function")
-        ? rand
-        : () => rand.next();   // oppure rand.random(), dipende dal tuo random
+    // rand è una funzione: rand()
 
-    // 1) Tonal center sicuro
     const TONICS = ["C", "D", "E", "F", "G", "A", "B"];
-    const tonic = TONICS[Math.floor(rnd() * TONICS.length)] || "E";
+    const tonic = TONICS[Math.floor(rand() * TONICS.length)];
 
-    // 2) Ottava sicura
     const OCTAVES = [3, 4, 5];
-    const octave = OCTAVES[Math.floor(rnd() * OCTAVES.length)] || 4;
+    const octave = OCTAVES[Math.floor(rand() * OCTAVES.length)];
 
     const tonalCenter = tonic + octave;
 
-    // 3) Tipo di scala sicuro
     const SCALE_TYPES = ["major", "naturalMinor", "harmonicMinor"];
-    const scaleType = SCALE_TYPES[Math.floor(rnd() * SCALE_TYPES.length)] || "naturalMinor";
+    const scaleType = SCALE_TYPES[Math.floor(rand() * SCALE_TYPES.length)];
 
-    // 4) BPM sicuro
-    const bpm = Math.floor(120 + rnd() * 60); // 120–180
+    const bpm = Math.floor(120 + rand() * 60);
 
-    // 5) Modalità composizione
     let compositionMode = "media";
     if (bpm < 130) compositionMode = "lenta";
     if (bpm > 160) compositionMode = "veloce";
@@ -45,8 +37,6 @@ export function buildPowerMetalParams(rand) {
         scaleType,
         bpm,
         compositionMode,
-
-        // parametri musicali
         riffDensity: 0.6,
         bassIntensity: 0.7,
         leadDensity: 0.8,
