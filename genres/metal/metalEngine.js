@@ -48,12 +48,12 @@ export async function createMetalEngine(params) {
     // --------------------------------------------------------
     // 1) Parametri specifici del metal
     // --------------------------------------------------------
-    const metalParams = buildPowerMetalParams(params);
-
     // --------------------------------------------------------
     // 2) Seed random deterministico
     // --------------------------------------------------------
     const rand = createSeededRandom(params.dna);
+    const metalParams = buildPowerMetalParams(rand);
+
 
     // --------------------------------------------------------
     // 3) Costruzione struttura del brano
