@@ -1,5 +1,5 @@
 //
-// riffEngine.js
+// riffEngine.js — versione corretta
 // Riff power metal con motivi, accenti e direzione armonica.
 //
 
@@ -31,13 +31,14 @@ export function initRiffEngine(instruments, params, scale, rand, structure) {
         return Tone.Frequency(midi, "midi").toNote("flat");
     }
 
-    // Motivo base: 4 note (tipo pedal + movimento)
+    // Motivo base in MIDI (NON convertiamo subito in note!)
     function buildMotif() {
         const root = pickMidi();
         const up = root + 2;
-        const down = root - 2;
         const fifth = root + 7;
-        return [root, up, root, fifth].map(m => midiToNoteName(m));
+
+        // Manteniamo il motivo in MIDI
+        return [root, up, root, fifth];
     }
 
     const baseMotif = buildMotif();
@@ -56,8 +57,14 @@ export function initRiffEngine(instruments, params, scale, rand, structure) {
         timeline.forEach((t, i) => {
             if (pattern[i % pattern.length] !== 1) return;
 
-            const motifNote = baseMotif[i % baseMotif.length];
-            const note = motifNote || "C2";
+            // MIDI dal motivo
+            const midi = baseMotif[i % baseMotif.length];
+
+            // Se il motivo genera una nota fuori range, la rimpiazziamo con la scala adattata
+            const safeMidi = riffScale.includes(midi) ? midi : riffScale[0];
+
+            // Convertiamo in nota SOLO ora
+            const note = midiToNoteName(safeMidi);
 
             Tone.Transport.schedule(time => {
                 guitarPalm.triggerAttackRelease(note, "16n", time);

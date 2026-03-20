@@ -1,5 +1,5 @@
 //
-// leadEngine.js
+// leadEngine.js — versione corretta e robusta
 // Lead power metal: frasi, direzione, tensione/risoluzione.
 //
 
@@ -23,22 +23,42 @@ export function initLeadEngine(instruments, params, scale, rand, structure) {
     const MIN_MIDI = noteToMidi("C4");
     const MAX_MIDI = noteToMidi("C6");
 
+    // ------------------------------------------------------------
+    // 1) Conversione sicura MIDI → nota
+    // ------------------------------------------------------------
+    function safeMidiToNote(midi) {
+        if (isNaN(midi)) return "C4";
+        if (midi < MIN_MIDI) midi = MIN_MIDI;
+        if (midi > MAX_MIDI) midi = MAX_MIDI;
+        return toFlat(midiToNote(midi));
+    }
+
+    // ------------------------------------------------------------
+    // 2) Clamping sicuro per note in formato stringa
+    // ------------------------------------------------------------
     function clampLead(note) {
         if (!note) return "C4";
         const midi = noteToMidi(note);
-        if (isNaN(midi)) return "C4";
-        if (midi < MIN_MIDI) return toFlat(midiToNote(MIN_MIDI));
-        if (midi > MAX_MIDI) return toFlat(midiToNote(MAX_MIDI));
-        return toFlat(note);
+        return safeMidiToNote(midi);
     }
 
+    // ------------------------------------------------------------
+    // 3) Step melodico sicuro
+    // ------------------------------------------------------------
     function safeMelodicStep(current, step) {
         if (scale.length === 0) return clampLead(current);
+
         let next = melodicStep(scale, current, step);
+
+        // Se melodicStep fallisce → resta sulla nota corrente
         if (!next) next = current;
+
         return clampLead(next);
     }
 
+    // ------------------------------------------------------------
+    // 4) Generazione frase lead
+    // ------------------------------------------------------------
     function generatePhrase(startNote, length = 8, directionBias = 1) {
         let note = startNote || "C4";
         const phrase = [];
@@ -47,6 +67,7 @@ export function initLeadEngine(instruments, params, scale, rand, structure) {
             const dir = rand() < params.intensity ? directionBias : -directionBias;
             const bigJump = rand() < params.leadDensity * 0.25;
             const step = bigJump ? dir * 2 : dir;
+
             note = safeMelodicStep(note, step);
             phrase.push(note);
         }
@@ -54,9 +75,13 @@ export function initLeadEngine(instruments, params, scale, rand, structure) {
         return phrase;
     }
 
+    // ------------------------------------------------------------
+    // 5) Scheduling sezioni
+    // ------------------------------------------------------------
     function scheduleSection(section, density) {
         const timeline = buildSectionTimeline(section, "8n");
 
+        // Nota di partenza sempre valida
         let baseNote = scale.length > 0
             ? clampLead(scale[Math.floor(rand() * scale.length)])
             : "C4";
@@ -86,6 +111,9 @@ export function initLeadEngine(instruments, params, scale, rand, structure) {
         });
     }
 
+    // ------------------------------------------------------------
+    // 6) Scheduling globale
+    // ------------------------------------------------------------
     function schedule() {
         structure.sections.forEach(section => {
             let density = params.leadDensity;
