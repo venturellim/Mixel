@@ -1,12 +1,8 @@
-//
-// leadEngine.js — versione corretta e robusta
-// Lead power metal: frasi, direzione, tensione/risoluzione.
-//
+// leadEngine.js — versione con leadScale dedicata
 
 import * as Tone from "https://esm.sh/tone";
 
 import { noteToMidi, midiToNote } from "../../utils/harmonyUtils.js";
-import { melodicStep } from "../../utils/scaleUtils.js";
 import { buildSectionTimeline } from "../../utils/structureUtils.js";
 import { duration } from "../../utils/tempoUtils.js";
 
@@ -22,6 +18,15 @@ export function initLeadEngine(instruments, params, scale, rand, structure) {
 
     const MIN_MIDI = noteToMidi("C4");
     const MAX_MIDI = noteToMidi("C6");
+
+    // ------------------------------------------------------------
+    // 0) Costruiamo una leadScale dedicata (in MIDI) nel range C4–C6
+    // ------------------------------------------------------------
+    const leadScaleMidi = scale
+        .map(n => typeof n === "number" ? n : noteToMidi(n))
+        .filter(m => !isNaN(m) && m >= MIN_MIDI && m <= MAX_MIDI);
+
+    console.log("[leadEngine] leadScaleMidi:", leadScaleMidi);
 
     // ------------------------------------------------------------
     // 1) Conversione sicura MIDI → nota
@@ -43,21 +48,35 @@ export function initLeadEngine(instruments, params, scale, rand, structure) {
     }
 
     // ------------------------------------------------------------
-    // 3) Step melodico sicuro
+    // 3) Step melodico robusto sulla leadScaleMidi
     // ------------------------------------------------------------
     function safeMelodicStep(current, step) {
-        if (scale.length === 0) return clampLead(current);
+        if (leadScaleMidi.length === 0) return clampLead(current);
 
-        let next = melodicStep(scale, current, step);
+        const currentMidi = noteToMidi(current);
+        if (isNaN(currentMidi)) return safeMidiToNote(leadScaleMidi[0]);
 
-        // Se melodicStep fallisce → resta sulla nota corrente
-        if (!next) next = current;
+        // Trova l'indice della nota più vicina nella leadScale
+        let bestIdx = 0;
+        let bestDiff = Infinity;
+        leadScaleMidi.forEach((m, i) => {
+            const d = Math.abs(m - currentMidi);
+            if (d < bestDiff) {
+                bestDiff = d;
+                bestIdx = i;
+            }
+        });
 
-        return clampLead(next);
+        let nextIdx = bestIdx + step;
+        if (nextIdx < 0) nextIdx = 0;
+        if (nextIdx >= leadScaleMidi.length) nextIdx = leadScaleMidi.length - 1;
+
+        const nextMidi = leadScaleMidi[nextIdx];
+        return safeMidiToNote(nextMidi);
     }
 
     // ------------------------------------------------------------
-    // 4) Generazione frase lead
+    // 4) Generazione frase lead (come tua, ma usando il nuovo safeMelodicStep)
     // ------------------------------------------------------------
     function generatePhrase(startNote, length = 8, directionBias = 1) {
         let note = startNote || "C4";
@@ -76,15 +95,18 @@ export function initLeadEngine(instruments, params, scale, rand, structure) {
     }
 
     // ------------------------------------------------------------
-    // 5) Scheduling sezioni
+    // 5) Scheduling sezioni (identico al tuo)
     // ------------------------------------------------------------
     function scheduleSection(section, density) {
         const timeline = buildSectionTimeline(section, "8n");
 
-        // Nota di partenza sempre valida
-        let baseNote = scale.length > 0
-            ? clampLead(scale[Math.floor(rand() * scale.length)])
-            : "C4";
+        let baseNote;
+        if (leadScaleMidi.length > 0) {
+            const startMidi = leadScaleMidi[Math.floor(rand() * leadScaleMidi.length)];
+            baseNote = safeMidiToNote(startMidi);
+        } else {
+            baseNote = "C4";
+        }
 
         const directionBias =
             section.name === "intro"  ? 1 :
@@ -112,7 +134,7 @@ export function initLeadEngine(instruments, params, scale, rand, structure) {
     }
 
     // ------------------------------------------------------------
-    // 6) Scheduling globale
+    // 6) Scheduling globale (come il tuo)
     // ------------------------------------------------------------
     function schedule() {
         structure.sections.forEach(section => {
