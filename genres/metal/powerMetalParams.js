@@ -7,82 +7,47 @@
 
 console.log("powerMetalParams.js loaded");
 
-// ============================================================
-// 🎼 COSTRUZIONE PARAMETRI POWER METAL
-// ============================================================
+export function buildPowerMetalParams(rand) {
 
-export function buildPowerMetalParams(universal) {
+    // 1) Tonal center sicuro
+    const TONICS = ["C", "D", "E", "F", "G", "A", "B"];
+    const tonic = TONICS[Math.floor(rand() * TONICS.length)] || "E";
 
-    // --------------------------------------------------------
-    // 1) BPM — power metal = veloce
-    // --------------------------------------------------------
-    const bpm = Math.floor(
-        140 + universal.energy * 40   // 140–180
-    );
+    // 2) Ottava sicura
+    const OCTAVES = [3, 4, 5];
+    const octave = OCTAVES[Math.floor(rand() * OCTAVES.length)] || 4;
 
-    // --------------------------------------------------------
-    // 2) Scala — power metal usa spesso minore naturale o armonica
-    // --------------------------------------------------------
-    const scaleType =
-        universal.colorTemperature > 0.5
-            ? "harmonicMinor"
-            : "naturalMinor";
+    const tonalCenter = tonic + octave;
 
-    // --------------------------------------------------------
-    // 3) Tonalità — già scelta da photoToMusicParams
-    // --------------------------------------------------------
-    const tonalCenter = universal.tonalCenter;
+    // 3) Tipo di scala sicuro
+    const SCALE_TYPES = ["major", "naturalMinor", "harmonicMinor"];
+    const scaleType = SCALE_TYPES[Math.floor(rand() * SCALE_TYPES.length)] || "naturalMinor";
 
-    // --------------------------------------------------------
-    // 4) Struttura del brano — power metal = ricca
-    // --------------------------------------------------------
-    const structureProfile = {
-        intro:  universal.intensity < 0.4 ? 2 : 4,
-        verse:  8,
-        chorus: 8,
-        solo:   universal.complexity > 0.5 ? 12 : 8,
-        outro:  4
-    };
+    // 4) BPM sicuro
+    const bpm = Math.floor(120 + rand() * 60); // 120–180
 
-    // --------------------------------------------------------
-    // 5) Densità strumenti
-    // --------------------------------------------------------
-    const riffDensity = 0.6 + universal.energy * 0.4;   // 0.6–1.0
-    const leadDensity = 0.4 + universal.complexity * 0.6;
-    const drumIntensity = 0.5 + universal.energy * 0.5;
-    const bassIntensity = 0.4 + universal.texture * 0.6;
+    // 5) Modalità composizione
+    let compositionMode = "media";
+    if (bpm < 130) compositionMode = "lenta";
+    if (bpm > 160) compositionMode = "veloce";
 
-    // --------------------------------------------------------
-    // 6) Stile strumenti
-    // --------------------------------------------------------
-    const drumStyle = universal.energy > 0.6 ? "doubleKick" : "standard";
-    const bassStyle = universal.texture > 0.5 ? "gallop" : "straight";
-    const themeStyle = universal.brightness > 0.5 ? "heroic" : "dark";
+    console.log("⚙️ Modalità:", compositionMode, "BPM:", bpm);
+    console.log("🎯 tonalCenter scelto:", tonalCenter);
+    console.log("🎯 scaleType scelto:", scaleType);
 
-    // --------------------------------------------------------
-    // 7) Seed random
-    // --------------------------------------------------------
-    const seed = universal.dna;
-
-    // --------------------------------------------------------
-    // 8) Output finale
-    // --------------------------------------------------------
     return {
-        bpm,
         tonalCenter,
         scaleType,
-        structureProfile,
+        bpm,
+        compositionMode,
 
-        intensity: universal.intensity,
-        riffDensity,
-        leadDensity,
-        drumIntensity,
-        bassIntensity,
-
-        drumStyle,
-        bassStyle,
-        themeStyle,
-
-        seed
+        // parametri musicali
+        riffDensity: 0.6,
+        bassIntensity: 0.7,
+        leadDensity: 0.8,
+        intensity: 0.7,
+        drumIntensity: 0.8,
+        drumStyle: "doubleKick",
+        themeStyle: "heroic"
     };
 }
