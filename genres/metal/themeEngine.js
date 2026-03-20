@@ -1,8 +1,6 @@
 //
 // themeEngine.js
 // Generatore del tema principale power metal.
-// Nessuna logica di routing. Nessuna logica di strumenti.
-// Solo generazione di note + scheduling.
 //
 
 import * as Tone from "https://esm.sh/tone";
@@ -14,25 +12,14 @@ import { duration } from "../../utils/tempoUtils.js";
 
 console.log("themeEngine.js loaded");
 
-// ============================================================
-// 🎼 FUNZIONE ENARMONICA → SOLO BEMOLLE
-// ============================================================
-
 function toFlat(note) {
     return Tone.Frequency(note).toNote("flat");
 }
-
-// ============================================================
-// 🎸 INIZIALIZZAZIONE
-// ============================================================
 
 export function initThemeEngine(instruments, params, scale, rand, structure) {
 
     const { guitarLead } = instruments;
 
-    // --------------------------------------------------------
-    // 1) Range lead (C4–C6)
-    // --------------------------------------------------------
     const MIN_MIDI = noteToMidi("C4");
     const MAX_MIDI = noteToMidi("C6");
 
@@ -43,9 +30,6 @@ export function initThemeEngine(instruments, params, scale, rand, structure) {
         return toFlat(note);
     }
 
-    // --------------------------------------------------------
-    // 2) Generazione del tema principale
-    // --------------------------------------------------------
     function generateTheme() {
         const length = params.themeStyle === "heroic" ? 8 : 6;
 
@@ -53,12 +37,7 @@ export function initThemeEngine(instruments, params, scale, rand, structure) {
         const theme = [note];
 
         for (let i = 1; i < length; i++) {
-
-            // Heroic → frasi ascendenti
-            // Dark → frasi discendenti
             const direction = params.themeStyle === "heroic" ? 1 : -1;
-
-            // Salti occasionali
             const step = rand() < 0.2 ? direction * 2 : direction;
 
             note = melodicStep(scale, note, step);
@@ -71,10 +50,6 @@ export function initThemeEngine(instruments, params, scale, rand, structure) {
     }
 
     const theme = generateTheme();
-
-    // --------------------------------------------------------
-    // 3) Varianti del tema per sezione
-    // --------------------------------------------------------
 
     function themeSimple() {
         return theme.slice(0, Math.ceil(theme.length / 2));
@@ -102,7 +77,7 @@ export function initThemeEngine(instruments, params, scale, rand, structure) {
     }
 
     // --------------------------------------------------------
-    // 4) Scheduling del tema in una sezione
+    // Scheduling corretto
     // --------------------------------------------------------
 
     function scheduleTheme(section, notes) {
@@ -111,13 +86,12 @@ export function initThemeEngine(instruments, params, scale, rand, structure) {
         notes.forEach((note, i) => {
             const t = timeline[i];
             if (!t) return;
-            guitarLead.triggerAttackRelease(note, "4n", t);
+
+            Tone.Transport.schedule((time) => {
+                guitarLead.triggerAttackRelease(note, "4n", time);
+            }, t);
         });
     }
-
-    // ============================================================
-    // 🎵 SCHEDULING COMPLETO
-    // ============================================================
 
     function schedule() {
 
@@ -129,7 +103,6 @@ export function initThemeEngine(instruments, params, scale, rand, structure) {
             }
 
             if (section.name === "verse") {
-                // Tema non suona nel verse
                 return;
             }
 
@@ -149,10 +122,6 @@ export function initThemeEngine(instruments, params, scale, rand, structure) {
             }
         });
     }
-
-    // ============================================================
-    // EXPORT ENGINE
-    // ============================================================
 
     return {
         schedule

@@ -1,8 +1,6 @@
 //
 // leadEngine.js
 // Generatore di melodie power metal.
-// Nessuna logica di routing. Nessuna logica di strumenti.
-// Solo generazione di note + scheduling.
 //
 
 import * as Tone from "https://esm.sh/tone";
@@ -14,35 +12,14 @@ import { duration } from "../../utils/tempoUtils.js";
 
 console.log("leadEngine.js loaded");
 
-// ============================================================
-// 🎼 FUNZIONE ENARMONICA → SOLO BEMOLLE
-// ============================================================
-//
-// Converte automaticamente:
-// C# → Db
-// D# → Eb
-// F# → Gb
-// G# → Ab
-// A# → Bb
-//
-// Tone.js gestisce perfettamente questa conversione.
-//
-
 function toFlat(note) {
     return Tone.Frequency(note).toNote("flat");
 }
-
-// ============================================================
-// 🎸 INIZIALIZZAZIONE
-// ============================================================
 
 export function initLeadEngine(instruments, params, scale, rand, structure) {
 
     const { guitarLead } = instruments;
 
-    // --------------------------------------------------------
-    // 1) Range della lead guitar
-    // --------------------------------------------------------
     const MIN_MIDI = noteToMidi("C4");
     const MAX_MIDI = noteToMidi("C6");
 
@@ -53,19 +30,13 @@ export function initLeadEngine(instruments, params, scale, rand, structure) {
         return toFlat(note);
     }
 
-    // --------------------------------------------------------
-    // 2) Generazione frase melodica
-    // --------------------------------------------------------
-    function generatePhrase(startNote, length = 8) {
+    function generatePhrase(startNote, length = 4) {
         let note = startNote;
         const phrase = [];
 
         for (let i = 0; i < length; i++) {
-
-            // Direzione melodica basata sull'intensità
             const step = rand() < params.intensity ? 1 : -1;
 
-            // Salti occasionali
             if (rand() < params.leadDensity * 0.2) {
                 const jump = rand() < 0.5 ? 2 : -2;
                 note = melodicStep(scale, note, jump);
@@ -80,13 +51,9 @@ export function initLeadEngine(instruments, params, scale, rand, structure) {
         return phrase;
     }
 
-    // --------------------------------------------------------
-    // 3) Scheduling di una sezione
-    // --------------------------------------------------------
     function scheduleSection(section, density) {
         const timeline = buildSectionTimeline(section, "8n");
 
-        // Nota di partenza
         let currentNote = clampLead(
             scale[Math.floor(rand() * scale.length)]
         );
@@ -95,23 +62,21 @@ export function initLeadEngine(instruments, params, scale, rand, structure) {
 
             if (rand() > density) return;
 
-            // Ogni 4 step generiamo una nuova frase
             if (i % 4 === 0) {
                 const phrase = generatePhrase(currentNote, 4);
 
                 phrase.forEach((n, idx) => {
-                    const time = t + idx * duration("16n");
-                    guitarLead.triggerAttackRelease(n, "16n", time);
+                    const eventTime = t + idx * duration("16n");
+
+                    Tone.Transport.schedule((time) => {
+                        guitarLead.triggerAttackRelease(n, "16n", time);
+                    }, eventTime);
                 });
 
                 currentNote = phrase[phrase.length - 1];
             }
         });
     }
-
-    // ============================================================
-    // 🎵 SCHEDULING COMPLETO
-    // ============================================================
 
     function schedule() {
 
@@ -128,10 +93,6 @@ export function initLeadEngine(instruments, params, scale, rand, structure) {
             scheduleSection(section, density);
         });
     }
-
-    // ============================================================
-    // EXPORT ENGINE
-    // ============================================================
 
     return {
         schedule

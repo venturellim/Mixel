@@ -1,8 +1,6 @@
 //
 // drumEngine.js
 // Motore batteria power metal.
-// Nessuna logica di routing. Nessuna logica di strumenti.
-// Solo scheduling di sample + groove + double kick.
 //
 
 import * as Tone from "https://esm.sh/tone";
@@ -12,17 +10,9 @@ import { duration } from "../../utils/tempoUtils.js";
 
 console.log("drumEngine.js loaded");
 
-// ============================================================
-// 🎧 INIZIALIZZAZIONE
-// ============================================================
-
 export function initDrumEngine(instruments, params, rand, structure) {
 
     const { drums } = instruments;
-
-    // --------------------------------------------------------
-    // 1) Funzioni di utilità
-    // --------------------------------------------------------
 
     function play(sample, time) {
         drums.player(sample).start(time);
@@ -33,61 +23,60 @@ export function initDrumEngine(instruments, params, rand, structure) {
     }
 
     // --------------------------------------------------------
-    // 2) Pattern base
+    // Scheduling corretto (tutto sul Transport)
     // --------------------------------------------------------
 
     function scheduleKick(t) {
-        play("kick", t);
+        Tone.Transport.schedule((time) => play("kick", time), t);
     }
 
     function scheduleSnare(t) {
-        play("snare", t);
+        Tone.Transport.schedule((time) => play("snare", time), t);
     }
 
     function scheduleGhost(t) {
-        play("ghost", t);
+        Tone.Transport.schedule((time) => play("ghost", time), t);
     }
 
     function scheduleHiHat(t) {
-        play("hihat", t);
+        Tone.Transport.schedule((time) => play("hihat", time), t);
     }
 
     function scheduleOpenHat(t) {
-        play("openhat", t);
+        Tone.Transport.schedule((time) => play("openhat", time), t);
     }
 
     function scheduleCrash(t) {
-        play(rand() < 0.5 ? "crash1" : "crash2", t);
+        const sample = rand() < 0.5 ? "crash1" : "crash2";
+        Tone.Transport.schedule((time) => play(sample, time), t);
     }
 
     function scheduleRide(t) {
-        play("ride", t);
+        Tone.Transport.schedule((time) => play("ride", time), t);
     }
 
     function scheduleRideBell(t) {
-        play("ridebell", t);
+        Tone.Transport.schedule((time) => play("ridebell", time), t);
     }
 
     function scheduleChina(t) {
-        play("china", t);
+        Tone.Transport.schedule((time) => play("china", time), t);
     }
 
     // --------------------------------------------------------
-    // 3) Double kick (power metal)
+    // Double kick
     // --------------------------------------------------------
 
     function scheduleDoubleKick(section) {
         const timeline = buildSectionTimeline(section, "16n");
 
         timeline.forEach((t, i) => {
-            if (i % 2 === 0) {
-                scheduleKick(t);
-            }
+            if (i % 2 === 0) scheduleKick(t);
         });
     }
 
     // --------------------------------------------------------
-    // 4) Groove standard (kick + snare + hihat)
+    // Groove standard
     // --------------------------------------------------------
 
     function scheduleGroove(section) {
@@ -95,24 +84,20 @@ export function initDrumEngine(instruments, params, rand, structure) {
 
         timeline.forEach((t, i) => {
 
-            // Kick on 1 and 3
             if (i % 2 === 0) scheduleKick(t);
-
-            // Snare on 2 and 4
             if (i % 2 === 1) scheduleSnare(t);
 
-            // Hi-hat every 8th
             scheduleHiHat(t);
 
-            // Ghost notes occasionali
             if (chance(0.1 * params.drumIntensity)) {
-                scheduleGhost(t + duration("16n"));
+                const ghostT = t + duration("16n");
+                scheduleGhost(ghostT);
             }
         });
     }
 
     // --------------------------------------------------------
-    // 5) Chorus: crash + ride
+    // Chorus
     // --------------------------------------------------------
 
     function scheduleChorus(section) {
@@ -120,20 +105,17 @@ export function initDrumEngine(instruments, params, rand, structure) {
 
         timeline.forEach((t, i) => {
 
-            // Crash all'inizio
             if (i === 0) scheduleCrash(t);
 
-            // Ride su ogni quarto
             scheduleRide(t);
 
-            // Kick doppia cassa
             scheduleKick(t);
             scheduleKick(t + duration("16n"));
         });
     }
 
     // --------------------------------------------------------
-    // 6) Solo: groove leggero + ride bell
+    // Solo
     // --------------------------------------------------------
 
     function scheduleSolo(section) {
@@ -141,22 +123,19 @@ export function initDrumEngine(instruments, params, rand, structure) {
 
         timeline.forEach((t, i) => {
 
-            // Kick semplice
             if (i % 2 === 0) scheduleKick(t);
-
-            // Snare leggero
             if (i % 2 === 1) scheduleSnare(t);
 
-            // Ride bell
             scheduleRideBell(t);
 
-            // Ghost notes
-            if (chance(0.2)) scheduleGhost(t + duration("16n"));
+            if (chance(0.2)) {
+                scheduleGhost(t + duration("16n"));
+            }
         });
     }
 
     // --------------------------------------------------------
-    // 7) Outro: china + tom fill
+    // Outro
     // --------------------------------------------------------
 
     function scheduleOutro(section) {
@@ -164,20 +143,19 @@ export function initDrumEngine(instruments, params, rand, structure) {
 
         timeline.forEach((t, i) => {
 
-            // China su ogni battuta
             scheduleChina(t);
 
-            // Fill di tom occasionali
             if (chance(0.3)) {
                 const tom = "tom" + (1 + Math.floor(rand() * 4));
-                play(tom, t + duration("8n"));
+                scheduleKick(t); // optional: keep kick
+                Tone.Transport.schedule((time) => play(tom, time), t + duration("8n"));
             }
         });
     }
 
-    // ============================================================
-    // 🎵 SCHEDULING COMPLETO
-    // ============================================================
+    // --------------------------------------------------------
+    // Scheduling completo
+    // --------------------------------------------------------
 
     function schedule() {
 
@@ -213,10 +191,6 @@ export function initDrumEngine(instruments, params, rand, structure) {
             }
         });
     }
-
-    // ============================================================
-    // EXPORT ENGINE
-    // ============================================================
 
     return {
         schedule

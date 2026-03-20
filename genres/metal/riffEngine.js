@@ -26,7 +26,8 @@ export function initRiffEngine(instruments, params, scale, rand, structure) {
     // 1) Costruzione scala adattata ai campioni (C2–C3)
     // --------------------------------------------------------
     const riffScale = scaleWithinRange(scale, noteToMidi("C2"), noteToMidi("C3"))
-        .map(n => nearestNatural(n)); // niente diesis/bemolle
+        .map(n => nearestNatural(n))
+        .filter(n => n !== undefined); // sicurezza
 
     // --------------------------------------------------------
     // 2) Pattern ritmici base
@@ -43,8 +44,9 @@ export function initRiffEngine(instruments, params, scale, rand, structure) {
     // 3) Funzione per scegliere una nota della scala
     // --------------------------------------------------------
     function pickNote() {
+        if (riffScale.length === 0) return "C2"; // fallback sicuro
         const idx = Math.floor(rand() * riffScale.length);
-        return riffScale[idx];
+        return riffScale[idx] || "C2";
     }
 
     // --------------------------------------------------------
@@ -58,12 +60,16 @@ export function initRiffEngine(instruments, params, scale, rand, structure) {
 
                 const note = pickNote();
 
-                // Palm mute di default
-                guitarPalm.triggerAttackRelease(note, "16n", t);
+                // Palm mute programmato sulla timeline
+                Tone.Transport.schedule((time) => {
+                    guitarPalm.triggerAttackRelease(note, "16n", time);
+                }, t);
 
                 // Accenti occasionali con open chord
                 if (rand() < params.riffDensity * 0.2) {
-                    guitarOpen.triggerAttackRelease(note, "8n", t);
+                    Tone.Transport.schedule((time) => {
+                        guitarOpen.triggerAttackRelease(note, "8n", time);
+                    }, t);
                 }
             }
         });

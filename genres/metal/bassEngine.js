@@ -16,14 +16,6 @@ console.log("bassEngine.js loaded");
 // ============================================================
 // 🎼 FUNZIONE ENARMONICA → SOLO BEMOLLE
 // ============================================================
-//
-// Converte automaticamente:
-// C# → Db
-// D# → Eb
-// F# → Gb
-// G# → Ab
-// A# → Bb
-//
 
 function toFlat(note) {
     return Tone.Frequency(note).toNote("flat");
@@ -61,14 +53,25 @@ export function initBassEngine(instruments, params, scale, rand, structure) {
 
     // Gallop tipico power metal: 1/16 + 1/16 + 1/8
     function scheduleGallop(note, t) {
-        bass.triggerAttackRelease(note, "16n", t);
-        bass.triggerAttackRelease(note, "16n", t + duration("16n"));
-        bass.triggerAttackRelease(note, "8n",  t + duration("8n"));
+
+        Tone.Transport.schedule((time) => {
+            bass.triggerAttackRelease(note, "16n", time);
+        }, t);
+
+        Tone.Transport.schedule((time) => {
+            bass.triggerAttackRelease(note, "16n", time);
+        }, t + duration("16n"));
+
+        Tone.Transport.schedule((time) => {
+            bass.triggerAttackRelease(note, "8n", time);
+        }, t + duration("8n"));
     }
 
     // Linea dritta: 1/8
     function scheduleStraight(note, t) {
-        bass.triggerAttackRelease(note, "8n", t);
+        Tone.Transport.schedule((time) => {
+            bass.triggerAttackRelease(note, "8n", time);
+        }, t);
     }
 
     // --------------------------------------------------------
