@@ -58,10 +58,18 @@ export async function createMetalEngine(params) {
     // --------------------------------------------------------
     // 3) Costruzione struttura del brano
     // --------------------------------------------------------
-    const structure = buildSongStructure(
-        metalParams.structureProfile,
-        metalParams.bpm
-    );
+    //const structure = buildSongStructure(
+        //metalParams.structureProfile,
+        //metalParams.bpm
+    //);
+    console.log("metalParams =", metalParams);
+
+
+const structure = buildSongStructure(
+    params.structure,
+    metalParams.bpm
+);
+
 
     // --------------------------------------------------------
     // 4) Costruzione scala
