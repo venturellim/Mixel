@@ -70,6 +70,8 @@ export async function createMetalEngine(params) {
         metalParams.tonalCenter,
         metalParams.scaleType
     );
+    console.log("🎼 Scala generata:", scale);
+
 
     // --------------------------------------------------------
     // 5) Inizializzazione engine specifici

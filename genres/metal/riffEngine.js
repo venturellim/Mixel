@@ -63,7 +63,7 @@ export function initRiffEngine(instruments, params, scale, rand, structure) {
                 guitarPalm.triggerAttackRelease(note, "16n", time);
             }, t);
 
-            if (rand() < params.riffDensity * 0.25) {
+            if (rand() < params.riffDensity * 0.6) {
                 Tone.Transport.schedule(time => {
                     guitarOpen.triggerAttackRelease(note, "8n", time);
                 }, t);
