@@ -165,8 +165,12 @@ export function photoToMusicParams(analysis) {
     const timeSignature = computeTimeSignature(intensity);
     const structureProfile = computeStructureProfile(intensity);
 
-    // Output universale
+    // --- DNA deterministico ---
+    const dna = hashStringToNumber(JSON.stringify(analysis));
+
     return {
+        dna,   // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< AGGIUNTO QUI
+
         global: {
             intensity,
             mood,
@@ -185,8 +189,16 @@ export function photoToMusicParams(analysis) {
         },
         structure: structureProfile,
 
-        // Ogni genere riempirà questo oggetto
         genreParams: {}
     };
 }
+
+function hashStringToNumber(str) {
+    let h = 0;
+    for (let i = 0; i < str.length; i++) {
+        h = (h * 31 + str.charCodeAt(i)) >>> 0;
+    }
+    return h;
+}
+
 
