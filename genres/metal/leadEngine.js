@@ -1,6 +1,6 @@
 //
 // leadEngine.js
-// Generatore di melodie power metal.
+// Lead power metal: frasi, direzione, tensione/risoluzione.
 //
 
 import * as Tone from "https://esm.sh/tone";
@@ -24,27 +24,30 @@ export function initLeadEngine(instruments, params, scale, rand, structure) {
     const MAX_MIDI = noteToMidi("C6");
 
     function clampLead(note) {
+        if (!note) return "C4";
         const midi = noteToMidi(note);
+        if (isNaN(midi)) return "C4";
         if (midi < MIN_MIDI) return toFlat(midiToNote(MIN_MIDI));
         if (midi > MAX_MIDI) return toFlat(midiToNote(MAX_MIDI));
         return toFlat(note);
     }
 
-    function generatePhrase(startNote, length = 4) {
-        let note = startNote;
+    function safeMelodicStep(current, step) {
+        if (scale.length === 0) return clampLead(current);
+        let next = melodicStep(scale, current, step);
+        if (!next) next = current;
+        return clampLead(next);
+    }
+
+    function generatePhrase(startNote, length = 8, directionBias = 1) {
+        let note = startNote || "C4";
         const phrase = [];
 
         for (let i = 0; i < length; i++) {
-            const step = rand() < params.intensity ? 1 : -1;
-
-            if (rand() < params.leadDensity * 0.2) {
-                const jump = rand() < 0.5 ? 2 : -2;
-                note = melodicStep(scale, note, jump);
-            } else {
-                note = melodicStep(scale, note, step);
-            }
-
-            note = clampLead(note);
+            const dir = rand() < params.intensity ? directionBias : -directionBias;
+            const bigJump = rand() < params.leadDensity * 0.25;
+            const step = bigJump ? dir * 2 : dir;
+            note = safeMelodicStep(note, step);
             phrase.push(note);
         }
 
@@ -54,47 +57,46 @@ export function initLeadEngine(instruments, params, scale, rand, structure) {
     function scheduleSection(section, density) {
         const timeline = buildSectionTimeline(section, "8n");
 
-        let currentNote = clampLead(
-            scale[Math.floor(rand() * scale.length)]
-        );
+        let baseNote = scale.length > 0
+            ? clampLead(scale[Math.floor(rand() * scale.length)])
+            : "C4";
+
+        const directionBias =
+            section.name === "intro"  ? 1 :
+            section.name === "verse"  ? 1 :
+            section.name === "chorus" ? 1 :
+            section.name === "solo"   ? 1 :
+            section.name === "outro"  ? -1 : 1;
 
         timeline.forEach((t, i) => {
-
             if (rand() > density) return;
 
             if (i % 4 === 0) {
-                const phrase = generatePhrase(currentNote, 4);
+                const phrase = generatePhrase(baseNote, 4, directionBias);
 
                 phrase.forEach((n, idx) => {
                     const eventTime = t + idx * duration("16n");
-
-                    Tone.Transport.schedule((time) => {
+                    Tone.Transport.schedule(time => {
                         guitarLead.triggerAttackRelease(n, "16n", time);
                     }, eventTime);
                 });
 
-                currentNote = phrase[phrase.length - 1];
+                baseNote = phrase[phrase.length - 1];
             }
         });
     }
 
     function schedule() {
-
         structure.sections.forEach(section => {
-
             let density = params.leadDensity;
-
             if (section.name === "intro")  density *= 0.3;
             if (section.name === "verse")  density *= 0.6;
             if (section.name === "chorus") density *= 1.0;
             if (section.name === "solo")   density *= 1.4;
             if (section.name === "outro")  density *= 0.4;
-
             scheduleSection(section, density);
         });
     }
 
-    return {
-        schedule
-    };
+    return { schedule };
 }

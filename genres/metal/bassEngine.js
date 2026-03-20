@@ -5,6 +5,7 @@
 // Solo generazione di note + scheduling.
 //
 
+
 import * as Tone from "https://esm.sh/tone";
 
 import { noteToMidi, midiToNote } from "../../utils/harmonyUtils.js";
@@ -13,118 +14,67 @@ import { duration } from "../../utils/tempoUtils.js";
 
 console.log("bassEngine.js loaded");
 
-// ============================================================
-// 🎼 FUNZIONE ENARMONICA → SOLO BEMOLLE
-// ============================================================
-
 function toFlat(note) {
     return Tone.Frequency(note).toNote("flat");
 }
-
-// ============================================================
-// 🎸 INIZIALIZZAZIONE
-// ============================================================
 
 export function initBassEngine(instruments, params, scale, rand, structure) {
 
     const { bass } = instruments;
 
-    // --------------------------------------------------------
-    // 1) Range del basso (C1–C2)
-    // --------------------------------------------------------
     const MIN_MIDI = noteToMidi("C1");
     const MAX_MIDI = noteToMidi("C2");
 
     function clampBass(note) {
+        if (!note) return "C1";
         const midi = noteToMidi(note);
+        if (isNaN(midi)) return "C1";
         if (midi < MIN_MIDI) return toFlat(midiToNote(MIN_MIDI));
         if (midi > MAX_MIDI) return toFlat(midiToNote(MAX_MIDI));
         return toFlat(note);
     }
 
-    // --------------------------------------------------------
-    // 2) Nota fondamentale (pedal tone)
-    // --------------------------------------------------------
-    const tonic = clampBass(scale[0]);
+    const tonic = scale.length > 0 ? clampBass(scale[0]) : "C1";
 
-    // --------------------------------------------------------
-    // 3) Funzioni di stile
-    // --------------------------------------------------------
+    function pickScaleNote() {
+        if (scale.length === 0) return tonic;
+        const idx = Math.floor(rand() * scale.length);
+        return clampBass(scale[idx] || tonic);
+    }
 
-    // Gallop tipico power metal: 1/16 + 1/16 + 1/8
     function scheduleGallop(note, t) {
-
-        Tone.Transport.schedule((time) => {
-            bass.triggerAttackRelease(note, "16n", time);
-        }, t);
-
-        Tone.Transport.schedule((time) => {
-            bass.triggerAttackRelease(note, "16n", time);
-        }, t + duration("16n"));
-
-        Tone.Transport.schedule((time) => {
-            bass.triggerAttackRelease(note, "8n", time);
-        }, t + duration("8n"));
+        Tone.Transport.schedule(time => bass.triggerAttackRelease(note, "16n", time), t);
+        Tone.Transport.schedule(time => bass.triggerAttackRelease(note, "16n", time), t + duration("16n"));
+        Tone.Transport.schedule(time => bass.triggerAttackRelease(note, "8n", time),  t + duration("8n"));
     }
 
-    // Linea dritta: 1/8
     function scheduleStraight(note, t) {
-        Tone.Transport.schedule((time) => {
-            bass.triggerAttackRelease(note, "8n", time);
-        }, t);
+        Tone.Transport.schedule(time => bass.triggerAttackRelease(note, "8n", time), t);
     }
 
-    // --------------------------------------------------------
-    // 4) Scheduling di una sezione
-    // --------------------------------------------------------
     function scheduleSection(section, style) {
         const timeline = buildSectionTimeline(section, "8n");
 
         timeline.forEach(t => {
-
-            // Nota di base: tonic
             let note = tonic;
 
-            // Variazioni occasionali
-            if (rand() < params.bassIntensity * 0.15) {
-                const idx = Math.floor(rand() * scale.length);
-                note = clampBass(scale[idx]);
+            if (rand() < params.bassIntensity * 0.2) {
+                note = pickScaleNote();
             }
 
-            // Stile
-            if (style === "gallop") {
-                scheduleGallop(note, t);
-            } else {
-                scheduleStraight(note, t);
-            }
+            if (style === "gallop") scheduleGallop(note, t);
+            else scheduleStraight(note, t);
         });
     }
 
-    // ============================================================
-    // 🎵 SCHEDULING COMPLETO
-    // ============================================================
-
     function schedule() {
-
         structure.sections.forEach(section => {
-
             let style = params.bassStyle; // "gallop" o "straight"
-
-            // Chorus più energico
             if (section.name === "chorus") style = "gallop";
-
-            // Solo: basso più semplice
-            if (section.name === "solo") style = "straight";
-
+            if (section.name === "solo")   style = "straight";
             scheduleSection(section, style);
         });
     }
 
-    // ============================================================
-    // EXPORT ENGINE
-    // ============================================================
-
-    return {
-        schedule
-    };
+    return { schedule };
 }
