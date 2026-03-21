@@ -1,12 +1,13 @@
-// riffEngine.js — versione power metal completa (Stratovarius Chorus)
+// riffEngine.js — versione power metal con pattern + Stratovarius chorus
 
 import * as Tone from "https://esm.sh/tone";
 
 import { noteToMidi, midiToNote, nearestNatural } from "../../utils/harmonyUtils.js";
 import { scaleWithinRange } from "../../utils/scaleUtils.js";
 import { buildSectionTimeline } from "../../utils/structureUtils.js";
+import { chooseRiffPattern } from "./riffPatterns.js";
 
-console.log("riffEngine.js ver. 004 loaded");
+console.log("riffEngine.js ver. 006 loaded");
 
 export function initRiffEngine(instruments, params, rand, options = {}) {
 
@@ -36,54 +37,10 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
         return riffScale[Math.floor(rand() * riffScale.length)];
     }
 
-    // ============================================================
-    // VERSE — PALM-MUTE GALLOP
-    // ============================================================
-    function scheduleVerseRiff(section, sectionScale, root) {
-        const timeline = buildSectionTimeline(section, "16n");
-        if (!timeline) return;
-
-        timeline.forEach((t, i) => {
-            const note = pickNote(sectionScale);
-
-            Tone.Transport.schedule(time => {
-                guitarPalm.triggerAttackRelease(note, "16n", time);
-            }, t);
-
-            if (i % 3 === 1) {
-                Tone.Transport.schedule(time => {
-                    guitarPalm.triggerAttackRelease(note, "16n", time);
-                }, t + Tone.Time("16n").toSeconds());
-            }
-        });
-    }
-
-    // ============================================================
-    // PRE-CHORUS — PEDAL TONE + MOVIMENTO
-    // ============================================================
-    function schedulePreChorusRiff(section, sectionScale, root) {
-        const timeline = buildSectionTimeline(section, "8n");
-        if (!timeline) return;
-
-        const pedal = root.replace("#","").replace("b","") + "2";
-
-        timeline.forEach((t, i) => {
-            const isPedal = i % 2 === 0;
-            const note = isPedal ? pedal : pickNote(sectionScale);
-
-            Tone.Transport.schedule(time => {
-                guitarPalm.triggerAttackRelease(note, "8n", time);
-            }, t);
-        });
-    }
-
-    // ============================================================
-    // CHORUS — STRATOVARIUS COMPLETE
-    // ============================================================
-    function scheduleChorusRiff(section, sectionScale, root) {
-        const timeline = buildSectionTimeline(section, "1n");
-        if (!timeline) return;
-
+    // --------------------------------------------------------
+    // Utility: power chord naturale nel range A2–G2
+    // --------------------------------------------------------
+    function buildNaturalPowerChord(root) {
         let rootLetter = root.replace("#","").replace("b","");
         let rootMidi = noteToMidi(rootLetter + "2");
 
@@ -111,69 +68,87 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
             }
         }
 
+        return chord;
+    }
+
+    // ============================================================
+    // PATTERN: PALM-MUTE CONTINUO
+    // ============================================================
+    function schedulePalmMuteContinuous(section, sectionScale, root, pattern) {
+        const timeline = buildSectionTimeline(section, "16n");
+        if (!timeline) return;
+
+        if (enableLog) console.log("[riffEngine]", pattern, "timeline:", timeline);
+
         timeline.forEach(t => {
-
-            // 1) ACCORDO LUNGO
+            const note = pickNote(sectionScale);
             Tone.Transport.schedule(time => {
-                chord.forEach(n => {
-                    guitarOpen.triggerAttackRelease(n, "1n", time);
-                });
+                guitarPalm.triggerAttackRelease(note, "16n", time);
             }, t);
-
-            // 2) ACCENTO SINCOPATO
-            const accentTime = t + Tone.Time("4n").toSeconds() * 0.75;
-            Tone.Transport.schedule(time => {
-                chord.forEach(n => {
-                    guitarOpen.triggerAttackRelease(n, "8n", time);
-                });
-            }, accentTime);
-
-            // 3) PALM MUTE LEGGERO
-            const pmTimeline = [
-                t + Tone.Time("8n").toSeconds(),
-                t + Tone.Time("8n").toSeconds() * 2.5,
-                t + Tone.Time("8n").toSeconds() * 3.5
-            ];
-
-            pmTimeline.forEach(pmT => {
-                Tone.Transport.schedule(time => {
-                    guitarPalm.triggerAttackRelease(midiToNote(rootMidi), "16n", time);
-                }, pmT);
-            });
         });
     }
 
     // ============================================================
-    // SOLO — APERTO E MELODICO
+    // PATTERN: GALLOP
     // ============================================================
-    function scheduleSoloRiff(section, sectionScale, root) {
+    function scheduleGallop(section, sectionScale, root, pattern) {
         const timeline = buildSectionTimeline(section, "8n");
         if (!timeline) return;
+
+        if (enableLog) console.log("[riffEngine]", pattern, "timeline:", timeline);
+
+        timeline.forEach(t => {
+            const note = pickNote(sectionScale);
+
+            Tone.Transport.schedule(time => {
+                guitarPalm.triggerAttackRelease(note, "16n", time);
+            }, t);
+
+            Tone.Transport.schedule(time => {
+                guitarPalm.triggerAttackRelease(note, "16n", time);
+            }, t + Tone.Time("16n").toSeconds());
+
+            Tone.Transport.schedule(time => {
+                guitarPalm.triggerAttackRelease(note, "16n", time);
+            }, t + Tone.Time("16n").toSeconds() * 2);
+        });
+    }
+
+    // ============================================================
+    // PATTERN: GALLOP LEGGERO (OUTRO)
+    // ============================================================
+    function scheduleOutroGallopLight(section, sectionScale, root, pattern) {
+        const timeline = buildSectionTimeline(section, "8n");
+        if (!timeline) return;
+
+        if (enableLog) console.log("[riffEngine]", pattern, "timeline:", timeline);
+
+        timeline.forEach(t => {
+            const note = pickNote(sectionScale);
+
+            Tone.Transport.schedule(time => {
+                guitarPalm.triggerAttackRelease(note, "16n", time);
+            }, t);
+
+            Tone.Transport.schedule(time => {
+                guitarPalm.triggerAttackRelease(note, "16n", time);
+            }, t + Tone.Time("16n").toSeconds());
+        });
+    }
+
+    // ============================================================
+    // PATTERN: PEDAL TONE
+    // ============================================================
+    function schedulePedal(section, sectionScale, root, pattern) {
+        const timeline = buildSectionTimeline(section, "8n");
+        if (!timeline) return;
+
+        if (enableLog) console.log("[riffEngine]", pattern, "timeline:", timeline);
+
+        const pedal = root.replace("#","").replace("b","") + "2";
 
         timeline.forEach((t, i) => {
-            const note = pickNote(sectionScale);
-
-            Tone.Transport.schedule(time => {
-                guitarOpen.triggerAttackRelease(note, "8n", time);
-            }, t);
-
-            if (rand() < 0.2) {
-                Tone.Transport.schedule(time => {
-                    guitarPalm.triggerAttackRelease(note, "16n", time);
-                }, t + Tone.Time("16n").toSeconds());
-            }
-        });
-    }
-
-    // ============================================================
-    // OUTRO — SEMPLICE
-    // ============================================================
-    function scheduleOutroRiff(section, sectionScale, root) {
-        const timeline = buildSectionTimeline(section, "8n");
-        if (!timeline) return;
-
-        timeline.forEach(t => {
-            const note = pickNote(sectionScale);
+            const note = (i % 2 === 0) ? pedal : pickNote(sectionScale);
 
             Tone.Transport.schedule(time => {
                 guitarPalm.triggerAttackRelease(note, "8n", time);
@@ -182,18 +157,226 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
     }
 
     // ============================================================
-    // DISPATCH
+    // PATTERN: PEDAL TONE SINCOPATO
     // ============================================================
-    function scheduleSection(section, sectionScale, root) {
+    function schedulePedalSyncopated(section, sectionScale, root, pattern) {
+        const timeline = buildSectionTimeline(section, "8n");
+        if (!timeline) return;
 
-        if (section.name === "intro")     return scheduleVerseRiff(section, sectionScale, root);
-        if (section.name === "verse")     return scheduleVerseRiff(section, sectionScale, root);
-        if (section.name === "prechorus") return schedulePreChorusRiff(section, sectionScale, root);
-        if (section.name === "chorus")    return scheduleChorusRiff(section, sectionScale, root);
-        if (section.name === "solo")      return scheduleSoloRiff(section, sectionScale, root);
-        if (section.name === "outro")     return scheduleOutroRiff(section, sectionScale, root);
+        if (enableLog) console.log("[riffEngine]", pattern, "timeline:", timeline);
 
-        return scheduleVerseRiff(section, sectionScale, root);
+        const pedal = root.replace("#","").replace("b","") + "2";
+
+        timeline.forEach((t, i) => {
+            const note = (i % 3 === 0) ? pickNote(sectionScale) : pedal;
+
+            Tone.Transport.schedule(time => {
+                guitarPalm.triggerAttackRelease(note, "8n", time);
+            }, t);
+        });
+    }
+
+    // ============================================================
+    // PATTERN: PALM-MUTE SINCOPATO
+    // ============================================================
+    function scheduleSyncopatedPalmMute(section, sectionScale, root, pattern) {
+        const timeline = buildSectionTimeline(section, "16n");
+        if (!timeline) return;
+
+        if (enableLog) console.log("[riffEngine]", pattern, "timeline:", timeline);
+
+        timeline.forEach((t, i) => {
+            const note = pickNote(sectionScale);
+
+            if (i % 4 !== 2) {
+                Tone.Transport.schedule(time => {
+                    guitarPalm.triggerAttackRelease(note, "16n", time);
+                }, t);
+            }
+        });
+    }
+
+    // ============================================================
+    // PATTERN: PALM-MUTE SEMPLICE (OUTRO)
+    // ============================================================
+    function scheduleOutroSimple(section, sectionScale, root, pattern) {
+        const timeline = buildSectionTimeline(section, "8n");
+        if (!timeline) return;
+
+        if (enableLog) console.log("[riffEngine]", pattern, "timeline:", timeline);
+
+        timeline.forEach(t => {
+            const note = pickNote(sectionScale);
+            Tone.Transport.schedule(time => {
+                guitarPalm.triggerAttackRelease(note, "8n", time);
+            }, t);
+        });
+    }
+
+    // ============================================================
+    // PATTERN: CHORUS OPEN SUSTAIN (STRATOVARIUS)
+    // ============================================================
+    function scheduleChorusOpenSustain(section, sectionScale, root, pattern) {
+        const timeline = buildSectionTimeline(section, "1n");
+        if (!timeline) return;
+
+        if (enableLog) console.log("[riffEngine]", pattern, "timeline:", timeline);
+
+        const chord = buildNaturalPowerChord(root);
+
+        timeline.forEach(t => {
+            Tone.Transport.schedule(time => {
+                chord.forEach(n => {
+                    guitarOpen.triggerAttackRelease(n, "1n", time);
+                });
+            }, t);
+        });
+    }
+
+    // ============================================================
+    // PATTERN: CHORUS OPEN ACCENT
+    // ============================================================
+    function scheduleChorusOpenAccent(section, sectionScale, root, pattern) {
+        const timeline = buildSectionTimeline(section, "1n");
+        if (!timeline) return;
+
+        if (enableLog) console.log("[riffEngine]", pattern, "timeline:", timeline);
+
+        const chord = buildNaturalPowerChord(root);
+
+        timeline.forEach(t => {
+
+            Tone.Transport.schedule(time => {
+                chord.forEach(n => {
+                    guitarOpen.triggerAttackRelease(n, "1n", time);
+                });
+            }, t);
+
+            const accentTime = t + Tone.Time("4n").toSeconds() * 0.75;
+            Tone.Transport.schedule(time => {
+                chord.forEach(n => {
+                    guitarOpen.triggerAttackRelease(n, "8n", time);
+                });
+            }, accentTime);
+        });
+    }
+
+    // ============================================================
+    // PATTERN: CHORUS OPEN SYNCOPATED
+    // ============================================================
+    function scheduleChorusOpenSyncopated(section, sectionScale, root, pattern) {
+        const timeline = buildSectionTimeline(section, "2n");
+        if (!timeline) return;
+
+        if (enableLog) console.log("[riffEngine]", pattern, "timeline:", timeline);
+
+        const chord = buildNaturalPowerChord(root);
+
+        timeline.forEach((t, i) => {
+
+            Tone.Transport.schedule(time => {
+                chord.forEach(n => {
+                    guitarOpen.triggerAttackRelease(n, "2n", time);
+                });
+            }, t);
+
+            if (i % 2 === 0) {
+                Tone.Transport.schedule(time => {
+                    chord.forEach(n => {
+                        guitarOpen.triggerAttackRelease(n, "8n", time);
+                    });
+                }, t + Tone.Time("8n").toSeconds() * 3);
+            }
+        });
+    }
+
+    // ============================================================
+    // PATTERN: SOLO MELODIC OPEN
+    // ============================================================
+    function scheduleSoloMelodicOpen(section, sectionScale, root, pattern) {
+        const timeline = buildSectionTimeline(section, "8n");
+        if (!timeline) return;
+
+        if (enableLog) console.log("[riffEngine]", pattern, "timeline:", timeline);
+
+        timeline.forEach(t => {
+            const note = pickNote(sectionScale);
+            Tone.Transport.schedule(time => {
+                guitarOpen.triggerAttackRelease(note, "8n", time);
+            }, t);
+        });
+    }
+
+    // ============================================================
+    // PATTERN: SOLO MELODIC FAST
+    // ============================================================
+    function scheduleSoloMelodicFast(section, sectionScale, root, pattern) {
+        const timeline = buildSectionTimeline(section, "16n");
+        if (!timeline) return;
+
+        if (enableLog) console.log("[riffEngine]", pattern, "timeline:", timeline);
+
+        timeline.forEach(t => {
+            const note = pickNote(sectionScale);
+            Tone.Transport.schedule(time => {
+                guitarOpen.triggerAttackRelease(note, "16n", time);
+            }, t);
+        });
+    }
+
+    // ============================================================
+    // DISPATCH UNICO BASATO SU PATTERN
+    // ============================================================
+    function scheduleSection(section, sectionScale, root, pattern) {
+
+        if (enableLog) {
+            console.log(
+                `%c[riffEngine] ${section.name} → pattern: ${pattern}, root: ${root}`,
+                "color:#ff00ff; font-weight:bold;"
+            );
+        }
+
+        switch(pattern) {
+
+            case "pm_continuous":
+                return schedulePalmMuteContinuous(section, sectionScale, root, pattern);
+
+            case "gallop":
+                return scheduleGallop(section, sectionScale, root, pattern);
+
+            case "pedal":
+                return schedulePedal(section, sectionScale, root, pattern);
+
+            case "pedal_syncopated":
+                return schedulePedalSyncopated(section, sectionScale, root, pattern);
+
+            case "syncopated_pm":
+                return scheduleSyncopatedPalmMute(section, sectionScale, root, pattern);
+
+            case "open_sustain":
+                return scheduleChorusOpenSustain(section, sectionScale, root, pattern);
+
+            case "open_accent":
+                return scheduleChorusOpenAccent(section, sectionScale, root, pattern);
+
+            case "open_syncopated":
+                return scheduleChorusOpenSyncopated(section, sectionScale, root, pattern);
+
+            case "melodic_open":
+                return scheduleSoloMelodicOpen(section, sectionScale, root, pattern);
+
+            case "melodic_fast":
+                return scheduleSoloMelodicFast(section, sectionScale, root, pattern);
+
+            case "pm_simple":
+                return scheduleOutroSimple(section, sectionScale, root, pattern);
+
+            case "gallop_light":
+                return scheduleOutroGallopLight(section, sectionScale, root, pattern);
+
+            default:
+                return scheduleGallop(section, sectionScale, root, pattern);
+        }
     }
 
     return { scheduleSection };

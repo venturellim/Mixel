@@ -1,5 +1,5 @@
 //
-// metalEngine.js — versione corretta e definitiva
+// metalEngine.js — versione corretta e definitiva (ver. 006)
 //
 
 import * as Tone from "https://esm.sh/tone";
@@ -17,9 +17,10 @@ import { initBassEngine } from "./bassEngine.js";
 import { initDrumEngine } from "./drumEngine.js";
 import { initThemeEngine } from "./themeEngine.js";
 
+import { generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 004 loaded");
+console.log("metalEngine.js ver. 005 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
@@ -52,49 +53,17 @@ export async function createMetalEngine(params) {
     );
 
     // --------------------------------------------------------
-    // 3) Scala globale (solo per debug, NON usata dagli engine)
+    // 3) Generazione progressioni armoniche
     // --------------------------------------------------------
-    const scale = buildScaleFromTonic(
+    const songProgressions = generateSongProgressions(
+        structure,
+        params.imageParams,
         metalParams.tonalCenter,
-        metalParams.scaleType
+        rand
     );
-    console.log("🎼 Scala generata:", scale);
 
     // --------------------------------------------------------
-    // 4) PROGRESSIONE ARMONICA RELATIVA ALLA TONALITÀ
-    // --------------------------------------------------------
-
-    // Progressioni espresse in gradi
-    const sectionProgressions = {
-        intro:  ["I", "V", "vi", "IV"],
-        verse:  ["vi", "IV", "I", "V"],
-        chorus: ["I", "V", "vi", "VII°"],
-        solo:   ["iii", "vi", "IV", "V"],
-        outro:  ["I", "IV", "I", "V"]
-    };
-
-    // Mappa gradi → semitoni
-    const degreeMap = {
-        "I":    0,
-        "ii":   2,
-        "iii":  4,
-        "IV":   5,
-        "V":    7,
-        "vi":   9,
-        "VII°": 11
-    };
-
-    // Trasposizione dei gradi nella tonalità del brano
-    function getSectionRoot(section, index, tonalCenter) {
-        const prog = sectionProgressions[section.name] || ["I"];
-        const degree = prog[index % prog.length];
-        const semitones = degreeMap[degree] ?? 0;
-
-        return Tone.Frequency(tonalCenter).transpose(semitones).toNote();
-    }
-
-    // --------------------------------------------------------
-    // 5) Inizializzazione engine specifici
+    // 4) Inizializzazione engine specifici
     // --------------------------------------------------------
     const riff  = initRiffEngine(metalInstruments, metalParams, rand);
     const lead  = initLeadEngine(metalInstruments, metalParams, rand);
@@ -103,30 +72,40 @@ export async function createMetalEngine(params) {
     const theme = initThemeEngine(metalInstruments, metalParams, rand);
 
     // --------------------------------------------------------
-    // 6) Programmazione timeline
+    // 5) Programmazione timeline
     // --------------------------------------------------------
     Tone.Transport.cancel(0);
 
     structure.sections.forEach((section, sectionIndex) => {
 
-        console.log("SECTION:", section.name, "INDEX:", sectionIndex);
+    const info = songProgressions[section.name];
+    const root = info.root;
+    const sectionScale = buildScaleFromTonic(root, metalParams.scaleType);
 
-        // 1) Root armonico della sezione (trasposto)
-        const root = getSectionRoot(section, sectionIndex, metalParams.tonalCenter);
+    console.log(
+        `%cSECTION ${section.name.toUpperCase()} — index ${sectionIndex}`,
+        "color:#00d1ff; font-weight:bold;"
+    );
 
-        // 2) Scala della sezione
-        const sectionScale = buildScaleFromTonic(root, metalParams.scaleType);
+    console.log("Progression:", info.progression);
+    console.log("Degree:", info.degree);
+    console.log("Root:", root);
 
-        // 3) Scheduling engine
-        riff.scheduleSection(section, sectionScale, root);
-        bass.scheduleSection(section, sectionScale, root);
-        drums.scheduleSection(section, sectionScale, root);
-        theme.scheduleSection(section, sectionScale, root);
-        lead.scheduleSection(section, sectionScale, root);
-    });
+    const pattern = chooseRiffPattern(section.name, params.imageParams, rand);
+    console.log("Pattern:", pattern);
+
+    // Pass pattern to riffEngine
+    riff.scheduleSection(section, sectionScale, root, pattern);
+
+    //bass.scheduleSection(section, sectionScale, root);
+    //drums.scheduleSection(section, sectionScale, root);
+    //lead.scheduleSection(section, sectionScale, root);
+    //theme.scheduleSection(section, sectionScale, root);
+});
+
 
     // --------------------------------------------------------
-    // 7) Engine finale
+    // 6) Engine finale
     // --------------------------------------------------------
     const engine = {
         totalDuration: structure.totalDuration,
