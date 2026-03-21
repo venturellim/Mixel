@@ -7,7 +7,7 @@ import { scaleWithinRange } from "../../utils/scaleUtils.js";
 import { buildSectionTimeline } from "../../utils/structureUtils.js";
 import { chooseRiffPattern } from "./riffPatterns.js";
 
-console.log("riffEngine.js ver. 007 loaded");
+console.log("riffEngine.js ver. 008 loaded");
 
 export function initRiffEngine(instruments, params, rand, options = {}) {
 
@@ -336,6 +336,40 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
             }, t);
         });
     }
+    
+//DISPATCHER
+    
+function schedulePalmMutePattern(section, sectionScale, root, pattern) {
+    switch(pattern) {
+        case "pm_continuous":
+            return schedulePalmMuteContinuous(section, sectionScale, root, pattern);
+        case "gallop":
+            return scheduleGallop(section, sectionScale, root, pattern);
+        case "pedal":
+            return schedulePedal(section, sectionScale, root, pattern);
+        case "pedal_syncopated":
+            return schedulePedalSyncopated(section, sectionScale, root, pattern);
+        case "syncopated_pm":
+            return scheduleSyncopatedPalmMute(section, sectionScale, root, pattern);
+        case "gallop_light":
+            return scheduleOutroGallopLight(section, sectionScale, root, pattern);
+    }
+}
+
+function scheduleOpenPattern(section, sectionScale, root, pattern) {
+    switch(pattern) {
+        case "open_sustain":
+            return scheduleChorusOpenSustain(section, sectionScale, root, pattern);
+        case "open_accent":
+            return scheduleChorusOpenAccent(section, sectionScale, root, pattern);
+        case "open_syncopated":
+            return scheduleChorusOpenSyncopated(section, sectionScale, root, pattern);
+        case "melodic_open":
+            return scheduleSoloMelodicOpen(section, sectionScale, root, pattern);
+        case "melodic_fast":
+            return scheduleSoloMelodicFast(section, sectionScale, root, pattern);
+    }
+}
 
     // ============================================================
     // DISPATCH UNICO BASATO SU PATTERN
@@ -351,63 +385,26 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
         );
     }
 
-    // Esegui il pattern (senza return)
-    switch(pattern) {
+    // PALM-MUTE PATTERNS
+    if (pattern.startsWith("pm") || 
+        pattern === "gallop" ||
+        pattern === "pedal" ||
+        pattern === "pedal_syncopated" ||
+        pattern === "syncopated_pm" ||
+        pattern === "gallop_light") {
 
-        case "pm_continuous":
-            schedulePalmMuteContinuous(section, sectionScale, root, pattern);
-            break;
-
-        case "gallop":
-            scheduleGallop(section, sectionScale, root, pattern);
-            break;
-
-        case "pedal":
-            schedulePedal(section, sectionScale, root, pattern);
-            break;
-
-        case "pedal_syncopated":
-            schedulePedalSyncopated(section, sectionScale, root, pattern);
-            break;
-
-        case "syncopated_pm":
-            scheduleSyncopatedPalmMute(section, sectionScale, root, pattern);
-            break;
-
-        case "open_sustain":
-            scheduleChorusOpenSustain(section, sectionScale, root, pattern);
-            break;
-
-        case "open_accent":
-            scheduleChorusOpenAccent(section, sectionScale, root, pattern);
-            break;
-
-        case "open_syncopated":
-            scheduleChorusOpenSyncopated(section, sectionScale, root, pattern);
-            break;
-
-        case "melodic_open":
-            scheduleSoloMelodicOpen(section, sectionScale, root, pattern);
-            break;
-
-        case "melodic_fast":
-            scheduleSoloMelodicFast(section, sectionScale, root, pattern);
-            break;
-
-        case "pm_simple":
-            scheduleOutroSimple(section, sectionScale, root, pattern);
-            break;
-
-        case "gallop_light":
-            scheduleOutroGallopLight(section, sectionScale, root, pattern);
-            break;
-
-        default:
-            scheduleGallop(section, sectionScale, root, pattern);
-            break;
+        schedulePalmMutePattern(section, sectionScale, root, pattern);
+        return pattern;
     }
 
-    // 🔥 RESTITUISCE IL PATTERN SCELTO
+    // OPEN PATTERNS
+    if (pattern.startsWith("open") ||
+        pattern.startsWith("melodic")) {
+
+        scheduleOpenPattern(section, sectionScale, root, pattern);
+        return pattern;
+    }
+
     return pattern;
 }
 return { scheduleSection };
