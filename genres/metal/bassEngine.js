@@ -1,7 +1,5 @@
-//
-// bassEngine.js — versione corretta e robusta
+// bassEngine.js — versione compatibile con la nuova architettura
 // Linee di basso power metal: gallop, straight, tonic-driven.
-//
 
 import * as Tone from "https://esm.sh/tone";
 
@@ -15,7 +13,7 @@ function toFlat(note) {
     return Tone.Frequency(note).toNote("flat");
 }
 
-export function initBassEngine(instruments, params, scale, rand, structure) {
+export function initBassEngine(instruments, params, rand) {
 
     const { bass } = instruments;
 
@@ -23,7 +21,7 @@ export function initBassEngine(instruments, params, scale, rand, structure) {
     const MAX_MIDI = noteToMidi("C2");
 
     // ------------------------------------------------------------
-    // 1) Conversione sicura MIDI → nota
+    // Conversione sicura MIDI → nota
     // ------------------------------------------------------------
     function safeMidiToNote(midi) {
         if (isNaN(midi)) return "C1";
@@ -33,7 +31,7 @@ export function initBassEngine(instruments, params, scale, rand, structure) {
     }
 
     // ------------------------------------------------------------
-    // 2) Clamping sicuro per note in formato stringa
+    // Clamping sicuro per note in formato stringa
     // ------------------------------------------------------------
     function clampBass(note) {
         if (!note) return "C1";
@@ -42,29 +40,22 @@ export function initBassEngine(instruments, params, scale, rand, structure) {
     }
 
     // ------------------------------------------------------------
-    // 3) Tonic sempre valido
+    // Scelta sicura di note dalla scala della sezione
     // ------------------------------------------------------------
-    const tonic = scale.length > 0
-        ? clampBass(scale[0])
-        : "C1";
-
-    // ------------------------------------------------------------
-    // 4) Scelta sicura di note dalla scala
-    // ------------------------------------------------------------
-    function pickScaleNote() {
-        if (scale.length === 0) return tonic;
-        const idx = Math.floor(rand() * scale.length);
-        const note = scale[idx] || scale[0];
+    function pickScaleNote(sectionScale) {
+        if (!sectionScale || sectionScale.length === 0) return "C1";
+        const idx = Math.floor(rand() * sectionScale.length);
+        const note = sectionScale[idx];
         return clampBass(note);
     }
 
     // ------------------------------------------------------------
-    // 5) Pattern di basso
+    // Pattern di basso
     // ------------------------------------------------------------
     function scheduleGallop(note, t) {
         Tone.Transport.schedule(time => bass.triggerAttackRelease(note, "16n", time), t);
         Tone.Transport.schedule(time => bass.triggerAttackRelease(note, "16n", time), t + duration("16n"));
-        Tone.Transport.schedule(time => bass.triggerAttackRelease(note, "8n", time),  t + duration("8n"));
+        Tone.Transport.schedule(time => bass.triggerAttackRelease(note, "8n",  time), t + duration("8n"));
     }
 
     function scheduleStraight(note, t) {
@@ -72,17 +63,28 @@ export function initBassEngine(instruments, params, scale, rand, structure) {
     }
 
     // ------------------------------------------------------------
-    // 6) Scheduling sezione
+    // Scheduling di una singola sezione
     // ------------------------------------------------------------
-    function scheduleSection(section, style) {
+    function scheduleSection(section, sectionScale, root) {
+
         const timeline = buildSectionTimeline(section, "8n");
 
+        // TONICA DELLA SEZIONE (root armonico)
+        const tonic = clampBass(root + "1");
+
+        // Stile della sezione
+        let style = params.bassStyle; // "gallop" o "straight"
+        if (section.name === "chorus") style = "gallop";
+        if (section.name === "solo")   style = "straight";
+
         timeline.forEach(t => {
+
+            // Nota principale: TONICA
             let note = tonic;
 
-            // variazione controllata
+            // Piccole variazioni melodiche
             if (rand() < params.bassIntensity * 0.2) {
-                note = pickScaleNote();
+                note = pickScaleNote(sectionScale);
             }
 
             if (style === "gallop") scheduleGallop(note, t);
@@ -91,18 +93,9 @@ export function initBassEngine(instruments, params, scale, rand, structure) {
     }
 
     // ------------------------------------------------------------
-    // 7) Scheduling globale
+    // EXPORT
     // ------------------------------------------------------------
-    function schedule() {
-        structure.sections.forEach(section => {
-            let style = params.bassStyle; // "gallop" o "straight"
-
-            if (section.name === "chorus") style = "gallop";
-            if (section.name === "solo")   style = "straight";
-
-            scheduleSection(section, style);
-        });
-    }
-
-    return { schedule };
+    return {
+        scheduleSection
+    };
 }

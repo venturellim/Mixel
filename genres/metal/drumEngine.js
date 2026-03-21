@@ -1,7 +1,5 @@
-//
-// drumEngine.js — versione corretta e robusta
+// drumEngine.js — versione compatibile con la nuova architettura
 // Batteria power metal: groove, double kick, sezioni differenziate.
-//
 
 import * as Tone from "https://esm.sh/tone";
 
@@ -10,12 +8,12 @@ import { duration } from "../../utils/tempoUtils.js";
 
 console.log("drumEngine.js loaded");
 
-export function initDrumEngine(instruments, params, rand, structure) {
+export function initDrumEngine(instruments, params, rand) {
 
     const { drums } = instruments;
 
     // ------------------------------------------------------------
-    // 1) Play sicuro: sample sempre valido
+    // Play sicuro
     // ------------------------------------------------------------
     function play(sample, time) {
         if (!drums || !drums.player || !drums.player(sample)) return;
@@ -23,7 +21,7 @@ export function initDrumEngine(instruments, params, rand, structure) {
     }
 
     // ------------------------------------------------------------
-    // 2) Chance sicura
+    // Chance sicura
     // ------------------------------------------------------------
     function chance(p) {
         if (isNaN(p) || p <= 0) return false;
@@ -32,16 +30,16 @@ export function initDrumEngine(instruments, params, rand, structure) {
     }
 
     // ------------------------------------------------------------
-    // 3) Schedulers singoli
+    // Schedulers singoli
     // ------------------------------------------------------------
-    function scheduleKick(t)     { Tone.Transport.schedule(time => play("kick", time), t); }
-    function scheduleSnare(t)    { Tone.Transport.schedule(time => play("snare", time), t); }
-    function scheduleGhost(t)    { Tone.Transport.schedule(time => play("ghost", time), t); }
-    function scheduleHiHat(t)    { Tone.Transport.schedule(time => play("hihat", time), t); }
-    function scheduleOpenHat(t)  { Tone.Transport.schedule(time => play("openhat", time), t); }
-    function scheduleRide(t)     { Tone.Transport.schedule(time => play("ride", time), t); }
-    function scheduleRideBell(t) { Tone.Transport.schedule(time => play("ridebell", time), t); }
-    function scheduleChina(t)    { Tone.Transport.schedule(time => play("china", time), t); }
+    const scheduleKick     = t => Tone.Transport.schedule(time => play("kick", time), t);
+    const scheduleSnare    = t => Tone.Transport.schedule(time => play("snare", time), t);
+    const scheduleGhost    = t => Tone.Transport.schedule(time => play("ghost", time), t);
+    const scheduleHiHat    = t => Tone.Transport.schedule(time => play("hihat", time), t);
+    const scheduleOpenHat  = t => Tone.Transport.schedule(time => play("openhat", time), t);
+    const scheduleRide     = t => Tone.Transport.schedule(time => play("ride", time), t);
+    const scheduleRideBell = t => Tone.Transport.schedule(time => play("ridebell", time), t);
+    const scheduleChina    = t => Tone.Transport.schedule(time => play("china", time), t);
 
     function scheduleCrash(t) {
         const sample = rand() < 0.5 ? "crash1" : "crash2";
@@ -49,11 +47,11 @@ export function initDrumEngine(instruments, params, rand, structure) {
     }
 
     // ------------------------------------------------------------
-    // 4) Pattern: Double Kick
+    // Pattern: Double Kick
     // ------------------------------------------------------------
-    function scheduleDoubleKick(section) {
+    function patternDoubleKick(section) {
         const timeline = buildSectionTimeline(section, "16n");
-        if (!timeline || timeline.length === 0) return;
+        if (!timeline) return;
 
         timeline.forEach((t, i) => {
             if (i % 2 === 0) scheduleKick(t);
@@ -61,11 +59,11 @@ export function initDrumEngine(instruments, params, rand, structure) {
     }
 
     // ------------------------------------------------------------
-    // 5) Pattern: Groove
+    // Pattern: Groove
     // ------------------------------------------------------------
-    function scheduleGroove(section) {
+    function patternGroove(section) {
         const timeline = buildSectionTimeline(section, "8n");
-        if (!timeline || timeline.length === 0) return;
+        if (!timeline) return;
 
         timeline.forEach((t, i) => {
             if (i % 2 === 0) scheduleKick(t);
@@ -80,11 +78,11 @@ export function initDrumEngine(instruments, params, rand, structure) {
     }
 
     // ------------------------------------------------------------
-    // 6) Pattern: Chorus
+    // Pattern: Chorus
     // ------------------------------------------------------------
-    function scheduleChorus(section) {
+    function patternChorus(section) {
         const timeline = buildSectionTimeline(section, "4n");
-        if (!timeline || timeline.length === 0) return;
+        if (!timeline) return;
 
         timeline.forEach((t, i) => {
             if (i === 0) scheduleCrash(t);
@@ -97,11 +95,11 @@ export function initDrumEngine(instruments, params, rand, structure) {
     }
 
     // ------------------------------------------------------------
-    // 7) Pattern: Solo
+    // Pattern: Solo
     // ------------------------------------------------------------
-    function scheduleSolo(section) {
+    function patternSolo(section) {
         const timeline = buildSectionTimeline(section, "8n");
-        if (!timeline || timeline.length === 0) return;
+        if (!timeline) return;
 
         timeline.forEach((t, i) => {
             if (i % 2 === 0) scheduleKick(t);
@@ -114,11 +112,11 @@ export function initDrumEngine(instruments, params, rand, structure) {
     }
 
     // ------------------------------------------------------------
-    // 8) Pattern: Outro
+    // Pattern: Outro
     // ------------------------------------------------------------
-    function scheduleOutro(section) {
+    function patternOutro(section) {
         const timeline = buildSectionTimeline(section, "4n");
-        if (!timeline || timeline.length === 0) return;
+        if (!timeline) return;
 
         timeline.forEach(t => {
             scheduleChina(t);
@@ -131,27 +129,29 @@ export function initDrumEngine(instruments, params, rand, structure) {
     }
 
     // ------------------------------------------------------------
-    // 9) Scheduling globale
+    // Scheduling di una singola sezione
     // ------------------------------------------------------------
-    function schedule() {
-        if (!structure || !structure.sections) return;
+    function scheduleSection(section) {
 
-        structure.sections.forEach(section => {
-            if (section.name === "intro")  return scheduleGroove(section);
+        if (section.name === "intro")  return patternGroove(section);
 
-            if (section.name === "verse") {
-                if (params.drumStyle === "doubleKick") return scheduleDoubleKick(section);
-                return scheduleGroove(section);
-            }
+        if (section.name === "verse") {
+            if (params.drumStyle === "doubleKick") return patternDoubleKick(section);
+            return patternGroove(section);
+        }
 
-            if (section.name === "chorus") return scheduleChorus(section);
-            if (section.name === "solo")   return scheduleSolo(section);
-            if (section.name === "outro")  return scheduleOutro(section);
+        if (section.name === "chorus") return patternChorus(section);
+        if (section.name === "solo")   return patternSolo(section);
+        if (section.name === "outro")  return patternOutro(section);
 
-            // fallback sicuro
-            scheduleGroove(section);
-        });
+        // fallback
+        patternGroove(section);
     }
 
-    return { schedule };
+    // ------------------------------------------------------------
+    // EXPORT
+    // ------------------------------------------------------------
+    return {
+        scheduleSection
+    };
 }

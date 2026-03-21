@@ -1,4 +1,4 @@
-// leadEngine.js — versione con leadScale dedicata
+// leadEngine.js — versione compatibile con la nuova architettura
 
 import * as Tone from "https://esm.sh/tone";
 
@@ -12,7 +12,7 @@ function toFlat(note) {
     return Tone.Frequency(note).toNote("flat");
 }
 
-export function initLeadEngine(instruments, params, scale, rand, structure) {
+export function initLeadEngine(instruments, params, rand) {
 
     const { guitarLead } = instruments;
 
@@ -20,16 +20,7 @@ export function initLeadEngine(instruments, params, scale, rand, structure) {
     const MAX_MIDI = noteToMidi("C6");
 
     // ------------------------------------------------------------
-    // 0) Costruiamo una leadScale dedicata (in MIDI) nel range C4–C6
-    // ------------------------------------------------------------
-    const leadScaleMidi = scale
-        .map(n => typeof n === "number" ? n : noteToMidi(n))
-        .filter(m => !isNaN(m) && m >= MIN_MIDI && m <= MAX_MIDI);
-
-    console.log("[leadEngine] leadScaleMidi:", leadScaleMidi);
-
-    // ------------------------------------------------------------
-    // 1) Conversione sicura MIDI → nota
+    // Conversione sicura MIDI → nota
     // ------------------------------------------------------------
     function safeMidiToNote(midi) {
         if (isNaN(midi)) return "C4";
@@ -39,7 +30,7 @@ export function initLeadEngine(instruments, params, scale, rand, structure) {
     }
 
     // ------------------------------------------------------------
-    // 2) Clamping sicuro per note in formato stringa
+    // Clamping sicuro per note in formato stringa
     // ------------------------------------------------------------
     function clampLead(note) {
         if (!note) return "C4";
@@ -48,15 +39,15 @@ export function initLeadEngine(instruments, params, scale, rand, structure) {
     }
 
     // ------------------------------------------------------------
-    // 3) Step melodico robusto sulla leadScaleMidi
+    // Step melodico robusto su leadScaleMidi
     // ------------------------------------------------------------
-    function safeMelodicStep(current, step) {
-        if (leadScaleMidi.length === 0) return clampLead(current);
+    function safeMelodicStep(current, step, leadScaleMidi) {
+        if (!leadScaleMidi || leadScaleMidi.length === 0) return clampLead(current);
 
         const currentMidi = noteToMidi(current);
         if (isNaN(currentMidi)) return safeMidiToNote(leadScaleMidi[0]);
 
-        // Trova l'indice della nota più vicina nella leadScale
+        // Trova l'indice della nota più vicina
         let bestIdx = 0;
         let bestDiff = Infinity;
         leadScaleMidi.forEach((m, i) => {
@@ -71,14 +62,13 @@ export function initLeadEngine(instruments, params, scale, rand, structure) {
         if (nextIdx < 0) nextIdx = 0;
         if (nextIdx >= leadScaleMidi.length) nextIdx = leadScaleMidi.length - 1;
 
-        const nextMidi = leadScaleMidi[nextIdx];
-        return safeMidiToNote(nextMidi);
+        return safeMidiToNote(leadScaleMidi[nextIdx]);
     }
 
     // ------------------------------------------------------------
-    // 4) Generazione frase lead (come tua, ma usando il nuovo safeMelodicStep)
+    // Generazione frase lead power metal
     // ------------------------------------------------------------
-    function generatePhrase(startNote, length = 8, directionBias = 1) {
+    function generatePhrase(startNote, length, directionBias, leadScaleMidi) {
         let note = startNote || "C4";
         const phrase = [];
 
@@ -87,7 +77,7 @@ export function initLeadEngine(instruments, params, scale, rand, structure) {
             const bigJump = rand() < params.leadDensity * 0.25;
             const step = bigJump ? dir * 2 : dir;
 
-            note = safeMelodicStep(note, step);
+            note = safeMelodicStep(note, step, leadScaleMidi);
             phrase.push(note);
         }
 
@@ -95,11 +85,18 @@ export function initLeadEngine(instruments, params, scale, rand, structure) {
     }
 
     // ------------------------------------------------------------
-    // 5) Scheduling sezioni (identico al tuo)
+    // Scheduling di una singola sezione
     // ------------------------------------------------------------
-    function scheduleSection(section, density) {
+    function scheduleSection(section, sectionScale, root) {
+
+        // Costruiamo la leadScale MIDI per questa sezione
+        const leadScaleMidi = sectionScale
+            .map(n => typeof n === "number" ? n : noteToMidi(n))
+            .filter(m => !isNaN(m) && m >= MIN_MIDI && m <= MAX_MIDI);
+
         const timeline = buildSectionTimeline(section, "8n");
 
+        // Nota di partenza
         let baseNote;
         if (leadScaleMidi.length > 0) {
             const startMidi = leadScaleMidi[Math.floor(rand() * leadScaleMidi.length)];
@@ -108,23 +105,21 @@ export function initLeadEngine(instruments, params, scale, rand, structure) {
             baseNote = "C4";
         }
 
+        // Direzione melodica
         const directionBias =
-            section.name === "intro"  ? 1 :
-            section.name === "verse"  ? 1 :
-            section.name === "chorus" ? 1 :
-            section.name === "solo"   ? 1 :
-            section.name === "outro"  ? -1 : 1;
+            section.name === "outro" ? -1 : 1;
 
         timeline.forEach((t, i) => {
-            if (rand() > density) return;
+            if (rand() > params.leadDensity) return;
 
-            if (i % 4 === 0) {
-                const phrase = generatePhrase(baseNote, 4, directionBias);
+            // Una frase ogni mezzo tempo
+            if (i % 2 === 0) {
+                const phrase = generatePhrase(baseNote, 4, directionBias, leadScaleMidi);
 
                 phrase.forEach((n, idx) => {
                     const eventTime = t + idx * duration("16n");
                     Tone.Transport.schedule(time => {
-                        guitarLead.triggerAttackRelease(n, "16n", time);
+                        guitarLead.triggerAttackRelease(n, "8n", time);
                     }, eventTime);
                 });
 
@@ -134,19 +129,9 @@ export function initLeadEngine(instruments, params, scale, rand, structure) {
     }
 
     // ------------------------------------------------------------
-    // 6) Scheduling globale (come il tuo)
+    // EXPORT
     // ------------------------------------------------------------
-    function schedule() {
-        structure.sections.forEach(section => {
-            let density = params.leadDensity;
-            if (section.name === "intro")  density *= 0.3;
-            if (section.name === "verse")  density *= 0.6;
-            if (section.name === "chorus") density *= 1.0;
-            if (section.name === "solo")   density *= 1.4;
-            if (section.name === "outro")  density *= 0.4;
-            scheduleSection(section, density);
-        });
-    }
-
-    return { schedule };
+    return {
+        scheduleSection
+    };
 }

@@ -8,7 +8,6 @@ import * as Tone from "https://esm.sh/tone";
 import { noteToMidi, midiToNote, nearestNatural } from "../../utils/harmonyUtils.js";
 import { scaleWithinRange } from "../../utils/scaleUtils.js";
 import { buildSectionTimeline } from "../../utils/structureUtils.js";
-import { duration } from "../../utils/tempoUtils.js";
 
 console.log("riffEngine.js loaded");
 
@@ -16,50 +15,56 @@ console.log("riffEngine.js loaded");
 // 🎸 INIZIALIZZAZIONE
 // ============================================================
 
-export function initRiffEngine(instruments, params, scale, rand, structure, options = {}) {
+export function initRiffEngine(instruments, params, rand, options = {}) {
 
     const { guitarPalm, guitarOpen } = instruments;
     const { enableLog = false } = options;
 
     // --------------------------------------------------------
-    // 1) Costruzione scala adattata ai campioni (C2–C3)
+    // Pattern ritmici power metal (straight 16th)
     // --------------------------------------------------------
-    // Se nearestNatural restituisce MIDI, lo convertiamo in nota.
-    // Se restituisce già una nota, midiToNote è idempotente (o lo togliamo).
-    const riffScale = scaleWithinRange(scale, noteToMidi("C2"), noteToMidi("C3"))
+    const patterns = {
+        intro:  [1,1,1,1, 1,1,1,1],
+        verse:  [1,1,1,1, 1,1,1,1],
+        chorus: [1,1,1,1, 1,1,1,1],
+        solo:   [1,1,1,1, 1,1,1,1],
+        outro:  [1,1,1,1, 1,1,1,1]
+    };
+
+    // --------------------------------------------------------
+    // Funzione per scegliere una nota dalla scala della sezione
+    // --------------------------------------------------------
+    function pickNote(sectionScale) {
+        if (!sectionScale || sectionScale.length === 0) return "C2";
+
+        // Adattiamo la scala al range C2–C3
+        const riffScale = scaleWithinRange(
+            sectionScale,
+            noteToMidi("C2"),
+            noteToMidi("C3")
+        )
         .map(n => nearestNatural(n))
         .filter(n => n !== undefined)
         .map(n => typeof n === "number" ? midiToNote(n) : n);
 
-    if (enableLog) {
-        console.log("[riffEngine] riffScale:", riffScale);
-    }
+        if (riffScale.length === 0) return "C2";
 
-    // --------------------------------------------------------
-    // 2) Pattern ritmici base
-    // --------------------------------------------------------
-    const patterns = {
-    intro:  [1,1,1,1, 1,1,1,1], // straight 16th
-    verse:  [1,1,1,1, 1,1,1,1],
-    chorus: [1,1,1,1, 1,1,1,1],
-    solo:   [1,1,1,1, 1,1,1,1],
-    outro:  [1,1,1,1, 1,1,1,1]
-};
-
-
-    // --------------------------------------------------------
-    // 3) Funzione per scegliere una nota della scala
-    // --------------------------------------------------------
-    function pickNote() {
-        if (riffScale.length === 0) return "C2"; // fallback sicuro
         const idx = Math.floor(rand() * riffScale.length);
-        return riffScale[idx] || "C2";
+        return riffScale[idx];
     }
 
     // --------------------------------------------------------
-    // 4) Scheduling di una sezione
+    // Scheduling di una singola sezione
     // --------------------------------------------------------
-    function scheduleSection(section, pattern) {
+    function scheduleSection(section, sectionScale, root) {
+
+        const pattern =
+            section.name === "intro"  ? patterns.intro :
+            section.name === "chorus" ? patterns.chorus :
+            section.name === "solo"   ? patterns.solo :
+            section.name === "outro"  ? patterns.outro :
+                                        patterns.verse;
+
         const timeline = buildSectionTimeline(section, "16n");
 
         if (enableLog) {
@@ -67,26 +72,28 @@ export function initRiffEngine(instruments, params, scale, rand, structure, opti
         }
 
         timeline.forEach((t, i) => {
-            if (pattern[i % pattern.length] === 1) {
+            if (pattern[i % pattern.length] !== 1) return;
 
-                const note = pickNote();
+            const note = pickNote(sectionScale);
 
-                if (enableLog) {
-                    console.log("[riffEngine] schedule palm", section.name, "t:", t, "note:", note);
-                }
+            if (enableLog) {
+                console.log("[riffEngine] palm", section.name, "t:", t, "note:", note);
+            }
 
-                // Palm mute programmato sulla timeline
+            // Palm mute
+            Tone.Transport.schedule((time) => {
+                guitarPalm.triggerAttackRelease(note, "16n", time);
+            }, t);
+
+            // Open chord (accents)
+            if (section.name === "chorus") {
+                // Nel chorus suona SEMPRE open (power metal wall)
                 Tone.Transport.schedule((time) => {
-                    guitarPalm.triggerAttackRelease(note, "16n", time);
+                    guitarOpen.triggerAttackRelease(note, "4n", time);
                 }, t);
-
-                // Accenti occasionali con open chord
+            } else {
+                // Negli altri casi: accenti occasionali
                 if (rand() < params.riffDensity * 0.2) {
-
-                    if (enableLog) {
-                        console.log("[riffEngine] schedule open", section.name, "t:", t, "note:", note);
-                    }
-
                     Tone.Transport.schedule((time) => {
                         guitarOpen.triggerAttackRelease(note, "8n", time);
                     }, t);
@@ -96,38 +103,10 @@ export function initRiffEngine(instruments, params, scale, rand, structure, opti
     }
 
     // ============================================================
-    // 🎵 SCHEDULING COMPLETO
-    // ============================================================
-
-    function schedule() {
-
-        if (!structure || !Array.isArray(structure.sections)) {
-            console.warn("[riffEngine] struttura non valida:", structure);
-            return;
-        }
-
-        structure.sections.forEach(section => {
-
-            let pattern = patterns.verse;
-
-            if (section.name === "intro")  pattern = patterns.intro;
-            if (section.name === "chorus") pattern = patterns.chorus;
-            if (section.name === "solo")   pattern = patterns.solo;
-            if (section.name === "outro")  pattern = patterns.outro;
-
-            if (enableLog) {
-                console.log("[riffEngine] scheduling section:", section.name, "pattern:", pattern);
-            }
-
-            scheduleSection(section, pattern);
-        });
-    }
-
-    // ============================================================
     // EXPORT ENGINE
     // ============================================================
 
     return {
-        schedule
+        scheduleSection
     };
 }

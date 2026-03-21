@@ -80,26 +80,55 @@ const structure = buildSongStructure(
     );
     console.log("🎼 Scala generata:", scale);
 
+// --------------------------------------------------------
+// PROGRESSIONE ARMONICA PER SEZIONE
+// --------------------------------------------------------
+const sectionProgressions = {
+    intro:  ["C", "G", "Am", "F"],
+    verse:  ["Am", "F", "C", "G"],
+    chorus: ["C", "G", "Am", "Bdim"],
+    solo:   ["Em", "Am", "F", "G"],
+    outro:  ["C", "F", "C", "G"]
+};
+
+function getSectionRoot(section, index) {
+    const prog = sectionProgressions[section.name] || ["C"];
+    return prog[index % prog.length];
+}
+
+
 
     // --------------------------------------------------------
     // 5) Inizializzazione engine specifici
     // --------------------------------------------------------
-    const riff = initRiffEngine(metalInstruments, metalParams, scale, rand, structure);
-    const lead = initLeadEngine(metalInstruments, metalParams, scale, rand, structure);
-    const bass = initBassEngine(metalInstruments, metalParams, scale, rand, structure);
-    const drums = initDrumEngine(metalInstruments, metalParams, rand, structure);
-    const theme = initThemeEngine(metalInstruments, metalParams, scale, rand, structure);
+    const riff  = initRiffEngine(metalInstruments, metalParams, rand);
+const lead  = initLeadEngine(metalInstruments, metalParams, rand);
+const bass  = initBassEngine(metalInstruments, metalParams, rand);
+const drums = initDrumEngine(metalInstruments, metalParams, rand);
+const theme = initThemeEngine(metalInstruments, metalParams, rand);
+
 
     // --------------------------------------------------------
     // 6) Programmazione timeline
     // --------------------------------------------------------
     Tone.Transport.cancel(0);
 
-    riff.schedule();
-    bass.schedule();
-    drums.schedule();
-    theme.schedule();
-    lead.schedule();
+    structure.sections.forEach((section, sectionIndex) => {
+
+    // 1) Root armonico della sezione
+    const root = getSectionRoot(section, sectionIndex);
+
+    // 2) Scala della sezione
+    const sectionScale = buildScaleFromTonic(root, metalParams.scaleType);
+
+    // 3) Passiamo root e scala ai singoli engine
+    riff.scheduleSection(section, sectionScale, root);
+    bass.scheduleSection(section, sectionScale, root);
+    drums.scheduleSection(section, sectionScale, root);
+    theme.scheduleSection(section, sectionScale, root);
+    lead.scheduleSection(section, sectionScale, root);
+});
+
 
     // --------------------------------------------------------
     // 7) Engine finale

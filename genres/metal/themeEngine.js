@@ -1,7 +1,5 @@
-//
-// themeEngine.js — versione corretta e robusta
+// themeEngine.js — versione compatibile con la nuova architettura
 // Tema principale: motivo ricorrente, variato per sezione.
-//
 
 import * as Tone from "https://esm.sh/tone";
 
@@ -15,7 +13,7 @@ function toFlat(note) {
     return Tone.Frequency(note).toNote("flat");
 }
 
-export function initThemeEngine(instruments, params, scale, rand, structure) {
+export function initThemeEngine(instruments, params, rand) {
 
     const { guitarLead } = instruments;
 
@@ -23,7 +21,7 @@ export function initThemeEngine(instruments, params, scale, rand, structure) {
     const MAX_MIDI = noteToMidi("C6");
 
     // ------------------------------------------------------------
-    // 1) Conversione sicura MIDI → nota
+    // Conversione sicura MIDI → nota
     // ------------------------------------------------------------
     function safeMidiToNote(midi) {
         if (isNaN(midi)) return "C4";
@@ -33,7 +31,7 @@ export function initThemeEngine(instruments, params, scale, rand, structure) {
     }
 
     // ------------------------------------------------------------
-    // 2) Clamping sicuro per note stringa
+    // Clamping sicuro
     // ------------------------------------------------------------
     function clampLead(note) {
         if (!note) return "C4";
@@ -42,27 +40,26 @@ export function initThemeEngine(instruments, params, scale, rand, structure) {
     }
 
     // ------------------------------------------------------------
-    // 3) Step melodico sicuro
+    // Step melodico sicuro
     // ------------------------------------------------------------
-    function safeMelodicStep(current, step) {
-        if (scale.length === 0) return clampLead(current);
+    function safeMelodicStep(current, step, sectionScale) {
+        if (!sectionScale || sectionScale.length === 0) return clampLead(current);
 
-        let next = melodicStep(scale, current, step);
+        let next = melodicStep(sectionScale, current, step);
 
-        // fallback se melodicStep fallisce
         if (!next) next = current;
 
         return clampLead(next);
     }
 
     // ------------------------------------------------------------
-    // 4) Generazione tema principale
+    // Generazione tema principale (basato sulla scala della sezione)
     // ------------------------------------------------------------
-    function generateTheme() {
+    function generateTheme(sectionScale) {
         const length = params.themeStyle === "heroic" ? 8 : 6;
 
-        let note = scale.length > 0
-            ? clampLead(scale[Math.floor(rand() * scale.length)])
+        let note = sectionScale.length > 0
+            ? clampLead(sectionScale[Math.floor(rand() * sectionScale.length)])
             : "C4";
 
         const theme = [note];
@@ -72,49 +69,46 @@ export function initThemeEngine(instruments, params, scale, rand, structure) {
             const bigJump = rand() < 0.25;
             const step = bigJump ? direction * 2 : direction;
 
-            note = safeMelodicStep(note, step);
+            note = safeMelodicStep(note, step, sectionScale);
             theme.push(note);
         }
 
         return theme;
     }
 
-    const theme = generateTheme();
-
     // ------------------------------------------------------------
-    // 5) Varianti del tema
+    // Varianti del tema
     // ------------------------------------------------------------
-    function themeSimple() {
+    function themeSimple(theme) {
         return theme.slice(0, Math.ceil(theme.length / 2));
     }
 
-    function themeFull() {
+    function themeFull(theme) {
         return theme;
     }
 
-    function themeExpanded() {
+    function themeExpanded(theme, sectionScale) {
         const out = [];
         theme.forEach(n => {
             out.push(n);
             if (rand() < 0.4) {
                 const step = rand() < 0.5 ? 1 : -1;
-                const extra = safeMelodicStep(n, step);
+                const extra = safeMelodicStep(n, step, sectionScale);
                 out.push(extra);
             }
         });
         return out;
     }
 
-    function themeOutro() {
+    function themeOutro(theme) {
         return theme.slice(0, 3);
     }
 
     // ------------------------------------------------------------
-    // 6) Scheduling tema
+    // Scheduling tema
     // ------------------------------------------------------------
     function scheduleTheme(section, notes) {
         const timeline = buildSectionTimeline(section, "4n");
-
         if (!timeline || timeline.length === 0) return;
 
         notes.forEach((note, i) => {
@@ -128,22 +122,27 @@ export function initThemeEngine(instruments, params, scale, rand, structure) {
     }
 
     // ------------------------------------------------------------
-    // 7) Scheduling globale
+    // Scheduling di una singola sezione
     // ------------------------------------------------------------
-    function schedule() {
-        if (!structure || !structure.sections) return;
+    function scheduleSection(section, sectionScale, root) {
 
-        structure.sections.forEach(section => {
-            if (section.name === "intro")  return scheduleTheme(section, themeSimple());
-            if (section.name === "verse")  return;
-            if (section.name === "chorus") return scheduleTheme(section, themeFull());
-            if (section.name === "solo")   return scheduleTheme(section, themeExpanded());
-            if (section.name === "outro")  return scheduleTheme(section, themeOutro());
+        // Generiamo il tema sulla scala della sezione
+        const theme = generateTheme(sectionScale);
 
-            // fallback sicuro
-            scheduleTheme(section, themeSimple());
-        });
+        if (section.name === "intro")  return scheduleTheme(section, themeSimple(theme));
+        if (section.name === "verse")  return; // niente tema nel verse
+        if (section.name === "chorus") return scheduleTheme(section, themeFull(theme));
+        if (section.name === "solo")   return scheduleTheme(section, themeExpanded(theme, sectionScale));
+        if (section.name === "outro")  return scheduleTheme(section, themeOutro(theme));
+
+        // fallback
+        scheduleTheme(section, themeSimple(theme));
     }
 
-    return { schedule };
+    // ------------------------------------------------------------
+    // EXPORT
+    // ------------------------------------------------------------
+    return {
+        scheduleSection
+    };
 }
