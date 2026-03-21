@@ -25,7 +25,7 @@ import { initThemeEngine } from "./themeEngine.js";
 import { waitForInstruments } from "../../common.js";
 
 
-console.log("metalEngine.js ver. 001 loaded");
+console.log("metalEngine.js ver. 002 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
@@ -114,6 +114,9 @@ const theme = initThemeEngine(metalInstruments, metalParams, rand);
     Tone.Transport.cancel(0);
 
     structure.sections.forEach((section, sectionIndex) => {
+
+console.log("SECTION:", section.name, "INDEX:", sectionIndex);
+
 
     // 1) Root armonico della sezione
     const root = getSectionRoot(section, sectionIndex);
