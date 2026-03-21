@@ -91,11 +91,8 @@ export async function createMetalEngine(params) {
     console.log("Degree:", info.degree);
     console.log("Root:", root);
 
-    const pattern = chooseRiffPattern(section.name, params.imageParams, rand);
-    console.log("Pattern:", pattern);
+    riff.scheduleSection(section, sectionScale, root);
 
-    // Pass pattern to riffEngine
-    riff.scheduleSection(section, sectionScale, root, pattern);
 
     //bass.scheduleSection(section, sectionScale, root);
     //drums.scheduleSection(section, sectionScale, root);

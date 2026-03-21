@@ -327,57 +327,59 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
     // ============================================================
     // DISPATCH UNICO BASATO SU PATTERN
     // ============================================================
-    function scheduleSection(section, sectionScale, root, pattern) {
+    function scheduleSection(section, sectionScale, root) {
 
-        if (enableLog) {
-            console.log(
-                `%c[riffEngine] ${section.name} → pattern: ${pattern}, root: ${root}`,
-                "color:#ff00ff; font-weight:bold;"
-            );
-        }
+    const pattern = chooseRiffPattern(section.name, params.imageParams, rand);
 
-        switch(pattern) {
-
-            case "pm_continuous":
-                return schedulePalmMuteContinuous(section, sectionScale, root, pattern);
-
-            case "gallop":
-                return scheduleGallop(section, sectionScale, root, pattern);
-
-            case "pedal":
-                return schedulePedal(section, sectionScale, root, pattern);
-
-            case "pedal_syncopated":
-                return schedulePedalSyncopated(section, sectionScale, root, pattern);
-
-            case "syncopated_pm":
-                return scheduleSyncopatedPalmMute(section, sectionScale, root, pattern);
-
-            case "open_sustain":
-                return scheduleChorusOpenSustain(section, sectionScale, root, pattern);
-
-            case "open_accent":
-                return scheduleChorusOpenAccent(section, sectionScale, root, pattern);
-
-            case "open_syncopated":
-                return scheduleChorusOpenSyncopated(section, sectionScale, root, pattern);
-
-            case "melodic_open":
-                return scheduleSoloMelodicOpen(section, sectionScale, root, pattern);
-
-            case "melodic_fast":
-                return scheduleSoloMelodicFast(section, sectionScale, root, pattern);
-
-            case "pm_simple":
-                return scheduleOutroSimple(section, sectionScale, root, pattern);
-
-            case "gallop_light":
-                return scheduleOutroGallopLight(section, sectionScale, root, pattern);
-
-            default:
-                return scheduleGallop(section, sectionScale, root, pattern);
-        }
+    if (enableLog) {
+        console.log(
+            `%c[riffEngine] ${section.name} → pattern: ${pattern}, root: ${root}`,
+            "color:#ff00ff; font-weight:bold;"
+        );
     }
 
-    return { scheduleSection };
+    switch(pattern) {
+
+        case "pm_continuous":
+            return schedulePalmMuteContinuous(section, sectionScale, root, pattern);
+
+        case "gallop":
+            return scheduleGallop(section, sectionScale, root, pattern);
+
+        case "pedal":
+            return schedulePedal(section, sectionScale, root, pattern);
+
+        case "pedal_syncopated":
+            return schedulePedalSyncopated(section, sectionScale, root, pattern);
+
+        case "syncopated_pm":
+            return scheduleSyncopatedPalmMute(section, sectionScale, root, pattern);
+
+        case "open_sustain":
+            return scheduleChorusOpenSustain(section, sectionScale, root, pattern);
+
+        case "open_accent":
+            return scheduleChorusOpenAccent(section, sectionScale, root, pattern);
+
+        case "open_syncopated":
+            return scheduleChorusOpenSyncopated(section, sectionScale, root, pattern);
+
+        case "melodic_open":
+            return scheduleSoloMelodicOpen(section, sectionScale, root, pattern);
+
+        case "melodic_fast":
+            return scheduleSoloMelodicFast(section, sectionScale, root, pattern);
+
+        case "pm_simple":
+            return scheduleOutroSimple(section, sectionScale, root, pattern);
+
+        case "gallop_light":
+            return scheduleOutroGallopLight(section, sectionScale, root, pattern);
+
+        default:
+            return scheduleGallop(section, sectionScale, root, pattern);
+    }
+}
+
+return { scheduleSection };
 }
