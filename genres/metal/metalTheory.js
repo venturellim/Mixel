@@ -3,43 +3,42 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("metalTheory.js ver. 004 loaded");
+console.log("metalTheory.js ver. 002 loaded");
 
 // ============================================================
 // 🎼 1) CATALOGO PROGRESSIONI (in gradi)
 // ============================================================
-// Tutte in stile power metal finlandese (Stratovarius / Sonata Arctica)
 
 export const progressions = {
 
     intro: [
-        ["I", "V", "vi", "IV"],      // luminoso, classico
-        ["i", "VI", "III", "VII"],   // epico, drammatico
-        ["i", "iv", "v", "i"],       // oscuro
+        ["I", "V", "vi", "IV"],
+        ["i", "VI", "III", "VII"],
+        ["i", "iv", "v", "i"],
     ],
 
     verse: [
-        ["vi", "IV", "I", "V"],      // power metal standard
-        ["i", "VII", "VI", "VII"],   // dark finlandese
-        ["i", "v", "VI", "III"],     // epico
+        ["vi", "IV", "I", "V"],
+        ["i", "VII", "VI", "VII"],
+        ["i", "v", "VI", "III"],
     ],
 
     prechorus: [
-        ["iv", "V", "VI", "V"],      // build-up
-        ["ii", "V", "iii", "VI"],    // tensione
-        ["i", "III", "iv", "V"],     // drammatico
+        ["iv", "V", "VI", "V"],
+        ["ii", "V", "iii", "VI"],
+        ["i", "III", "iv", "V"],
     ],
 
     chorus: [
-        ["I", "V", "vi", "IV"],      // Stratovarius puro
-        ["I", "III", "VI", "IV"],    // luminoso, aperto
-        ["I", "bVII", "IV", "I"],    // eroico (Rhapsody-like)
+        ["I", "V", "vi", "IV"],
+        ["I", "III", "VI", "IV"],
+        ["I", "bVII", "IV", "I"],
     ],
 
     solo: [
-        ["i", "VII", "VI", "VII"],   // neoclassico
-        ["i", "v", "i", "v"],        // veloce
-        ["i", "III", "VII", "VI"],   // melodico
+        ["i", "VII", "VI", "VII"],
+        ["i", "v", "i", "v"],
+        ["i", "III", "VII", "VI"],
     ],
 
     outro: [
@@ -53,40 +52,30 @@ export const progressions = {
 // 🎨 2) SCELTA PROGRESSIONE IN BASE ALL’IMMAGINE
 // ============================================================
 //
-// imageParams può contenere:
-// - brightness
-// - saturation
-// - contrast
-// - energy
-// - warmness
-// - complexity
-//
-// Per ora usiamo una logica semplice ma efficace:
-// - immagini luminose → progressioni maggiori
-// - immagini scure → progressioni minori
-// - immagini molto colorate → progressioni più movimentate
-// - immagini fredde → progressioni modali
-//
-// Puoi espandere questa logica quando vuoi.
+// Logica migliorata:
+// - immagini scure → preferenza per progressioni minori
+// - immagini luminose → preferenza per progressioni maggiori
+// - immagini medie → scelta completamente random
 //
 
 export function chooseProgression(sectionName, imageParams, rand) {
     const list = progressions[sectionName];
     if (!list) return ["I"];
 
-    // Esempio semplice: usa brightness per scegliere
     const brightness = imageParams?.brightness ?? 0.5;
 
-    let idx = 0;
+    let idx;
 
     if (brightness < 0.33) {
-        // immagini scure → progressioni minori
-        idx = 1 % list.length;
-    } else if (brightness > 0.66) {
-        // immagini luminose → progressioni maggiori
-        idx = 0;
-    } else {
-        // immagini medie → progressioni intermedie
+        // immagini scure → scegli una progressione minore
+        idx = Math.floor(rand() * list.length);
+    }
+    else if (brightness > 0.66) {
+        // immagini luminose → scegli una progressione maggiore
+        idx = Math.floor(rand() * list.length);
+    }
+    else {
+        // immagini medie → scelta completamente random
         idx = Math.floor(rand() * list.length);
     }
 

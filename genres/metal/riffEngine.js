@@ -41,35 +41,44 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
     // Utility: power chord naturale nel range A2–G2
     // --------------------------------------------------------
     function buildNaturalPowerChord(root) {
-        let rootLetter = root.replace("#","").replace("b","");
-        let rootMidi = noteToMidi(rootLetter + "2");
 
-        if (rootMidi < MIN) rootMidi = MIN;
-        if (rootMidi > MAX) rootMidi = MAX;
+    // 1) Converti la root reale (F3, A3, C4, ecc.)
+    let rootMidi = noteToMidi(root);
 
-        const naturalFifths = {
-            "A": "E",
-            "B": null,
-            "C": "G",
-            "D": "A",
-            "E": "B",
-            "F": "C",
-            "G": "D"
-        };
+    // 2) Clamp nel range A2–G2
+    if (rootMidi < MIN) rootMidi = MIN;
+    if (rootMidi > MAX) rootMidi = MAX;
 
-        const fifthLetter = naturalFifths[rootLetter] || null;
+    // 3) Ricava la lettera della nota clampata
+    const rootNote = midiToNote(rootMidi); // es. "F2"
+    const rootLetter = rootNote[0];        // "F"
 
-        const chord = [midiToNote(rootMidi)];
+    // 4) Quinta naturale (no alterazioni)
+    const naturalFifths = {
+        "A": "E",
+        "B": null,
+        "C": "G",
+        "D": "A",
+        "E": "B",
+        "F": "C",
+        "G": "D"
+    };
 
-        if (fifthLetter) {
-            const fifthMidi = noteToMidi(fifthLetter + "2");
-            if (fifthMidi >= MIN && fifthMidi <= MAX) {
-                chord.push(midiToNote(fifthMidi));
-            }
+    const fifthLetter = naturalFifths[rootLetter] || null;
+
+    // 5) Costruisci il power chord
+    const chord = [rootNote];
+
+    if (fifthLetter) {
+        const fifthMidi = noteToMidi(fifthLetter + "2");
+
+        if (fifthMidi >= MIN && fifthMidi <= MAX) {
+            chord.push(midiToNote(fifthMidi));
         }
-
-        return chord;
     }
+
+    return chord;
+}
 
     // ============================================================
     // PATTERN: PALM-MUTE CONTINUO
