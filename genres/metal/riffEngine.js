@@ -7,7 +7,7 @@ import { scaleWithinRange } from "../../utils/scaleUtils.js";
 import { buildSectionTimeline } from "../../utils/structureUtils.js";
 import { chooseRiffPattern } from "./riffPatterns.js";
 
-console.log("riffEngine.js ver. 006 loaded");
+console.log("riffEngine.js ver. 007 loaded");
 
 export function initRiffEngine(instruments, params, rand, options = {}) {
 
@@ -42,18 +42,20 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
     // --------------------------------------------------------
     function buildNaturalPowerChord(root) {
 
-    // 1) Converti la root reale (F3, A3, C4, ecc.)
+    // 1) Converti la root reale (es. "F3")
     let rootMidi = noteToMidi(root);
 
     // 2) Clamp nel range A2–G2
     if (rootMidi < MIN) rootMidi = MIN;
     if (rootMidi > MAX) rootMidi = MAX;
 
-    // 3) Ricava la lettera della nota clampata
+    // 3) Ricava la nota clampata
     const rootNote = midiToNote(rootMidi); // es. "F2"
-    const rootLetter = rootNote[0];        // "F"
 
-    // 4) Quinta naturale (no alterazioni)
+    // 4) Estrai SOLO la lettera (prima del numero)
+    const rootLetter = rootNote[0]; // "F"
+
+    // 5) Quinta naturale
     const naturalFifths = {
         "A": "E",
         "B": null,
@@ -64,13 +66,14 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
         "G": "D"
     };
 
-    const fifthLetter = naturalFifths[rootLetter] || null;
+    const fifthLetter = naturalFifths[rootLetter];
 
-    // 5) Costruisci il power chord
     const chord = [rootNote];
 
     if (fifthLetter) {
-        const fifthMidi = noteToMidi(fifthLetter + "2");
+        // quinta nella stessa ottava della root clampata
+        const octave = rootNote.slice(-1); // "2"
+        const fifthMidi = noteToMidi(fifthLetter + octave);
 
         if (fifthMidi >= MIN && fifthMidi <= MAX) {
             chord.push(midiToNote(fifthMidi));
@@ -79,6 +82,7 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
 
     return chord;
 }
+
 
     // ============================================================
     // PATTERN: PALM-MUTE CONTINUO
