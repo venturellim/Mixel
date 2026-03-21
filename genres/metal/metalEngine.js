@@ -92,6 +92,16 @@ export async function createMetalEngine(params) {
     console.log("Root:", root);
 
     const pattern = riff.scheduleSection(section, sectionScale, root);
+    
+console.log(
+    `%c[SECTION] ${section.name.toUpperCase()}  ` +
+    `%cROOT: ${root}  ` +
+    `%cPATTERN: ${pattern}`,
+    "color:#00aaff; font-weight:bold;",
+    "color:#ffaa00; font-weight:bold;",
+    "color:#ff00ff; font-weight:bold;"
+);
+
 
 //bass.scheduleSection(section, sectionScale, root, pattern);
 //drums.scheduleSection(section, sectionScale, root, pattern);
