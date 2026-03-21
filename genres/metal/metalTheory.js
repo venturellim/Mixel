@@ -136,6 +136,8 @@ export function generateSongProgressions(structure, imageParams, tonalCenter, ra
             root
         };
     });
+    
+    console.log("[HARMONY]", songProgressions);
 
     return result;
 }
