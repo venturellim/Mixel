@@ -347,48 +347,64 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
         );
     }
 
+    // Esegui il pattern (senza return)
     switch(pattern) {
 
         case "pm_continuous":
-            return schedulePalmMuteContinuous(section, sectionScale, root, pattern);
+            schedulePalmMuteContinuous(section, sectionScale, root, pattern);
+            break;
 
         case "gallop":
-            return scheduleGallop(section, sectionScale, root, pattern);
+            scheduleGallop(section, sectionScale, root, pattern);
+            break;
 
         case "pedal":
-            return schedulePedal(section, sectionScale, root, pattern);
+            schedulePedal(section, sectionScale, root, pattern);
+            break;
 
         case "pedal_syncopated":
-            return schedulePedalSyncopated(section, sectionScale, root, pattern);
+            schedulePedalSyncopated(section, sectionScale, root, pattern);
+            break;
 
         case "syncopated_pm":
-            return scheduleSyncopatedPalmMute(section, sectionScale, root, pattern);
+            scheduleSyncopatedPalmMute(section, sectionScale, root, pattern);
+            break;
 
         case "open_sustain":
-            return scheduleChorusOpenSustain(section, sectionScale, root, pattern);
+            scheduleChorusOpenSustain(section, sectionScale, root, pattern);
+            break;
 
         case "open_accent":
-            return scheduleChorusOpenAccent(section, sectionScale, root, pattern);
+            scheduleChorusOpenAccent(section, sectionScale, root, pattern);
+            break;
 
         case "open_syncopated":
-            return scheduleChorusOpenSyncopated(section, sectionScale, root, pattern);
+            scheduleChorusOpenSyncopated(section, sectionScale, root, pattern);
+            break;
 
         case "melodic_open":
-            return scheduleSoloMelodicOpen(section, sectionScale, root, pattern);
+            scheduleSoloMelodicOpen(section, sectionScale, root, pattern);
+            break;
 
         case "melodic_fast":
-            return scheduleSoloMelodicFast(section, sectionScale, root, pattern);
+            scheduleSoloMelodicFast(section, sectionScale, root, pattern);
+            break;
 
         case "pm_simple":
-            return scheduleOutroSimple(section, sectionScale, root, pattern);
+            scheduleOutroSimple(section, sectionScale, root, pattern);
+            break;
 
         case "gallop_light":
-            return scheduleOutroGallopLight(section, sectionScale, root, pattern);
+            scheduleOutroGallopLight(section, sectionScale, root, pattern);
+            break;
 
         default:
-            return scheduleGallop(section, sectionScale, root, pattern);
+            scheduleGallop(section, sectionScale, root, pattern);
+            break;
     }
-}
 
+    // 🔥 RESTITUISCE IL PATTERN SCELTO
+    return pattern;
+}
 return { scheduleSection };
 }
