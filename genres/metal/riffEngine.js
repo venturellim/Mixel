@@ -1,5 +1,4 @@
-// riffEngine.js — versione power metal completa
-// Generatore di riff power metal con pattern per verse, pre-chorus, chorus, solo, outro.
+// riffEngine.js — versione power metal completa e compatibile con A2–G2 naturali
 
 import * as Tone from "https://esm.sh/tone";
 
@@ -7,7 +6,7 @@ import { noteToMidi, midiToNote, nearestNatural } from "../../utils/harmonyUtils
 import { scaleWithinRange } from "../../utils/scaleUtils.js";
 import { buildSectionTimeline } from "../../utils/structureUtils.js";
 
-console.log("riffEngine.js ver. 002 loaded");
+console.log("riffEngine.js ver. 003 loaded");
 
 // ============================================================
 // 🎸 INIZIALIZZAZIONE
@@ -18,8 +17,11 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
     const { guitarPalm, guitarOpen } = instruments;
     const { enableLog = false } = options;
 
+    const MIN = noteToMidi("A2");
+    const MAX = noteToMidi("G2");
+
     // --------------------------------------------------------
-    // Utility: nota dalla scala della sezione
+    // Utility: nota dalla scala della sezione (range C2–C3)
     // --------------------------------------------------------
     function pickNote(sectionScale) {
         if (!sectionScale || sectionScale.length === 0) return "C2";
@@ -38,9 +40,9 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
         return riffScale[Math.floor(rand() * riffScale.length)];
     }
 
-    // --------------------------------------------------------
+    // ============================================================
     // PATTERN 1 — VERSE: PALM-MUTE GALLOP
-    // --------------------------------------------------------
+    // ============================================================
     function scheduleVerseRiff(section, sectionScale, root) {
         const timeline = buildSectionTimeline(section, "16n");
         if (!timeline) return;
@@ -61,14 +63,14 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
         });
     }
 
-    // --------------------------------------------------------
+    // ============================================================
     // PATTERN 2 — PRE-CHORUS: PEDAL TONE + MOVIMENTO
-    // --------------------------------------------------------
+    // ============================================================
     function schedulePreChorusRiff(section, sectionScale, root) {
         const timeline = buildSectionTimeline(section, "8n");
         if (!timeline) return;
 
-        const pedal = root + "2";
+        const pedal = root.replace("#","").replace("b","") + "2";
 
         timeline.forEach((t, i) => {
             const isPedal = i % 2 === 0;
@@ -80,22 +82,42 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
         });
     }
 
-    // --------------------------------------------------------
+    // ============================================================
     // PATTERN 3 — CHORUS: OPEN CHORDS SUSTAIN (STRATOVARIUS)
-    // --------------------------------------------------------
+    // Compatibile con A2–G2 naturali
+    // ============================================================
     function scheduleChorusRiff(section, sectionScale, root) {
-        const timeline = buildSectionTimeline(section, "2n"); // mezzo tempo
+        const timeline = buildSectionTimeline(section, "2n");
         if (!timeline) return;
 
-        const rootMidi = noteToMidi(root + "3");
-        const fifthMidi = rootMidi + 7;
-        const octaveMidi = rootMidi + 12;
+        // Root naturale nel range A2–G2
+        let rootLetter = root.replace("#","").replace("b","");
+        let rootMidi = noteToMidi(rootLetter + "2");
 
-        const chord = [
-            midiToNote(rootMidi),
-            midiToNote(fifthMidi),
-            midiToNote(octaveMidi)
-        ];
+        if (rootMidi < MIN) rootMidi = MIN;
+        if (rootMidi > MAX) rootMidi = MAX;
+
+        // Quinta naturale (solo se non crea #)
+        const naturalFifths = {
+            "A": "E",
+            "B": null,   // F# → non naturale → scartata
+            "C": "G",
+            "D": "A",
+            "E": "B",
+            "F": "C",
+            "G": "D"
+        };
+
+        const fifthLetter = naturalFifths[rootLetter] || null;
+
+        const chord = [midiToNote(rootMidi)];
+
+        if (fifthLetter) {
+            const fifthMidi = noteToMidi(fifthLetter + "2");
+            if (fifthMidi >= MIN && fifthMidi <= MAX) {
+                chord.push(midiToNote(fifthMidi));
+            }
+        }
 
         timeline.forEach(t => {
             Tone.Transport.schedule(time => {
@@ -106,9 +128,9 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
         });
     }
 
-    // --------------------------------------------------------
+    // ============================================================
     // PATTERN 4 — SOLO: RIFF APERTO E MELODICO
-    // --------------------------------------------------------
+    // ============================================================
     function scheduleSoloRiff(section, sectionScale, root) {
         const timeline = buildSectionTimeline(section, "8n");
         if (!timeline) return;
@@ -120,7 +142,6 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
                 guitarOpen.triggerAttackRelease(note, "8n", time);
             }, t);
 
-            // occasionali palm mute per groove
             if (rand() < 0.2) {
                 Tone.Transport.schedule(time => {
                     guitarPalm.triggerAttackRelease(note, "16n", time);
@@ -129,9 +150,9 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
         });
     }
 
-    // --------------------------------------------------------
+    // ============================================================
     // PATTERN 5 — OUTRO: SEMPLICE E DIRETTO
-    // --------------------------------------------------------
+    // ============================================================
     function scheduleOutroRiff(section, sectionScale, root) {
         const timeline = buildSectionTimeline(section, "8n");
         if (!timeline) return;
@@ -145,26 +166,20 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
         });
     }
 
-    // --------------------------------------------------------
+    // ============================================================
     // SCHEDULING SEZIONE
-    // --------------------------------------------------------
+    // ============================================================
     function scheduleSection(section, sectionScale, root) {
 
-        if (section.name === "intro")  return scheduleVerseRiff(section, sectionScale, root);
-        if (section.name === "verse")  return scheduleVerseRiff(section, sectionScale, root);
+        if (section.name === "intro")     return scheduleVerseRiff(section, sectionScale, root);
+        if (section.name === "verse")     return scheduleVerseRiff(section, sectionScale, root);
         if (section.name === "prechorus") return schedulePreChorusRiff(section, sectionScale, root);
-        if (section.name === "chorus") return scheduleChorusRiff(section, sectionScale, root);
-        if (section.name === "solo")   return scheduleSoloRiff(section, sectionScale, root);
-        if (section.name === "outro")  return scheduleOutroRiff(section, sectionScale, root);
+        if (section.name === "chorus")    return scheduleChorusRiff(section, sectionScale, root);
+        if (section.name === "solo")      return scheduleSoloRiff(section, sectionScale, root);
+        if (section.name === "outro")     return scheduleOutroRiff(section, sectionScale, root);
 
-        // fallback
         return scheduleVerseRiff(section, sectionScale, root);
     }
 
-    // ============================================================
-    // EXPORT ENGINE
-    // ============================================================
-    return {
-        scheduleSection
-    };
+    return { scheduleSection };
 }
