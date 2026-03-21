@@ -20,7 +20,7 @@ import { initThemeEngine } from "./themeEngine.js";
 import { generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 006 loaded");
+console.log("metalEngine.js ver. 007 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
@@ -91,7 +91,8 @@ export async function createMetalEngine(params) {
     console.log("Degree:", info.degree);
     console.log("Root:", root);
 
-    const pattern = riff.scheduleSection(section, sectionScale, root);
+    const pattern = riff.scheduleSection(section, sectionScale, info.progression);
+
     
 console.log(
     `%c[SECTION] ${section.name.toUpperCase()}  ` +
