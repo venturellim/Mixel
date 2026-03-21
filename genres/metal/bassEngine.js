@@ -7,7 +7,7 @@ import { noteToMidi, midiToNote } from "../../utils/harmonyUtils.js";
 import { buildSectionTimeline } from "../../utils/structureUtils.js";
 import { duration } from "../../utils/tempoUtils.js";
 
-console.log("bassEngine.js loaded");
+console.log("bassEngine.js ver. 001 loaded");
 
 function toFlat(note) {
     return Tone.Frequency(note).toNote("flat");

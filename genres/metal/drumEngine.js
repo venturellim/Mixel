@@ -6,7 +6,7 @@ import * as Tone from "https://esm.sh/tone";
 import { buildSectionTimeline } from "../../utils/structureUtils.js";
 import { duration } from "../../utils/tempoUtils.js";
 
-console.log("drumEngine.js loaded");
+console.log("drumEngine.js ver. 001 loaded");
 
 export function initDrumEngine(instruments, params, rand) {
 

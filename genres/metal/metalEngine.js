@@ -25,7 +25,7 @@ import { initThemeEngine } from "./themeEngine.js";
 import { waitForInstruments } from "../../common.js";
 
 
-console.log("metalEngine.js loaded");
+console.log("metalEngine.js ver. 001 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL

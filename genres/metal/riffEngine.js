@@ -9,7 +9,7 @@ import { noteToMidi, midiToNote, nearestNatural } from "../../utils/harmonyUtils
 import { scaleWithinRange } from "../../utils/scaleUtils.js";
 import { buildSectionTimeline } from "../../utils/structureUtils.js";
 
-console.log("riffEngine.js loaded");
+console.log("riffEngine.js ver. 001 loaded");
 
 // ============================================================
 // 🎸 INIZIALIZZAZIONE

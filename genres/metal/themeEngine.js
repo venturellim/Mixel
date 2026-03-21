@@ -7,7 +7,7 @@ import { noteToMidi, midiToNote } from "../../utils/harmonyUtils.js";
 import { melodicStep } from "../../utils/scaleUtils.js";
 import { buildSectionTimeline } from "../../utils/structureUtils.js";
 
-console.log("themeEngine.js loaded");
+console.log("themeEngine.js ver. 001 loaded");
 
 function toFlat(note) {
     return Tone.Frequency(note).toNote("flat");
