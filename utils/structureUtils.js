@@ -13,7 +13,7 @@
 
 import { duration } from "./tempoUtils.js";
 
-console.log("structureUtils.js loaded");
+console.log("structureUtils.js ver 001 loaded");
 
 // ============================================================
 // 🎼 COSTRUZIONE STRUTTURA DEL BRANO
@@ -31,24 +31,27 @@ console.log("structureUtils.js loaded");
 // bpm: per calcolare la durata reale.
 //
 
-export function buildSongStructure(structureProfile, bpm) {
-    const measureDur = duration("1m"); // durata misura secondo Tone.js
-    const sections = [];
+export function buildSongStructure(structurePreset, bpm) {
+
+    const measureDur = Tone.Time("1m").toSeconds();
     let currentTime = 0;
 
-    for (const [name, measures] of Object.entries(structureProfile)) {
-        const sectionDur = measures * measureDur;
+    const sections = structurePreset.map((s, index) => {
 
-        sections.push({
-            name,
-            start: currentTime,
-            end: currentTime + sectionDur,
-            duration: sectionDur,
-            measures
-        });
+        const measures = s.measures ?? 4; // default 4 misure
+        const duration = measures * measureDur;
 
-        currentTime += sectionDur;
-    }
+        const section = {
+            name: s.name,
+            measures,
+            duration,
+            startTime: currentTime
+        };
+
+        currentTime += duration;
+
+        return section;
+    });
 
     return {
         sections,
@@ -83,17 +86,25 @@ export function getSectionAtTime(structure, time) {
 // bpm: per calcolare la durata reale
 //
 
-export function buildSectionTimeline(section, division) {
-    const stepDur = duration(division);
-    const events = [];
+export function buildSectionTimeline(section, subdivision = "4n") {
 
-    for (let t = section.start; t < section.end; t += stepDur) {
-        events.push(t);
+    const events = [];
+    const step = Tone.Time(subdivision).toSeconds();
+    const measureDur = Tone.Time("1m").toSeconds();
+
+    // Genera TUTTE le misure della sezione
+    for (let m = 0; m < section.measures; m++) {
+
+        const base = m * measureDur;
+
+        // Genera TUTTI gli step dentro la misura
+        for (let t = 0; t < measureDur; t += step) {
+            events.push(base + t);
+        }
     }
 
     return events;
 }
-
 
 // ============================================================
 // 🎹 GENERARE TIMELINE COMPLETA DEL BRANO
