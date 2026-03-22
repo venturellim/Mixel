@@ -10,7 +10,7 @@
 // Nessuna logica di genere.
 // Nessuna dipendenza da strumenti.
 //
-
+import * as Tone from "https://esm.sh/tone";
 import { duration } from "./tempoUtils.js";
 
 console.log("structureUtils.js ver 001 loaded");
@@ -38,14 +38,15 @@ export function buildSongStructure(structurePreset, bpm) {
 
     const sections = structurePreset.map((s, index) => {
 
-        const measures = s.measures ?? 4; // default 4 misure
+        const measures = s.measures ?? 4;
         const duration = measures * measureDur;
 
         const section = {
             name: s.name,
             measures,
             duration,
-            startTime: currentTime
+            startTime: currentTime,
+            endTime: currentTime + duration
         };
 
         currentTime += duration;
@@ -58,6 +59,7 @@ export function buildSongStructure(structurePreset, bpm) {
         totalDuration: currentTime
     };
 }
+
 
 
 // ============================================================
@@ -92,12 +94,10 @@ export function buildSectionTimeline(section, subdivision = "4n") {
     const step = Tone.Time(subdivision).toSeconds();
     const measureDur = Tone.Time("1m").toSeconds();
 
-    // Genera TUTTE le misure della sezione
     for (let m = 0; m < section.measures; m++) {
 
-        const base = m * measureDur;
+        const base = section.startTime + m * measureDur;
 
-        // Genera TUTTI gli step dentro la misura
         for (let t = 0; t < measureDur; t += step) {
             events.push(base + t);
         }
@@ -105,6 +105,7 @@ export function buildSectionTimeline(section, subdivision = "4n") {
 
     return events;
 }
+
 
 // ============================================================
 // 🎹 GENERARE TIMELINE COMPLETA DEL BRANO

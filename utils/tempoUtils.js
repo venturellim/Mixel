@@ -14,7 +14,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("tempoUtils.js loaded");
+console.log("tempoUtils.js ver 001 loaded");
 
 // ============================================================
 // 🎵 BPM → DURATE
