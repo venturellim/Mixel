@@ -1,5 +1,5 @@
-// riffEngine.js — versione 012
-// Timeline 100% relativa, nessuna sovrapposizione, power chord corretti
+// riffEngine.js — versione 013
+// Timeline relativa, power chord corretti, supporto melodic_fast e pm_support
 
 import * as Tone from "https://esm.sh/tone";
 
@@ -9,7 +9,7 @@ import { buildSectionTimeline } from "../../utils/structureUtils.js";
 import { chooseRiffPattern } from "./riffPatterns.js";
 import { degreeToRoot } from "./metalTheory.js";
 
-console.log("riffEngine.js ver. 012 loaded");
+console.log("riffEngine.js ver. 013 loaded");
 
 export function initRiffEngine(instruments, params, rand, options = {}) {
 
@@ -43,7 +43,6 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
 
         let rootMidi = noteToMidi(root);
 
-        // Porta la root nell’ottava 2
         while (rootMidi < noteToMidi("C2")) rootMidi += 12;
         while (rootMidi > noteToMidi("B2")) rootMidi -= 12;
 
@@ -65,7 +64,6 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
 
         let fifthMidi = noteToMidi(fifthLetter + octave);
 
-        // Porta la quinta nell’ottava 2
         while (fifthMidi < noteToMidi("C2")) fifthMidi += 12;
         while (fifthMidi > noteToMidi("B2")) fifthMidi -= 12;
 
@@ -157,6 +155,19 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
         });
     }
 
+    // pm_support: palm-mute di supporto, meno denso del continuous
+    function schedulePmSupport(section, sectionScale, root, offset = 0) {
+        const timeline = buildSectionTimeline(section, "8n");
+        timeline.forEach((t, i) => {
+            if (i % 2 === 0) {
+                const note = pickNote(sectionScale);
+                Tone.Transport.schedule(time => {
+                    guitarPalm.triggerAttackRelease(note, "8n", time);
+                }, section.startTime + t + offset);
+            }
+        });
+    }
+
     // ============================================================
     // PATTERN OPEN (timeline relativa)
     // ============================================================
@@ -208,6 +219,46 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
     }
 
     // ============================================================
+    // PATTERN MELODICO (SOLO)
+    // ============================================================
+    function scheduleMelodicFast(section, sectionScale, root, offset = 0) {
+        const timeline = buildSectionTimeline(section, "16n");
+        timeline.forEach((t, i) => {
+            const note = pickNote(sectionScale);
+            Tone.Transport.schedule(time => {
+                guitarOpen.triggerAttackRelease(note, "16n", time);
+            }, section.startTime + t + offset);
+        });
+    }
+
+    // ============================================================
+    // DISPATCHER PALM
+    // ============================================================
+    function schedulePalmMutePattern(section, sectionScale, root, pattern, offset) {
+        switch(pattern) {
+            case "pm_continuous":   return schedulePalmMuteContinuous(section, sectionScale, root, offset);
+            case "gallop":          return scheduleGallop(section, sectionScale, root, offset);
+            case "pedal":           return schedulePedal(section, sectionScale, root, offset);
+            case "pedal_syncopated":return schedulePedalSyncopated(section, sectionScale, root, offset);
+            case "syncopated_pm":   return scheduleSyncopatedPalmMute(section, sectionScale, root, offset);
+            case "gallop_light":    return scheduleOutroGallopLight(section, sectionScale, root, offset);
+            case "pm_support":      return schedulePmSupport(section, sectionScale, root, offset);
+        }
+    }
+
+    // ============================================================
+    // DISPATCHER OPEN
+    // ============================================================
+    function scheduleOpenPattern(section, sectionScale, root, pattern, offset) {
+        switch(pattern) {
+            case "open_sustain":    return scheduleOpenSustain(section, sectionScale, root, offset);
+            case "open_accent":     return scheduleOpenAccent(section, sectionScale, root, offset);
+            case "open_syncopated": return scheduleOpenSyncopated(section, sectionScale, root, offset);
+            case "melodic_fast":    return scheduleMelodicFast(section, sectionScale, root, offset);
+        }
+    }
+
+    // ============================================================
     // SCHEDULAZIONE SEZIONE
     // ============================================================
     function scheduleSection(section, sectionScale, progression) {
@@ -239,13 +290,16 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
                 pattern === "pedal" ||
                 pattern === "pedal_syncopated" ||
                 pattern === "syncopated_pm" ||
-                pattern === "gallop_light") {
+                pattern === "gallop_light" ||
+                pattern === "pm_support") {
 
                 schedulePalmMutePattern(section, sectionScale, root, pattern, offset);
                 continue;
             }
 
-            if (pattern.startsWith("open")) {
+            if (pattern.startsWith("open") ||
+                pattern === "melodic_fast") {
+
                 scheduleOpenPattern(section, sectionScale, root, pattern, offset);
                 continue;
             }
