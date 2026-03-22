@@ -1,5 +1,6 @@
-// riffEngine.js — versione 008
-// Supporto progressioni a 4 misure + offset + open/palm dispatcher corretto
+// riffEngine.js — versione 010
+// Progressioni a 4 misure ripetute per tutta la sezione
+// Offset corretto, dispatcher palm/open, power chord naturali
 
 import * as Tone from "https://esm.sh/tone";
 
@@ -9,7 +10,7 @@ import { buildSectionTimeline } from "../../utils/structureUtils.js";
 import { chooseRiffPattern } from "./riffPatterns.js";
 import { degreeToRoot } from "./metalTheory.js";
 
-console.log("riffEngine.js ver. 009 loaded");
+console.log("riffEngine.js ver. 010 loaded");
 
 export function initRiffEngine(instruments, params, rand, options = {}) {
 
@@ -17,7 +18,7 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
     const { enableLog = true } = options;
 
     // ============================================================
-    // UTILITY: pickNote (solo per pattern palm/melodic)
+    // UTILITY: pickNote (solo per pattern palm)
     // ============================================================
     function pickNote(sectionScale) {
         if (!sectionScale || sectionScale.length === 0) return "C2";
@@ -253,12 +254,11 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
     }
 
     // ============================================================
-    // SCHEDULAZIONE SEZIONE (4 MISURE)
+    // SCHEDULAZIONE SEZIONE (progressione ripetuta per tutta la sezione)
     // ============================================================
     function scheduleSection(section, sectionScale, progression) {
 
-        const measures = section.measures
-;
+        const measures = section.measures;   // <-- FIX FONDAMENTALE
         const measureDuration = Tone.Time("1m").toSeconds();
 
         for (let i = 0; i < measures; i++) {
@@ -270,7 +270,7 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
 
             if (enableLog) {
                 console.log(
-                    `%c[RIFF] measure ${i+1} | degree: ${degree} | root: ${root} | pattern: ${pattern}`,
+                    `%c[RIFF] measure ${i+1}/${measures} | degree: ${degree} | root: ${root} | pattern: ${pattern}`,
                     "color:#ff00ff; font-weight:bold;"
                 );
             }
