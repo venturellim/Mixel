@@ -8,7 +8,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("MAIN.js avviato");
+console.log("main.js ver. 001 loaded");
 
 // -------------------------------------------------------------
 // Import fondamentali

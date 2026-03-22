@@ -15,6 +15,9 @@
 // Intensità generale del brano (0–1)
 // Combina luminosità, contrasto, complessità e texture.
 // È il parametro più importante: guida BPM, densità, energia.
+
+console.log("photoToMusicParams.js ver. 001 loaded");
+
 function computeIntensity(analysis) {
     const { brightness, energy, entropy, edges } = analysis;
 
