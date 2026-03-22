@@ -8,7 +8,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("instruments.js loaded");
+console.log("instruments.js ver. 001 loaded");
 
 // ============================================================
 // 🎚 BUS SPECIFICI DEL METAL
@@ -57,13 +57,13 @@ const palmComp = new Tone.Compressor({
 
 export const guitarPalm = new Tone.Sampler({
     urls: {
-        C2: "Samples/GuitarPalm/C.mp3",
-        D2: "Samples/GuitarPalm/D.mp3",
-        E2: "Samples/GuitarPalm/E.mp3",
-        F2: "Samples/GuitarPalm/F.mp3",
-        G2: "Samples/GuitarPalm/G.mp3",
-        A2: "Samples/GuitarPalm/A.mp3",
-        B2: "Samples/GuitarPalm/B.mp3"
+        C: "Samples/GuitarPalm/C.mp3",
+        D: "Samples/GuitarPalm/D.mp3",
+        E: "Samples/GuitarPalm/E.mp3",
+        F: "Samples/GuitarPalm/F.mp3",
+        G: "Samples/GuitarPalm/G.mp3",
+        A: "Samples/GuitarPalm/A.mp3",
+        B: "Samples/GuitarPalm/B.mp3"
     },
     onload: () => registerInstrumentLoaded()
 });
@@ -83,13 +83,13 @@ guitarPalm.set({
 
 export const guitarOpen = new Tone.Sampler({
     urls: {
-        C2: "Samples/GuitarOpen/C.mp3",
-        D2: "Samples/GuitarOpen/D.mp3",
-        E2: "Samples/GuitarOpen/E.mp3",
-        F2: "Samples/GuitarOpen/F.mp3",
-        G2: "Samples/GuitarOpen/G.mp3",
-        A2: "Samples/GuitarOpen/A.mp3",
-        B2: "Samples/GuitarOpen/B.mp3"
+        C: "Samples/GuitarOpen/C.mp3",
+        D: "Samples/GuitarOpen/D.mp3",
+        E: "Samples/GuitarOpen/E.mp3",
+        F: "Samples/GuitarOpen/F.mp3",
+        G: "Samples/GuitarOpen/G.mp3",
+        A: "Samples/GuitarOpen/A.mp3",
+        B: "Samples/GuitarOpen/B.mp3"
     },
     onload: () => registerInstrumentLoaded()
 });
