@@ -8,7 +8,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("instruments.js ver. 002 loaded");
+console.log("instruments.js ver. 001 loaded");
 
 // ============================================================
 // 🎚 BUS SPECIFICI DEL METAL
@@ -262,11 +262,24 @@ orchestraPad.volume.value = -14;
 
 function wrapSampler(name, sampler) {
     const orig = sampler.triggerAttackRelease.bind(sampler);
+
     sampler.triggerAttackRelease = (note, dur, time) => {
+
+        // Se il sampler non è ancora caricato, NON loggare
+        if (!sampler.loaded) {
+            return orig(note, dur, time);
+        }
+
+        // Se la nota non è una chiave valida, NON loggare
+        if (!sampler._buffers._buffers.has(note)) {
+            return orig(note, dur, time);
+        }
+
         logNote(name, note, time);
         return orig(note, dur, time);
     };
 }
+
 
 wrapSampler("guitarPalm", guitarPalm);
 wrapSampler("guitarOpen", guitarOpen);
