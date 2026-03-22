@@ -1,42 +1,31 @@
 //
-// structureUtils.js
-// Modulo universale per la gestione della struttura del brano.
-// Contiene:
-// - generazione timeline sezioni
-// - calcolo durate sezioni
-// - mapping intro/verse/chorus/solo/outro
-// - utilità per navigare la struttura
+// structureUtils.js — versione 002
+// Timeline BPM-correct, nessun drift, nessun buco tra sezioni
 //
-// Nessuna logica di genere.
-// Nessuna dipendenza da strumenti.
-//
-import * as Tone from "https://esm.sh/tone";
-import { duration } from "./tempoUtils.js";
 
-console.log("structureUtils.js ver. 001 loaded");
+console.log("structureUtils.js ver. 002 loaded");
 
 // ============================================================
-// 🎼 COSTRUZIONE STRUTTURA DEL BRANO
+// 🎼 COSTRUZIONE STRUTTURA DEL BRANO (BPM-CORRECT)
 // ============================================================
 //
-// structureProfile = {
-//   intro: 4,
-//   verse: 8,
-//   chorus: 8,
-//   solo: 12,
-//   outro: 4
-// }
+// structurePreset = [
+//   { name: "intro", measures: 4 },
+//   { name: "verse", measures: 8 },
+//   ...
+// ]
 //
-// Ogni valore rappresenta il numero di misure.
-// bpm: per calcolare la durata reale.
+// bpm = BPM reale del brano
 //
 
 export function buildSongStructure(structurePreset, bpm) {
 
-    const measureDur = Tone.Time("1m").toSeconds();
+    const secondsPerBeat = 60 / bpm;
+    const measureDur = secondsPerBeat * 4; // 4/4
+
     let currentTime = 0;
 
-    const sections = structurePreset.map((s, index) => {
+    const sections = structurePreset.map(s => {
 
         const measures = s.measures ?? 4;
         const duration = measures * measureDur;
@@ -71,32 +60,49 @@ export function getSection(structure, name) {
 }
 
 
+
 // ============================================================
 // 🎶 OTTENERE LA SEZIONE CORRENTE DATO UN TEMPO
 // ============================================================
 
 export function getSectionAtTime(structure, time) {
-    return structure.sections.find(s => time >= s.start && time < s.end) || null;
+    return structure.sections.find(s => time >= s.startTime && time < s.endTime) || null;
 }
 
 
+
 // ============================================================
-// 🧱 GENERARE TIMELINE DI EVENTI PER UNA SEZIONE
+// 🧱 GENERARE TIMELINE DI EVENTI PER UNA SEZIONE (BPM-CORRECT)
 // ============================================================
 //
-// division: "4n", "8n", "16n"
-// bpm: per calcolare la durata reale
+// subdivision: "4n", "8n", "16n"
+// bpm: BPM reale
+//
+// ⚠️ IMPORTANTE:
+// Questa timeline è *relativa alla sezione*.
+// NON aggiunge section.startTime.
 //
 
-export function buildSectionTimeline(section, subdivision = "4n") {
+export function buildSectionTimeline(section, subdivision = "4n", bpm) {
+
+    const secondsPerBeat = 60 / bpm;
+
+    const subdivisionMap = {
+        "1n":  secondsPerBeat * 4,
+        "2n":  secondsPerBeat * 2,
+        "4n":  secondsPerBeat,
+        "8n":  secondsPerBeat / 2,
+        "16n": secondsPerBeat / 4
+    };
+
+    const step = subdivisionMap[subdivision];
+    const measureDur = secondsPerBeat * 4;
 
     const events = [];
-    const step = Tone.Time(subdivision).toSeconds();
-    const measureDur = Tone.Time("1m").toSeconds();
 
     for (let m = 0; m < section.measures; m++) {
 
-        const base = section.startTime + m * measureDur;
+        const base = m * measureDur; // RELATIVO alla sezione
 
         for (let t = 0; t < measureDur; t += step) {
             events.push(base + t);
@@ -107,18 +113,27 @@ export function buildSectionTimeline(section, subdivision = "4n") {
 }
 
 
-// ============================================================
-// 🎹 GENERARE TIMELINE COMPLETA DEL BRANO
-// ============================================================
-//
-// Utile per strumenti che devono suonare in tutto il brano.
-//
 
-export function buildFullTimeline(structure, division) {
-    const stepDur = duration(division);
+// ============================================================
+// 🎹 TIMELINE COMPLETA DEL BRANO (BPM-CORRECT)
+// ============================================================
+
+export function buildFullTimeline(structure, subdivision, bpm) {
+
+    const secondsPerBeat = 60 / bpm;
+
+    const subdivisionMap = {
+        "1n":  secondsPerBeat * 4,
+        "2n":  secondsPerBeat * 2,
+        "4n":  secondsPerBeat,
+        "8n":  secondsPerBeat / 2,
+        "16n": secondsPerBeat / 4
+    };
+
+    const step = subdivisionMap[subdivision];
     const events = [];
 
-    for (let t = 0; t < structure.totalDuration; t += stepDur) {
+    for (let t = 0; t < structure.totalDuration; t += step) {
         events.push(t);
     }
 
@@ -126,16 +141,15 @@ export function buildFullTimeline(structure, division) {
 }
 
 
+
 // ============================================================
-// 🎵 UTILITY: NORMALIZZARE TEMPO RELATIVO ALLA SEZIONE
+// 🎵 UTILITY: TEMPO RELATIVO ALLA SEZIONE
 // ============================================================
-//
-// Converte un tempo assoluto in tempo relativo alla sezione.
-//
 
 export function sectionRelativeTime(section, absoluteTime) {
-    return absoluteTime - section.start;
+    return absoluteTime - section.startTime;
 }
+
 
 
 // ============================================================
@@ -143,5 +157,5 @@ export function sectionRelativeTime(section, absoluteTime) {
 // ============================================================
 
 export function isTimeInSection(section, time) {
-    return time >= section.start && time < section.end;
+    return time >= section.startTime && time < section.endTime;
 }
