@@ -20,7 +20,7 @@ import { initThemeEngine } from "./themeEngine.js";
 import { generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 009 loaded");
+console.log("metalEngine.js ver. 010 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
@@ -29,6 +29,34 @@ console.log("metalEngine.js ver. 009 loaded");
 export async function waitMetalInstruments() {
     await waitForInstruments(4);
 }
+
+function normalizeStructurePreset(preset) {
+
+    // Se è già un array → ok
+    if (Array.isArray(preset)) return preset;
+
+    // Se è un oggetto → converti in array
+    if (typeof preset === "object") {
+        return Object.entries(preset).map(([name, measures]) => ({
+            name,
+            measures
+        }));
+    }
+
+    // Se è una stringa → preset predefiniti
+    const STRUCTURE_LIBRARY = {
+        standard: [
+            { name: "intro", measures: 4 },
+            { name: "verse", measures: 8 },
+            { name: "chorus", measures: 8 },
+            { name: "solo", measures: 12 },
+            { name: "outro", measures: 4 }
+        ]
+    };
+
+    return STRUCTURE_LIBRARY[preset] ?? STRUCTURE_LIBRARY.standard;
+}
+
 
 // ============================================================
 // 🎼 CREAZIONE ENGINE METAL
@@ -47,10 +75,13 @@ export async function createMetalEngine(params) {
     // --------------------------------------------------------
     // 2) Costruzione struttura del brano
     // --------------------------------------------------------
-    const structure = buildSongStructure(
-        params.structure,
-        metalParams.bpm
-    );
+    const structurePreset = normalizeStructurePreset(params.structure);
+
+const structure = buildSongStructure(
+    structurePreset,
+    metalParams.bpm
+);
+
 
     // --------------------------------------------------------
     // 3) Generazione progressioni armoniche
