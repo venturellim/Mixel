@@ -13,7 +13,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { duration } from "./tempoUtils.js";
 
-console.log("structureUtils.js ver 001 loaded");
+console.log("structureUtils.js ver. 001 loaded");
 
 // ============================================================
 // 🎼 COSTRUZIONE STRUTTURA DEL BRANO
