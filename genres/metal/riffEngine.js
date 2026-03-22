@@ -9,7 +9,7 @@ import { buildSectionTimeline } from "../../utils/structureUtils.js";
 import { chooseRiffPattern } from "./riffPatterns.js";
 import { degreeToRoot } from "./metalTheory.js";
 
-console.log("riffEngine.js ver. 015 loaded");
+console.log("riffEngine.js ver. 016 loaded");
 
 function toSampleKey(letter) {
     return letter + "2";   // "C" → "C2"
