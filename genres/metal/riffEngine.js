@@ -178,7 +178,7 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
 
         timeline.forEach(t => {
             Tone.Transport.schedule(time => {
-                chord.forEach(n => guitarOpen.triggerAttackRelease(toSampleKey(n), "1n", time));
+                chord.forEach(n => guitarOpen.triggerAttackRelease(toSampleKey(note), "16n", time));
             }, section.startTime + t + offset);
         });
     }
@@ -191,12 +191,12 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
             const s = section.startTime;
 
             Tone.Transport.schedule(time => {
-                chord.forEach(n => guitarOpen.triggerAttackRelease(toSampleKey(n), "1n", time));
+                chord.forEach(n => guitarOpen.triggerAttackRelease(toSampleKey(note), "16n", time));
 
             }, s + t + offset);
 
             Tone.Transport.schedule(time => {
-                chord.forEach(n => guitarOpen.triggerAttackRelease(toSampleKey(n), "1n", time));
+                chord.forEach(n => guitarOpen.triggerAttackRelease(toSampleKey(note), "16n", time));
 
             }, s + t + secondsPerBeat * 3 + offset);
         });
@@ -210,13 +210,13 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
             const s = section.startTime;
 
             Tone.Transport.schedule(time => {
-                chord.forEach(n => guitarOpen.triggerAttackRelease(toSampleKey(n), "1n", time));
+                chord.forEach(n => guitarOpen.triggerAttackRelease(toSampleKey(note), "16n", time));
 
             }, s + t + offset);
 
             if (i % 2 === 0) {
                 Tone.Transport.schedule(time => {
-                    chord.forEach(n => guitarOpen.triggerAttackRelease(toSampleKey(n), "1n", time));
+                    chord.forEach(n => guitarOpen.triggerAttackRelease(toSampleKey(note), "16n", time));
 
                 }, s + t + secondsPerBeat * 3 + offset);
             }
@@ -231,7 +231,8 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
         timeline.forEach(t => {
             const note = pickNote(sectionScale);
             Tone.Transport.schedule(time => {
-                guitarOpen.triggerAttackRelease(toSampleKey(n), "1n", time);
+                guitarOpen.triggerAttackRelease(toSampleKey(note), "16n", time);
+
             }, section.startTime + t + offset);
         });
     }
