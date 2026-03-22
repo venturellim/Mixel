@@ -9,11 +9,16 @@ import { buildSectionTimeline } from "../../utils/structureUtils.js";
 import { chooseRiffPattern } from "./riffPatterns.js";
 import { degreeToRoot } from "./metalTheory.js";
 
-console.log("riffEngine.js ver. 017 loaded");
+console.log("riffEngine.js ver. 018 loaded");
 
 function toSampleKey(letter) {
     return letter + "2";   // "C" → "C2"
 }
+
+function jitter(rand) {
+    return (rand() * 0.0003); // 0.0–0.0003 sec
+}
+
 
 export function initRiffEngine(instruments, params, rand, options = {}) {
 
@@ -78,7 +83,7 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
             const note = pickNote(sectionScale);
             Tone.Transport.schedule(time => {
                 guitarPalm.triggerAttackRelease(toSampleKey(note), "16n", time);
-            }, section.startTime + t + offset);
+            }, section.startTime + t + offset + jitter(rand));
         });
     }
 
@@ -90,7 +95,7 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
 
             Tone.Transport.schedule(time => {
                 guitarPalm.triggerAttackRelease(toSampleKey(note), "16n", time);
-            }, s + t + offset);
+            }, s + t + offset + jitter(rand));
 
             Tone.Transport.schedule(time => {
                 guitarPalm.triggerAttackRelease(toSampleKey(note), "16n", time);
@@ -112,7 +117,7 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
             Tone.Transport.schedule(time => {
                 guitarPalm.triggerAttackRelease(toSampleKey(note), "16n", time);
 
-            }, section.startTime + t + offset);
+            }, section.startTime + t + offset + jitter(rand));
         });
     }
 
@@ -124,7 +129,7 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
             const note = (i % 3 === 0) ? pickNote(sectionScale) : pedal;
             Tone.Transport.schedule(time => {
                 guitarPalm.triggerAttackRelease(toSampleKey(note), "16n", time);
-            }, section.startTime + t + offset);
+            }, section.startTime + t + offset + jitter(rand));
         });
     }
 
@@ -136,7 +141,7 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
                 Tone.Transport.schedule(time => {
                     guitarPalm.triggerAttackRelease(toSampleKey(note), "16n", time);
 
-                }, section.startTime + t + offset);
+                }, section.startTime + t + offset + jitter(rand));
             }
         });
     }
@@ -149,7 +154,7 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
 
             Tone.Transport.schedule(time => {
                 guitarPalm.triggerAttackRelease(toSampleKey(note), "16n", time);
-            }, s + t + offset);
+            }, s + t + offset + jitter(rand));
 
             Tone.Transport.schedule(time => {
                 guitarPalm.triggerAttackRelease(toSampleKey(note), "16n", time);
@@ -164,7 +169,7 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
                 const note = pickNote(sectionScale);
                 Tone.Transport.schedule(time => {
                     guitarPalm.triggerAttackRelease(toSampleKey(note), "16n", time);
-                }, section.startTime + t + offset);
+                }, section.startTime + t + offset + jitter(rand));
             }
         });
     }
@@ -179,7 +184,7 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
         timeline.forEach(t => {
             Tone.Transport.schedule(time => {
                 chord.forEach(n => guitarOpen.triggerAttackRelease(toSampleKey(n), "1n", time));
-            }, section.startTime + t + offset);
+            }, section.startTime + t + offset + jitter(rand));
         });
     }
 
@@ -193,7 +198,7 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
             Tone.Transport.schedule(time => {
                 chord.forEach(n => guitarOpen.triggerAttackRelease(toSampleKey(n), "1n", time));
 
-            }, s + t + offset);
+            }, s + t + offset + jitter(rand));
 
             Tone.Transport.schedule(time => {
                 chord.forEach(n => guitarOpen.triggerAttackRelease(toSampleKey(n), "16n", time));
@@ -212,7 +217,7 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
             Tone.Transport.schedule(time => {
                 chord.forEach(n => guitarOpen.triggerAttackRelease(toSampleKey(n), "2n", time));
 
-            }, s + t + offset);
+            }, s + t + offset + jitter(rand));
 
             if (i % 2 === 0) {
                 Tone.Transport.schedule(time => {
@@ -233,7 +238,7 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
             Tone.Transport.schedule(time => {
                 guitarOpen.triggerAttackRelease(toSampleKey(note), "16n", time);
 
-            }, section.startTime + t + offset);
+            }, section.startTime + t + offset + jitter(rand));
         });
     }
 
@@ -305,7 +310,8 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
                 continue;
             }
         }
-
+const sectionEnd = section.startTime + (section.measures * measureDuration);
+Tone.Transport.schedule(() => {}, sectionEnd + 0.001);
         return patternMap;
     }
 
