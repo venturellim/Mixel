@@ -20,7 +20,7 @@ import { initThemeEngine } from "./themeEngine.js";
 import { generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 007 loaded");
+console.log("metalEngine.js ver. 008 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
@@ -79,6 +79,7 @@ export async function createMetalEngine(params) {
     structure.sections.forEach((section, sectionIndex) => {
 
     const info = songProgressions[section.name];
+    const progression = info.progression;
     const root = info.root;
     const sectionScale = buildScaleFromTonic(root, metalParams.scaleType);
 
@@ -87,29 +88,21 @@ export async function createMetalEngine(params) {
         "color:#00d1ff; font-weight:bold;"
     );
 
-    console.log("Progression:", info.progression);
+    console.log("Progression:", progression);
     console.log("Degree:", info.degree);
     console.log("Root:", root);
 
-    const pattern = riff.scheduleSection(section, sectionScale, info.progression);
-
-    
-console.log(
-    `%c[SECTION] ${section.name.toUpperCase()}  ` +
-    `%cROOT: ${root}  ` +
-    `%cPATTERN: ${pattern}`,
-    "color:#00aaff; font-weight:bold;",
-    "color:#ffaa00; font-weight:bold;",
-    "color:#ff00ff; font-weight:bold;"
-);
-
-
-//bass.scheduleSection(section, sectionScale, root, pattern);
-//drums.scheduleSection(section, sectionScale, root, pattern);
-//theme.scheduleSection(section, sectionScale, root, pattern);
-//lead.scheduleSection(section, sectionScale, root); // lead non usa pattern
-
+    // SCHEDULAZIONE ASSOLUTA SULLA TIMELINE
+    Tone.Transport.schedule(time => {
+        riff.scheduleSection(section, sectionScale, progression);
+        // quando riattivi gli altri:
+        // bass.scheduleSection(section, sectionScale, progression);
+        // drums.scheduleSection(section, sectionScale, progression);
+        // theme.scheduleSection(section, sectionScale, progression);
+        // lead.scheduleSection(section, sectionScale, progression);
+    }, section.startTime);
 });
+
 
 
     // --------------------------------------------------------
