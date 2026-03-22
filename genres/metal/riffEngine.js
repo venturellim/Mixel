@@ -1,4 +1,4 @@
-// riffEngine.js — versione 019
+// riffEngine.js — versione 020
 // Usa solo lettere (C, D, E...), niente ottave. Power chord realistici.
 
 import * as Tone from "https://esm.sh/tone";
@@ -8,14 +8,14 @@ import { buildSectionTimeline } from "../../utils/structureUtils.js";
 import { chooseRiffPattern } from "./riffPatterns.js";
 import { degreeToRoot } from "./metalTheory.js";
 
-console.log("riffEngine.js ver. 019 loaded");
+console.log("riffEngine.js ver. 020 loaded");
 
 function toSampleKey(letter) {
     return letter + "2";   // "C" → "C2"
 }
 
 function jitter(rand) {
-    return (rand() * 0.0003); // 0.0–0.0003 sec
+    return (rand() * 0.0003); // 0.0–0.0003 sec (solo per palm mute)
 }
 
 export function initRiffEngine(instruments, params, rand, options = {}) {
@@ -66,7 +66,7 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
     }
 
     // ============================================================
-    // PALM PATTERNS
+    // PALM PATTERNS (con jitter)
     // ============================================================
     function schedulePalmMuteContinuous(section, sectionScale, root, offset = 0) {
         const timeline = buildSectionTimeline(section, "16n", params.bpm);
@@ -163,7 +163,7 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
     }
 
     // ============================================================
-    // OPEN PATTERNS (durate corrette!)
+    // OPEN PATTERNS (senza jitter)
     // ============================================================
     function scheduleOpenSustain(section, sectionScale, root, offset = 0) {
         const timeline = buildSectionTimeline(section, "1n", params.bpm);
@@ -172,7 +172,7 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
         timeline.forEach(t => {
             Tone.Transport.schedule(time => {
                 chord.forEach(n => guitarOpen.triggerAttackRelease(toSampleKey(n), "1n", time));
-            }, section.startTime + t + offset + jitter(rand));
+            }, section.startTime + t + offset);
         });
     }
 
@@ -186,7 +186,7 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
             // Primo accento
             Tone.Transport.schedule(time => {
                 chord.forEach(n => guitarOpen.triggerAttackRelease(toSampleKey(n), "1n", time));
-            }, s + t + offset + jitter(rand));
+            }, s + t + offset);
 
             // Secondo accento (fine misura)
             Tone.Transport.schedule(time => {
@@ -205,7 +205,7 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
             // Primo colpo
             Tone.Transport.schedule(time => {
                 chord.forEach(n => guitarOpen.triggerAttackRelease(toSampleKey(n), "2n", time));
-            }, s + t + offset + jitter(rand));
+            }, s + t + offset);
 
             // Colpo syncopato
             if (i % 2 === 0) {
@@ -217,7 +217,7 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
     }
 
     // ============================================================
-    // MELODIC FAST
+    // MELODIC FAST (senza jitter)
     // ============================================================
     function scheduleMelodicFast(section, sectionScale, root, offset = 0) {
         const timeline = buildSectionTimeline(section, "16n", params.bpm);
@@ -225,7 +225,7 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
             const note = pickNote(sectionScale);
             Tone.Transport.schedule(time => {
                 guitarOpen.triggerAttackRelease(toSampleKey(note), "16n", time);
-            }, section.startTime + t + offset + jitter(rand));
+            }, section.startTime + t + offset);
         });
     }
 
@@ -254,7 +254,7 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
     }
 
     // ============================================================
-    // SCHEDULAZIONE SEZIONE (senza hack inutili)
+    // SCHEDULAZIONE SEZIONE
     // ============================================================
     function scheduleSection(section, sectionScale, progression) {
 
