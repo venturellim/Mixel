@@ -9,7 +9,7 @@ import { buildSectionTimeline } from "../../utils/structureUtils.js";
 import { chooseRiffPattern } from "./riffPatterns.js";
 import { degreeToRoot } from "./metalTheory.js";
 
-console.log("riffEngine.js ver. 008 loaded");
+console.log("riffEngine.js ver. 009 loaded");
 
 export function initRiffEngine(instruments, params, rand, options = {}) {
 
@@ -257,7 +257,8 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
     // ============================================================
     function scheduleSection(section, sectionScale, progression) {
 
-        const measures = 4;
+        const measures = section.measures
+;
         const measureDuration = Tone.Time("1m").toSeconds();
 
         for (let i = 0; i < measures; i++) {
