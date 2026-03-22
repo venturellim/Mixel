@@ -1,15 +1,14 @@
-// riffEngine.js — versione 015
+// riffEngine.js — versione 019
 // Usa solo lettere (C, D, E...), niente ottave. Power chord realistici.
 
 import * as Tone from "https://esm.sh/tone";
 
 import { nearestNatural } from "../../utils/harmonyUtils.js";
-import { scaleWithinRange } from "../../utils/scaleUtils.js";
 import { buildSectionTimeline } from "../../utils/structureUtils.js";
 import { chooseRiffPattern } from "./riffPatterns.js";
 import { degreeToRoot } from "./metalTheory.js";
 
-console.log("riffEngine.js ver. 018 loaded");
+console.log("riffEngine.js ver. 019 loaded");
 
 function toSampleKey(letter) {
     return letter + "2";   // "C" → "C2"
@@ -18,7 +17,6 @@ function toSampleKey(letter) {
 function jitter(rand) {
     return (rand() * 0.0003); // 0.0–0.0003 sec
 }
-
 
 export function initRiffEngine(instruments, params, rand, options = {}) {
 
@@ -29,15 +27,12 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
     const measureDuration = secondsPerBeat * 4;
 
     // ============================================================
-    // UTILITY: estrai solo la lettera (C, D, E...)
+    // UTILITY
     // ============================================================
     function toLetter(note) {
-        return note[0]; // "C3" → "C"
+        return note[0];
     }
 
-    // ============================================================
-    // UTILITY: pickNote (solo lettera)
-    // ============================================================
     function pickNote(sectionScale) {
         if (!sectionScale || sectionScale.length === 0) return "C";
 
@@ -51,11 +46,7 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
         return nat[Math.floor(rand() * nat.length)];
     }
 
-    // ============================================================
-    // POWER CHORD NATURALE (solo lettere)
-    // ============================================================
     function buildNaturalPowerChord(rootNote) {
-
         const rootLetter = toLetter(rootNote);
 
         const naturalFifths = {
@@ -75,7 +66,7 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
     }
 
     // ============================================================
-    // PALM PATTERNS (solo lettere)
+    // PALM PATTERNS
     // ============================================================
     function schedulePalmMuteContinuous(section, sectionScale, root, offset = 0) {
         const timeline = buildSectionTimeline(section, "16n", params.bpm);
@@ -103,7 +94,6 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
 
             Tone.Transport.schedule(time => {
                 guitarPalm.triggerAttackRelease(toSampleKey(note), "16n", time);
-
             }, s + t + secondsPerBeat / 2 + offset);
         });
     }
@@ -116,7 +106,6 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
             const note = (i % 2 === 0) ? pedal : pickNote(sectionScale);
             Tone.Transport.schedule(time => {
                 guitarPalm.triggerAttackRelease(toSampleKey(note), "16n", time);
-
             }, section.startTime + t + offset + jitter(rand));
         });
     }
@@ -140,7 +129,6 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
                 const note = pickNote(sectionScale);
                 Tone.Transport.schedule(time => {
                     guitarPalm.triggerAttackRelease(toSampleKey(note), "16n", time);
-
                 }, section.startTime + t + offset + jitter(rand));
             }
         });
@@ -175,7 +163,7 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
     }
 
     // ============================================================
-    // OPEN PATTERNS (solo lettere)
+    // OPEN PATTERNS (durate corrette!)
     // ============================================================
     function scheduleOpenSustain(section, sectionScale, root, offset = 0) {
         const timeline = buildSectionTimeline(section, "1n", params.bpm);
@@ -195,14 +183,14 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
         timeline.forEach(t => {
             const s = section.startTime;
 
+            // Primo accento
             Tone.Transport.schedule(time => {
                 chord.forEach(n => guitarOpen.triggerAttackRelease(toSampleKey(n), "1n", time));
-
             }, s + t + offset + jitter(rand));
 
+            // Secondo accento (fine misura)
             Tone.Transport.schedule(time => {
-                chord.forEach(n => guitarOpen.triggerAttackRelease(toSampleKey(n), "16n", time));
-
+                chord.forEach(n => guitarOpen.triggerAttackRelease(toSampleKey(n), "1n", time));
             }, s + t + secondsPerBeat * 3 + offset);
         });
     }
@@ -214,22 +202,22 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
         timeline.forEach((t, i) => {
             const s = section.startTime;
 
+            // Primo colpo
             Tone.Transport.schedule(time => {
                 chord.forEach(n => guitarOpen.triggerAttackRelease(toSampleKey(n), "2n", time));
-
             }, s + t + offset + jitter(rand));
 
+            // Colpo syncopato
             if (i % 2 === 0) {
                 Tone.Transport.schedule(time => {
-                    chord.forEach(n => guitarOpen.triggerAttackRelease(toSampleKey(n), "16n", time));
-
+                    chord.forEach(n => guitarOpen.triggerAttackRelease(toSampleKey(n), "1n", time));
                 }, s + t + secondsPerBeat * 3 + offset);
             }
         });
     }
 
     // ============================================================
-    // MELODIC FAST (solo lettere)
+    // MELODIC FAST
     // ============================================================
     function scheduleMelodicFast(section, sectionScale, root, offset = 0) {
         const timeline = buildSectionTimeline(section, "16n", params.bpm);
@@ -237,7 +225,6 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
             const note = pickNote(sectionScale);
             Tone.Transport.schedule(time => {
                 guitarOpen.triggerAttackRelease(toSampleKey(note), "16n", time);
-
             }, section.startTime + t + offset + jitter(rand));
         });
     }
@@ -267,7 +254,7 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
     }
 
     // ============================================================
-    // SCHEDULAZIONE SEZIONE
+    // SCHEDULAZIONE SEZIONE (senza hack inutili)
     // ============================================================
     function scheduleSection(section, sectionScale, progression) {
 
@@ -310,8 +297,7 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
                 continue;
             }
         }
-const sectionEnd = section.startTime + (section.measures * measureDuration);
-Tone.Transport.schedule(() => {}, sectionEnd + 0.001);
+
         return patternMap;
     }
 
