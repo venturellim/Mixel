@@ -20,7 +20,7 @@ import { initThemeEngine } from "./themeEngine.js";
 import { generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 008 loaded");
+console.log("metalEngine.js ver. 009 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
@@ -94,11 +94,11 @@ export async function createMetalEngine(params) {
 
     // SCHEDULAZIONE ASSOLUTA SULLA TIMELINE
     Tone.Transport.schedule(time => {
-        riff.scheduleSection(section, sectionScale, progression);
+        const riffPatterns = riff.scheduleSection(section, sectionScale, progression);
         // quando riattivi gli altri:
-        // bass.scheduleSection(section, sectionScale, progression);
-        // drums.scheduleSection(section, sectionScale, progression);
-        // theme.scheduleSection(section, sectionScale, progression);
+        // bass.scheduleSection(section, sectionScale, progression, riffPatterns);
+        // drums.scheduleSection(section, sectionScale, progression, riffPatterns);
+        // theme.scheduleSection(section, sectionScale, progression, riffPatterns);
         // lead.scheduleSection(section, sectionScale, progression);
     }, section.startTime);
 });

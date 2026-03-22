@@ -10,7 +10,7 @@ import { buildSectionTimeline } from "../../utils/structureUtils.js";
 import { chooseRiffPattern } from "./riffPatterns.js";
 import { degreeToRoot } from "./metalTheory.js";
 
-console.log("riffEngine.js ver. 010 loaded");
+console.log("riffEngine.js ver. 011 loaded");
 
 export function initRiffEngine(instruments, params, rand, options = {}) {
 
@@ -258,44 +258,51 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
     // ============================================================
     function scheduleSection(section, sectionScale, progression) {
 
-        const measures = section.measures;   // <-- FIX FONDAMENTALE
-        const measureDuration = Tone.Time("1m").toSeconds();
+    const measures = section.measures;
+    const measureDuration = Tone.Time("1m").toSeconds();
 
-        for (let i = 0; i < measures; i++) {
+    // Array dei pattern per misura
+    const patternMap = [];
 
-            const degree = progression[i % progression.length];
-            const root = degreeToRoot(degree, params.tonalCenter);
+    for (let i = 0; i < measures; i++) {
 
-            const pattern = chooseRiffPattern(section.name, params.imageParams, rand);
+        const degree = progression[i % progression.length];
+        const root = degreeToRoot(degree, params.tonalCenter);
 
-            if (enableLog) {
-                console.log(
-                    `%c[RIFF] measure ${i+1}/${measures} | degree: ${degree} | root: ${root} | pattern: ${pattern}`,
-                    "color:#ff00ff; font-weight:bold;"
-                );
-            }
+        const pattern = chooseRiffPattern(section.name, params.imageParams, rand);
 
-            const offset = i * measureDuration;
+        // Salva il pattern per questa misura
+        patternMap.push(pattern);
 
-            if (pattern.startsWith("pm") ||
-                pattern === "gallop" ||
-                pattern === "pedal" ||
-                pattern === "pedal_syncopated" ||
-                pattern === "syncopated_pm" ||
-                pattern === "gallop_light") {
-
-                schedulePalmMutePattern(section, sectionScale, root, pattern, offset);
-                continue;
-            }
-
-            if (pattern.startsWith("open")) {
-                scheduleOpenPattern(section, sectionScale, root, pattern, offset);
-                continue;
-            }
+        if (enableLog) {
+            console.log(
+                `%c[RIFF] measure ${i+1}/${measures} | degree: ${degree} | root: ${root} | pattern: ${pattern}`,
+                "color:#ff00ff; font-weight:bold;"
+            );
         }
 
-        return "ok";
+        const offset = i * measureDuration;
+
+        if (pattern.startsWith("pm") ||
+            pattern === "gallop" ||
+            pattern === "pedal" ||
+            pattern === "pedal_syncopated" ||
+            pattern === "syncopated_pm" ||
+            pattern === "gallop_light") {
+
+            schedulePalmMutePattern(section, sectionScale, root, pattern, offset);
+            continue;
+        }
+
+        if (pattern.startsWith("open")) {
+            scheduleOpenPattern(section, sectionScale, root, pattern, offset);
+            continue;
+        }
     }
+
+    // Restituisce l’array dei pattern per misura
+    return patternMap;
+}
 
     return { scheduleSection };
 }
