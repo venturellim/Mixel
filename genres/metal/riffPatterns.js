@@ -1,91 +1,99 @@
-// riffPatterns.js
-// Pattern ritmici power metal (stile Stratovarius)
+// riffPatterns.js — versione 002
+// Pattern power metal musicali, meno densi, più ariosi
 
-console.log("riffPatterns.js ver. 001 loaded");
+console.log("riffPatterns.js ver. 002 loaded");
 
 export const riffPatterns = {
 
+    // ============================================================
+    // INTRO — epica, ariosa, spazio per lead
+    // ============================================================
     intro: [
-        "pm_continuous",
-        "gallop",
-        "pedal"
+        "open_half_time",
+        "open_epic",
+        "pm_sparse"
     ],
 
+    // ============================================================
+    // VERSE — groove, palm mute lenti, spazio per voce
+    // ============================================================
     verse: [
-        "gallop",
-        "pm_continuous",
-        "syncopated_pm"
+        "pm_groove",
+        "pm_half_time",
+        "pm_sparse"
     ],
 
+    // ============================================================
+    // PRE-CHORUS — build-up, tensione
+    // ============================================================
     prechorus: [
         "pedal",
         "pedal_syncopated",
-        "pm_build"
+        "pm_groove"
     ],
 
+    // ============================================================
+    // CHORUS — aperto, epico, power metal
+    // ============================================================
     chorus: [
-        "open_sustain",
-        "open_accent",
-        "open_syncopated"
+        "open_epic",
+        "open_drive",
+        "open_sustain"
     ],
 
+    // ============================================================
+    // SOLO — melodico, 8n, niente mitragliatrice
+    // ============================================================
     solo: [
+        "melodic_8n",
         "melodic_open",
-        "melodic_fast",
         "pm_support"
     ],
 
+    // ============================================================
+    // OUTRO — rilassato, half-time
+    // ============================================================
     outro: [
-        "pm_simple",
+        "open_half_time",
+        "pm_half_time",
         "gallop_light"
     ]
 };
 
 // ============================================================
 // 🎨 Scelta pattern basata sull’immagine
+// (stessa logica, ma con pattern nuovi)
 // ============================================================
-//
-// imageParams:
-// - brightness
-// - saturation
-// - contrast
-// - energy
-// - warmness
-// - complexity
-//
-// Logica semplice ma efficace:
-// - immagini luminose → pattern più aperti
-// - immagini scure → più palm mute
-// - immagini energiche → gallop
-// - immagini complesse → pattern sincopati
-//
 
 export function chooseRiffPattern(sectionName, imageParams, rand) {
     const list = riffPatterns[sectionName];
-    if (!list) return "pm_continuous";
+    if (!list) return "pm_half_time";
 
     const brightness = imageParams?.brightness ?? 0.5;
     const energy = imageParams?.energy ?? 0.5;
     const complexity = imageParams?.complexity ?? 0.5;
 
-    // Esempio di logica:
     if (sectionName === "chorus") {
-        if (brightness > 0.6) return "open_sustain";
-        if (complexity > 0.6) return "open_syncopated";
-        return "open_accent";
+        if (brightness > 0.6) return "open_epic";
+        if (complexity > 0.6) return "open_drive";
+        return "open_sustain";
     }
 
     if (sectionName === "verse") {
-        if (energy > 0.6) return "gallop";
-        if (brightness < 0.3) return "pm_continuous";
-        return "syncopated_pm";
+        if (energy > 0.6) return "pm_groove";
+        if (brightness < 0.3) return "pm_half_time";
+        return "pm_sparse";
     }
 
-    if (sectionName === "prechorus") {
-        if (complexity > 0.6) return "pedal_syncopated";
-        return "pedal";
+    if (sectionName === "intro") {
+        if (brightness > 0.6) return "open_epic";
+        return "open_half_time";
     }
 
-    // fallback generico
+    if (sectionName === "solo") {
+        if (complexity > 0.6) return "melodic_8n";
+        return "melodic_open";
+    }
+
     return list[Math.floor(rand() * list.length)];
 }

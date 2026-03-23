@@ -9,7 +9,7 @@ import { chooseRiffPattern } from "./riffPatterns.js";
 import { degreeToRoot } from "./metalTheory.js";
 import { transitionPatterns } from "./transitionPatterns.js";
 
-console.log("riffEngine.js ver. 023 loaded");
+console.log("riffEngine.js ver. 024 loaded");
 
 function toSampleKey(letter) {
     return letter + "2";
@@ -182,6 +182,61 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
             }
         });
     }
+    
+    // ============================================================
+// PALM PATTERNS LENTI / GROOVE
+// ============================================================
+
+// 1) PM HALF-TIME — colpi su 1 e 3
+function schedulePmHalfTime(section, sectionScale, root, offset = 0) {
+    const timeline = buildSectionTimeline(section, "2n", params.bpm); // 1 colpo ogni mezzo
+    const pedal = toLetter(root);
+
+    timeline.forEach(t => {
+        const note = pedal;
+        lastNoteOfSection = note;
+        const eventTime = section.startTime + t + offset + jitter(rand);
+        scheduleIfInSection(section, eventTime, time => {
+            guitarPalm.triggerAttackRelease(toSampleKey(note), "8n", time);
+        });
+    });
+}
+
+// 2) PM SPARSE — colpi su 1, “e” di 2, 4
+function schedulePmSparse(section, sectionScale, root, offset = 0) {
+    const s = section.startTime;
+    const beat = secondsPerBeat;
+    const pedal = toLetter(root);
+
+    const hits = [
+        0 * beat,      // 1
+        1.5 * beat,    // "e" di 2
+        3 * beat       // 4
+    ];
+
+    hits.forEach(h => {
+        const eventTime = s + offset + h + jitter(rand);
+        lastNoteOfSection = pedal;
+        scheduleIfInSection(section, eventTime, time => {
+            guitarPalm.triggerAttackRelease(toSampleKey(pedal), "8n", time);
+        });
+    });
+}
+
+// 3) PM GROOVE — ottavi regolari con accenti
+function schedulePmGroove(section, sectionScale, root, offset = 0) {
+    const timeline = buildSectionTimeline(section, "8n", params.bpm);
+    const pedal = toLetter(root);
+
+    timeline.forEach((t, i) => {
+        const note = (i % 4 === 0) ? pedal : pickNote(sectionScale);
+        lastNoteOfSection = note;
+        const eventTime = section.startTime + t + offset + jitter(rand);
+        scheduleIfInSection(section, eventTime, time => {
+            guitarPalm.triggerAttackRelease(toSampleKey(note), "8n", time);
+        });
+    });
+}
 
     // ============================================================
     // OPEN PATTERNS (senza jitter, con clamp)
@@ -242,6 +297,75 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
             }
         });
     }
+
+// ============================================================
+// OPEN PATTERNS LENTI / EPICI
+// ============================================================
+
+// 1) OPEN HALF-TIME — power chord su 1 e 3
+function scheduleOpenHalfTime(section, sectionScale, root, offset = 0) {
+    const timeline = buildSectionTimeline(section, "2n", params.bpm);
+    const chord = buildNaturalPowerChord(root);
+
+    timeline.forEach(t => {
+        const eventTime = section.startTime + t + offset;
+        lastNoteOfSection = chord[0];
+        scheduleIfInSection(section, eventTime, time => {
+            chord.forEach(n => guitarOpen.triggerAttackRelease(toSampleKey(n), "2n", time));
+        });
+    });
+}
+
+// 2) OPEN EPIC — colpi su 1 e 2.5 (classico power metal)
+function scheduleOpenEpic(section, sectionScale, root, offset = 0) {
+    const s = section.startTime;
+    const beat = secondsPerBeat;
+    const chord = buildNaturalPowerChord(root);
+
+    const hits = [
+        0 * beat,      // 1
+        2.5 * beat     // 2.5
+    ];
+
+    hits.forEach(h => {
+        const eventTime = s + offset + h;
+        lastNoteOfSection = chord[0];
+        scheduleIfInSection(section, eventTime, time => {
+            chord.forEach(n => guitarOpen.triggerAttackRelease(toSampleKey(n), "1n", time));
+        });
+    });
+}
+
+// 3) OPEN DRIVE — ottavi aperti
+function scheduleOpenDrive(section, sectionScale, root, offset = 0) {
+    const timeline = buildSectionTimeline(section, "8n", params.bpm);
+    const chord = buildNaturalPowerChord(root);
+
+    timeline.forEach(t => {
+        const eventTime = section.startTime + t + offset;
+        lastNoteOfSection = chord[0];
+        scheduleIfInSection(section, eventTime, time => {
+            chord.forEach(n => guitarOpen.triggerAttackRelease(toSampleKey(n), "8n", time));
+        });
+    });
+}
+
+// ============================================================
+// MELODIC PATTERNS LENTI
+// ============================================================
+
+function scheduleMelodic8n(section, sectionScale, root, offset = 0) {
+    const timeline = buildSectionTimeline(section, "8n", params.bpm);
+
+    timeline.forEach(t => {
+        const note = pickNote(sectionScale);
+        lastNoteOfSection = note;
+        const eventTime = section.startTime + t + offset;
+        scheduleIfInSection(section, eventTime, time => {
+            guitarOpen.triggerAttackRelease(toSampleKey(note), "8n", time);
+        });
+    });
+}
 
     function scheduleMelodicFast(section, sectionScale, root, offset = 0) {
         const timeline = buildSectionTimeline(section, "16n", params.bpm);
@@ -325,6 +449,9 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
             case "syncopated_pm":   return scheduleSyncopatedPalmMute(section, sectionScale, root, offset);
             case "gallop_light":    return scheduleOutroGallopLight(section, sectionScale, root, offset);
             case "pm_support":      return schedulePmSupport(section, sectionScale, root, offset);
+            case "pm_half_time":    return schedulePmHalfTime(section, sectionScale, root, offset);
+case "pm_sparse":       return schedulePmSparse(section, sectionScale, root, offset);
+case "pm_groove":       return schedulePmGroove(section, sectionScale, root, offset);
         }
     }
 
@@ -334,6 +461,11 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
             case "open_accent":     return scheduleOpenAccent(section, sectionScale, root, offset);
             case "open_syncopated": return scheduleOpenSyncopated(section, sectionScale, root, offset);
             case "melodic_fast":    return scheduleMelodicFast(section, sectionScale, root, offset);
+            case "open_half_time":  return scheduleOpenHalfTime(section, sectionScale, root, offset);
+case "open_epic":       return scheduleOpenEpic(section, sectionScale, root, offset);
+case "open_drive":      return scheduleOpenDrive(section, sectionScale, root, offset);
+case "melodic_8n":      return scheduleMelodic8n(section, sectionScale, root, offset);
+
         }
     }
 
@@ -372,19 +504,22 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
             const offset = i * measureDuration;
 
             if (pattern.startsWith("pm") ||
-                pattern === "gallop" ||
-                pattern === "pedal" ||
-                pattern === "pedal_syncopated" ||
-                pattern === "syncopated_pm" ||
-                pattern === "gallop_light" ||
-                pattern === "pm_support") {
+    pattern === "gallop" ||
+    pattern === "pedal" ||
+    pattern === "pedal_syncopated" ||
+    pattern === "syncopated_pm" ||
+    pattern === "gallop_light" ||
+    pattern === "pm_support") {
+
 
                 schedulePalmMutePattern(section, sectionScale, root, pattern, offset);
                 continue;
             }
 
             if (pattern.startsWith("open") ||
-                pattern === "melodic_fast") {
+    pattern === "melodic_fast" ||
+    pattern === "melodic_8n") {
+ 
 
                 scheduleOpenPattern(section, sectionScale, root, pattern, offset);
                 continue;

@@ -41,14 +41,15 @@ function normalizeStructurePreset(preset) {
     }
 
     const STRUCTURE_LIBRARY = {
-        standard: [
-            { name: "intro",   measures: 4 },
-            { name: "verse",   measures: 8 },
-            { name: "chorus",  measures: 8 },
-            { name: "solo",    measures: 12 },
-            { name: "outro",   measures: 4 }
-        ]
-    };
+    standard: [
+        { name: "intro",   measures: 8 },
+        { name: "verse",   measures: 12 },
+        { name: "chorus",  measures: 12 },
+        { name: "solo",    measures: 16 },
+        { name: "outro",   measures: 8 }
+    ]
+};
+
 
     return STRUCTURE_LIBRARY[preset] ?? STRUCTURE_LIBRARY.standard;
 }
