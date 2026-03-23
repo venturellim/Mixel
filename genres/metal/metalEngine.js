@@ -1,6 +1,5 @@
-//
-// metalEngine.js — versione 011
-//
+// metalEngine.js — versione 012
+// 011 + sezioni di transizione autonome
 
 import * as Tone from "https://esm.sh/tone";
 
@@ -20,7 +19,7 @@ import { initThemeEngine } from "./themeEngine.js";
 import { generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 011 loaded");
+console.log("metalEngine.js ver. 012 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
@@ -66,7 +65,6 @@ export async function createMetalEngine(params) {
 
     console.log("metalParams =", metalParams);
 
-    // Imposta il BPM del Transport PRIMA di schedulare
     Tone.Transport.bpm.value = metalParams.bpm;
 
     // 2) Costruzione struttura del brano
@@ -93,10 +91,13 @@ export async function createMetalEngine(params) {
     const drums = initDrumEngine(metalInstruments, metalParams, rand);
     const theme = initThemeEngine(metalInstruments, metalParams, rand);
 
-    // 5) Programmazione timeline
-    Tone.Transport.cancel(0);
+    // ============================================================
+    // PRIMA PASSATA: raccogliamo sezioni e transizioni
+    // ============================================================
 
-    structure.sections.forEach((section, sectionIndex) => {
+    const enrichedSections = [];
+
+    structure.sections.forEach((section, index) => {
 
         const info = songProgressions[section.name];
         const progression = info.progression;
@@ -104,29 +105,103 @@ export async function createMetalEngine(params) {
         const sectionScale = buildScaleFromTonic(root, metalParams.scaleType);
 
         console.log(
-            `%cSECTION ${section.name.toUpperCase()} — index ${sectionIndex}`,
+            `%cSECTION ${section.name.toUpperCase()} — index ${index}`,
             "color:#00d1ff; font-weight:bold;"
         );
 
-        console.log("Progression:", progression);
-        console.log("Degree:", info.degree);
-        console.log("Root:", root);
+        const riffResult = riff.scheduleSection(section, sectionScale, progression);
 
-        // SCHEDULAZIONE DIRETTA: gli engine usano section.startTime internamente
-        const riffPatterns = riff.scheduleSection(section, sectionScale, progression);
-        // bass.scheduleSection(section, sectionScale, progression, riffPatterns);
-        // drums.scheduleSection(section, sectionScale, progression, riffPatterns);
-        // theme.scheduleSection(section, sectionScale, progression, riffPatterns);
-        // lead.scheduleSection(section, sectionScale, progression);
+        enrichedSections.push({
+            type: "main",
+            name: section.name,
+            measures: section.measures,
+            startTime: section.startTime,
+            endTime: section.startTime + section.measures * (60 / metalParams.bpm) * 4,
+            progression,
+            sectionScale,
+            riffResult
+        });
+
+        // Se esiste una transizione, la aggiungiamo come sezione autonoma
+        if (riffResult.transition) {
+            enrichedSections.push({
+                type: "transition",
+                name: `transition_${section.name}`,
+                transition: riffResult.transition,
+                // startTime e endTime verranno calcolati dopo
+            });
+        }
     });
 
-    // Allinea il Transport alla durata del brano
+    // ============================================================
+    // SECONDA PASSATA: ricalcolo startTime / endTime
+    // ============================================================
+
+    let currentTime = 0;
+    const secondsPerBeat = 60 / metalParams.bpm;
+
+    enrichedSections.forEach(sec => {
+
+        sec.startTime = currentTime;
+
+        if (sec.type === "main") {
+            sec.endTime = sec.startTime + sec.measures * 4 * secondsPerBeat;
+        } else {
+            // sezione di transizione
+            sec.endTime = sec.startTime + sec.transition.durationBeats * secondsPerBeat;
+        }
+
+        currentTime = sec.endTime;
+    });
+
+    // ============================================================
+    // TERZA PASSATA: schedulazione engine
+    // ============================================================
+
+    Tone.Transport.cancel(0);
+
+    enrichedSections.forEach(sec => {
+
+        if (sec.type === "main") {
+
+            riff.scheduleSection(sec, sec.sectionScale, sec.progression);
+            //bass.scheduleSection(sec, sec.sectionScale, sec.progression);
+            //drums.scheduleSection(sec, sec.sectionScale, sec.progression);
+            //theme.scheduleSection(sec, sec.sectionScale, sec.progression);
+            //lead.scheduleSection(sec, sec.sectionScale, sec.progression);
+
+        } else {
+
+            // TRANSIZIONE: solo riff/bass/drums
+            const t = sec.transition;
+
+            t.events.forEach(ev => {
+                const eventTime = sec.startTime + ev.beatOffset * secondsPerBeat;
+
+                // Riff: suona la transizione
+                Tone.Transport.schedule(time => {
+                    metalInstruments.guitarPalm.triggerAttackRelease(
+                        ev.note + "2",
+                        "16n",
+                        time
+                    );
+                }, eventTime);
+
+                // Bass e drums seguiranno in futuro
+            });
+        }
+    });
+
+    // ============================================================
+    // LOOP E DURATA
+    // ============================================================
+
     Tone.Transport.loop = false;
-    Tone.Transport.loopEnd = structure.totalDuration;
+    Tone.Transport.loopEnd = currentTime;
 
     // 6) Engine finale
     const engine = {
-        totalDuration: structure.totalDuration,
+        totalDuration: currentTime,
 
         play() {
             Tone.Transport.start("+0.1");

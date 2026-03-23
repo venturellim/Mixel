@@ -1,5 +1,5 @@
-// riffEngine.js — versione 022
-// 021 + transizioni musicali di sezione (senza cambiare API)
+// riffEngine.js — versione 023
+// 022.2 + transizioni come oggetti (non schedulate) + scelta musicale per distanza
 
 import * as Tone from "https://esm.sh/tone";
 
@@ -9,7 +9,7 @@ import { chooseRiffPattern } from "./riffPatterns.js";
 import { degreeToRoot } from "./metalTheory.js";
 import { transitionPatterns } from "./transitionPatterns.js";
 
-console.log("riffEngine.js ver. 022.2 loaded");
+console.log("riffEngine.js ver. 023 loaded");
 
 function toSampleKey(letter) {
     return letter + "2";
@@ -256,54 +256,61 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
     }
 
     // ============================================================
-    // TRANSIZIONI DI SEZIONE
+    // SCELTA TRANSIZIONE BASATA SU DISTANZA
     // ============================================================
-    function chooseTransitionKeyForSection(sectionName) {
-        const name = sectionName.toLowerCase();
-        if (name.includes("intro"))  return "syncopated_hits";
-        if (name.includes("verse"))  return "gallop_9";
-        if (name.includes("chorus")) return "scale_down";
-        if (name.includes("solo"))   return "power_walk";
-        if (name.includes("outro"))  return "open_hit";
-        return null;
+    function chooseTransitionByDistance(fromNote, toNote) {
+        const letters = ["C","D","E","F","G","A","B"];
+
+        const i1 = letters.indexOf(fromNote);
+        const i2 = letters.indexOf(toNote);
+
+        if (i1 === -1 || i2 === -1) return "syncopated_hits";
+
+        let dist = Math.abs(i1 - i2);
+        if (dist > 3) dist = 7 - dist;
+
+        if (dist <= 1) {
+            const choices = ["gallop_9", "tremolo_burst", "syncopated_hits", "open_hit"];
+            return choices[Math.floor(rand() * choices.length)];
+        }
+
+        if (dist === 2 || dist === 3) {
+            const choices = ["power_walk", "scale_up", "scale_down"];
+            return choices[Math.floor(rand() * choices.length)];
+        }
+
+        const choices = ["scale_up", "scale_down", "power_walk", "power_slide"];
+        return choices[Math.floor(rand() * choices.length)];
     }
 
-    function scheduleTransition(section, sectionScale, fromNote, toNote, transitionKey) {
-        if (!transitionKey) return;
+    // ============================================================
+    // COSTRUZIONE OGGETTO TRANSIZIONE (NON SCHEDULATA)
+    // ============================================================
+    function buildTransitionObject(sectionScale, fromNote, toNote) {
+        const transitionKey = chooseTransitionByDistance(fromNote, toNote);
         const pattern = transitionPatterns[transitionKey];
-        if (!pattern) return;
+        if (!pattern) return null;
 
-        const sectionEnd = section.startTime + section.measures * measureDuration;
-        const baseTime = sectionEnd - pattern.durationBeats * secondsPerBeat;
+        const melody = pattern.melodicPattern(fromNote, toNote, sectionScale);
+        if (!melody || melody.length === 0) return null;
 
-        const melody = pattern.melodicPattern(fromNote, toNote, sectionScale) || [];
-        if (melody.length === 0) return;
+        const events = pattern.rhythmicPattern.map((beatOffset, i) => ({
+            beatOffset,
+            note: melody[i % melody.length]
+        }));
 
         if (enableLog) {
             console.log(
-                `%c[RIFF] transition ${pattern.name} | from: ${fromNote} → to: ${toNote}`,
+                `%c[RIFF] TRANSITION SELECTED: ${pattern.name} | ${fromNote} → ${toNote}`,
                 "color:#ffaa00; font-weight:bold;"
             );
         }
 
-        pattern.rhythmicPattern.forEach((beatOffset, i) => {
-            const note = melody[i % melody.length];
-            const eventTime = baseTime + beatOffset * secondsPerBeat;
-
-            // per ora: scale_* e power_walk su open, il resto su palm
-            const useOpen =
-                pattern.name.startsWith("scale_") ||
-                pattern.name === "power_walk" ||
-                pattern.name === "open_hit";
-
-            scheduleIfInSection(section, eventTime, time => {
-                if (useOpen) {
-                    guitarOpen.triggerAttackRelease(toSampleKey(note), "16n", time);
-                } else {
-                    guitarPalm.triggerAttackRelease(toSampleKey(note), "16n", time);
-                }
-            });
-        });
+        return {
+            type: pattern.name,
+            durationBeats: pattern.durationBeats,
+            events
+        };
     }
 
     // ============================================================
@@ -331,15 +338,13 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
     }
 
     function scheduleSection(section, sectionScale, progression) {
-    
-    Tone.Transport.schedule(time => {
-    console.log(
-        `%c[RIFF] >>> SECTION START: ${section.name.toUpperCase()} @ ${section.startTime.toFixed(3)}`,
-        "color:#00ffcc; font-weight:bold;"
-    );
-}, section.startTime);
 
-
+        Tone.Transport.schedule(time => {
+            console.log(
+                `%c[RIFF] >>> SECTION START: ${section.name.toUpperCase()} @ ${section.startTime.toFixed(3)}`,
+                "color:#00ffcc; font-weight:bold;"
+            );
+        }, section.startTime);
 
         const measures = section.measures;
         const patternMap = [];
@@ -386,24 +391,26 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
             }
         }
 
-        // Transizione di sezione (in coda alla sezione, dentro i suoi limiti)
-        if (lastNoteOfSection) {
-            const transitionKey = chooseTransitionKeyForSection(section.name);
-            scheduleTransition(section, sectionScale, lastNoteOfSection, firstRootLetter, transitionKey);
-        }
+        const sectionEnd = section.startTime + section.measures * measureDuration;
 
-const sectionEnd = section.startTime + section.measures * measureDuration;
+        Tone.Transport.schedule(time => {
+            console.log(
+                `%c[RIFF] <<< SECTION END: ${section.name.toUpperCase()} @ ${sectionEnd.toFixed(3)}`,
+                "color:#00ffcc; font-weight:bold;"
+            );
+        }, sectionEnd);
 
-Tone.Transport.schedule(time => {
-    console.log(
-        `%c[RIFF] <<< SECTION END: ${section.name.toUpperCase()} @ ${sectionEnd.toFixed(3)}`,
-        "color:#00ffcc; font-weight:bold;"
-    );
-}, sectionEnd);
+        // Costruzione oggetto transizione (NON schedulata)
+        const transition = lastNoteOfSection
+            ? buildTransitionObject(sectionScale, lastNoteOfSection, firstRootLetter)
+            : null;
 
-
-
-        return patternMap;
+        return {
+            patternMap,
+            lastNote: lastNoteOfSection,
+            nextFirstNote: firstRootLetter,
+            transition
+        };
     }
 
     return { scheduleSection };
