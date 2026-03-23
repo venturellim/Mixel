@@ -1,20 +1,18 @@
-// transitionPatterns.js — versione 001
-// Pattern di transizione per riffEngine, bassEngine e drumEngine
+// transitionPatterns.js — versione 002
+// Transizioni power metal musicali (1 misura), niente mitragliatrice
 
 import { nearestNatural } from "../../utils/harmonyUtils.js";
 
-console.log("transitionPatterns.js ver. 001 loaded");
+console.log("transitionPatterns.js ver. 002 loaded");
 
 // ============================================================
 // UTILITIES
 // ============================================================
 
-// Converte una nota (es. "C3") in lettera naturale ("C")
 function toLetter(note) {
     return nearestNatural(note)[0];
 }
 
-// Genera una scala discendente tra due note naturali
 function buildDescendingScale(fromNote, toNote, scale) {
     const letters = scale.map(n => toLetter(n));
     const startIndex = letters.indexOf(toLetter(fromNote));
@@ -23,14 +21,12 @@ function buildDescendingScale(fromNote, toNote, scale) {
     if (startIndex === -1 || endIndex === -1) return [toLetter(fromNote)];
 
     if (startIndex <= endIndex) {
-        // già discendente o uguale
         return letters.slice(startIndex, endIndex + 1);
     }
 
     return letters.slice(endIndex, startIndex + 1).reverse();
 }
 
-// Genera una scala ascendente
 function buildAscendingScale(fromNote, toNote, scale) {
     const letters = scale.map(n => toLetter(n));
     const startIndex = letters.indexOf(toLetter(fromNote));
@@ -39,14 +35,12 @@ function buildAscendingScale(fromNote, toNote, scale) {
     if (startIndex === -1 || endIndex === -1) return [toLetter(fromNote)];
 
     if (startIndex >= endIndex) {
-        // già ascendente o uguale
         return letters.slice(endIndex, startIndex + 1);
     }
 
     return letters.slice(startIndex, endIndex + 1);
 }
 
-// Power walk: root → 3rd → 5th → octave
 function buildPowerWalk(root, scale) {
     const letters = scale.map(n => toLetter(n));
     const rootIndex = letters.indexOf(toLetter(root));
@@ -55,122 +49,126 @@ function buildPowerWalk(root, scale) {
 
     const third = letters[(rootIndex + 2) % letters.length];
     const fifth = letters[(rootIndex + 4) % letters.length];
-    const octave = letters[rootIndex]; // stessa lettera, ottava superiore gestita dal sampler
+    const octave = letters[rootIndex];
 
     return [toLetter(root), third, fifth, octave];
 }
 
 // ============================================================
-// STRUTTURA DATI TRANSIZIONE
+// TRANSIZIONI
 // ============================================================
 //
-// Ogni transizione ha:
-// - name
-// - durationBeats
-// - rhythmicPattern (offset in beat)
-// - melodicPattern (funzione)
-// - description (per debug)
+// Regole:
+// - Tutte le transizioni melodiche durano 4 beat (1 misura)
+// - Ritmi lenti: 4n o 8n
+// - Melodiche → guitarOpen
+// - Ritmiche → guitarPalm
 //
-
-// ============================================================
-// TRANSIZIONI RITMICHE (palm-style)
-// ============================================================
 
 export const transitionPatterns = {
 
-    // 1) Gallop 9 colpi (Hunting High and Low)
+    // ============================================================
+    // TRANSIZIONI STATICHE (palm)
+    // ============================================================
+
+    // 1) Gallop 9 colpi → ora 1 misura, 3 colpi per beat
     gallop_9: {
         name: "gallop_9",
-        durationBeats: 1,
+        durationBeats: 4,
         rhythmicPattern: [
-            0.00, 0.125, 0.25,
-            0.375, 0.50, 0.625,
-            0.75, 0.875, 1.00
+            0.00, 0.33, 0.66,
+            1.00, 1.33, 1.66,
+            2.00, 2.33, 2.66,
+            3.00, 3.33, 3.66
         ],
-        melodicPattern: (fromNote, toNote, scale) => {
-            return Array(9).fill(toLetter(fromNote));
-        },
-        description: "9 colpi equidistanti sulla nota di partenza"
+        melodicPattern: (fromNote) => Array(12).fill(toLetter(fromNote)),
+        description: "Gallop continuo per 1 misura"
     },
 
-    // 2) Tremolo burst
+    // 2) Tremolo burst → 1 misura, 8 colpi totali (8n)
     tremolo_burst: {
         name: "tremolo_burst",
-        durationBeats: 1,
+        durationBeats: 4,
         rhythmicPattern: [
-            0.00, 0.0625, 0.125, 0.1875,
-            0.25, 0.3125, 0.375, 0.4375
+            0.0, 0.5,
+            1.0, 1.5,
+            2.0, 2.5,
+            3.0, 3.5
         ],
         melodicPattern: (fromNote) => Array(8).fill(toLetter(fromNote)),
-        description: "8 colpi rapidissimi sulla nota di partenza"
+        description: "8 colpi regolari (8n) sulla nota di partenza"
     },
 
-    // 3) Syncopated hits
+    // 3) Syncopated hits → 1 misura, 4 colpi
     syncopated_hits: {
         name: "syncopated_hits",
-        durationBeats: 1,
-        rhythmicPattern: [0.0, 0.5, 0.75],
+        durationBeats: 4,
+        rhythmicPattern: [0.0, 1.5, 2.5, 3.0],
         melodicPattern: (fromNote) => [
+            toLetter(fromNote),
             toLetter(fromNote),
             toLetter(fromNote),
             toLetter(fromNote)
         ],
-        description: "3 colpi sincopati"
+        description: "4 colpi sincopati"
     },
 
     // ============================================================
-    // TRANSIZIONI MELODICHE (open-style)
+    // TRANSIZIONI MELODICHE (open)
     // ============================================================
 
-    // 4) Scala discendente (It’s a Mystery)
+    // 4) Scala discendente → 4 note, 1 per beat (4n)
     scale_down: {
         name: "scale_down",
-        durationBeats: 1,
-        rhythmicPattern: [0.0, 0.25, 0.5, 0.75],
+        durationBeats: 4,
+        rhythmicPattern: [0.0, 1.0, 2.0, 3.0],
         melodicPattern: (fromNote, toNote, scale) =>
             buildDescendingScale(fromNote, toNote, scale),
-        description: "Scala discendente dalla nota di partenza a quella di arrivo"
+        description: "Scala discendente lenta (4n)"
     },
 
-    // 5) Scala ascendente
+    // 5) Scala ascendente → 4 note, 1 per beat
     scale_up: {
         name: "scale_up",
-        durationBeats: 1,
-        rhythmicPattern: [0.0, 0.25, 0.5, 0.75],
+        durationBeats: 4,
+        rhythmicPattern: [0.0, 1.0, 2.0, 3.0],
         melodicPattern: (fromNote, toNote, scale) =>
             buildAscendingScale(fromNote, toNote, scale),
-        description: "Scala ascendente dalla nota di partenza a quella di arrivo"
+        description: "Scala ascendente lenta (4n)"
     },
 
-    // 6) Power walk
+    // 6) Power walk → 4 note, 1 per beat
     power_walk: {
         name: "power_walk",
-        durationBeats: 1,
-        rhythmicPattern: [0.0, 0.25, 0.5, 0.75],
+        durationBeats: 4,
+        rhythmicPattern: [0.0, 1.0, 2.0, 3.0],
         melodicPattern: (fromNote, toNote, scale) =>
             buildPowerWalk(fromNote, scale),
-        description: "Root → 3rd → 5th → octave"
+        description: "Root → 3rd → 5th → octave (4n)"
     },
 
     // ============================================================
-    // TRANSIZIONI ARMONICHE
+    // TRANSIZIONI ARMONICHE (open)
     // ============================================================
 
-    // 7) Power chord slide
+    // 7) Power chord slide → 1 misura, colpo all'inizio
     power_slide: {
         name: "power_slide",
-        durationBeats: 1,
+        durationBeats: 4,
         rhythmicPattern: [0.0],
-        melodicPattern: (fromNote, toNote) => [toLetter(fromNote), toLetter(toNote)],
-        description: "Slide dal power chord di partenza a quello di arrivo"
+        melodicPattern: (fromNote, toNote) => [
+            toLetter(fromNote),
+            toLetter(toNote)
+        ],
+        description: "Slide lento tra due power chord"
     },
 
-    // 8) Open chord hit
+    // 8) Open chord hit → 1 misura, colpo all'inizio
     open_hit: {
         name: "open_hit",
-        durationBeats: 1,
+        durationBeats: 4,
         rhythmicPattern: [0.0],
         melodicPattern: (fromNote, toNote) => [toLetter(toNote)],
-        description: "Colpo singolo sul power chord della nota di arrivo"
+        description: "Colpo singolo sul power chord di arrivo"
     }
 };
