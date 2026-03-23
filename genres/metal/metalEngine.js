@@ -86,7 +86,8 @@ export async function createMetalEngine(params) {
     );
 
     // 4) Inizializzazione engine specifici
-    const riff  = initRiffEngine(metalInstruments, metalParams, rand);
+    const riff  = initRiffEngine(metalInstruments, metalParams, rand, { enableLog: true });
+
     const lead  = initLeadEngine(metalInstruments, metalParams, rand);
     const bass  = initBassEngine(metalInstruments, metalParams, rand);
     const drums = initDrumEngine(metalInstruments, metalParams, rand);
