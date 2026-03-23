@@ -20,7 +20,7 @@ import { initThemeEngine } from "./themeEngine.js";
 import { generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 011 loaded");
+console.log("metalEngine.js ver. 011 test loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
