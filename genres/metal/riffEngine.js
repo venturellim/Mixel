@@ -9,7 +9,7 @@ import { chooseRiffPattern } from "./riffPatterns.js";
 import { degreeToRoot } from "./metalTheory.js";
 import { transitionPatterns } from "./transitionPatterns.js";
 
-console.log("riffEngine.js ver. 022.1 loaded");
+console.log("riffEngine.js ver. 022.2 loaded");
 
 function toSampleKey(letter) {
     return letter + "2";
@@ -332,12 +332,13 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
 
     function scheduleSection(section, sectionScale, progression) {
     
-    if (enableLog) {
+    Tone.Transport.schedule(time => {
     console.log(
         `%c[RIFF] >>> SECTION START: ${section.name.toUpperCase()} @ ${section.startTime.toFixed(3)}`,
         "color:#00ffcc; font-weight:bold;"
     );
-}
+}, section.startTime);
+
 
 
         const measures = section.measures;
@@ -391,13 +392,15 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
             scheduleTransition(section, sectionScale, lastNoteOfSection, firstRootLetter, transitionKey);
         }
 
-if (enableLog) {
-    const sectionEnd = section.startTime + section.measures * measureDuration;
+const sectionEnd = section.startTime + section.measures * measureDuration;
+
+Tone.Transport.schedule(time => {
     console.log(
         `%c[RIFF] <<< SECTION END: ${section.name.toUpperCase()} @ ${sectionEnd.toFixed(3)}`,
         "color:#00ffcc; font-weight:bold;"
     );
-}
+}, sectionEnd);
+
 
 
         return patternMap;
