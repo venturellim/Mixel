@@ -1,5 +1,5 @@
-// riffEngine.js — versione 021
-// Come la 020, ma con clamp su sectionEnd per evitare sovrapposizioni.
+// riffEngine.js — versione 022
+// 021 + transizioni musicali di sezione (senza cambiare API)
 
 import * as Tone from "https://esm.sh/tone";
 
@@ -7,8 +7,9 @@ import { nearestNatural } from "../../utils/harmonyUtils.js";
 import { buildSectionTimeline } from "../../utils/structureUtils.js";
 import { chooseRiffPattern } from "./riffPatterns.js";
 import { degreeToRoot } from "./metalTheory.js";
+import { transitionPatterns } from "./transitionPatterns.js";
 
-console.log("riffEngine.js ver. 021 loaded");
+console.log("riffEngine.js ver. 022 loaded");
 
 function toSampleKey(letter) {
     return letter + "2";
@@ -25,6 +26,8 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
 
     const secondsPerBeat = 60 / params.bpm;
     const measureDuration = secondsPerBeat * 4;
+
+    let lastNoteOfSection = null;
 
     function toLetter(note) {
         return note[0];
@@ -73,6 +76,7 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
         const timeline = buildSectionTimeline(section, "16n", params.bpm);
         timeline.forEach(t => {
             const note = pickNote(sectionScale);
+            lastNoteOfSection = note;
             const eventTime = section.startTime + t + offset + jitter(rand);
             scheduleIfInSection(section, eventTime, time => {
                 guitarPalm.triggerAttackRelease(toSampleKey(note), "16n", time);
@@ -84,6 +88,7 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
         const timeline = buildSectionTimeline(section, "8n", params.bpm);
         timeline.forEach(t => {
             const note = pickNote(sectionScale);
+            lastNoteOfSection = note;
             const s = section.startTime;
 
             let eventTime = s + t + offset + jitter(rand);
@@ -109,6 +114,7 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
 
         timeline.forEach((t, i) => {
             const note = (i % 2 === 0) ? pedal : pickNote(sectionScale);
+            lastNoteOfSection = note;
             const eventTime = section.startTime + t + offset + jitter(rand);
             scheduleIfInSection(section, eventTime, time => {
                 guitarPalm.triggerAttackRelease(toSampleKey(note), "16n", time);
@@ -122,6 +128,7 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
 
         timeline.forEach((t, i) => {
             const note = (i % 3 === 0) ? pickNote(sectionScale) : pedal;
+            lastNoteOfSection = note;
             const eventTime = section.startTime + t + offset + jitter(rand);
             scheduleIfInSection(section, eventTime, time => {
                 guitarPalm.triggerAttackRelease(toSampleKey(note), "16n", time);
@@ -134,6 +141,7 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
         timeline.forEach((t, i) => {
             if (i % 4 !== 2) {
                 const note = pickNote(sectionScale);
+                lastNoteOfSection = note;
                 const eventTime = section.startTime + t + offset + jitter(rand);
                 scheduleIfInSection(section, eventTime, time => {
                     guitarPalm.triggerAttackRelease(toSampleKey(note), "16n", time);
@@ -146,6 +154,7 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
         const timeline = buildSectionTimeline(section, "8n", params.bpm);
         timeline.forEach(t => {
             const note = pickNote(sectionScale);
+            lastNoteOfSection = note;
             const s = section.startTime;
 
             let eventTime = s + t + offset + jitter(rand);
@@ -165,6 +174,7 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
         timeline.forEach((t, i) => {
             if (i % 2 === 0) {
                 const note = pickNote(sectionScale);
+                lastNoteOfSection = note;
                 const eventTime = section.startTime + t + offset + jitter(rand);
                 scheduleIfInSection(section, eventTime, time => {
                     guitarPalm.triggerAttackRelease(toSampleKey(note), "16n", time);
@@ -182,6 +192,7 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
 
         timeline.forEach(t => {
             const eventTime = section.startTime + t + offset;
+            lastNoteOfSection = chord[0];
             scheduleIfInSection(section, eventTime, time => {
                 chord.forEach(n => guitarOpen.triggerAttackRelease(toSampleKey(n), "1n", time));
             });
@@ -196,11 +207,13 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
             const s = section.startTime;
 
             let eventTime = s + t + offset;
+            lastNoteOfSection = chord[0];
             scheduleIfInSection(section, eventTime, time => {
                 chord.forEach(n => guitarOpen.triggerAttackRelease(toSampleKey(n), "1n", time));
             });
 
             eventTime = s + t + secondsPerBeat * 3 + offset;
+            lastNoteOfSection = chord[0];
             scheduleIfInSection(section, eventTime, time => {
                 chord.forEach(n => guitarOpen.triggerAttackRelease(toSampleKey(n), "1n", time));
             });
@@ -215,12 +228,14 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
             const s = section.startTime;
 
             let eventTime = s + t + offset;
+            lastNoteOfSection = chord[0];
             scheduleIfInSection(section, eventTime, time => {
                 chord.forEach(n => guitarOpen.triggerAttackRelease(toSampleKey(n), "2n", time));
             });
 
             if (i % 2 === 0) {
                 eventTime = s + t + secondsPerBeat * 3 + offset;
+                lastNoteOfSection = chord[0];
                 scheduleIfInSection(section, eventTime, time => {
                     chord.forEach(n => guitarOpen.triggerAttackRelease(toSampleKey(n), "1n", time));
                 });
@@ -232,9 +247,61 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
         const timeline = buildSectionTimeline(section, "16n", params.bpm);
         timeline.forEach(t => {
             const note = pickNote(sectionScale);
+            lastNoteOfSection = note;
             const eventTime = section.startTime + t + offset;
             scheduleIfInSection(section, eventTime, time => {
                 guitarOpen.triggerAttackRelease(toSampleKey(note), "16n", time);
+            });
+        });
+    }
+
+    // ============================================================
+    // TRANSIZIONI DI SEZIONE
+    // ============================================================
+    function chooseTransitionKeyForSection(sectionName) {
+        const name = sectionName.toLowerCase();
+        if (name.includes("intro"))  return "syncopated_hits";
+        if (name.includes("verse"))  return "gallop_9";
+        if (name.includes("chorus")) return "scale_down";
+        if (name.includes("solo"))   return "power_walk";
+        if (name.includes("outro"))  return "open_hit";
+        return null;
+    }
+
+    function scheduleTransition(section, sectionScale, fromNote, toNote, transitionKey) {
+        if (!transitionKey) return;
+        const pattern = transitionPatterns[transitionKey];
+        if (!pattern) return;
+
+        const sectionEnd = section.startTime + section.measures * measureDuration;
+        const baseTime = sectionEnd - pattern.durationBeats * secondsPerBeat;
+
+        const melody = pattern.melodicPattern(fromNote, toNote, sectionScale) || [];
+        if (melody.length === 0) return;
+
+        if (enableLog) {
+            console.log(
+                `%c[RIFF] transition ${pattern.name} | from: ${fromNote} → to: ${toNote}`,
+                "color:#ffaa00; font-weight:bold;"
+            );
+        }
+
+        pattern.rhythmicPattern.forEach((beatOffset, i) => {
+            const note = melody[i % melody.length];
+            const eventTime = baseTime + beatOffset * secondsPerBeat;
+
+            // per ora: scale_* e power_walk su open, il resto su palm
+            const useOpen =
+                pattern.name.startsWith("scale_") ||
+                pattern.name === "power_walk" ||
+                pattern.name === "open_hit";
+
+            scheduleIfInSection(section, eventTime, time => {
+                if (useOpen) {
+                    guitarOpen.triggerAttackRelease(toSampleKey(note), "16n", time);
+                } else {
+                    guitarPalm.triggerAttackRelease(toSampleKey(note), "16n", time);
+                }
             });
         });
     }
@@ -267,6 +334,11 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
 
         const measures = section.measures;
         const patternMap = [];
+        lastNoteOfSection = null;
+
+        const firstDegree = progression[0 % progression.length];
+        const firstRoot = degreeToRoot(firstDegree, params.tonalCenter);
+        const firstRootLetter = toLetter(firstRoot);
 
         for (let i = 0; i < measures; i++) {
 
@@ -303,6 +375,12 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
                 scheduleOpenPattern(section, sectionScale, root, pattern, offset);
                 continue;
             }
+        }
+
+        // Transizione di sezione (in coda alla sezione, dentro i suoi limiti)
+        if (lastNoteOfSection) {
+            const transitionKey = chooseTransitionKeyForSection(section.name);
+            scheduleTransition(section, sectionScale, lastNoteOfSection, firstRootLetter, transitionKey);
         }
 
         return patternMap;
