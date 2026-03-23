@@ -1,5 +1,5 @@
-// metalEngine.js — versione 012
-// 011 + sezioni di transizione autonome
+// metalEngine.js — versione 013
+// Timeline robusta: transizioni integrate PRIMA della schedulazione
 
 import * as Tone from "https://esm.sh/tone";
 
@@ -19,7 +19,7 @@ import { initThemeEngine } from "./themeEngine.js";
 import { generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 012 loaded");
+console.log("metalEngine.js ver. 013 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
@@ -41,15 +41,14 @@ function normalizeStructurePreset(preset) {
     }
 
     const STRUCTURE_LIBRARY = {
-    standard: [
-        { name: "intro",   measures: 8 },
-        { name: "verse",   measures: 12 },
-        { name: "chorus",  measures: 12 },
-        { name: "solo",    measures: 16 },
-        { name: "outro",   measures: 8 }
-    ]
-};
-
+        standard: [
+            { name: "intro",   measures: 8 },
+            { name: "verse",   measures: 12 },
+            { name: "chorus",  measures: 12 },
+            { name: "solo",    measures: 16 },
+            { name: "outro",   measures: 8 }
+        ]
+    };
 
     return STRUCTURE_LIBRARY[preset] ?? STRUCTURE_LIBRARY.standard;
 }
@@ -60,23 +59,17 @@ function normalizeStructurePreset(preset) {
 
 export async function createMetalEngine(params) {
 
-    // 1) Parametri specifici del metal
     const rand = createSeededRandom(params.dna);
     const metalParams = buildPowerMetalParams(rand);
 
-    console.log("metalParams =", metalParams);
-
     Tone.Transport.bpm.value = metalParams.bpm;
+    const secondsPerBeat = 60 / metalParams.bpm;
 
-    // 2) Costruzione struttura del brano
+    // 1) Struttura originale
     const structurePreset = normalizeStructurePreset(params.structure);
+    const structure = buildSongStructure(structurePreset, metalParams.bpm);
 
-    const structure = buildSongStructure(
-        structurePreset,
-        metalParams.bpm
-    );
-
-    // 3) Generazione progressioni armoniche
+    // 2) Progressioni armoniche
     const songProgressions = generateSongProgressions(
         structure,
         params.imageParams,
@@ -84,52 +77,47 @@ export async function createMetalEngine(params) {
         rand
     );
 
-    // 4) Inizializzazione engine specifici
+    // 3) Engine
     const riff  = initRiffEngine(metalInstruments, metalParams, rand, { enableLog: true });
-
     const lead  = initLeadEngine(metalInstruments, metalParams, rand);
     const bass  = initBassEngine(metalInstruments, metalParams, rand);
     const drums = initDrumEngine(metalInstruments, metalParams, rand);
     const theme = initThemeEngine(metalInstruments, metalParams, rand);
 
     // ============================================================
-    // PRIMA PASSATA: raccogliamo sezioni e transizioni
+    // PRIMA PASSATA: costruiamo sezioni + transizioni (NO SCHEDULAZIONE)
     // ============================================================
 
-    const enrichedSections = [];
+    const enriched = [];
 
     structure.sections.forEach((section, index) => {
 
         const info = songProgressions[section.name];
         const progression = info.progression;
         const root = info.root;
-        const sectionScale = buildScaleFromTonic(root, metalParams.scaleType);
-
+        const scale = buildScaleFromTonic(root, metalParams.scaleType);
+        
         console.log(
             `%cSECTION ${section.name.toUpperCase()} — index ${index}`,
             "color:#00d1ff; font-weight:bold;"
         );
 
-        const riffResult = riff.scheduleSection(section, sectionScale, progression);
+        const riffResult = riff.scheduleSection(section, scale, progression);
 
-        enrichedSections.push({
+        enriched.push({
             type: "main",
             name: section.name,
             measures: section.measures,
-            startTime: section.startTime,
-            endTime: section.startTime + section.measures * (60 / metalParams.bpm) * 4,
             progression,
-            sectionScale,
+            scale,
             riffResult
         });
 
-        // Se esiste una transizione, la aggiungiamo come sezione autonoma
         if (riffResult.transition) {
-            enrichedSections.push({
+            enriched.push({
                 type: "transition",
                 name: `transition_${section.name}`,
-                transition: riffResult.transition,
-                // startTime e endTime verranno calcolati dopo
+                transition: riffResult.transition
             });
         }
     });
@@ -139,16 +127,14 @@ export async function createMetalEngine(params) {
     // ============================================================
 
     let currentTime = 0;
-    const secondsPerBeat = 60 / metalParams.bpm;
 
-    enrichedSections.forEach(sec => {
+    enriched.forEach(sec => {
 
         sec.startTime = currentTime;
 
         if (sec.type === "main") {
             sec.endTime = sec.startTime + sec.measures * 4 * secondsPerBeat;
         } else {
-            // sezione di transizione
             sec.endTime = sec.startTime + sec.transition.durationBeats * secondsPerBeat;
         }
 
@@ -161,25 +147,23 @@ export async function createMetalEngine(params) {
 
     Tone.Transport.cancel(0);
 
-    enrichedSections.forEach(sec => {
+    enriched.forEach(sec => {
 
         if (sec.type === "main") {
 
-            riff.scheduleSection(sec, sec.sectionScale, sec.progression);
-            //bass.scheduleSection(sec, sec.sectionScale, sec.progression);
-            //drums.scheduleSection(sec, sec.sectionScale, sec.progression);
-            //theme.scheduleSection(sec, sec.sectionScale, sec.progression);
-            //lead.scheduleSection(sec, sec.sectionScale, sec.progression);
+            riff.scheduleSection(sec, sec.scale, sec.progression);
+            // bass.scheduleSection(sec, sec.scale, sec.progression);
+            // drums.scheduleSection(sec, sec.scale, sec.progression);
+            // theme.scheduleSection(sec, sec.scale, sec.progression);
+            // lead.scheduleSection(sec, sec.scale, sec.progression);
 
         } else {
 
-            // TRANSIZIONE: solo riff/bass/drums
             const t = sec.transition;
 
             t.events.forEach(ev => {
                 const eventTime = sec.startTime + ev.beatOffset * secondsPerBeat;
 
-                // Riff: suona la transizione
                 Tone.Transport.schedule(time => {
                     metalInstruments.guitarPalm.triggerAttackRelease(
                         ev.note + "2",
@@ -187,8 +171,6 @@ export async function createMetalEngine(params) {
                         time
                     );
                 }, eventTime);
-
-                // Bass e drums seguiranno in futuro
             });
         }
     });
@@ -200,27 +182,11 @@ export async function createMetalEngine(params) {
     Tone.Transport.loop = false;
     Tone.Transport.loopEnd = currentTime;
 
-    // 6) Engine finale
-    const engine = {
+    return {
         totalDuration: currentTime,
-
-        play() {
-            Tone.Transport.start("+0.1");
-        },
-
-        pause() {
-            Tone.Transport.pause();
-        },
-
-        stop() {
-            Tone.Transport.stop();
-            Tone.Transport.seconds = 0;
-        },
-
-        seek(seconds) {
-            Tone.Transport.seconds = seconds;
-        }
+        play() { Tone.Transport.start("+0.1"); },
+        pause() { Tone.Transport.pause(); },
+        stop() { Tone.Transport.stop(); Tone.Transport.seconds = 0; },
+        seek(s) { Tone.Transport.seconds = s; }
     };
-
-    return engine;
 }
