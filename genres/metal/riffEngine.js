@@ -9,7 +9,7 @@ import { chooseRiffPattern } from "./riffPatterns.js";
 import { degreeToRoot } from "./metalTheory.js";
 import { transitionPatterns } from "./transitionPatterns.js";
 
-console.log("riffEngine.js ver. 024 loaded");
+console.log("riffEngine.js ver. 024.1 loaded");
 
 function toSampleKey(letter) {
     return letter + "2";
@@ -298,6 +298,19 @@ function schedulePmGroove(section, sectionScale, root, offset = 0) {
         });
     }
 
+function scheduleMelodicOpen(section, sectionScale, root, offset = 0) {
+    const timeline = buildSectionTimeline(section, "4n", params.bpm);
+    timeline.forEach(t => {
+        const note = pickNote(sectionScale);
+        lastNoteOfSection = note;
+        const eventTime = section.startTime + t + offset;
+        scheduleIfInSection(section, eventTime, time => {
+            guitarOpen.triggerAttackRelease(toSampleKey(note), "4n", time);
+        });
+    });
+}
+
+
 // ============================================================
 // OPEN PATTERNS LENTI / EPICI
 // ============================================================
@@ -460,6 +473,8 @@ case "pm_groove":       return schedulePmGroove(section, sectionScale, root, off
             case "open_sustain":    return scheduleOpenSustain(section, sectionScale, root, offset);
             case "open_accent":     return scheduleOpenAccent(section, sectionScale, root, offset);
             case "open_syncopated": return scheduleOpenSyncopated(section, sectionScale, root, offset);
+            case "melodic_open": return scheduleMelodicOpen(section, sectionScale, root, offset);
+
             case "melodic_fast":    return scheduleMelodicFast(section, sectionScale, root, offset);
             case "open_half_time":  return scheduleOpenHalfTime(section, sectionScale, root, offset);
 case "open_epic":       return scheduleOpenEpic(section, sectionScale, root, offset);
@@ -518,7 +533,9 @@ case "melodic_8n":      return scheduleMelodic8n(section, sectionScale, root, of
 
             if (pattern.startsWith("open") ||
     pattern === "melodic_fast" ||
-    pattern === "melodic_8n") {
+    pattern === "melodic_8n" ||
+    pattern === "melodic_open") {
+
  
 
                 scheduleOpenPattern(section, sectionScale, root, pattern, offset);
