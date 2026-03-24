@@ -9,7 +9,7 @@ import { chooseRiffPattern } from "./riffPatterns.js";
 import { degreeToRoot } from "./metalTheory.js";
 import { transitionPatterns } from "./transitionPatterns.js";
 
-console.log("riffEngine.js ver. 026.1 loaded");
+console.log("riffEngine.js ver. 026.2 loaded");
 
 // ------------------------------------------------------------
 // UTILITIES
@@ -404,6 +404,67 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
             });
         });
     }
+    
+        // ------------------------------------------------------------
+    // TRANSIZIONI (costruzione oggetto, NON schedulata)
+    // ------------------------------------------------------------
+
+    function chooseTransitionByDistance(fromNote, toNote) {
+        const letters = ["C","D","E","F","G","A","B"];
+
+        const i1 = letters.indexOf(fromNote);
+        const i2 = letters.indexOf(toNote);
+
+        if (i1 === -1 || i2 === -1) return "syncopated_hits";
+
+        let dist = Math.abs(i1 - i2);
+        if (dist > 3) dist = 7 - dist;
+
+        if (dist <= 1) {
+            const choices = ["gallop_9", "tremolo_burst", "syncopated_hits", "open_hit"];
+            return choices[Math.floor(rand() * choices.length)];
+        }
+
+        if (dist === 2 || dist === 3) {
+            const choices = ["power_walk", "scale_up", "scale_down"];
+            return choices[Math.floor(rand() * choices.length)];
+        }
+
+        const choices = ["scale_up", "scale_down", "power_walk", "power_slide"];
+        return choices[Math.floor(rand() * choices.length)];
+    }
+
+
+    function buildTransitionObject(sectionScale, fromNote, toNote) {
+        const transitionKey = chooseTransitionByDistance(fromNote, toNote);
+        const pattern = transitionPatterns[transitionKey];
+        if (!pattern) return null;
+
+        // Melodia generata dal pattern
+        const melody = pattern.melodicPattern(fromNote, toNote, sectionScale);
+        if (!melody || melody.length === 0) return null;
+
+        // Eventi ritmici → oggetti { beatOffset, note }
+        const events = pattern.rhythmicPattern.map((beatOffset, i) => ({
+            beatOffset,
+            note: melody[i % melody.length]
+        }));
+
+        if (enableLog) {
+            console.log(
+                `%c[RIFF] TRANSITION SELECTED: ${pattern.name} | ${fromNote} → ${toNote}`,
+                "color:#ffaa00; font-weight:bold;"
+            );
+        }
+
+        return {
+            type: pattern.name,
+            durationBeats: pattern.durationBeats,
+            events
+        };
+    }
+
+    
     // ------------------------------------------------------------
     // DISPATCHER ROBUSTO
     // ------------------------------------------------------------
