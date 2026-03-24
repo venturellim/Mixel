@@ -19,7 +19,7 @@ import { initThemeEngine } from "./themeEngine.js";
 import { generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 013.1 loaded");
+console.log("metalEngine.js ver. 013.2 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
@@ -100,11 +100,7 @@ export async function createMetalEngine(params) {
         const root = info.root;
         const scale = buildScaleFromTonic(root, metalParams.scaleType);
         
-        console.log(
-            `%cSECTION ${section.name.toUpperCase()} — index ${index}`,
-            "color:#00d1ff; font-weight:bold;"
-        );
-
+        
         // IMPORTANTE: qui NON scheduliamo nulla
         const riffResult = riff.scheduleSection(section, scale, progression);
 
