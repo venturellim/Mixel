@@ -1,5 +1,5 @@
-// metalEngine.js — versione 013
-// Timeline robusta: transizioni integrate PRIMA della schedulazione
+// metalEngine.js — versione 013.1
+// Timeline robusta: nessuna schedulazione prima del ricalcolo
 
 import * as Tone from "https://esm.sh/tone";
 
@@ -19,7 +19,7 @@ import { initThemeEngine } from "./themeEngine.js";
 import { generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 013 loaded");
+console.log("metalEngine.js ver. 013.1 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
@@ -59,6 +59,9 @@ function normalizeStructurePreset(preset) {
 
 export async function createMetalEngine(params) {
 
+    // Forziamo struttura power metal lunga
+    params.structure = "standard";
+
     const rand = createSeededRandom(params.dna);
     const metalParams = buildPowerMetalParams(rand);
 
@@ -90,7 +93,7 @@ export async function createMetalEngine(params) {
 
     const enriched = [];
 
-    structure.sections.forEach((section, index) => {
+    structure.sections.forEach(section => {
 
         const info = songProgressions[section.name];
         const progression = info.progression;
@@ -102,6 +105,7 @@ export async function createMetalEngine(params) {
             "color:#00d1ff; font-weight:bold;"
         );
 
+        // IMPORTANTE: qui NON scheduliamo nulla
         const riffResult = riff.scheduleSection(section, scale, progression);
 
         enriched.push({
@@ -142,7 +146,7 @@ export async function createMetalEngine(params) {
     });
 
     // ============================================================
-    // TERZA PASSATA: schedulazione engine
+    // TERZA PASSATA: schedulazione engine (ORA È SICURA)
     // ============================================================
 
     Tone.Transport.cancel(0);
