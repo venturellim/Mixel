@@ -228,19 +228,18 @@ function schedulePmSupport(section, sectionScale, root, offset = 0) {
     const rootLetter = toLetter(root);
     const s = section.startTime + offset;
 
-    // Timeline di 2 misure, griglia 8n (come gli altri pattern palm lenti)
+    // Timeline di 2 misure, griglia 8n
     const timeline = buildSectionTimeline({ measures: 2 }, "8n", params.bpm);
 
     timeline.forEach((t, i) => {
         if (i % 2 === 0) { // colpi ogni 2 ottavi
-            const note = pickNote(sectionScale);
-            lastNoteOfSection = note;
+            lastNoteOfSection = rootLetter;
 
             const eventTime = s + t + jitter(rand);
 
             scheduleIfInSection(section, eventTime, time => {
                 guitarPalm.triggerAttackRelease(
-                    toSampleKey(note),
+                    toSampleKey(rootLetter),
                     "16n",
                     time
                 );
@@ -248,7 +247,6 @@ function schedulePmSupport(section, sectionScale, root, offset = 0) {
         }
     });
 }
-
 
             // ------------------------------------------------------------
     // PALM PATTERNS LENTI — SAMPLE GIÀ POWER CHORD (suoniamo SOLO la root)
@@ -626,16 +624,11 @@ function scheduleOpenStrikeEighth(section, sectionScale, root, offset = 0) {
             case "open_drive":      return scheduleOpenDrive(section, sectionScale, root, offset);
             case "melodic_8n":      return scheduleMelodic8n(section, sectionScale, root, offset);
             case "open_strike_quarter":
-    scheduleOpenStrikeQuarter(section, sectionScale, root, offset);
-    break;
+    return scheduleOpenStrikeQuarter(section, sectionScale, root, offset);
     case "open_strike_eighth":
-    scheduleOpenStrikeEighth(section, sectionScale, root, offset);
-    break;
+    return scheduleOpenStrikeEighth(section, sectionScale, root, offset);
     case "intro_stratovarius":
-    scheduleIntroStratovarius(section, sectionScale, root, offset);
-    break;
-
-
+    return scheduleIntroStratovarius(section, sectionScale, root, offset);
         }
     }
 

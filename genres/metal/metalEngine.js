@@ -325,6 +325,7 @@ if (nextSection) {
         transition
     });
 }
+});
 
     // ============================================================
     // SECONDA PASSATA: ricalcolo startTime / endTime
