@@ -19,7 +19,7 @@ import { initThemeEngine } from "./themeEngine.js";
 import { generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 014.1 loaded");
+console.log("metalEngine.js ver. 014.2 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
@@ -60,12 +60,12 @@ function chooseTransitionByDistance(fromNote, toNote, rand) {
     const i2 = letters.indexOf(toNote);
 
     if (i1 === -1 || i2 === -1) {
-        return {
-            type: "syncopated_hits",
-            durationBeats: 4,
-            instrument: "palm"
-        };
-    }
+    return {
+        type: "gallop_9",
+        durationBeats: 4,
+        instrument: "palm"
+    };
+}
 
     // distanza circolare
     let dist = Math.abs(i1 - i2);
