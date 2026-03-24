@@ -19,7 +19,7 @@ import { initThemeEngine } from "./themeEngine.js";
 import { generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 014.2 loaded");
+console.log("metalEngine.js ver. 014.3 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
@@ -59,52 +59,71 @@ function chooseTransitionByDistance(fromNote, toNote, rand) {
     const i1 = letters.indexOf(fromNote);
     const i2 = letters.indexOf(toNote);
 
+    // Fallback elegante
     if (i1 === -1 || i2 === -1) {
-    return {
-        type: "gallop_9",
-        durationBeats: 4,
-        instrument: "palm"
-    };
-}
-
-    // distanza circolare
-    let dist = Math.abs(i1 - i2);
-    if (dist > 3) dist = 7 - dist;
-
-    // -----------------------------
-    // DISTANZA 0–1 → STATICA
-    // -----------------------------
-    if (dist <= 1) {
-        const staticChoices = ["gallop_9", "tremolo_burst", "syncopated_hits", "open_hit"];
         return {
-            type: staticChoices[Math.floor(rand() * staticChoices.length)],
-            durationBeats: 4,   // 1 misura
+            type: "gallop_9",
+            durationBeats: 4,
             instrument: "palm"
         };
     }
 
-    // -----------------------------
-    // DISTANZA 2–3 → DINAMICA
-    // -----------------------------
-    if (dist <= 3) {
-        const dynamicChoices = ["power_walk", "power_slide", "scale_up_short", "scale_down_short"];
-        return {
-            type: dynamicChoices[Math.floor(rand() * dynamicChoices.length)],
-            durationBeats: 6,   // 1.5 misure
-            instrument: "mixed"
-        };
+    let dist = Math.abs(i1 - i2);
+    if (dist > 3) dist = 7 - dist;
+
+    // Utility per scelta pesata
+    function weightedChoice(options) {
+        const total = options.reduce((s, o) => s + o.weight, 0);
+        let r = rand() * total;
+        for (const o of options) {
+            if (r < o.weight) return o.value;
+            r -= o.weight;
+        }
+        return options[options.length - 1].value;
     }
 
-    // -----------------------------
-    // DISTANZA 4–6 → MELODICA
-    // -----------------------------
-    const melodicChoices = ["scale_up", "scale_down", "melodic_run"];
-    return {
-        type: melodicChoices[Math.floor(rand() * melodicChoices.length)],
-        durationBeats: 8,       // 2 misure
-        instrument: "lead"
-    };
+    // ---------------------------------------------------------
+    // DISTANZA 0 → tremolo o gallop (non statico)
+    // ---------------------------------------------------------
+    if (dist === 0) {
+        return weightedChoice([
+            { value: { type: "tremolo_burst", durationBeats: 4, instrument: "palm" }, weight: 1.2 },
+            { value: { type: "gallop_9",      durationBeats: 4, instrument: "palm" }, weight: 1.0 }
+        ]);
+    }
+
+    // ---------------------------------------------------------
+    // DISTANZA 1 → gallop o syncopated (ma non 4 colpi distanti)
+    // ---------------------------------------------------------
+    if (dist === 1) {
+        return weightedChoice([
+            { value: { type: "gallop_9",      durationBeats: 4, instrument: "palm" }, weight: 1.5 },
+            { value: { type: "tremolo_burst", durationBeats: 4, instrument: "palm" }, weight: 1.0 }
+        ]);
+    }
+
+    // ---------------------------------------------------------
+    // DISTANZA 2–3 → dinamica vera
+    // ---------------------------------------------------------
+    if (dist === 2 || dist === 3) {
+        return weightedChoice([
+            { value: { type: "power_walk",       durationBeats: 6, instrument: "mixed" }, weight: 1.4 },
+            { value: { type: "power_slide",      durationBeats: 6, instrument: "mixed" }, weight: 1.0 },
+            { value: { type: "scale_up_short",   durationBeats: 6, instrument: "mixed" }, weight: 1.2 },
+            { value: { type: "scale_down_short", durationBeats: 6, instrument: "mixed" }, weight: 1.2 }
+        ]);
+    }
+
+    // ---------------------------------------------------------
+    // DISTANZA 4–6 → melodica vera
+    // ---------------------------------------------------------
+    return weightedChoice([
+        { value: { type: "scale_up",    durationBeats: 8, instrument: "lead" }, weight: 1.4 },
+        { value: { type: "scale_down",  durationBeats: 8, instrument: "lead" }, weight: 1.4 },
+        { value: { type: "melodic_run", durationBeats: 8, instrument: "lead" }, weight: 1.2 }
+    ]);
 }
+
 
 function buildTransitionEvents(fromNote, toNote, scale, transitionInfo, rand) {
     const { type, durationBeats, instrument } = transitionInfo;
