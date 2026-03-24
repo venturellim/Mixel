@@ -9,7 +9,7 @@ import { chooseRiffPattern } from "./riffPatterns.js";
 import { degreeToRoot } from "./metalTheory.js";
 import { transitionPatterns } from "./transitionPatterns.js";
 
-console.log("riffEngine.js ver. 024.1 loaded");
+console.log("riffEngine.js ver. 025 loaded");
 
 function toSampleKey(letter) {
     return letter + "2";
@@ -242,73 +242,70 @@ function schedulePmGroove(section, sectionScale, root, offset = 0) {
     // OPEN PATTERNS (senza jitter, con clamp)
     // ============================================================
     function scheduleOpenSustain(section, sectionScale, root, offset = 0) {
-        const timeline = buildSectionTimeline(section, "1n", params.bpm);
-        const chord = buildNaturalPowerChord(root);
+    const chord = buildNaturalPowerChord(root);
+    const eventTime = section.startTime + offset;
 
-        timeline.forEach(t => {
-            const eventTime = section.startTime + t + offset;
-            lastNoteOfSection = chord[0];
-            scheduleIfInSection(section, eventTime, time => {
-                chord.forEach(n => guitarOpen.triggerAttackRelease(toSampleKey(n), "1n", time));
-            });
-        });
-    }
+    lastNoteOfSection = chord[0];
+
+    scheduleIfInSection(section, eventTime, time => {
+        chord.forEach(n => guitarOpen.triggerAttackRelease(toSampleKey(n), "1n", time));
+    });
+}
+
 
     function scheduleOpenAccent(section, sectionScale, root, offset = 0) {
-        const timeline = buildSectionTimeline(section, "1n", params.bpm);
-        const chord = buildNaturalPowerChord(root);
+    const chord = buildNaturalPowerChord(root);
+    const s = section.startTime + offset;
 
-        timeline.forEach(t => {
-            const s = section.startTime;
+    const hits = [0, secondsPerBeat * 3];
 
-            let eventTime = s + t + offset;
-            lastNoteOfSection = chord[0];
-            scheduleIfInSection(section, eventTime, time => {
-                chord.forEach(n => guitarOpen.triggerAttackRelease(toSampleKey(n), "1n", time));
-            });
-
-            eventTime = s + t + secondsPerBeat * 3 + offset;
-            lastNoteOfSection = chord[0];
-            scheduleIfInSection(section, eventTime, time => {
-                chord.forEach(n => guitarOpen.triggerAttackRelease(toSampleKey(n), "1n", time));
-            });
-        });
-    }
-
-    function scheduleOpenSyncopated(section, sectionScale, root, offset = 0) {
-        const timeline = buildSectionTimeline(section, "2n", params.bpm);
-        const chord = buildNaturalPowerChord(root);
-
-        timeline.forEach((t, i) => {
-            const s = section.startTime;
-
-            let eventTime = s + t + offset;
-            lastNoteOfSection = chord[0];
-            scheduleIfInSection(section, eventTime, time => {
-                chord.forEach(n => guitarOpen.triggerAttackRelease(toSampleKey(n), "2n", time));
-            });
-
-            if (i % 2 === 0) {
-                eventTime = s + t + secondsPerBeat * 3 + offset;
-                lastNoteOfSection = chord[0];
-                scheduleIfInSection(section, eventTime, time => {
-                    chord.forEach(n => guitarOpen.triggerAttackRelease(toSampleKey(n), "1n", time));
-                });
-            }
-        });
-    }
-
-function scheduleMelodicOpen(section, sectionScale, root, offset = 0) {
-    const timeline = buildSectionTimeline(section, "4n", params.bpm);
-    timeline.forEach(t => {
-        const note = pickNote(sectionScale);
-        lastNoteOfSection = note;
-        const eventTime = section.startTime + t + offset;
+    hits.forEach(h => {
+        const eventTime = s + h;
+        lastNoteOfSection = chord[0];
         scheduleIfInSection(section, eventTime, time => {
-            guitarOpen.triggerAttackRelease(toSampleKey(note), "4n", time);
+            chord.forEach(n => guitarOpen.triggerAttackRelease(toSampleKey(n), "1n", time));
         });
     });
 }
+
+
+    function scheduleOpenSyncopated(section, sectionScale, root, offset = 0) {
+    const chord = buildNaturalPowerChord(root);
+    const s = section.startTime + offset;
+
+    const hits = [0, secondsPerBeat * 3];
+
+    hits.forEach(h => {
+        const eventTime = s + h;
+        lastNoteOfSection = chord[0];
+        scheduleIfInSection(section, eventTime, time => {
+            chord.forEach(n => guitarOpen.triggerAttackRelease(toSampleKey(n), "1n", time));
+        });
+    });
+}
+
+
+function scheduleMelodicOpen(section, sectionScale, root, offset = 0) {
+    const s = section.startTime + offset;
+
+    const note1 = pickNote(sectionScale);
+    const note2 = pickNote(sectionScale);
+
+    lastNoteOfSection = note2;
+
+    const hits = [
+        { time: 0, note: note1 },
+        { time: secondsPerBeat * 2, note: note2 }
+    ];
+
+    hits.forEach(h => {
+        const eventTime = s + h.time;
+        scheduleIfInSection(section, eventTime, time => {
+            guitarOpen.triggerAttackRelease(toSampleKey(h.note), "2n", time);
+        });
+    });
+}
+
 
 
 // ============================================================
@@ -331,17 +328,13 @@ function scheduleOpenHalfTime(section, sectionScale, root, offset = 0) {
 
 // 2) OPEN EPIC — colpi su 1 e 2.5 (classico power metal)
 function scheduleOpenEpic(section, sectionScale, root, offset = 0) {
-    const s = section.startTime;
-    const beat = secondsPerBeat;
     const chord = buildNaturalPowerChord(root);
+    const s = section.startTime + offset;
 
-    const hits = [
-        0 * beat,      // 1
-        2.5 * beat     // 2.5
-    ];
+    const hits = [0, 2.5 * secondsPerBeat];
 
     hits.forEach(h => {
-        const eventTime = s + offset + h;
+        const eventTime = s + h;
         lastNoteOfSection = chord[0];
         scheduleIfInSection(section, eventTime, time => {
             chord.forEach(n => guitarOpen.triggerAttackRelease(toSampleKey(n), "1n", time));
@@ -349,13 +342,17 @@ function scheduleOpenEpic(section, sectionScale, root, offset = 0) {
     });
 }
 
+
+
 // 3) OPEN DRIVE — ottavi aperti
 function scheduleOpenDrive(section, sectionScale, root, offset = 0) {
-    const timeline = buildSectionTimeline(section, "8n", params.bpm);
     const chord = buildNaturalPowerChord(root);
+    const s = section.startTime + offset;
 
-    timeline.forEach(t => {
-        const eventTime = section.startTime + t + offset;
+    const hits = [0, secondsPerBeat, secondsPerBeat * 2, secondsPerBeat * 3];
+
+    hits.forEach(h => {
+        const eventTime = s + h;
         lastNoteOfSection = chord[0];
         scheduleIfInSection(section, eventTime, time => {
             chord.forEach(n => guitarOpen.triggerAttackRelease(toSampleKey(n), "8n", time));
