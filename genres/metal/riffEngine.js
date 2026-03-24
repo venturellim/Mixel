@@ -7,9 +7,8 @@ import { nearestNatural } from "../../utils/harmonyUtils.js";
 import { buildSectionTimeline } from "../../utils/structureUtils.js";
 import { chooseRiffPattern } from "./riffPatterns.js";
 import { degreeToRoot } from "./metalTheory.js";
-import { transitionPatterns } from "./transitionPatterns.js";
 
-console.log("riffEngine.js ver. 026.8 loaded");
+console.log("riffEngine.js ver. 027 loaded");
 
 // ------------------------------------------------------------
 // UTILITIES
@@ -224,6 +223,32 @@ function scheduleOutroGallopLight(section, sectionScale, root, offset = 0) {
         });
     });
 }
+
+function schedulePmSupport(section, sectionScale, root, offset = 0) {
+    const rootLetter = toLetter(root);
+    const s = section.startTime + offset;
+
+    // Timeline di 2 misure, griglia 8n (come gli altri pattern palm lenti)
+    const timeline = buildSectionTimeline({ measures: 2 }, "8n", params.bpm);
+
+    timeline.forEach((t, i) => {
+        if (i % 2 === 0) { // colpi ogni 2 ottavi
+            const note = pickNote(sectionScale);
+            lastNoteOfSection = note;
+
+            const eventTime = s + t + jitter(rand);
+
+            scheduleIfInSection(section, eventTime, time => {
+                guitarPalm.triggerAttackRelease(
+                    toSampleKey(note),
+                    "16n",
+                    time
+                );
+            });
+        }
+    });
+}
+
 
             // ------------------------------------------------------------
     // PALM PATTERNS LENTI — SAMPLE GIÀ POWER CHORD (suoniamo SOLO la root)
@@ -570,68 +595,7 @@ function scheduleOpenStrikeEighth(section, sectionScale, root, offset = 0) {
         });
     }
 
-    
-        // ------------------------------------------------------------
-    // TRANSIZIONI (costruzione oggetto, NON schedulata)
-    // ------------------------------------------------------------
-
-    function chooseTransitionByDistance(fromNote, toNote) {
-        const letters = ["C","D","E","F","G","A","B"];
-
-        const i1 = letters.indexOf(fromNote);
-        const i2 = letters.indexOf(toNote);
-
-        if (i1 === -1 || i2 === -1) return "syncopated_hits";
-
-        let dist = Math.abs(i1 - i2);
-        if (dist > 3) dist = 7 - dist;
-
-        if (dist <= 1) {
-            const choices = ["gallop_9", "tremolo_burst", "syncopated_hits", "open_hit"];
-            return choices[Math.floor(rand() * choices.length)];
-        }
-
-        if (dist === 2 || dist === 3) {
-            const choices = ["power_walk", "scale_up", "scale_down"];
-            return choices[Math.floor(rand() * choices.length)];
-        }
-
-        const choices = ["scale_up", "scale_down", "power_walk", "power_slide"];
-        return choices[Math.floor(rand() * choices.length)];
-    }
-
-
-    function buildTransitionObject(sectionScale, fromNote, toNote) {
-        const transitionKey = chooseTransitionByDistance(fromNote, toNote);
-        const pattern = transitionPatterns[transitionKey];
-        if (!pattern) return null;
-
-        // Melodia generata dal pattern
-        const melody = pattern.melodicPattern(fromNote, toNote, sectionScale);
-        if (!melody || melody.length === 0) return null;
-
-        // Eventi ritmici → oggetti { beatOffset, note }
-        const events = pattern.rhythmicPattern.map((beatOffset, i) => ({
-            beatOffset,
-            note: melody[i % melody.length]
-        }));
-
-        if (enableLog) {
-            console.log(
-                `%c[RIFF] TRANSITION SELECTED: ${pattern.name} | ${fromNote} → ${toNote}`,
-                "color:#ffaa00; font-weight:bold;"
-            );
-        }
-
-        return {
-            type: pattern.name,
-            durationBeats: pattern.durationBeats,
-            events
-        };
-    }
-
-    
-    // ------------------------------------------------------------
+// ------------------------------------------------------------
     // DISPATCHER ROBUSTO
     // ------------------------------------------------------------
 
@@ -765,17 +729,12 @@ i += patternLength;
             );
         }, sectionEnd);
 
-        // Transizione (non schedulata)
-        const transition = lastNoteOfSection
-            ? buildTransitionObject(sectionScale, lastNoteOfSection, firstRootLetter)
-            : null;
-
         return {
-            patternMap,
-            lastNote: lastNoteOfSection,
-            nextFirstNote: firstRootLetter,
-            transition
-        };
+    patternMap,
+    lastNote: lastNoteOfSection,
+    nextFirstNote: firstRootLetter
+};
+
     }
 
     // ------------------------------------------------------------
