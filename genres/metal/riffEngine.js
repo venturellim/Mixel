@@ -9,7 +9,7 @@ import { chooseRiffPattern } from "./riffPatterns.js";
 import { degreeToRoot } from "./metalTheory.js";
 import { transitionPatterns } from "./transitionPatterns.js";
 
-console.log("riffEngine.js ver. 026.6 loaded");
+console.log("riffEngine.js ver. 026.8 loaded");
 
 // ------------------------------------------------------------
 // UTILITIES
@@ -44,14 +44,17 @@ const patternMeasures = {
     gallop: 2,
     gallop_light: 2,
     pm_support: 2,
+    open_sustain_2m: 2,
 
     // OPEN (tutti 1 misura)
     open_half_time: 1,
     open_epic: 1,
     open_drive: 1,
-    open_sustain: 1,
+    open_sustain_1m: 1,
     open_strike_quarter: 1,
     open_strike_eighth: 1,
+    intro_stratovarius: 1,
+
 
     // MELODIC (1 misura)
     melodic_open: 1,
@@ -61,7 +64,6 @@ const patternMeasures = {
     // fallback
     default: 1
 };
-
 
     function toLetter(note) {
         return note[0];
@@ -318,16 +320,73 @@ function scheduleOutroGallopLight(section, sectionScale, root, offset = 0) {
     // OPEN PATTERNS — SAMPLE GIÀ POWER CHORD (suoniamo SOLO la root)
     // ------------------------------------------------------------
 
-    function scheduleOpenSustain(section, sectionScale, root, offset = 0) {
+function scheduleIntroStratovarius(section, sectionScale, root, offset = 0) {
+    const rootLetter = toLetter(root);
+    const s = section.startTime + offset;
+
+    // --- FRASE 1 ---
+    // Cp (1/8)
+    scheduleIfInSection(section, s, time => {
+        guitarPalm.triggerAttackRelease(toSampleKey(rootLetter), "8n", time);
+    });
+
+    // Cp (1/8)
+    scheduleIfInSection(section, s + secondsPerBeat * 0.5, time => {
+        guitarPalm.triggerAttackRelease(toSampleKey(rootLetter), "8n", time);
+    });
+
+    // Cccc (1/2)
+    scheduleIfInSection(section, s + secondsPerBeat * 1, time => {
+        guitarOpen.triggerAttackRelease(toSampleKey(rootLetter), "2n", time);
+    });
+
+    // --- FRASE 2 ---
+    // Cp (1/8)
+    scheduleIfInSection(section, s + secondsPerBeat * 2, time => {
+        guitarPalm.triggerAttackRelease(toSampleKey(rootLetter), "8n", time);
+    });
+
+    // Cp (1/8)
+    scheduleIfInSection(section, s + secondsPerBeat * 2.5, time => {
+        guitarPalm.triggerAttackRelease(toSampleKey(rootLetter), "8n", time);
+    });
+
+    // Cccc (1/2)
+    scheduleIfInSection(section, s + secondsPerBeat * 3, time => {
+        guitarOpen.triggerAttackRelease(toSampleKey(rootLetter), "2n", time);
+    });
+
+    lastNoteOfSection = rootLetter;
+}
+
+    function scheduleOpenSustain1m(section, sectionScale, root, offset = 0) {
     const rootLetter = toLetter(root);
     const eventTime = section.startTime + offset;
 
     lastNoteOfSection = rootLetter;
 
     scheduleIfInSection(section, eventTime, time => {
-        // 1 colpo che dura 1 misura intera
         guitarOpen.triggerAttackRelease(toSampleKey(rootLetter), "1m", time);
     });
+}
+
+function scheduleOpenSustain2m(section, sectionScale, root, offset = 0) {
+    const rootLetter = toLetter(root);
+    const eventTime = section.startTime + offset;
+
+    lastNoteOfSection = rootLetter;
+
+    scheduleIfInSection(section, eventTime, time => {
+        guitarOpen.triggerAttackRelease(toSampleKey(rootLetter), "2m", time);
+    });
+}
+
+function scheduleOpenSustain(section, sectionScale, root, offset = 0) {
+    if (params.bpm < 140) {
+        return scheduleOpenSustain1m(section, sectionScale, root, offset);
+    } else {
+        return scheduleOpenSustain2m(section, sectionScale, root, offset);
+    }
 }
 
     function scheduleOpenAccent(section, sectionScale, root, offset = 0) {
@@ -608,6 +667,10 @@ function scheduleOpenStrikeEighth(section, sectionScale, root, offset = 0) {
     case "open_strike_eighth":
     scheduleOpenStrikeEighth(section, sectionScale, root, offset);
     break;
+    case "intro_stratovarius":
+    scheduleIntroStratovarius(section, sectionScale, root, offset);
+    break;
+
 
         }
     }
