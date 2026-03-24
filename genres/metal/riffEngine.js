@@ -9,7 +9,7 @@ import { chooseRiffPattern } from "./riffPatterns.js";
 import { degreeToRoot } from "./metalTheory.js";
 import { transitionPatterns } from "./transitionPatterns.js";
 
-console.log("riffEngine.js ver. 026 loaded");
+console.log("riffEngine.js ver. 026.1 loaded");
 
 // ------------------------------------------------------------
 // UTILITIES
@@ -310,6 +310,27 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
             });
         });
     }
+    
+        function scheduleOpenHalfTime(section, sectionScale, root, offset = 0) {
+        const chord = buildNaturalPowerChord(root);
+        const s = section.startTime + offset;
+
+        const hits = [
+            0,                    // battito 1
+            secondsPerBeat * 2    // battito 3
+        ];
+
+        hits.forEach(h => {
+            const eventTime = s + h;
+            lastNoteOfSection = chord[0];
+            scheduleIfInSection(section, eventTime, time => {
+                chord.forEach(n =>
+                    guitarOpen.triggerAttackRelease(toSampleKey(n), "2n", time)
+                );
+            });
+        });
+    }
+
 
     function scheduleOpenDrive(section, sectionScale, root, offset = 0) {
         const chord = buildNaturalPowerChord(root);
