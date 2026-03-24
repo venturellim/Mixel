@@ -1,7 +1,7 @@
 // riffPatterns.js — versione 002
 // Pattern power metal musicali, meno densi, più ariosi
 
-console.log("riffPatterns.js ver. 002 loaded");
+console.log("riffPatterns.js ver. 003 loaded");
 
 export const riffPatterns = {
 
@@ -9,6 +9,7 @@ export const riffPatterns = {
     // INTRO — epica, ariosa, spazio per lead
     // ============================================================
     intro: [
+        "open_strike_quarter",
         "open_half_time",
         "open_epic",
         "pm_sparse"
@@ -27,6 +28,7 @@ export const riffPatterns = {
     // PRE-CHORUS — build-up, tensione
     // ============================================================
     prechorus: [
+        "open_strike_eighth",
         "pedal",
         "pedal_syncopated",
         "pm_groove"
@@ -36,6 +38,7 @@ export const riffPatterns = {
     // CHORUS — aperto, epico, power metal
     // ============================================================
     chorus: [
+        "open_strike_quarter",
         "open_epic",
         "open_drive",
         "open_sustain"
@@ -54,6 +57,7 @@ export const riffPatterns = {
     // OUTRO — rilassato, half-time
     // ============================================================
     outro: [
+        "open_strike_quarter",
         "open_half_time",
         "pm_half_time",
         "gallop_light"

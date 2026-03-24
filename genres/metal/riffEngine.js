@@ -50,6 +50,8 @@ const patternMeasures = {
     open_epic: 1,
     open_drive: 1,
     open_sustain: 1,
+    open_strike_quarter: 1,
+    open_strike_eighth: 1,
 
     // MELODIC (1 misura)
     melodic_open: 1,
@@ -317,15 +319,16 @@ function scheduleOutroGallopLight(section, sectionScale, root, offset = 0) {
     // ------------------------------------------------------------
 
     function scheduleOpenSustain(section, sectionScale, root, offset = 0) {
-        const rootLetter = toLetter(root);
-        const eventTime = section.startTime + offset;
+    const rootLetter = toLetter(root);
+    const eventTime = section.startTime + offset;
 
-        lastNoteOfSection = rootLetter;
+    lastNoteOfSection = rootLetter;
 
-        scheduleIfInSection(section, eventTime, time => {
-            guitarOpen.triggerAttackRelease(toSampleKey(rootLetter), "1n", time);
-        });
-    }
+    scheduleIfInSection(section, eventTime, time => {
+        // 1 colpo che dura 1 misura intera
+        guitarOpen.triggerAttackRelease(toSampleKey(rootLetter), "1m", time);
+    });
+}
 
     function scheduleOpenAccent(section, sectionScale, root, offset = 0) {
         const rootLetter = toLetter(root);
@@ -418,6 +421,44 @@ function scheduleOutroGallopLight(section, sectionScale, root, offset = 0) {
             });
         });
     }
+    
+    function scheduleOpenStrikeQuarter(section, sectionScale, root, offset = 0) {
+    const rootLetter = toLetter(root);
+    const s = section.startTime + offset;
+
+    // Colpo 1: inizio misura, durata 3/4
+    scheduleIfInSection(section, s, time => {
+        guitarOpen.triggerAttackRelease(toSampleKey(rootLetter), "2n.", time); 
+        // "2n." = dotted half = 3/4 di misura
+    });
+
+    // Colpo 2: sul beat 4, durata 1/4
+    const secondHit = s + secondsPerBeat * 3;
+    scheduleIfInSection(section, secondHit, time => {
+        guitarOpen.triggerAttackRelease(toSampleKey(rootLetter), "4n", time);
+    });
+
+    lastNoteOfSection = rootLetter;
+}
+
+function scheduleOpenStrikeEighth(section, sectionScale, root, offset = 0) {
+    const rootLetter = toLetter(root);
+    const s = section.startTime + offset;
+
+    // Colpo 1: inizio misura, durata 7/8
+    scheduleIfInSection(section, s, time => {
+        guitarOpen.triggerAttackRelease(toSampleKey(rootLetter), "1m", time, 0, 0.875);
+        // 0.875 = 7/8 della misura
+    });
+
+    // Colpo 2: sull’ottavo finale (beat 3.5)
+    const secondHit = s + secondsPerBeat * 3.5;
+    scheduleIfInSection(section, secondHit, time => {
+        guitarOpen.triggerAttackRelease(toSampleKey(rootLetter), "8n", time);
+    });
+
+    lastNoteOfSection = rootLetter;
+}
 
     // ------------------------------------------------------------
     // MELODIC PATTERNS (lead = singola nota, quindi OK)
@@ -561,6 +602,13 @@ function scheduleOutroGallopLight(section, sectionScale, root, offset = 0) {
             case "open_epic":       return scheduleOpenEpic(section, sectionScale, root, offset);
             case "open_drive":      return scheduleOpenDrive(section, sectionScale, root, offset);
             case "melodic_8n":      return scheduleMelodic8n(section, sectionScale, root, offset);
+            case "open_strike_quarter":
+    scheduleOpenStrikeQuarter(section, sectionScale, root, offset);
+    break;
+    case "open_strike_eighth":
+    scheduleOpenStrikeEighth(section, sectionScale, root, offset);
+    break;
+
         }
     }
 
