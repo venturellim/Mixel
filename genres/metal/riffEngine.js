@@ -9,7 +9,7 @@ import { chooseRiffPattern } from "./riffPatterns.js";
 import { degreeToRoot } from "./metalTheory.js";
 import { transitionPatterns } from "./transitionPatterns.js";
 
-console.log("riffEngine.js ver. 026.3 loaded");
+console.log("riffEngine.js ver. 026.4 loaded");
 
 // ------------------------------------------------------------
 // UTILITIES
@@ -77,20 +77,20 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
     // ------------------------------------------------------------
 function schedulePalmMuteContinuous(section, sectionScale, root, offset = 0) {
     const rootLetter = toLetter(root);
-    const timeline = buildSectionTimeline(section, "16n", params.bpm);
+    const timeline = buildSectionTimeline(section, "32n", params.bpm);
 
     timeline.forEach(t => {
         lastNoteOfSection = rootLetter;
         const eventTime = section.startTime + t + offset + jitter(rand);
         scheduleIfInSection(section, eventTime, time => {
-            guitarPalm.triggerAttackRelease(toSampleKey(rootLetter), "16n", time);
+            guitarPalm.triggerAttackRelease(toSampleKey(rootLetter), "8n", time);
         });
     });
 }
 
 function scheduleGallop(section, sectionScale, root, offset = 0) {
     const rootLetter = toLetter(root);
-    const timeline = buildSectionTimeline(section, "8n", params.bpm);
+    const timeline = buildSectionTimeline(section, "16n", params.bpm);
 
     timeline.forEach(t => {
         lastNoteOfSection = rootLetter;
@@ -98,44 +98,46 @@ function scheduleGallop(section, sectionScale, root, offset = 0) {
 
         let eventTime = s + t + offset + jitter(rand);
         scheduleIfInSection(section, eventTime, time => {
-            guitarPalm.triggerAttackRelease(toSampleKey(rootLetter), "16n", time);
+            guitarPalm.triggerAttackRelease(toSampleKey(rootLetter), "8n", time);
+        });
+
+        eventTime = s + t + secondsPerBeat / 8 + offset;
+        scheduleIfInSection(section, eventTime, time => {
+            guitarPalm.triggerAttackRelease(toSampleKey(rootLetter), "8n", time);
         });
 
         eventTime = s + t + secondsPerBeat / 4 + offset;
         scheduleIfInSection(section, eventTime, time => {
-            guitarPalm.triggerAttackRelease(toSampleKey(rootLetter), "16n", time);
-        });
-
-        eventTime = s + t + secondsPerBeat / 2 + offset;
-        scheduleIfInSection(section, eventTime, time => {
-            guitarPalm.triggerAttackRelease(toSampleKey(rootLetter), "16n", time);
+            guitarPalm.triggerAttackRelease(toSampleKey(rootLetter), "8n", time);
         });
     });
 }
 
 function schedulePedal(section, sectionScale, root, offset = 0) {
     const rootLetter = toLetter(root);
-    const timeline = buildSectionTimeline(section, "8n", params.bpm);
+    const timeline = buildSectionTimeline(section, "16n", params.bpm);
 
     timeline.forEach(t => {
         lastNoteOfSection = rootLetter;
         const eventTime = section.startTime + t + offset + jitter(rand);
         scheduleIfInSection(section, eventTime, time => {
-            guitarPalm.triggerAttackRelease(toSampleKey(rootLetter), "16n", time);
+            guitarPalm.triggerAttackRelease(toSampleKey(rootLetter), "8n", time);
         });
     });
 }
 
 function schedulePedalSyncopated(section, sectionScale, root, offset = 0) {
     const rootLetter = toLetter(root);
-    const timeline = buildSectionTimeline(section, "8n", params.bpm);
+    const timeline = buildSectionTimeline(section, "16n", params.bpm);
 
-    timeline.forEach(t => {
-        lastNoteOfSection = rootLetter;
-        const eventTime = section.startTime + t + offset + jitter(rand);
-        scheduleIfInSection(section, eventTime, time => {
-            guitarPalm.triggerAttackRelease(toSampleKey(rootLetter), "16n", time);
-        });
+    timeline.forEach((t, i) => {
+        if (i % 3 !== 1) { // sincopi leggere
+            lastNoteOfSection = rootLetter;
+            const eventTime = section.startTime + t + offset + jitter(rand);
+            scheduleIfInSection(section, eventTime, time => {
+                guitarPalm.triggerAttackRelease(toSampleKey(rootLetter), "8n", time);
+            });
+        }
     });
 }
 
@@ -148,15 +150,16 @@ function scheduleSyncopatedPalmMute(section, sectionScale, root, offset = 0) {
             lastNoteOfSection = rootLetter;
             const eventTime = section.startTime + t + offset + jitter(rand);
             scheduleIfInSection(section, eventTime, time => {
-                guitarPalm.triggerAttackRelease(toSampleKey(rootLetter), "16n", time);
+                guitarPalm.triggerAttackRelease(toSampleKey(rootLetter), "8n", time);
             });
         }
     });
 }
 
+
 function scheduleOutroGallopLight(section, sectionScale, root, offset = 0) {
     const rootLetter = toLetter(root);
-    const timeline = buildSectionTimeline(section, "8n", params.bpm);
+    const timeline = buildSectionTimeline(section, "16n", params.bpm);
 
     timeline.forEach(t => {
         lastNoteOfSection = rootLetter;
@@ -164,12 +167,12 @@ function scheduleOutroGallopLight(section, sectionScale, root, offset = 0) {
 
         let eventTime = s + t + offset + jitter(rand);
         scheduleIfInSection(section, eventTime, time => {
-            guitarPalm.triggerAttackRelease(toSampleKey(rootLetter), "16n", time);
+            guitarPalm.triggerAttackRelease(toSampleKey(rootLetter), "8n", time);
         });
 
-        eventTime = s + t + secondsPerBeat / 4 + offset;
+        eventTime = s + t + secondsPerBeat / 8 + offset;
         scheduleIfInSection(section, eventTime, time => {
-            guitarPalm.triggerAttackRelease(toSampleKey(rootLetter), "16n", time);
+            guitarPalm.triggerAttackRelease(toSampleKey(rootLetter), "8n", time);
         });
     });
 }
@@ -197,23 +200,29 @@ function scheduleOutroGallopLight(section, sectionScale, root, offset = 0) {
     }
 
     function schedulePmSparse(section, sectionScale, root, offset = 0) {
-        const rootLetter = toLetter(root);
-        const s = section.startTime + offset;
+    const rootLetter = toLetter(root);
+    const s = section.startTime + offset;
 
-        const hits = [
-            0,                     // 1
-            secondsPerBeat * 1.5,  // "e" di 2
-            secondsPerBeat * 3     // 4
-        ];
+    // 6 colpi per misura (ogni mezzo beat)
+    const hits = [
+        0,
+        secondsPerBeat * 0.5,
+        secondsPerBeat * 1,
+        secondsPerBeat * 1.5,
+        secondsPerBeat * 2,
+        secondsPerBeat * 2.5
+    ];
 
-        hits.forEach(h => {
-            const eventTime = s + h + jitter(rand);
-            lastNoteOfSection = rootLetter;
-            scheduleIfInSection(section, eventTime, time => {
-                guitarPalm.triggerAttackRelease(toSampleKey(rootLetter), "8n", time);
-            });
+    hits.forEach(h => {
+        const eventTime = s + h + jitter(rand);
+        lastNoteOfSection = rootLetter;
+        scheduleIfInSection(section, eventTime, time => {
+            // durata doppia
+            guitarPalm.triggerAttackRelease(toSampleKey(rootLetter), "4n", time);
         });
-    }
+    });
+}
+
 
     function schedulePmGroove(section, sectionScale, root, offset = 0) {
         const rootLetter = toLetter(root);
