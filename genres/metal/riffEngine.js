@@ -9,7 +9,7 @@ import { chooseRiffPattern } from "./riffPatterns.js";
 import { degreeToRoot } from "./metalTheory.js";
 import { transitionPatterns } from "./transitionPatterns.js";
 
-console.log("riffEngine.js ver. 026.5 loaded");
+console.log("riffEngine.js ver. 026.6 loaded");
 
 // ------------------------------------------------------------
 // UTILITIES
@@ -32,6 +32,34 @@ export function initRiffEngine(instruments, params, rand, options = {}) {
     const measureDuration = secondsPerBeat * 4;
 
     let lastNoteOfSection = null;
+
+const patternMeasures = {
+    // PALM (tutti 2 misure)
+    pm_sparse: 2,
+    pm_groove: 2,
+    pm_half_time: 2,
+    pedal: 2,
+    pedal_syncopated: 2,
+    syncopated_pm: 2,
+    gallop: 2,
+    gallop_light: 2,
+    pm_support: 2,
+
+    // OPEN (tutti 1 misura)
+    open_half_time: 1,
+    open_epic: 1,
+    open_drive: 1,
+    open_sustain: 1,
+
+    // MELODIC (1 misura)
+    melodic_open: 1,
+    melodic_8n: 1,
+    melodic_fast: 1,
+
+    // fallback
+    default: 1
+};
+
 
     function toLetter(note) {
         return note[0];
@@ -557,7 +585,7 @@ function scheduleOutroGallopLight(section, sectionScale, root, offset = 0) {
         const firstRoot = degreeToRoot(firstDegree, params.tonalCenter);
         const firstRootLetter = toLetter(firstRoot);
 
-        for (let i = 0; i < measures; i++) {
+        for (let i = 0; i < measures; ) {
 
             const degree = progression[i % progression.length];
             const root = degreeToRoot(degree, params.tonalCenter);
@@ -611,8 +639,12 @@ function scheduleOutroGallopLight(section, sectionScale, root, offset = 0) {
                 console.warn("[RIFF] Pattern sconosciuto:", normalized, "→ fallback open_sustain");
                 scheduleOpenSustain(section, sectionScale, root, offset);
             }
-        }
+            
+const patternLength = patternMeasures[normalized] ?? patternMeasures.default;
+i += patternLength;
 
+            
+        }
         const sectionEnd = section.startTime + section.measures * measureDuration;
 
         Tone.Transport.schedule(time => {
