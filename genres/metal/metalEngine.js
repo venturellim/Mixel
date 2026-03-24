@@ -19,7 +19,7 @@ import { initThemeEngine } from "./themeEngine.js";
 import { generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 014.3 loaded");
+console.log("metalEngine.js ver. 014.4 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
@@ -62,10 +62,10 @@ function chooseTransitionByDistance(fromNote, toNote, rand) {
     // Fallback elegante
     if (i1 === -1 || i2 === -1) {
         return {
-            type: "gallop_9",
-            durationBeats: 4,
-            instrument: "palm"
-        };
+    type: "pm_burst_9",
+    durationBeats: 4,
+    instrument: "palm"
+};
     }
 
     let dist = Math.abs(i1 - i2);
@@ -87,6 +87,8 @@ function chooseTransitionByDistance(fromNote, toNote, rand) {
     // ---------------------------------------------------------
     if (dist === 0) {
         return weightedChoice([
+        { value: { type: "pm_burst_9", durationBeats: 4, instrument: "palm" }, weight: 1.6 },
+        { value: { type: "pm_burst_12", durationBeats: 4, instrument: "palm" }, weight: 1.6 },
             { value: { type: "tremolo_burst", durationBeats: 4, instrument: "palm" }, weight: 1.2 },
             { value: { type: "gallop_9",      durationBeats: 4, instrument: "palm" }, weight: 1.0 }
         ]);
@@ -97,6 +99,8 @@ function chooseTransitionByDistance(fromNote, toNote, rand) {
     // ---------------------------------------------------------
     if (dist === 1) {
         return weightedChoice([
+        { value: { type: "pm_burst_9", durationBeats: 4, instrument: "palm" }, weight: 1.6 },
+        { value: { type: "pm_burst_12", durationBeats: 4, instrument: "palm" }, weight: 1.6 },
             { value: { type: "gallop_9",      durationBeats: 4, instrument: "palm" }, weight: 1.5 },
             { value: { type: "tremolo_burst", durationBeats: 4, instrument: "palm" }, weight: 1.0 }
         ]);
@@ -148,6 +152,23 @@ function buildTransitionEvents(fromNote, toNote, scale, transitionInfo, rand) {
                 events.push({ beatOffset: b + 0.75, note: fromNote });
             }
         }
+        
+        if (type === "pm_burst_9") {
+    // 3 colpi per beat × 3 beat = 9 colpi totali
+    for (let b = 0; b < 3; b++) {
+        events.push({ beatOffset: b,       note: fromNote });
+        events.push({ beatOffset: b + 0.33, note: fromNote });
+        events.push({ beatOffset: b + 0.66, note: fromNote });
+    }
+}
+        
+        if (type === "pm_burst_12") {
+    for (let b = 0; b < durationBeats; b++) {
+        events.push({ beatOffset: b,       note: fromNote });
+        events.push({ beatOffset: b + 0.33, note: fromNote });
+        events.push({ beatOffset: b + 0.66, note: fromNote });
+    }
+}
 
         if (type === "tremolo_burst") {
             for (let b = 0; b < durationBeats; b += 0.25) {
@@ -311,8 +332,12 @@ enriched.push({
 // CALCOLO DELLA TRANSIZIONE
 // ------------------------------------------------------------
 
+function toLetter(n) {
+    return typeof n === "string" ? n[0] : null;
+}
+
 // 1) Nota finale della sezione corrente
-const fromNote = riffResult.lastNote;
+const fromNote = toLetter(riffResult.lastNote);   
 
 // 2) Nota iniziale della prossima sezione (se esiste)
 const nextSection = structure.sections[structure.sections.indexOf(section) + 1];
@@ -323,7 +348,7 @@ if (nextSection) {
     const nextScale = buildScaleFromTonic(nextRoot, metalParams.scaleType);
 
     // prima nota della prossima sezione = root della prossima sezione
-    const toNote = nextRoot;
+    const toNote   = toLetter(nextRoot);
 
     // 3) Scegliamo la transizione in base alla distanza
     
