@@ -19,7 +19,7 @@ import { initThemeEngine } from "./themeEngine.js";
 import { generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 014 loaded");
+console.log("metalEngine.js ver. 014.1 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
@@ -307,7 +307,20 @@ if (nextSection) {
     const toNote = nextRoot;
 
     // 3) Scegliamo la transizione in base alla distanza
+    
+    console.log(
+    "%c[TRANSITION DEBUG] from → to:", 
+    "color:#00aaff; font-weight:bold;", 
+    fromNote, "→", toNote
+);
+    
     const transitionInfo = chooseTransitionByDistance(fromNote, toNote, rand);
+
+console.log(
+    "%c[TRANSITION DEBUG] chosen:", 
+    "color:#00aaff; font-weight:bold;", 
+    transitionInfo
+);
 
     // 4) Costruiamo gli eventi della transizione
     const transition = buildTransitionEvents(

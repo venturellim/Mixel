@@ -8,7 +8,7 @@ import { buildSectionTimeline } from "../../utils/structureUtils.js";
 import { chooseRiffPattern } from "./riffPatterns.js";
 import { degreeToRoot } from "./metalTheory.js";
 
-console.log("riffEngine.js ver. 027 loaded");
+console.log("riffEngine.js ver. 027.1 loaded");
 
 // ------------------------------------------------------------
 // UTILITIES
@@ -722,7 +722,19 @@ i += patternLength;
             );
         }, sectionEnd);
 
-        return {
+        console.log(
+    "%c[RIFF DEBUG] lastNote:", 
+    "color:#ffaa00; font-weight:bold;", 
+    lastNoteOfSection
+);
+
+console.log(
+    "%c[RIFF DEBUG] patternMap:", 
+    "color:#ffaa00; font-weight:bold;", 
+    patternMap
+);
+
+return {
     patternMap,
     lastNote: lastNoteOfSection,
     nextFirstNote: firstRootLetter
