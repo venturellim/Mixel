@@ -8,7 +8,7 @@ import { buildSectionTimeline } from "../../utils/structureUtils.js";
 import { chooseRiffPattern } from "./riffPatterns.js";
 import { degreeToRoot } from "./metalTheory.js";
 
-console.log("riffEngine.js ver. 027.1 loaded");
+console.log("riffEngine.js ver. 028 loaded");
 
 // ------------------------------------------------------------
 // UTILITIES
@@ -653,66 +653,63 @@ function scheduleOpenStrikeEighth(section, sectionScale, root, offset = 0) {
         const firstRoot = degreeToRoot(firstDegree, params.tonalCenter);
         const firstRootLetter = toLetter(firstRoot);
 
-        for (let i = 0; i < measures; ) {
+        // Scegliamo il pattern UNA SOLA VOLTA per tutta la sezione
+const sectionPattern = chooseRiffPattern(section.name, params.imageParams, rand);
+const normalizedPattern = sectionPattern.trim().toLowerCase();
 
-            const degree = progression[i % progression.length];
-            const root = degreeToRoot(degree, params.tonalCenter);
+patternMap.push(normalizedPattern);
 
-            // Pattern scelto
-            const pattern = chooseRiffPattern(section.name, params.imageParams, rand);
+for (let i = 0; i < measures; ) {
 
-            // Normalizzazione robusta
-            const normalized = pattern.trim().toLowerCase();
-
-            patternMap.push(normalized);
-
-            if (enableLog) {
+    const degree = progression[i % progression.length];
+    const root = degreeToRoot(degree, params.tonalCenter);
+    
+    if (enableLog) {
                 console.log(
-                    `%c[RIFF] measure ${i+1}/${measures} | degree: ${degree} | root: ${root} | pattern: ${normalized}`,
+                    `%c[RIFF] measure ${i+1}/${measures} | degree: ${degree} | root: ${root} | sectionPattern: ${normalized}`,
                     "color:#ff00ff; font-weight:bold;"
                 );
             }
+    
 
-            const offset = i * measureDuration;
+    const offset = i * measureDuration;
 
-            let scheduled = false;
+    let scheduled = false;
 
-            // PALM
-            if (!scheduled && (
-                normalized.startsWith("pm") ||
-                normalized === "gallop" ||
-                normalized === "pedal" ||
-                normalized === "pedal_syncopated" ||
-                normalized === "syncopated_pm" ||
-                normalized === "gallop_light" ||
-                normalized === "pm_support"
-            )) {
-                schedulePalmMutePattern(section, sectionScale, root, normalized, offset);
-                scheduled = true;
-            }
+    // PALM
+    if (!scheduled && (
+        normalizedPattern.startsWith("pm") ||
+        normalizedPattern === "gallop" ||
+        normalizedPattern === "pedal" ||
+        normalizedPattern === "pedal_syncopated" ||
+        normalizedPattern === "syncopated_pm" ||
+        normalizedPattern === "gallop_light" ||
+        normalizedPattern === "pm_support"
+    )) {
+        schedulePalmMutePattern(section, sectionScale, root, normalizedPattern, offset);
+        scheduled = true;
+    }
 
-            // OPEN
-            if (!scheduled && (
-                normalized.startsWith("open") ||
-                normalized === "melodic_fast" ||
-                normalized === "melodic_8n" ||
-                normalized === "melodic_open"
-            )) {
-                scheduleOpenPattern(section, sectionScale, root, normalized, offset);
-                scheduled = true;
-            }
+    // OPEN
+    if (!scheduled && (
+        normalizedPattern.startsWith("open") ||
+        normalizedPattern === "melodic_fast" ||
+        normalizedPattern === "melodic_8n" ||
+        normalizedPattern === "melodic_open"
+    )) {
+        scheduleOpenPattern(section, sectionScale, root, normalizedPattern, offset);
+        scheduled = true;
+    }
 
-            // Se pattern sconosciuto → fallback sicuro
-            if (!scheduled) {
-                console.warn("[RIFF] Pattern sconosciuto:", normalized, "→ fallback open_sustain");
-                scheduleOpenSustain(section, sectionScale, root, offset);
-            }
-            
-const patternLength = patternMeasures[normalized] ?? patternMeasures.default;
-i += patternLength;
+    if (!scheduled) {
+        console.warn("[RIFF] Pattern sconosciuto:", normalizedPattern, "→ fallback open_sustain");
+        scheduleOpenSustain(section, sectionScale, root, offset);
+    }
 
-            
-        }
+    const patternLength = patternMeasures[normalizedPattern] ?? patternMeasures.default;
+    i += patternLength;
+}
+
         const sectionEnd = section.startTime + section.measures * measureDuration;
 
         Tone.Transport.schedule(time => {
