@@ -8,7 +8,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("main.js ver. 002 loaded");
+console.log("main.js ver. 002.1 loaded");
 
 // -------------------------------------------------------------
 // Import fondamentali
@@ -266,15 +266,31 @@ function initFxPanel() {
 // reset audio
 
 async function resetAudio() {
+    const ctx = Tone.getContext();
+
+    // Se il contesto non è mai stato avviato, NON chiudere nulla
+    if (ctx.state === "suspended") {
+        console.log("AudioContext non avviato: skip reset");
+        return;
+    }
+
     try {
         Tone.Transport.stop();
         Tone.Transport.cancel();
-        await Tone.getContext().close();
-    } catch(e) {
-        console.warn("Audio context already closed", e);
+
+        if (ctx.state !== "closed") {
+            await ctx.close();
+            console.log("AudioContext chiuso correttamente");
+        }
+    } catch (e) {
+        console.warn("Errore durante la chiusura AudioContext:", e);
     }
-    await Tone.start(); // riattiva su iOS
+
+    // Riattiva per iOS
+    await Tone.start();
+    console.log("AudioContext riavviato");
 }
+
 
 
 // -------------------------------------------------------------
