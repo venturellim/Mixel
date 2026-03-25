@@ -8,7 +8,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("main.js ver. 002.6 loaded");
+console.log("main.js ver. 002.7 loaded");
 
 // -------------------------------------------------------------
 // Import fondamentali
@@ -106,7 +106,7 @@ function initGenrePanel() {
     const closeGenrePanel = document.getElementById("closeGenrePanel");
 
     btnElabora.addEventListener("click", () => {
-    //releaseScreenAwake();
+    releaseScreenAwake();
     keepScreenAwake();
     closeMixelUI();
     resetAudio();
