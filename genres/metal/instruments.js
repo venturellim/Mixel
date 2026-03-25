@@ -8,7 +8,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("instruments.js ver. 003 loaded");
+console.log("instruments.js ver. 004 loaded");
 
 // ============================================================
 // 🎚 BUS SPECIFICI DEL METAL
@@ -31,6 +31,34 @@ const drumComp = new Tone.Compressor({
     attack: 0.01,
     release: 0.2
 });
+
+// ============================================================
+// 🎚️ MIXER INTERNO — controllo volumi dei bus
+// ============================================================
+
+const mixer = {
+    guitar: guitarBus,
+    bass: bassBus,
+    drums: drumBus,
+    lead: leadBus
+};
+
+// Valori di default (soundcheck iniziale)
+guitarBus.gain.value = 0;   // 0 dB
+bassBus.gain.value   = 0;   // 0 dB
+drumBus.gain.value   = 0;   // 0 dB
+leadBus.gain.value   = 0;   // 0 dB
+
+export function setVolume(busName, dbValue) {
+    const bus = mixer[busName];
+    if (!bus) {
+        console.warn("[MIXER] Bus inesistente:", busName);
+        return;
+    }
+    bus.gain.value = Tone.dbToGain(dbValue);
+    console.log(`[MIXER] ${busName} volume → ${dbValue} dB`);
+}
+
 
 // Routing bus → EQ → master
 guitarBus.connect(guitarEQ).connect(masterEQ);
@@ -303,5 +331,6 @@ export const metalInstruments = {
     guitarBus,
     bassBus,
     drumBus,
-    leadBus
+    leadBus,
+    setVolume
 };

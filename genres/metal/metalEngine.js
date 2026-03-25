@@ -19,7 +19,7 @@ import { initThemeEngine } from "./themeEngine.js";
 import { generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 014.6 loaded");
+console.log("metalEngine.js ver. 015 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
@@ -427,7 +427,7 @@ console.log(
         if (sec.type === "main") {
 
             riff.scheduleSection(sec, sec.scale, sec.progression);
-            // bass.scheduleSection(sec, sec.scale, sec.progression);
+bass.scheduleSection(sec, sec.scale, sec.progression);
             // drums.scheduleSection(sec, sec.scale, sec.progression);
             // theme.scheduleSection(sec, sec.scale, sec.progression);
             // lead.scheduleSection(sec, sec.scale, sec.progression);
@@ -468,7 +468,7 @@ console.log(
 
         }, eventTime);
     });
-
+bass.scheduleTransition(sec, sec.transition);
     // ---------------------------------------------------------
     // OPEN CHORD FINALE (solo per mixed e lead)
     // ---------------------------------------------------------
