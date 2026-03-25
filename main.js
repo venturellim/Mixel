@@ -8,7 +8,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("main.js ver. 001 loaded");
+console.log("main.js ver. 002 loaded");
 
 // -------------------------------------------------------------
 // Import fondamentali
@@ -107,6 +107,7 @@ function initGenrePanel() {
 
     btnElabora.addEventListener("click", () => {
         closeMixelUI();
+        resetAudio();
         genrePanel.classList.add("show");
         genrePanel.classList.remove("hidden");
     });
@@ -180,11 +181,16 @@ function initPlayerUI() {
         await Tone.loaded();
 
         overlay.style.display = "none";
+        keepScreenAwake();
         currentEngine.play();
     };
 
     pauseBtn.onclick = () => currentEngine?.pause();
-    stopBtn.onclick = () => currentEngine?.stop();
+    stopBtn.onclick = () => {
+    releaseScreenAwake();
+    currentEngine?.stop();
+};
+
 
     const currentTimeEl = document.getElementById("currentTime");
     const totalTimeEl = document.getElementById("totalTime");
@@ -257,6 +263,20 @@ function initFxPanel() {
     closeFxPanel.onclick = () => fxPanel.classList.remove("open");
 }
 
+// reset audio
+
+async function resetAudio() {
+    try {
+        Tone.Transport.stop();
+        Tone.Transport.cancel();
+        await Tone.getContext().close();
+    } catch(e) {
+        console.warn("Audio context already closed", e);
+    }
+    await Tone.start(); // riattiva su iOS
+}
+
+
 // -------------------------------------------------------------
 // Reset App
 // -------------------------------------------------------------
@@ -264,6 +284,7 @@ function resetAppState() {
     currentEngine?.stop();
     currentEngine = null;
     closeMixelUI();
+    resetAudio();
 }
 
 // -------------------------------------------------------------
@@ -286,4 +307,19 @@ function closeMixelUI() {
     document.getElementById("spectrumPanel").classList.remove("active");
     document.getElementById("previewImage").classList.remove("shift-left");
     document.getElementById("playerPanel").classList.remove("open");
+}
+
+// -------------------------------------------------------------
+// Wake Lock via video invisibile (funziona su iOS e Android)
+// -------------------------------------------------------------
+function keepScreenAwake() {
+    const v = document.getElementById("wakelock-video");
+    if (!v) return;
+    v.play().catch(err => console.warn("WakeLock video play error:", err));
+}
+
+function releaseScreenAwake() {
+    const v = document.getElementById("wakelock-video");
+    if (!v) return;
+    v.pause();
 }
