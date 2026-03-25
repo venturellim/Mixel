@@ -8,7 +8,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("main.js ver. 002.5 loaded");
+console.log("main.js ver. 002.6 loaded");
 
 // -------------------------------------------------------------
 // Import fondamentali
@@ -111,9 +111,8 @@ function initGenrePanel() {
     closeMixelUI();
     resetAudio();
     genrePanel.classList.add("show");
-});
 
-        genrePanel.classList.remove("hidden");
+genrePanel.classList.remove("hidden");
     });
 
     closeGenrePanel.addEventListener("click", () => {
