@@ -8,7 +8,7 @@ import { buildSectionTimeline } from "../../utils/structureUtils.js";
 import { chooseRiffPattern } from "./riffPatterns.js";
 import { degreeToRoot } from "./metalTheory.js";
 
-console.log("riffEngine.js ver. 027.1 loaded");
+console.log("riffEngine.js ver. 027.2 loaded");
 
 // ------------------------------------------------------------
 // UTILITIES
@@ -624,11 +624,11 @@ function scheduleOpenStrikeEighth(section, sectionScale, root, offset = 0) {
             case "open_drive":      return scheduleOpenDrive(section, sectionScale, root, offset);
             case "melodic_8n":      return scheduleMelodic8n(section, sectionScale, root, offset);
             case "open_strike_quarter":
-    return scheduleOpenStrikeQuarter(section, sectionScale, root, offset);
+return scheduleOpenStrikeQuarter(section, sectionScale, root, offset);
     case "open_strike_eighth":
-    return scheduleOpenStrikeEighth(section, sectionScale, root, offset);
+return scheduleOpenStrikeEighth(section, sectionScale, root, offset);
     case "intro_stratovarius":
-    return scheduleIntroStratovarius(section, sectionScale, root, offset);
+return scheduleIntroStratovarius(section, sectionScale, root, offset);
         }
     }
 
@@ -697,11 +697,13 @@ const pattern = sectionPattern;
 
             // OPEN
             if (!scheduled && (
-                normalized.startsWith("open") ||
-                normalized === "melodic_fast" ||
-                normalized === "melodic_8n" ||
-                normalized === "melodic_open"
-            )) {
+    normalized.startsWith("open") ||
+    normalized === "melodic_fast" ||
+    normalized === "melodic_8n" ||
+    normalized === "melodic_open" ||
+    normalized === "intro_stratovarius"
+)) {
+
                 scheduleOpenPattern(section, sectionScale, root, normalized, offset);
                 scheduled = true;
             }
