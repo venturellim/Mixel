@@ -8,7 +8,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("main.js ver. 002.3 loaded");
+console.log("main.js ver. 002.4 loaded");
 
 // -------------------------------------------------------------
 // Import fondamentali
@@ -331,6 +331,7 @@ function closeMixelUI() {
 // -------------------------------------------------------------
 function keepScreenAwake() {
     const v = document.getElementById("wakelock-video");
+    console.log("Wake Lock via video invisibile avviato");
     if (!v) return;
     v.play().catch(err => console.warn("WakeLock video play error:", err));
 }
