@@ -8,7 +8,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("main.js ver. 002.1 loaded");
+console.log("main.js ver. 002.2 loaded");
 
 // -------------------------------------------------------------
 // Import fondamentali
@@ -174,6 +174,7 @@ function initPlayerUI() {
     }
 
     playBtn.onclick = async () => {
+    keepScreenAwake();
         const overlay = document.getElementById("loadingOverlay");
         overlay.style.display = "flex";
 
@@ -181,7 +182,7 @@ function initPlayerUI() {
         await Tone.loaded();
 
         overlay.style.display = "none";
-        keepScreenAwake();
+        
         currentEngine.play();
     };
 
@@ -331,7 +332,15 @@ function closeMixelUI() {
 function keepScreenAwake() {
     const v = document.getElementById("wakelock-video");
     if (!v) return;
-    v.play().catch(err => console.warn("WakeLock video play error:", err));
+
+    // iOS richiede play() immediato dentro la gesture
+    const playPromise = v.play();
+
+    if (playPromise !== undefined) {
+        playPromise.catch(err => {
+            console.warn("WakeLock video play error:", err);
+        });
+    }
 }
 
 function releaseScreenAwake() {
