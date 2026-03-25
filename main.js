@@ -8,7 +8,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("main.js ver. 002.4 loaded");
+console.log("main.js ver. 002.5 loaded");
 
 // -------------------------------------------------------------
 // Import fondamentali
@@ -188,7 +188,6 @@ function initPlayerUI() {
 
     pauseBtn.onclick = () => currentEngine?.pause();
     stopBtn.onclick = () => {
-    releaseScreenAwake();
     currentEngine?.stop();
 };
 
@@ -302,6 +301,7 @@ function resetAppState() {
     currentEngine = null;
     closeMixelUI();
     resetAudio();
+    releaseScreenAwake();
 }
 
 // -------------------------------------------------------------
