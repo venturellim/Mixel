@@ -19,7 +19,7 @@ import { initThemeEngine } from "./themeEngine.js";
 import { generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 014.4 loaded");
+console.log("metalEngine.js ver. 014.5 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
@@ -431,7 +431,7 @@ console.log(
             // STRUMENTO DELLA TRANSIZIONE
             if (t.instrument === "palm") {
                 metalInstruments.guitarPalm.triggerAttackRelease(
-                    ev.note + "2",
+                    toLetter(ev.note) + "2",
                     "16n",
                     time
                 );
@@ -439,7 +439,7 @@ console.log(
 
             if (t.instrument === "mixed") {
                 metalInstruments.guitarPalm.triggerAttackRelease(
-                    ev.note + "2",
+                    toLetter(ev.note) + "2",
                     "16n",
                     time
                 );
@@ -447,7 +447,7 @@ console.log(
 
             if (t.instrument === "lead") {
                 metalInstruments.lead.triggerAttackRelease(
-                    ev.note + "4",
+                    toLetter(ev.note) + "4",
                     "16n",
                     time
                 );
@@ -464,7 +464,7 @@ console.log(
 
         Tone.Transport.schedule(time => {
             metalInstruments.guitarOpen.triggerAttackRelease(
-                t.events[t.events.length - 1].note + "2",
+                toLetter(t.events[t.events.length - 1].note) + "2",
                 "1n",
                 time
             );
