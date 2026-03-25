@@ -19,7 +19,7 @@ import { initThemeEngine } from "./themeEngine.js";
 import { generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 015 loaded");
+console.log("metalEngine.js ver. 015.1 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
@@ -390,10 +390,13 @@ console.log(
 
     // 5) Aggiungiamo la transizione alla timeline
     enriched.push({
-        type: "transition",
-        name: `transition_${section.name}`,
-        transition
-    });
+    type: "transition",
+    name: `transition_${section.name}`,
+    transition,
+    scale: nextScale,        // <<--- AGGIUNTO
+    progression: [nextRoot]  // opzionale ma utile
+});
+
 }
 });
 
