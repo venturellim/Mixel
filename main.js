@@ -106,10 +106,13 @@ function initGenrePanel() {
     const closeGenrePanel = document.getElementById("closeGenrePanel");
 
     btnElabora.addEventListener("click", () => {
-        keepScreenAwake();
-        closeMixelUI();
-        resetAudio();
-        genrePanel.classList.add("show");
+    //releaseScreenAwake();
+    keepScreenAwake();
+    closeMixelUI();
+    resetAudio();
+    genrePanel.classList.add("show");
+});
+
         genrePanel.classList.remove("hidden");
     });
 
@@ -299,9 +302,9 @@ async function resetAudio() {
 function resetAppState() {
     currentEngine?.stop();
     currentEngine = null;
+    releaseScreenAwake();
     closeMixelUI();
     resetAudio();
-    releaseScreenAwake();
 }
 
 // -------------------------------------------------------------
