@@ -3,8 +3,10 @@
 // Pattern coerenti con riffEngine, ma indipendenti.
 
 import * as Tone from "https://esm.sh/tone";
+import { degreeToRoot } from "./metalTheory.js";
 
-console.log("bassEngine.js ver. 001 loaded");
+
+console.log("bassEngine.js ver. 001.1 loaded");
 
 export function initBassEngine(instruments, params, rand) {
 
@@ -593,7 +595,8 @@ function scheduleWalkingDown(section, scale, fromRoot, toRoot, durationBeats, of
         for (let i = 0; i < measures; i++) {
 
             const degree = progression[i % progression.length];
-            const root = degree; // già lettera naturale
+            const root = degreeToRoot(degree, params.tonalCenter);
+
 
             const offset = i * measureDuration;
 
