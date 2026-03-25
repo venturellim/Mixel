@@ -19,7 +19,7 @@ import { initThemeEngine } from "./themeEngine.js";
 import { generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 014.5 loaded");
+console.log("metalEngine.js ver. 014.6 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
@@ -259,12 +259,25 @@ function buildTransitionEvents(fromNote, toNote, scale, transitionInfo, rand) {
         }
     }
 
-    return {
-        type,
-        durationBeats,
-        instrument,
-        events
-    };
+    // Normalizzazione: ogni nota deve essere una lettera naturale A–G
+function safeLetter(n) {
+    const letters = ["A","B","C","D","E","F","G"];
+    if (letters.includes(n)) return n;
+    return "A"; // fallback sicuro
+}
+
+// Applichiamo la normalizzazione a TUTTI gli eventi
+events.forEach(ev => {
+    ev.note = safeLetter(ev.note);
+});
+
+return {
+    type,
+    durationBeats,
+    instrument,
+    events
+};
+
 }
 
 // ============================================================
@@ -431,7 +444,7 @@ console.log(
             // STRUMENTO DELLA TRANSIZIONE
             if (t.instrument === "palm") {
                 metalInstruments.guitarPalm.triggerAttackRelease(
-                    toLetter(ev.note) + "2",
+                    ev.note + "2",
                     "16n",
                     time
                 );
@@ -439,7 +452,7 @@ console.log(
 
             if (t.instrument === "mixed") {
                 metalInstruments.guitarPalm.triggerAttackRelease(
-                    toLetter(ev.note) + "2",
+                    ev.note + "2",
                     "16n",
                     time
                 );
@@ -447,7 +460,7 @@ console.log(
 
             if (t.instrument === "lead") {
                 metalInstruments.lead.triggerAttackRelease(
-                    toLetter(ev.note) + "4",
+                    ev.note + "4",
                     "16n",
                     time
                 );
@@ -464,7 +477,7 @@ console.log(
 
         Tone.Transport.schedule(time => {
             metalInstruments.guitarOpen.triggerAttackRelease(
-                toLetter(t.events[t.events.length - 1].note) + "2",
+                t.events[t.events.length - 1].note + "2",
                 "1n",
                 time
             );
