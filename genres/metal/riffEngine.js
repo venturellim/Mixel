@@ -666,7 +666,7 @@ for (let i = 0; i < measures; ) {
     
     if (enableLog) {
                 console.log(
-                    `%c[RIFF] measure ${i+1}/${measures} | degree: ${degree} | root: ${root} | sectionPattern: ${normalized}`,
+                    `%c[RIFF] measure ${i+1}/${measures} | degree: ${degree} | root: ${root} | sectionPattern: ${normalizedPattern}`,
                     "color:#ff00ff; font-weight:bold;"
                 );
             }
