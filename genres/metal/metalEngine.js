@@ -19,7 +19,7 @@ import { initThemeEngine } from "./themeEngine.js";
 import { generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 016 loaded");
+console.log("metalEngine.js ver. 016.1 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
@@ -262,10 +262,10 @@ function buildTransitionEvents(fromNote, toNote, scale, transitionInfo, rand) {
     // Normalizzazione: ogni nota deve essere una lettera naturale A–G
 function safeLetter(n) {
     const letters = ["A","B","C","D","E","F","G"];
-    if (letters.includes(n)) return n;
-    return "A"; // fallback sicuro
+    if (!n || typeof n !== "string") return "A";
+    return n[0]; // prende solo la lettera iniziale
 }
-
+ 
 // Applichiamo la normalizzazione a TUTTI gli eventi
 events.forEach(ev => {
     ev.note = safeLetter(ev.note);
