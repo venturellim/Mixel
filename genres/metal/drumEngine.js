@@ -1,31 +1,58 @@
-
-// drumEngine.js — versione 005 (autosufficiente come il basso)
+// drumEngine.js — versione 006 (autosufficiente come il basso)
 // Batteria power metal: groove, double kick, sezioni differenziate.
 
 import * as Tone from "https://esm.sh/tone";
-import { analyzeRiff } from "../../analysis/riffAnalysis.js";
 
-console.log("drumEngine.js ver. 005 loaded");
+console.log("drumEngine.js ver. 006 loaded");
 
 export function initDrumEngine(instruments, params, rand) {
 
-    // Estrae SOLO la batteria, come fa il basso con instruments.bass
+    // Estrae SOLO la batteria, come il basso estrae instruments.bass
     const { drums } = instruments;
 
-    // Calcolo interno, come nel basso
+    // Calcolo interno, identico al basso
     const secondsPerBeat = 60 / params.bpm;
     const measureDuration = secondsPerBeat * 4;
 
-    // Funzione autosufficiente, identica al basso
+    // ============================================================
+    // 🎵 ANALISI RIFF (copiata dal basso, adattata)
+    // ============================================================
+
+    function analyzeRiff(riffEvents) {
+        if (!riffEvents || riffEvents.length === 0) {
+            return { dominantPattern: "pedal_8n", palmRatio: 0 };
+        }
+
+        const patterns = riffEvents.map(ev => ev.pattern);
+        const types = riffEvents.map(ev => ev.type);
+
+        const count = arr =>
+            arr.reduce((m, x) => (m[x] = (m[x] || 0) + 1, m), {});
+
+        const patternCount = count(patterns);
+        const typeCount = count(types);
+
+        const dominantPattern = Object.entries(patternCount)
+            .sort((a, b) => b[1] - a[1])[0][0];
+
+        const palmRatio = (typeCount["palm"] || 0) / riffEvents.length;
+
+        return { dominantPattern, palmRatio };
+    }
+
+    // ============================================================
+    // 🎵 SCHEDULER AUTOSUFFICIENTE (come il basso)
+    // ============================================================
+
     function scheduleIfInSection(section, eventTime, cb) {
         const end = section.startTime + section.measures * measureDuration;
         if (eventTime >= end) return;
         Tone.Transport.schedule(cb, eventTime);
     }
 
-    // ------------------------------------------------------------
-    // KICK PATTERNS (identici alla tua versione precedente)
-    // ------------------------------------------------------------
+    // ============================================================
+    // 🥁 KICK PATTERNS
+    // ============================================================
 
     function scheduleKickDoubleBass(section) {
         const beats = section.measures * 4;
@@ -87,9 +114,9 @@ export function initDrumEngine(instruments, params, rand) {
         });
     }
 
-    // ------------------------------------------------------------
-    // SNARE / HIHAT / CRASH (identici alla tua versione)
-    // ------------------------------------------------------------
+    // ============================================================
+    // 🥁 SNARE / HIHAT / CRASH
+    // ============================================================
 
     function scheduleSnare(section, riffEvents, dominantPattern, palmRatio) {
         const beats = section.measures * 4;
@@ -164,9 +191,9 @@ export function initDrumEngine(instruments, params, rand) {
         }
     }
 
-    // ------------------------------------------------------------
-    // SEZIONE PRINCIPALE
-    // ------------------------------------------------------------
+    // ============================================================
+    // 🥁 SEZIONE PRINCIPALE
+    // ============================================================
 
     function scheduleSection(section, scale, progression, riffEvents) {
 
@@ -181,9 +208,9 @@ export function initDrumEngine(instruments, params, rand) {
         scheduleFill(section, dominantPattern);
     }
 
-    // ------------------------------------------------------------
-    // TRANSIZIONI
-    // ------------------------------------------------------------
+    // ============================================================
+    // 🥁 TRANSIZIONI
+    // ============================================================
 
     function scheduleTransition(section, transitionEvents) {
         if (transitionEvents.length > 0) {
@@ -192,9 +219,9 @@ export function initDrumEngine(instruments, params, rand) {
         }
     }
 
-    // ------------------------------------------------------------
+    // ============================================================
     // EXPORT (identico al basso)
-    // ------------------------------------------------------------
+    // ============================================================
 
     return {
         scheduleSection,
