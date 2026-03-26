@@ -8,7 +8,7 @@ import { buildSectionTimeline } from "../../utils/structureUtils.js";
 import { chooseRiffPattern } from "./riffPatterns.js";
 import { degreeToRoot } from "./metalTheory.js";
 
-console.log("riffEngine.js ver. 029 loaded");
+console.log("riffEngine.js ver. 029.1 loaded");
 
 // ------------------------------------------------------------
 // UTILITIES
@@ -814,33 +814,35 @@ function scheduleOpenStrikeEighth(section, sectionScale, root, offset = 0, patte
     // ------------------------------------------------------------
 
     function scheduleMelodicOpen(section, sectionScale, root, offset = 0, pattern, events) {
-        const s = section.startTime + offset;
+    const s = section.startTime + offset;
 
-        const note1 = pickNote(sectionScale);
-        const note2 = pickNote(sectionScale);
+    const note1 = pickNote(sectionScale);
+    const note2 = pickNote(sectionScale);
 
-        lastNoteOfSection = note2;
+    lastNoteOfSection = note2;
 
-        const hits = [
-            { time: 0, note: note1 },                     // 1
-            { time: secondsPerBeat * 2, note: note2 }     // 3
-        ];
+    const hits = [
+        { time: 0, note: note1 },
+        { time: secondsPerBeat * 2, note: note2 }
+    ];
 
-        hits.forEach(h => {
-            const eventTime = s + h.time;
-            const beatOffset = (eventTime - section.startTime) / secondsPerBeat;
+    hits.forEach(h => {
+        const eventTime = s + h.time;
+        const beatOffset = (eventTime - section.startTime) / secondsPerBeat;
 
-events.push({
-    beatOffset,
-    note: rootLetter,
-    pattern,   // il pattern della sezione
-    type: "open"
-});
-            scheduleIfInSection(section, eventTime, time => {
-                guitarOpen.triggerAttackRelease(toSampleKey(h.note), "2n", time);
-            });
+        events.push({
+            beatOffset,
+            note: h.note,   // <-- FIX
+            pattern,
+            type: "open"
         });
-    }
+
+        scheduleIfInSection(section, eventTime, time => {
+            guitarOpen.triggerAttackRelease(toSampleKey(h.note), "2n", time);
+        });
+    });
+}
+
 
     function scheduleMelodic8n(section, sectionScale, root, offset = 0, pattern, events) {
         const timeline = buildSectionTimeline(section, "8n", params.bpm);
@@ -853,7 +855,7 @@ events.push({
 
 events.push({
     beatOffset,
-    note: rootLetter,
+    note,
     pattern,   // il pattern della sezione
     type: "open"
 });
@@ -874,7 +876,7 @@ events.push({
 
 events.push({
     beatOffset,
-    note: rootLetter,
+    note,
     pattern,   // il pattern della sezione
     type: "open"
 });
