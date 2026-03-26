@@ -8,9 +8,10 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-import { metalInstruments, instrumentVolumeMap, masterEQ } from "./metal/instruments.js";
+import { metalInstruments, instrumentVolumeMap } from "./genres/metal/instruments.js";
+import { masterEQ, } from "./common.js";
 
-console.log("main.js ver. 003 loaded");
+console.log("main.js ver. 003.1 loaded");
 
 // -------------------------------------------------------------
 // Import fondamentali
