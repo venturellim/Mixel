@@ -8,7 +8,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("instruments.js ver. 004.1 loaded");
+console.log("instruments.js ver. 004.2 loaded");
 
 // ============================================================
 // 🎚 BUS SPECIFICI DEL METAL
@@ -344,3 +344,12 @@ export const metalInstruments = {
     leadBus,
     setVolume
 };
+
+export const instrumentVolumeMap = {
+    guitar: "Chitarre",
+    bass: "Basso",
+    drums: "Batteria",
+    lead: "Lead",
+    pad: "Pad / Orchestra"
+};
+
