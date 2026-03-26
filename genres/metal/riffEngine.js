@@ -1,4 +1,4 @@
-// riffEngine.js — versione 026
+// riffEngine.js — versione 029
 // Dispatcher robusto + normalizzazione pattern + fix cluster open/palm
 
 import * as Tone from "https://esm.sh/tone";
@@ -8,7 +8,7 @@ import { buildSectionTimeline } from "../../utils/structureUtils.js";
 import { chooseRiffPattern } from "./riffPatterns.js";
 import { degreeToRoot } from "./metalTheory.js";
 
-console.log("riffEngine.js ver. 027.2 loaded");
+console.log("riffEngine.js ver. 029 loaded");
 
 // ------------------------------------------------------------
 // UTILITIES
@@ -106,7 +106,7 @@ const patternMeasures = {
     // ------------------------------------------------------------
     // PALM PATTERNS VELOCI (timeline OK)
     // ------------------------------------------------------------
-function schedulePalmMuteContinuous(section, sectionScale, root, offset = 0) {
+function schedulePalmMuteContinuous(section, sectionScale, root, offset = 0, pattern, events) {
     const rootLetter = toLetter(root);
     const s = section.startTime + offset;
 
@@ -116,13 +116,22 @@ function schedulePalmMuteContinuous(section, sectionScale, root, offset = 0) {
     timeline.forEach(t => {
         const eventTime = s + t + jitter(rand);
         lastNoteOfSection = rootLetter;
+        
+const beatOffset = (eventTime - section.startTime) / secondsPerBeat;
+
+events.push({
+    beatOffset,
+    note: rootLetter,
+    pattern,   // il pattern della sezione
+    type: "palm"
+});
         scheduleIfInSection(section, eventTime, time => {
             guitarPalm.triggerAttackRelease(toSampleKey(rootLetter), "8n", time);
         });
     });
 }
 
-function scheduleGallop(section, sectionScale, root, offset = 0) {
+function scheduleGallop(section, sectionScale, root, offset = 0, pattern, events) {
     const rootLetter = toLetter(root);
     const s = section.startTime + offset;
 
@@ -140,6 +149,15 @@ function scheduleGallop(section, sectionScale, root, offset = 0) {
         hits.forEach(h => {
             const eventTime = h + jitter(rand);
             lastNoteOfSection = rootLetter;
+            
+const beatOffset = (eventTime - section.startTime) / secondsPerBeat;
+
+events.push({
+    beatOffset,
+    note: rootLetter,
+    pattern,   // il pattern della sezione
+    type: "palm"
+});
             scheduleIfInSection(section, eventTime, time => {
                 guitarPalm.triggerAttackRelease(toSampleKey(rootLetter), "8n", time);
             });
@@ -147,7 +165,7 @@ function scheduleGallop(section, sectionScale, root, offset = 0) {
     });
 }
 
-function schedulePedal(section, sectionScale, root, offset = 0) {
+function schedulePedal(section, sectionScale, root, offset = 0, pattern, events) {
     const rootLetter = toLetter(root);
     const s = section.startTime + offset;
 
@@ -159,13 +177,22 @@ function schedulePedal(section, sectionScale, root, offset = 0) {
     timeline.forEach(t => {
         const eventTime = s + t + jitter(rand);
         lastNoteOfSection = rootLetter;
+        
+const beatOffset = (eventTime - section.startTime) / secondsPerBeat;
+
+events.push({
+    beatOffset,
+    note: rootLetter,
+    pattern,   // il pattern della sezione
+    type: "palm"
+});
         scheduleIfInSection(section, eventTime, time => {
             guitarPalm.triggerAttackRelease(toSampleKey(rootLetter), "8n", time);
         });
     });
 }
 
-function schedulePedalSyncopated(section, sectionScale, root, offset = 0) {
+function schedulePedalSyncopated(section, sectionScale, root, offset = 0, pattern, events) {
     const rootLetter = toLetter(root);
     const s = section.startTime + offset;
 
@@ -175,6 +202,15 @@ function schedulePedalSyncopated(section, sectionScale, root, offset = 0) {
         if (i % 3 !== 1) { // sincopi leggere
             const eventTime = s + t + jitter(rand);
             lastNoteOfSection = rootLetter;
+            
+const beatOffset = (eventTime - section.startTime) / secondsPerBeat;
+
+events.push({
+    beatOffset,
+    note: rootLetter,
+    pattern,   // il pattern della sezione
+    type: "palm"
+});
             scheduleIfInSection(section, eventTime, time => {
                 guitarPalm.triggerAttackRelease(toSampleKey(rootLetter), "8n", time);
             });
@@ -182,7 +218,7 @@ function schedulePedalSyncopated(section, sectionScale, root, offset = 0) {
     });
 }
 
-function scheduleSyncopatedPalmMute(section, sectionScale, root, offset = 0) {
+function scheduleSyncopatedPalmMute(section, sectionScale, root, offset = 0, pattern, events) {
     const rootLetter = toLetter(root);
     const s = section.startTime + offset;
 
@@ -192,6 +228,15 @@ function scheduleSyncopatedPalmMute(section, sectionScale, root, offset = 0) {
         if (i % 4 !== 2) {
             const eventTime = s + t + jitter(rand);
             lastNoteOfSection = rootLetter;
+            
+const beatOffset = (eventTime - section.startTime) / secondsPerBeat;
+
+events.push({
+    beatOffset,
+    note: rootLetter,
+    pattern,   // il pattern della sezione
+    type: "palm"
+});
             scheduleIfInSection(section, eventTime, time => {
                 guitarPalm.triggerAttackRelease(toSampleKey(rootLetter), "8n", time);
             });
@@ -199,7 +244,7 @@ function scheduleSyncopatedPalmMute(section, sectionScale, root, offset = 0) {
     });
 }
 
-function scheduleOutroGallopLight(section, sectionScale, root, offset = 0) {
+function scheduleOutroGallopLight(section, sectionScale, root, offset = 0, pattern, events) {
     const rootLetter = toLetter(root);
     const s = section.startTime + offset;
 
@@ -217,6 +262,15 @@ function scheduleOutroGallopLight(section, sectionScale, root, offset = 0) {
         hits.forEach(h => {
             const eventTime = h + jitter(rand);
             lastNoteOfSection = rootLetter;
+            
+const beatOffset = (eventTime - section.startTime) / secondsPerBeat;
+
+events.push({
+    beatOffset,
+    note: rootLetter,
+    pattern,   // il pattern della sezione
+    type: "palm"
+});
             scheduleIfInSection(section, eventTime, time => {
                 guitarPalm.triggerAttackRelease(toSampleKey(rootLetter), "8n", time);
             });
@@ -224,7 +278,7 @@ function scheduleOutroGallopLight(section, sectionScale, root, offset = 0) {
     });
 }
 
-function schedulePmSupport(section, sectionScale, root, offset = 0) {
+function schedulePmSupport(section, sectionScale, root, offset = 0, pattern, events) {
     const rootLetter = toLetter(root);
     const s = section.startTime + offset;
 
@@ -237,6 +291,14 @@ function schedulePmSupport(section, sectionScale, root, offset = 0) {
 
             const eventTime = s + t + jitter(rand);
 
+const beatOffset = (eventTime - section.startTime) / secondsPerBeat;
+
+events.push({
+    beatOffset,
+    note: rootLetter,
+    pattern,   // il pattern della sezione
+    type: "palm"
+});
             scheduleIfInSection(section, eventTime, time => {
                 guitarPalm.triggerAttackRelease(
                     toSampleKey(rootLetter),
@@ -252,7 +314,7 @@ function schedulePmSupport(section, sectionScale, root, offset = 0) {
     // PALM PATTERNS LENTI — SAMPLE GIÀ POWER CHORD (suoniamo SOLO la root)
     // ------------------------------------------------------------
 
-    function schedulePmHalfTime(section, sectionScale, root, offset = 0) {
+    function schedulePmHalfTime(section, sectionScale, root, offset = 0, pattern, events) {
     const rootLetter = toLetter(root);
     const s = section.startTime + offset;
 
@@ -272,6 +334,15 @@ function schedulePmSupport(section, sectionScale, root, offset = 0) {
     hits.forEach(h => {
         const eventTime = s + h + jitter(rand);
         lastNoteOfSection = rootLetter;
+        
+const beatOffset = (eventTime - section.startTime) / secondsPerBeat;
+
+events.push({
+    beatOffset,
+    note: rootLetter,
+    pattern,   // il pattern della sezione
+    type: "palm"
+});
         scheduleIfInSection(section, eventTime, time => {
             guitarPalm.triggerAttackRelease(toSampleKey(rootLetter), "4n", time);
         });
@@ -279,7 +350,7 @@ function schedulePmSupport(section, sectionScale, root, offset = 0) {
 }
 
 
-    function schedulePmSparse(section, sectionScale, root, offset = 0) {
+    function schedulePmSparse(section, sectionScale, root, offset = 0, pattern, events) {
     const rootLetter = toLetter(root);
     const s = section.startTime + offset;
 
@@ -303,13 +374,22 @@ function schedulePmSupport(section, sectionScale, root, offset = 0) {
     hits.forEach(h => {
         const eventTime = s + h + jitter(rand);
         lastNoteOfSection = rootLetter;
+        
+const beatOffset = (eventTime - section.startTime) / secondsPerBeat;
+
+events.push({
+    beatOffset,
+    note: rootLetter,
+    pattern,   // il pattern della sezione
+    type: "palm"
+});
         scheduleIfInSection(section, eventTime, time => {
             guitarPalm.triggerAttackRelease(toSampleKey(rootLetter), "8n", time);
         });
     });
 }
 
-    function schedulePmGroove(section, sectionScale, root, offset = 0) {
+    function schedulePmGroove(section, sectionScale, root, offset = 0, pattern, events) {
     const rootLetter = toLetter(root);
     const s = section.startTime + offset;
 
@@ -333,6 +413,15 @@ function schedulePmSupport(section, sectionScale, root, offset = 0) {
     hits.forEach(h => {
         const eventTime = s + h + jitter(rand);
         lastNoteOfSection = rootLetter;
+        
+const beatOffset = (eventTime - section.startTime) / secondsPerBeat;
+
+events.push({
+    beatOffset,
+    note: rootLetter,
+    pattern,   // il pattern della sezione
+    type: "palm"
+});
         scheduleIfInSection(section, eventTime, time => {
             guitarPalm.triggerAttackRelease(toSampleKey(rootLetter), "8n", time);
         });
@@ -343,76 +432,170 @@ function schedulePmSupport(section, sectionScale, root, offset = 0) {
     // OPEN PATTERNS — SAMPLE GIÀ POWER CHORD (suoniamo SOLO la root)
     // ------------------------------------------------------------
 
-function scheduleIntroStratovarius(section, sectionScale, root, offset = 0) {
+function scheduleIntroStratovarius(section, sectionScale, root, offset = 0, pattern, events) {
     const rootLetter = toLetter(root);
     const s = section.startTime + offset;
 
     // --- FRASE 1 ---
-    // Cp (1/8)
-    scheduleIfInSection(section, s, time => {
-        guitarPalm.triggerAttackRelease(toSampleKey(rootLetter), "8n", time);
-    });
 
     // Cp (1/8)
-    scheduleIfInSection(section, s + secondsPerBeat * 0.5, time => {
-        guitarPalm.triggerAttackRelease(toSampleKey(rootLetter), "8n", time);
-    });
+    {
+        const eventTime = s;
+        const beatOffset = (eventTime - section.startTime) / secondsPerBeat;
+
+        events.push({
+            beatOffset,
+            note: rootLetter,
+            pattern,
+            type: "palm"
+        });
+
+        scheduleIfInSection(section, eventTime, time => {
+            guitarPalm.triggerAttackRelease(toSampleKey(rootLetter), "8n", time);
+        });
+    }
+
+    // Cp (1/8)
+    {
+        const eventTime = s + secondsPerBeat * 0.5;
+        const beatOffset = (eventTime - section.startTime) / secondsPerBeat;
+
+        events.push({
+            beatOffset,
+            note: rootLetter,
+            pattern,
+            type: "palm"
+        });
+
+        scheduleIfInSection(section, eventTime, time => {
+            guitarPalm.triggerAttackRelease(toSampleKey(rootLetter), "8n", time);
+        });
+    }
 
     // Cccc (1/2)
-    scheduleIfInSection(section, s + secondsPerBeat * 1, time => {
-        guitarOpen.triggerAttackRelease(toSampleKey(rootLetter), "2n", time);
-    });
+    {
+        const eventTime = s + secondsPerBeat * 1;
+        const beatOffset = (eventTime - section.startTime) / secondsPerBeat;
+
+        events.push({
+            beatOffset,
+            note: rootLetter,
+            pattern,
+            type: "open"
+        });
+
+        scheduleIfInSection(section, eventTime, time => {
+            guitarOpen.triggerAttackRelease(toSampleKey(rootLetter), "2n", time);
+        });
+    }
 
     // --- FRASE 2 ---
-    // Cp (1/8)
-    scheduleIfInSection(section, s + secondsPerBeat * 2, time => {
-        guitarPalm.triggerAttackRelease(toSampleKey(rootLetter), "8n", time);
-    });
 
     // Cp (1/8)
-    scheduleIfInSection(section, s + secondsPerBeat * 2.5, time => {
-        guitarPalm.triggerAttackRelease(toSampleKey(rootLetter), "8n", time);
-    });
+    {
+        const eventTime = s + secondsPerBeat * 2;
+        const beatOffset = (eventTime - section.startTime) / secondsPerBeat;
+
+        events.push({
+            beatOffset,
+            note: rootLetter,
+            pattern,
+            type: "palm"
+        });
+
+        scheduleIfInSection(section, eventTime, time => {
+            guitarPalm.triggerAttackRelease(toSampleKey(rootLetter), "8n", time);
+        });
+    }
+
+    // Cp (1/8)
+    {
+        const eventTime = s + secondsPerBeat * 2.5;
+        const beatOffset = (eventTime - section.startTime) / secondsPerBeat;
+
+        events.push({
+            beatOffset,
+            note: rootLetter,
+            pattern,
+            type: "palm"
+        });
+
+        scheduleIfInSection(section, eventTime, time => {
+            guitarPalm.triggerAttackRelease(toSampleKey(rootLetter), "8n", time);
+        });
+    }
 
     // Cccc (1/2)
-    scheduleIfInSection(section, s + secondsPerBeat * 3, time => {
-        guitarOpen.triggerAttackRelease(toSampleKey(rootLetter), "2n", time);
-    });
+    {
+        const eventTime = s + secondsPerBeat * 3;
+        const beatOffset = (eventTime - section.startTime) / secondsPerBeat;
+
+        events.push({
+            beatOffset,
+            note: rootLetter,
+            pattern,
+            type: "open"
+        });
+
+        scheduleIfInSection(section, eventTime, time => {
+            guitarOpen.triggerAttackRelease(toSampleKey(rootLetter), "2n", time);
+        });
+    }
 
     lastNoteOfSection = rootLetter;
 }
 
-    function scheduleOpenSustain1m(section, sectionScale, root, offset = 0) {
+
+    function scheduleOpenSustain1m(section, sectionScale, root, offset = 0, pattern, events) {
     const rootLetter = toLetter(root);
     const eventTime = section.startTime + offset;
 
     lastNoteOfSection = rootLetter;
+    
+    const beatOffset = (eventTime - section.startTime) / secondsPerBeat;
+    
+events.push({
+    beatOffset,
+    note: rootLetter,
+    pattern,   // il pattern della sezione
+    type: "open"
+});
 
     scheduleIfInSection(section, eventTime, time => {
         guitarOpen.triggerAttackRelease(toSampleKey(rootLetter), "1m", time);
     });
 }
 
-function scheduleOpenSustain2m(section, sectionScale, root, offset = 0) {
+function scheduleOpenSustain2m(section, sectionScale, root, offset = 0, pattern, events) {
     const rootLetter = toLetter(root);
     const eventTime = section.startTime + offset;
 
     lastNoteOfSection = rootLetter;
+    const beatOffset = (eventTime - section.startTime) / secondsPerBeat;
+    
+events.push({
+    beatOffset,
+    note: rootLetter,
+    pattern,   // il pattern della sezione
+    type: "open"
+});
 
     scheduleIfInSection(section, eventTime, time => {
         guitarOpen.triggerAttackRelease(toSampleKey(rootLetter), "2m", time);
     });
 }
 
-function scheduleOpenSustain(section, sectionScale, root, offset = 0) {
+function scheduleOpenSustain(section, sectionScale, root, offset = 0, pattern, events) {
     if (params.bpm < 140) {
-        return scheduleOpenSustain1m(section, sectionScale, root, offset);
+        return scheduleOpenSustain1m(section, sectionScale, root, offset, pattern, events);
+
     } else {
-        return scheduleOpenSustain2m(section, sectionScale, root, offset);
+        return scheduleOpenSustain2m(section, sectionScale, root, offset, pattern, events);
+
     }
 }
 
-    function scheduleOpenAccent(section, sectionScale, root, offset = 0) {
+    function scheduleOpenAccent(section, sectionScale, root, offset = 0, pattern, events) {
         const rootLetter = toLetter(root);
         const s = section.startTime + offset;
 
@@ -424,13 +607,21 @@ function scheduleOpenSustain(section, sectionScale, root, offset = 0) {
         hits.forEach(h => {
             const eventTime = s + h;
             lastNoteOfSection = rootLetter;
+            const beatOffset = (eventTime - section.startTime) / secondsPerBeat;
+
+events.push({
+    beatOffset,
+    note: rootLetter,
+    pattern,   // il pattern della sezione
+    type: "open"
+});
             scheduleIfInSection(section, eventTime, time => {
                 guitarOpen.triggerAttackRelease(toSampleKey(rootLetter), "1n", time);
             });
         });
     }
 
-    function scheduleOpenSyncopated(section, sectionScale, root, offset = 0) {
+    function scheduleOpenSyncopated(section, sectionScale, root, offset = 0, pattern, events) {
         const rootLetter = toLetter(root);
         const s = section.startTime + offset;
 
@@ -442,13 +633,21 @@ function scheduleOpenSustain(section, sectionScale, root, offset = 0) {
         hits.forEach(h => {
             const eventTime = s + h;
             lastNoteOfSection = rootLetter;
+const beatOffset = (eventTime - section.startTime) / secondsPerBeat;
+
+events.push({
+    beatOffset,
+    note: rootLetter,
+    pattern,   // il pattern della sezione
+    type: "open"
+});
             scheduleIfInSection(section, eventTime, time => {
                 guitarOpen.triggerAttackRelease(toSampleKey(rootLetter), "1n", time);
             });
         });
     }
 
-    function scheduleOpenHalfTime(section, sectionScale, root, offset = 0) {
+    function scheduleOpenHalfTime(section, sectionScale, root, offset = 0, pattern, events) {
         const rootLetter = toLetter(root);
         const s = section.startTime + offset;
 
@@ -460,13 +659,21 @@ function scheduleOpenSustain(section, sectionScale, root, offset = 0) {
         hits.forEach(h => {
             const eventTime = s + h;
             lastNoteOfSection = rootLetter;
+            const beatOffset = (eventTime - section.startTime) / secondsPerBeat;
+
+events.push({
+    beatOffset,
+    note: rootLetter,
+    pattern,   // il pattern della sezione
+    type: "open"
+});
             scheduleIfInSection(section, eventTime, time => {
                 guitarOpen.triggerAttackRelease(toSampleKey(rootLetter), "2n", time);
             });
         });
     }
 
-    function scheduleOpenEpic(section, sectionScale, root, offset = 0) {
+    function scheduleOpenEpic(section, sectionScale, root, offset = 0, pattern, events) {
         const rootLetter = toLetter(root);
         const s = section.startTime + offset;
 
@@ -478,13 +685,21 @@ function scheduleOpenSustain(section, sectionScale, root, offset = 0) {
         hits.forEach(h => {
             const eventTime = s + h;
             lastNoteOfSection = rootLetter;
+            const beatOffset = (eventTime - section.startTime) / secondsPerBeat;
+
+events.push({
+    beatOffset,
+    note: rootLetter,
+    pattern,   // il pattern della sezione
+    type: "open"
+});
             scheduleIfInSection(section, eventTime, time => {
                 guitarOpen.triggerAttackRelease(toSampleKey(rootLetter), "1n", time);
             });
         });
     }
 
-    function scheduleOpenDrive(section, sectionScale, root, offset = 0) {
+    function scheduleOpenDrive(section, sectionScale, root, offset = 0, pattern, events) {
         const rootLetter = toLetter(root);
         const s = section.startTime + offset;
 
@@ -498,46 +713,98 @@ function scheduleOpenSustain(section, sectionScale, root, offset = 0) {
         hits.forEach(h => {
             const eventTime = s + h;
             lastNoteOfSection = rootLetter;
+            const beatOffset = (eventTime - section.startTime) / secondsPerBeat;
+
+events.push({
+    beatOffset,
+    note: rootLetter,
+    pattern,   // il pattern della sezione
+    type: "open"
+});
             scheduleIfInSection(section, eventTime, time => {
                 guitarOpen.triggerAttackRelease(toSampleKey(rootLetter), "8n", time);
             });
         });
     }
     
-    function scheduleOpenStrikeQuarter(section, sectionScale, root, offset = 0) {
+    function scheduleOpenStrikeQuarter(section, sectionScale, root, offset = 0, pattern, events) {
     const rootLetter = toLetter(root);
     const s = section.startTime + offset;
 
-    // Colpo 1: inizio misura, durata 3/4
-    scheduleIfInSection(section, s, time => {
-        guitarOpen.triggerAttackRelease(toSampleKey(rootLetter), "2n.", time); 
-        // "2n." = dotted half = 3/4 di misura
-    });
+    // --- HIT 1 ---
+    {
+        const eventTime = s;
+        const beatOffset = (eventTime - section.startTime) / secondsPerBeat;
 
-    // Colpo 2: sul beat 4, durata 1/4
-    const secondHit = s + secondsPerBeat * 3;
-    scheduleIfInSection(section, secondHit, time => {
-        guitarOpen.triggerAttackRelease(toSampleKey(rootLetter), "4n", time);
-    });
+        events.push({
+            beatOffset,
+            note: rootLetter,
+            pattern,
+            type: "open"
+        });
+
+        scheduleIfInSection(section, eventTime, time => {
+            guitarOpen.triggerAttackRelease(toSampleKey(rootLetter), "2n.", time);
+        });
+    }
+
+    // --- HIT 2 ---
+    {
+        const eventTime = s + secondsPerBeat * 3;
+        const beatOffset = (eventTime - section.startTime) / secondsPerBeat;
+
+        events.push({
+            beatOffset,
+            note: rootLetter,
+            pattern,
+            type: "open"
+        });
+
+        scheduleIfInSection(section, eventTime, time => {
+            guitarOpen.triggerAttackRelease(toSampleKey(rootLetter), "4n", time);
+        });
+    }
 
     lastNoteOfSection = rootLetter;
 }
 
-function scheduleOpenStrikeEighth(section, sectionScale, root, offset = 0) {
+function scheduleOpenStrikeEighth(section, sectionScale, root, offset = 0, pattern, events) {
     const rootLetter = toLetter(root);
     const s = section.startTime + offset;
 
-    // Colpo 1: inizio misura, durata 7/8
-    scheduleIfInSection(section, s, time => {
-        guitarOpen.triggerAttackRelease(toSampleKey(rootLetter), "1m", time, 0, 0.875);
-        // 0.875 = 7/8 della misura
-    });
+    // --- HIT 1 ---
+    {
+        const eventTime = s;
+        const beatOffset = (eventTime - section.startTime) / secondsPerBeat;
 
-    // Colpo 2: sull’ottavo finale (beat 3.5)
-    const secondHit = s + secondsPerBeat * 3.5;
-    scheduleIfInSection(section, secondHit, time => {
-        guitarOpen.triggerAttackRelease(toSampleKey(rootLetter), "8n", time);
-    });
+        events.push({
+            beatOffset,
+            note: rootLetter,
+            pattern,
+            type: "open"
+        });
+
+        scheduleIfInSection(section, eventTime, time => {
+            guitarOpen.triggerAttackRelease(toSampleKey(rootLetter), "1m", time, 0, 0.875);
+        });
+    }
+
+    // --- HIT 2 ---
+    {
+        const eventTime = s + secondsPerBeat * 3.5;
+        const beatOffset = (eventTime - section.startTime) / secondsPerBeat;
+
+        events.push({
+            beatOffset,
+            note: rootLetter,
+            pattern,
+            type: "open"
+        });
+
+        scheduleIfInSection(section, eventTime, time => {
+            guitarOpen.triggerAttackRelease(toSampleKey(rootLetter), "8n", time);
+        });
+    }
 
     lastNoteOfSection = rootLetter;
 }
@@ -546,7 +813,7 @@ function scheduleOpenStrikeEighth(section, sectionScale, root, offset = 0) {
     // MELODIC PATTERNS (lead = singola nota, quindi OK)
     // ------------------------------------------------------------
 
-    function scheduleMelodicOpen(section, sectionScale, root, offset = 0) {
+    function scheduleMelodicOpen(section, sectionScale, root, offset = 0, pattern, events) {
         const s = section.startTime + offset;
 
         const note1 = pickNote(sectionScale);
@@ -561,32 +828,56 @@ function scheduleOpenStrikeEighth(section, sectionScale, root, offset = 0) {
 
         hits.forEach(h => {
             const eventTime = s + h.time;
+            const beatOffset = (eventTime - section.startTime) / secondsPerBeat;
+
+events.push({
+    beatOffset,
+    note: rootLetter,
+    pattern,   // il pattern della sezione
+    type: "open"
+});
             scheduleIfInSection(section, eventTime, time => {
                 guitarOpen.triggerAttackRelease(toSampleKey(h.note), "2n", time);
             });
         });
     }
 
-    function scheduleMelodic8n(section, sectionScale, root, offset = 0) {
+    function scheduleMelodic8n(section, sectionScale, root, offset = 0, pattern, events) {
         const timeline = buildSectionTimeline(section, "8n", params.bpm);
 
         timeline.forEach(t => {
             const note = pickNote(sectionScale);
             lastNoteOfSection = note;
             const eventTime = section.startTime + t + offset;
+            const beatOffset = (eventTime - section.startTime) / secondsPerBeat;
+
+events.push({
+    beatOffset,
+    note: rootLetter,
+    pattern,   // il pattern della sezione
+    type: "open"
+});
             scheduleIfInSection(section, eventTime, time => {
                 guitarOpen.triggerAttackRelease(toSampleKey(note), "8n", time);
             });
         });
     }
 
-    function scheduleMelodicFast(section, sectionScale, root, offset = 0) {
+    function scheduleMelodicFast(section, sectionScale, root, offset = 0, pattern, events) {
         const timeline = buildSectionTimeline(section, "16n", params.bpm);
 
         timeline.forEach(t => {
             const note = pickNote(sectionScale);
             lastNoteOfSection = note;
             const eventTime = section.startTime + t + offset;
+            const beatOffset = (eventTime - section.startTime) / secondsPerBeat;
+
+events.push({
+    beatOffset,
+    note: rootLetter,
+    pattern,   // il pattern della sezione
+    type: "open"
+});
             scheduleIfInSection(section, eventTime, time => {
                 guitarOpen.triggerAttackRelease(toSampleKey(note), "16n", time);
             });
@@ -597,40 +888,40 @@ function scheduleOpenStrikeEighth(section, sectionScale, root, offset = 0) {
     // DISPATCHER ROBUSTO
     // ------------------------------------------------------------
 
-    function schedulePalmMutePattern(section, sectionScale, root, pattern, offset) {
-        switch(pattern) {
-            case "pm_continuous":   return schedulePalmMuteContinuous(section, sectionScale, root, offset);
-            case "gallop":          return scheduleGallop(section, sectionScale, root, offset);
-            case "pedal":           return schedulePedal(section, sectionScale, root, offset);
-            case "pedal_syncopated":return schedulePedalSyncopated(section, sectionScale, root, offset);
-            case "syncopated_pm":   return scheduleSyncopatedPalmMute(section, sectionScale, root, offset);
-            case "gallop_light":    return scheduleOutroGallopLight(section, sectionScale, root, offset);
-            case "pm_support":      return schedulePmSupport(section, sectionScale, root, offset);
-            case "pm_half_time":    return schedulePmHalfTime(section, sectionScale, root, offset);
-            case "pm_sparse":       return schedulePmSparse(section, sectionScale, root, offset);
-            case "pm_groove":       return schedulePmGroove(section, sectionScale, root, offset);
-        }
+    function schedulePalmMutePattern(section, sectionScale, root, pattern, offset, events) {
+    switch(pattern) {
+        case "pm_continuous":   return schedulePalmMuteContinuous(section, sectionScale, root, offset, pattern, events);
+        case "gallop":          return scheduleGallop(section, sectionScale, root, offset, pattern, events);
+        case "pedal":           return schedulePedal(section, sectionScale, root, offset, pattern, events);
+        case "pedal_syncopated":return schedulePedalSyncopated(section, sectionScale, root, offset, pattern, events);
+        case "syncopated_pm":   return scheduleSyncopatedPalmMute(section, sectionScale, root, offset, pattern, events);
+        case "gallop_light":    return scheduleOutroGallopLight(section, sectionScale, root, offset, pattern, events);
+        case "pm_support":      return schedulePmSupport(section, sectionScale, root, offset, pattern, events);
+        case "pm_half_time":    return schedulePmHalfTime(section, sectionScale, root, offset, pattern, events);
+        case "pm_sparse":       return schedulePmSparse(section, sectionScale, root, offset, pattern, events);
+        case "pm_groove":       return schedulePmGroove(section, sectionScale, root, offset, pattern, events);
     }
+}
 
-    function scheduleOpenPattern(section, sectionScale, root, pattern, offset) {
-        switch(pattern) {
-            case "open_sustain":    return scheduleOpenSustain(section, sectionScale, root, offset);
-            case "open_accent":     return scheduleOpenAccent(section, sectionScale, root, offset);
-            case "open_syncopated": return scheduleOpenSyncopated(section, sectionScale, root, offset);
-            case "melodic_open":    return scheduleMelodicOpen(section, sectionScale, root, offset);
-            case "melodic_fast":    return scheduleMelodicFast(section, sectionScale, root, offset);
-            case "open_half_time":  return scheduleOpenHalfTime(section, sectionScale, root, offset);
-            case "open_epic":       return scheduleOpenEpic(section, sectionScale, root, offset);
-            case "open_drive":      return scheduleOpenDrive(section, sectionScale, root, offset);
-            case "melodic_8n":      return scheduleMelodic8n(section, sectionScale, root, offset);
-            case "open_strike_quarter":
-return scheduleOpenStrikeQuarter(section, sectionScale, root, offset);
-    case "open_strike_eighth":
-return scheduleOpenStrikeEighth(section, sectionScale, root, offset);
-    case "intro_stratovarius":
-return scheduleIntroStratovarius(section, sectionScale, root, offset);
-        }
+    function scheduleOpenPattern(section, sectionScale, root, pattern, offset, events) {
+    switch(pattern) {
+        case "open_sustain":    return scheduleOpenSustain(section, sectionScale, root, offset, pattern, events);
+        case "open_accent":     return scheduleOpenAccent(section, sectionScale, root, offset, pattern, events);
+        case "open_syncopated": return scheduleOpenSyncopated(section, sectionScale, root, offset, pattern, events);
+        case "melodic_open":    return scheduleMelodicOpen(section, sectionScale, root, offset, pattern, events);
+        case "melodic_fast":    return scheduleMelodicFast(section, sectionScale, root, offset, pattern, events);
+        case "open_half_time":  return scheduleOpenHalfTime(section, sectionScale, root, offset, pattern, events);
+        case "open_epic":       return scheduleOpenEpic(section, sectionScale, root, offset, pattern, events);
+        case "open_drive":      return scheduleOpenDrive(section, sectionScale, root, offset, pattern, events);
+        case "melodic_8n":      return scheduleMelodic8n(section, sectionScale, root, offset, pattern, events);
+        case "open_strike_quarter":
+            return scheduleOpenStrikeQuarter(section, sectionScale, root, offset, pattern, events);
+        case "open_strike_eighth":
+            return scheduleOpenStrikeEighth(section, sectionScale, root, offset, pattern, events);
+        case "intro_stratovarius":
+            return scheduleIntroStratovarius(section, sectionScale, root, offset, pattern, events);
     }
+}
 
     // ------------------------------------------------------------
     // SCHEDULAZIONE SEZIONE
@@ -638,7 +929,8 @@ return scheduleIntroStratovarius(section, sectionScale, root, offset);
 
     function scheduleSection(section, sectionScale, progression) {
 
-        Tone.Transport.schedule(time => {
+        const events = [];
+Tone.Transport.schedule(time => {
             console.log(
                 `%c[RIFF] >>> SECTION START: ${section.name.toUpperCase()} @ ${section.startTime.toFixed(3)}`,
                 "color:#00ffcc; font-weight:bold;"
@@ -691,7 +983,7 @@ const pattern = sectionPattern;
                 normalized === "gallop_light" ||
                 normalized === "pm_support"
             )) {
-                schedulePalmMutePattern(section, sectionScale, root, normalized, offset);
+                schedulePalmMutePattern(section, sectionScale, root, normalized, offset, events);
                 scheduled = true;
             }
 
@@ -704,7 +996,7 @@ const pattern = sectionPattern;
     normalized === "intro_stratovarius"
 )) {
 
-                scheduleOpenPattern(section, sectionScale, root, normalized, offset);
+                scheduleOpenPattern(section, sectionScale, root, normalized, offset, events);
                 scheduled = true;
             }
 
@@ -743,7 +1035,8 @@ console.log(
 return {
     patternMap,
     lastNote: lastNoteOfSection,
-    nextFirstNote: firstRootLetter
+    nextFirstNote: firstRootLetter,
+    events
 };
 
     }

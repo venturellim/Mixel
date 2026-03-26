@@ -1,4 +1,4 @@
-// bassEngine.js — versione 001 (Helloween style)
+// bassEngine.js — versione 002 (Helloween style)
 // Basso power metal: dritto, potente, radicato sulla root.
 // Pattern coerenti con riffEngine, ma indipendenti.
 
@@ -6,7 +6,7 @@ import * as Tone from "https://esm.sh/tone";
 import { degreeToRoot } from "./metalTheory.js";
 
 
-console.log("bassEngine.js ver. 001.1 loaded");
+console.log("bassEngine.js ver. 002 loaded");
 
 export function initBassEngine(instruments, params, rand) {
 
@@ -583,27 +583,76 @@ function scheduleWalkingDown(section, scale, fromRoot, toRoot, durationBeats, of
     }
 }
 
+function analyzeRiff(riffEvents) {
+    if (!riffEvents || riffEvents.length === 0) return "pedal_8n";
+
+    const patterns = riffEvents.map(ev => ev.pattern);
+    const types = riffEvents.map(ev => ev.type);
+
+    const count = arr => arr.reduce((m, x) => (m[x] = (m[x] || 0) + 1, m), {});
+
+    const patternCount = count(patterns);
+    const typeCount = count(types);
+
+    const dominantPattern = Object.entries(patternCount)
+        .sort((a,b) => b[1] - a[1])[0][0];
+
+    const palmRatio = (typeCount["palm"] || 0) / riffEvents.length;
+
+    return { dominantPattern, palmRatio };
+}
 
     // ============================================================
     // 🎼 SCHEDULAZIONE SEZIONE
     // ============================================================
 
-    function scheduleSection(section, scale, progression) {
+    function scheduleSection(section, scale, progression, riffEvents = null) {
 
+    // Se abbiamo gli eventi del riff → analisi avanzata
+    if (riffEvents && riffEvents.length > 0) {
+
+        const analysis = analyzeRiff(riffEvents);
+        const { dominantPattern, palmRatio } = analysis;
+
+        const degree = progression[0];
+        const root = degreeToRoot(degree, params.tonalCenter);
+        const rootLetter = toLetter(root);
+
+        // --- MAPPATURA INTELLIGENTE ---
+        let bassPattern = "pedal_8n";
+
+        if (dominantPattern.includes("gallop")) bassPattern = "gallop";
+        else if (dominantPattern.includes("pedal_syncopated")) bassPattern = "syncopated_8n";
+        else if (dominantPattern.includes("syncopated")) bassPattern = "syncopated_8n";
+        else if (dominantPattern.includes("open_epic")) bassPattern = "accent_first";
+        else if (dominantPattern.includes("open_drive")) bassPattern = "pedal_8n";
+        else if (dominantPattern.includes("open_half_time")) bassPattern = "accent_third";
+        else if (dominantPattern.includes("melodic")) bassPattern = "root_octave";
+
+        // Se la sezione è 90% palm → pedal_16n
+        if (palmRatio > 0.9) bassPattern = "pedal_16n";
+
+        // Schedulazione del pattern scelto
         const measures = section.measures;
-
         for (let i = 0; i < measures; i++) {
-
-            const degree = progression[i % progression.length];
-            const root = degreeToRoot(degree, params.tonalCenter);
-
-
             const offset = i * measureDuration;
-
-            // Pattern Helloween: sempre pedal_8n per ora
-            scheduleBassPattern(section, scale, root, "pedal_8n", offset);
+            scheduleBassPattern(section, scale, root, bassPattern, offset);
         }
+
+        return;
     }
+
+    // Fallback: pedal 8n
+    const measures = section.measures;
+    for (let i = 0; i < measures; i++) {
+        const degree = progression[i % progression.length];
+        const root = degreeToRoot(degree, params.tonalCenter);
+        const offset = i * measureDuration;
+        scheduleBassPattern(section, scale, root, "pedal_8n", offset);
+    }
+}
+
+
 
     // ============================================================
     // EXPORT

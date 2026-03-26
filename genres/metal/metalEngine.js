@@ -1,4 +1,4 @@
-// metalEngine.js — versione 013
+// metalEngine.js — versione 016
 // Timeline robusta: nessuna schedulazione prima del ricalcolo
 
 import * as Tone from "https://esm.sh/tone";
@@ -19,7 +19,7 @@ import { initThemeEngine } from "./themeEngine.js";
 import { generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 015.1 loaded");
+console.log("metalEngine.js ver. 016 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
@@ -430,7 +430,8 @@ console.log(
         if (sec.type === "main") {
 
             riff.scheduleSection(sec, sec.scale, sec.progression);
-bass.scheduleSection(sec, sec.scale, sec.progression);
+bass.scheduleSection(sec, sec.scale, sec.progression, sec.riffResult.events);
+
             // drums.scheduleSection(sec, sec.scale, sec.progression);
             // theme.scheduleSection(sec, sec.scale, sec.progression);
             // lead.scheduleSection(sec, sec.scale, sec.progression);

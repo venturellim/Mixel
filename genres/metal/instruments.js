@@ -8,7 +8,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("instruments.js ver. 004 loaded");
+console.log("instruments.js ver. 004.1 loaded");
 
 // ============================================================
 // 🎚 BUS SPECIFICI DEL METAL
@@ -18,6 +18,7 @@ export const guitarBus = new Tone.Gain(1);
 export const bassBus = new Tone.Gain(1);
 export const drumBus = new Tone.Gain(1);
 export const leadBus = new Tone.Gain(1);
+export const padBus = new Tone.Gain(1);
 
 // EQ specifici del metal
 const guitarEQ = new Tone.EQ3({ low: -4, mid: 2, high: 3 });
@@ -40,8 +41,10 @@ const mixer = {
     guitar: guitarBus,
     bass: bassBus,
     drums: drumBus,
-    lead: leadBus
+    lead: leadBus,
+    pad: padBus
 };
+
 
 // Valori di default (soundcheck iniziale)
 guitarBus.gain.value = 0;   // 0 dB
@@ -63,7 +66,7 @@ setVolume("guitar", -4);
 setVolume("bass", -2);
 setVolume("drums", -3);
 setVolume("lead", -8);
-//setVolume("pad", -12);
+setVolume("pad", -12);
 
 
 // Routing bus → EQ → master
@@ -71,6 +74,8 @@ guitarBus.connect(guitarEQ).connect(masterEQ);
 bassBus.connect(bassEQ).connect(masterEQ);
 drumBus.connect(drumEQ).connect(drumComp).connect(masterEQ);
 leadBus.connect(leadEQ).connect(masterEQ);
+padBus.connect(masterEQ);
+
 
 // ============================================================
 // 🎸 GUITAR PALM (C2–C3)
@@ -287,8 +292,7 @@ export const orchestraPad = new Tone.PolySynth(Tone.Synth, {
 const padFilter = new Tone.Filter({ type: "lowpass", frequency: 2500 });
 const padReverb = new Tone.Reverb({ decay: 6, wet: 0.6 });
 
-orchestraPad.chain(padFilter, padReverb, masterEQ);
-orchestraPad.volume.value = -14;
+orchestraPad.chain(padFilter, padReverb, padBus);
 
 // ============================================================
 // 🎵 LOGGING (wrapping)
