@@ -1,3 +1,4 @@
+
 // drumEngine.js — versione compatibile con la nuova architettura
 // Batteria power metal: groove, double kick, sezioni differenziate.
 
@@ -5,153 +6,227 @@ import * as Tone from "https://esm.sh/tone";
 
 import { buildSectionTimeline } from "../../utils/structureUtils.js";
 import { duration } from "../../utils/tempoUtils.js";
+import { analyzeRiff } from "../../analysis/riffAnalysis.js"; // IMPORTANTE
 
-console.log("drumEngine.js ver. 001 loaded");
+console.log("drumEngine.js ver. 002 loaded");
 
-export function initDrumEngine(instruments, params, rand) {
+// ============================================================
+// PATTERN KICK
+// ============================================================
 
-    const { drums } = instruments;
-
-    // ------------------------------------------------------------
-    // Play sicuro
-    // ------------------------------------------------------------
-    function play(sample, time) {
-        if (!drums || !drums.player || !drums.player(sample)) return;
-        drums.player(sample).start(time);
+function scheduleKickDoubleBass(section) {
+    const beats = section.measures * 4;
+    for (let b = 0; b < beats; b += 0.25) {
+        const time = section.startTime + b * secondsPerBeat;
+        scheduleIfInSection(section, time, t => drums.kick(t));
     }
-
-    // ------------------------------------------------------------
-    // Chance sicura
-    // ------------------------------------------------------------
-    function chance(p) {
-        if (isNaN(p) || p <= 0) return false;
-        if (p >= 1) return true;
-        return rand() < p;
-    }
-
-    // ------------------------------------------------------------
-    // Schedulers singoli
-    // ------------------------------------------------------------
-    const scheduleKick     = t => Tone.Transport.schedule(time => play("kick", time), t);
-    const scheduleSnare    = t => Tone.Transport.schedule(time => play("snare", time), t);
-    const scheduleGhost    = t => Tone.Transport.schedule(time => play("ghost", time), t);
-    const scheduleHiHat    = t => Tone.Transport.schedule(time => play("hihat", time), t);
-    const scheduleOpenHat  = t => Tone.Transport.schedule(time => play("openhat", time), t);
-    const scheduleRide     = t => Tone.Transport.schedule(time => play("ride", time), t);
-    const scheduleRideBell = t => Tone.Transport.schedule(time => play("ridebell", time), t);
-    const scheduleChina    = t => Tone.Transport.schedule(time => play("china", time), t);
-
-    function scheduleCrash(t) {
-        const sample = rand() < 0.5 ? "crash1" : "crash2";
-        Tone.Transport.schedule(time => play(sample, time), t);
-    }
-
-    // ------------------------------------------------------------
-    // Pattern: Double Kick
-    // ------------------------------------------------------------
-    function patternDoubleKick(section) {
-        const timeline = buildSectionTimeline(section, "16n");
-        if (!timeline) return;
-
-        timeline.forEach((t, i) => {
-            if (i % 2 === 0) scheduleKick(t);
-        });
-    }
-
-    // ------------------------------------------------------------
-    // Pattern: Groove
-    // ------------------------------------------------------------
-    function patternGroove(section) {
-        const timeline = buildSectionTimeline(section, "8n");
-        if (!timeline) return;
-
-        timeline.forEach((t, i) => {
-            if (i % 2 === 0) scheduleKick(t);
-            if (i % 2 === 1) scheduleSnare(t);
-
-            scheduleHiHat(t);
-
-            if (chance(0.1 * params.drumIntensity)) {
-                scheduleGhost(t + duration("16n"));
-            }
-        });
-    }
-
-    // ------------------------------------------------------------
-    // Pattern: Chorus
-    // ------------------------------------------------------------
-    function patternChorus(section) {
-        const timeline = buildSectionTimeline(section, "4n");
-        if (!timeline) return;
-
-        timeline.forEach((t, i) => {
-            if (i === 0) scheduleCrash(t);
-
-            scheduleRide(t);
-
-            scheduleKick(t);
-            scheduleKick(t + duration("16n"));
-        });
-    }
-
-    // ------------------------------------------------------------
-    // Pattern: Solo
-    // ------------------------------------------------------------
-    function patternSolo(section) {
-        const timeline = buildSectionTimeline(section, "8n");
-        if (!timeline) return;
-
-        timeline.forEach((t, i) => {
-            if (i % 2 === 0) scheduleKick(t);
-            if (i % 2 === 1) scheduleSnare(t);
-
-            scheduleRideBell(t);
-
-            if (chance(0.2)) scheduleGhost(t + duration("16n"));
-        });
-    }
-
-    // ------------------------------------------------------------
-    // Pattern: Outro
-    // ------------------------------------------------------------
-    function patternOutro(section) {
-        const timeline = buildSectionTimeline(section, "4n");
-        if (!timeline) return;
-
-        timeline.forEach(t => {
-            scheduleChina(t);
-
-            if (chance(0.3)) {
-                const tom = "tom" + (1 + Math.floor(rand() * 4));
-                Tone.Transport.schedule(time => play(tom, time), t + duration("8n"));
-            }
-        });
-    }
-
-    // ------------------------------------------------------------
-    // Scheduling di una singola sezione
-    // ------------------------------------------------------------
-    function scheduleSection(section) {
-
-        if (section.name === "intro")  return patternGroove(section);
-
-        if (section.name === "verse") {
-            if (params.drumStyle === "doubleKick") return patternDoubleKick(section);
-            return patternGroove(section);
-        }
-
-        if (section.name === "chorus") return patternChorus(section);
-        if (section.name === "solo")   return patternSolo(section);
-        if (section.name === "outro")  return patternOutro(section);
-
-        // fallback
-        patternGroove(section);
-    }
-
-    // ------------------------------------------------------------
-    // EXPORT
-    // ------------------------------------------------------------
-    return {
-        scheduleSection
-    };
 }
+
+function scheduleKickGallop(section) {
+    const beats = section.measures * 4;
+    for (let b = 0; b < beats; b++) {
+        const base = section.startTime + b * secondsPerBeat;
+        scheduleIfInSection(section, base, t => drums.kick(t));
+        scheduleIfInSection(section, base + 0.5 * secondsPerBeat, t => drums.kick(t));
+        scheduleIfInSection(section, base + 0.75 * secondsPerBeat, t => drums.kick(t));
+    }
+}
+
+function scheduleKickBurst(section) {
+    const beats = section.measures * 4;
+    for (let b = 0; b < beats; b++) {
+        const base = section.startTime + b * secondsPerBeat;
+        scheduleIfInSection(section, base, t => drums.kick(t));
+        scheduleIfInSection(section, base + 0.33 * secondsPerBeat, t => drums.kick(t));
+        scheduleIfInSection(section, base + 0.66 * secondsPerBeat, t => drums.kick(t));
+    }
+}
+
+function scheduleKickSyncopated(section, riffEvents) {
+    riffEvents.forEach(ev => {
+        if (ev.beatOffset % 1 === 0.5) {
+            const time = section.startTime + ev.beatOffset * secondsPerBeat;
+            scheduleIfInSection(section, time, t => drums.kick(t));
+        }
+    });
+}
+
+function scheduleKickOpen(section) {
+    const beats = section.measures * 4;
+    for (let b = 0; b < beats; b += 2) {
+        const time = section.startTime + b * secondsPerBeat;
+        scheduleIfInSection(section, time, t => drums.kick(t));
+    }
+}
+
+function scheduleKickHalfTime(section) {
+    const beats = section.measures * 4;
+    for (let b = 0; b < beats; b += 2) {
+        const time = section.startTime + b * secondsPerBeat;
+        scheduleIfInSection(section, time, t => drums.kick(t));
+    }
+}
+
+function scheduleKickFollower(section, riffEvents) {
+    riffEvents.forEach(ev => {
+        const time = section.startTime + ev.beatOffset * secondsPerBeat;
+        scheduleIfInSection(section, time, t => drums.kick(t));
+    });
+}
+
+// ============================================================
+// DRUMS ENGINE – STRUTTURA BASE (firma corretta)
+// ============================================================
+
+function scheduleDrumsSection(section, scale, progression, riffEvents) {
+
+    // Analisi del riff (come il basso)
+    const analysis = analyzeRiff(riffEvents);
+    const { dominantPattern, palmRatio } = analysis;
+
+    // Kick, snare, hihat, crash
+    scheduleKick(section, riffEvents, dominantPattern, palmRatio);
+    scheduleSnare(section, riffEvents, dominantPattern, palmRatio);
+    scheduleHihat(section, riffEvents, dominantPattern, palmRatio);
+    scheduleCrash(section, riffEvents, dominantPattern, palmRatio);
+
+    // Fill automatico a fine sezione
+    scheduleFill(section, dominantPattern);
+}
+
+function scheduleDrumsTransition(section, transitionEvents) {
+    if (transitionEvents.length > 0) {
+        const t = section.startTime + transitionEvents[0].beatOffset * secondsPerBeat;
+        drums.crash(t);
+    }
+}
+
+// ============================================================
+// PATTERN BASE
+// ============================================================
+
+function scheduleKick(section, riffEvents, dominantPattern, palmRatio) {
+
+    if (palmRatio > 0.7) {
+        scheduleKickDoubleBass(section);
+        return;
+    }
+
+    if (dominantPattern.includes("gallop")) {
+        scheduleKickGallop(section);
+        return;
+    }
+
+    if (dominantPattern.includes("burst")) {
+        scheduleKickBurst(section);
+        return;
+    }
+
+    if (dominantPattern.includes("syncopated")) {
+        scheduleKickSyncopated(section, riffEvents);
+        return;
+    }
+
+    if (dominantPattern.includes("open")) {
+        scheduleKickOpen(section);
+        return;
+    }
+
+    if (dominantPattern.includes("half_time")) {
+        scheduleKickHalfTime(section);
+        return;
+    }
+
+    scheduleKickFollower(section, riffEvents);
+}
+
+function scheduleSnare(section, riffEvents, dominantPattern, palmRatio) {
+
+    const beats = section.measures * 4;
+
+    if (dominantPattern.includes("half_time") || dominantPattern.includes("open_half_time")) {
+        for (let b = 0; b < beats; b++) {
+            if (b % 4 === 2) {
+                const time = section.startTime + b * secondsPerBeat;
+                scheduleIfInSection(section, time, t => drums.snare(t));
+            }
+        }
+        return;
+    }
+
+    for (let b = 0; b < beats; b++) {
+        if (b % 4 === 1 || b % 4 === 3) {
+            const time = section.startTime + b * secondsPerBeat;
+            scheduleIfInSection(section, time, t => drums.snare(t));
+        }
+    }
+}
+
+function scheduleHihat(section, riffEvents, dominantPattern, palmRatio) {
+
+    const beats = section.measures * 4;
+
+    if (palmRatio > 0.7) {
+        for (let b = 0; b < beats; b += 0.25) {
+            const time = section.startTime + b * secondsPerBeat;
+            scheduleIfInSection(section, time, t => drums.hihatClosed(t));
+        }
+        return;
+    }
+
+    if (dominantPattern.includes("open")) {
+        for (let b = 0; b < beats; b += 0.5) {
+            const time = section.startTime + b * secondsPerBeat;
+            scheduleIfInSection(section, time, t => drums.ride(t));
+        }
+        return;
+    }
+
+    for (let b = 0; b < beats; b += 0.5) {
+        const time = section.startTime + b * secondsPerBeat;
+        scheduleIfInSection(section, time, t => drums.hihatClosed(t));
+    }
+}
+
+function scheduleCrash(section, riffEvents, dominantPattern, palmRatio) {
+
+    const startTime = section.startTime;
+    scheduleIfInSection(section, startTime, t => drums.crash(t));
+
+    if (dominantPattern.includes("open")) {
+        const beats = section.measures * 4;
+        for (let b = 0; b < beats; b += 4) {
+            const time = section.startTime + b * secondsPerBeat;
+            scheduleIfInSection(section, time, t => drums.crash(t));
+        }
+    }
+}
+
+function scheduleFill(section, dominantPattern) {
+
+    const totalBeats = section.measures * 4;
+    const fillStartBeat = totalBeats - 1;
+
+    for (let b = fillStartBeat; b < totalBeats; b += 0.25) {
+        const time = section.startTime + b * secondsPerBeat;
+
+        scheduleIfInSection(section, time, t => {
+            const tom = pickRandomTom();
+            drums[tom](t);
+        });
+    }
+}
+
+function pickRandomTom() {
+    const toms = ["tom1", "tom2", "tom3"];
+    return toms[Math.floor(Math.random() * toms.length)];
+}
+
+// ============================================================
+// EXPORT
+// ============================================================
+
+return {
+    scheduleDrumsSection,
+    scheduleDrumsTransition
+};

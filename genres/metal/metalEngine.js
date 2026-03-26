@@ -431,8 +431,8 @@ console.log(
 
             riff.scheduleSection(sec, sec.scale, sec.progression);
 bass.scheduleSection(sec, sec.scale, sec.progression, sec.riffResult.events);
+drums.scheduleSection(sec, sec.scale, sec.progression, sec.riffResult.events);
 
-            // drums.scheduleSection(sec, sec.scale, sec.progression);
             // theme.scheduleSection(sec, sec.scale, sec.progression);
             // lead.scheduleSection(sec, sec.scale, sec.progression);
 
