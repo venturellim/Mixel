@@ -8,7 +8,9 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("main.js ver. 002.7 loaded");
+import { metalInstruments, instrumentVolumeMap, masterEQ } from "./metal/instruments.js";
+
+console.log("main.js ver. 003 loaded");
 
 // -------------------------------------------------------------
 // Import fondamentali
@@ -256,6 +258,7 @@ function drawSpectrum() {
 // -------------------------------------------------------------
 // FX Panel
 // -------------------------------------------------------------
+
 function initFxPanel() {
     const fxPanel = document.getElementById("fxPanel");
     const btnFxPanel = document.getElementById("btnFxPanel");
@@ -263,7 +266,97 @@ function initFxPanel() {
 
     btnFxPanel.onclick = () => fxPanel.classList.add("open");
     closeFxPanel.onclick = () => fxPanel.classList.remove("open");
+
+    // ============================================================
+    // MASTER EQ CONTROLS
+    // ============================================================
+
+    const eqLow = document.getElementById("eqLow");
+    const eqMid = document.getElementById("eqMid");
+    const eqHigh = document.getElementById("eqHigh");
+
+    eqLow.addEventListener("input", e => {
+        masterEQ.low.value = Tone.dbToGain(Number(e.target.value));
+    });
+
+    eqMid.addEventListener("input", e => {
+        masterEQ.mid.value = Tone.dbToGain(Number(e.target.value));
+    });
+
+    eqHigh.addEventListener("input", e => {
+        masterEQ.high.value = Tone.dbToGain(Number(e.target.value));
+    });
+
+    // ============================================================
+    // VOLUME CONTROLS (DINAMICI)
+    // ============================================================
+
+    const volumeContainer = document.createElement("div");
+    volumeContainer.classList.add("volume-controls");
+
+    const title = document.createElement("h3");
+    title.textContent = "Volumi Strumenti";
+    volumeContainer.appendChild(title);
+
+    Object.entries(instrumentVolumeMap).forEach(([busName, label]) => {
+
+        const row = document.createElement("div");
+        row.classList.add("fx-row");
+
+        const lbl = document.createElement("label");
+        lbl.textContent = label;
+
+        const slider = document.createElement("input");
+        slider.type = "range";
+        slider.min = -24;
+        slider.max = 6;
+        slider.value = 0;
+        slider.dataset.bus = busName;
+
+        slider.addEventListener("input", e => {
+            metalInstruments.setVolume(busName, Number(e.target.value));
+        });
+
+        // --- SOLO ---
+        const btnSolo = document.createElement("button");
+        btnSolo.textContent = "Solo";
+        btnSolo.classList.add("fx-btn");
+
+        btnSolo.addEventListener("click", () => {
+            Object.keys(instrumentVolumeMap).forEach(otherBus => {
+                const otherSlider = volumeContainer.querySelector(`input[data-bus="${otherBus}"]`);
+                if (otherBus === busName) {
+                    metalInstruments.setVolume(otherBus, 0);
+                    if (otherSlider) otherSlider.value = 0;
+                } else {
+                    metalInstruments.setVolume(otherBus, -99);
+                    if (otherSlider) otherSlider.value = -24;
+                }
+            });
+        });
+
+        // --- MUTE ---
+        const btnMute = document.createElement("button");
+        btnMute.textContent = "Mute";
+        btnMute.classList.add("fx-btn");
+
+        btnMute.addEventListener("click", () => {
+            metalInstruments.setVolume(busName, -99);
+            slider.value = -24;
+        });
+
+        row.appendChild(lbl);
+        row.appendChild(slider);
+        row.appendChild(btnSolo);
+        row.appendChild(btnMute);
+
+        volumeContainer.appendChild(row);
+    });
+
+    fxPanel.appendChild(volumeContainer);
 }
+
+
 
 // reset audio
 
