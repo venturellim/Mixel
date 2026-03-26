@@ -4,15 +4,21 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-import { buildSectionTimeline } from "../../utils/structureUtils.js";
-import { duration } from "../../utils/tempoUtils.js";
-import { analyzeRiff } from "../../analysis/riffAnalysis.js"; // IMPORTANTE
+import { analyzeRiff } from "../../analysis/riffAnalysis.js";
 
-console.log("drumEngine.js ver. 002 loaded");
+console.log("drumEngine.js ver. 004 loaded");
 
-// ============================================================
+// =====================================================================
+// VARIABILI INTERNE (inizializzate da initDrumEngine)
+// =====================================================================
+
+let drums = null;
+let secondsPerBeat = 0;
+let scheduleIfInSection = null;
+
+// =====================================================================
 // PATTERN KICK
-// ============================================================
+// =====================================================================
 
 function scheduleKickDoubleBass(section) {
     const beats = section.measures * 4;
@@ -74,23 +80,20 @@ function scheduleKickFollower(section, riffEvents) {
     });
 }
 
-// ============================================================
-// DRUMS ENGINE – STRUTTURA BASE (firma corretta)
-// ============================================================
+// =====================================================================
+// DRUMS ENGINE – SEZIONE PRINCIPALE
+// =====================================================================
 
 function scheduleDrumsSection(section, scale, progression, riffEvents) {
 
-    // Analisi del riff (come il basso)
     const analysis = analyzeRiff(riffEvents);
     const { dominantPattern, palmRatio } = analysis;
 
-    // Kick, snare, hihat, crash
     scheduleKick(section, riffEvents, dominantPattern, palmRatio);
     scheduleSnare(section, riffEvents, dominantPattern, palmRatio);
     scheduleHihat(section, riffEvents, dominantPattern, palmRatio);
     scheduleCrash(section, riffEvents, dominantPattern, palmRatio);
 
-    // Fill automatico a fine sezione
     scheduleFill(section, dominantPattern);
 }
 
@@ -101,41 +104,18 @@ function scheduleDrumsTransition(section, transitionEvents) {
     }
 }
 
-// ============================================================
+// =====================================================================
 // PATTERN BASE
-// ============================================================
+// =====================================================================
 
 function scheduleKick(section, riffEvents, dominantPattern, palmRatio) {
 
-    if (palmRatio > 0.7) {
-        scheduleKickDoubleBass(section);
-        return;
-    }
-
-    if (dominantPattern.includes("gallop")) {
-        scheduleKickGallop(section);
-        return;
-    }
-
-    if (dominantPattern.includes("burst")) {
-        scheduleKickBurst(section);
-        return;
-    }
-
-    if (dominantPattern.includes("syncopated")) {
-        scheduleKickSyncopated(section, riffEvents);
-        return;
-    }
-
-    if (dominantPattern.includes("open")) {
-        scheduleKickOpen(section);
-        return;
-    }
-
-    if (dominantPattern.includes("half_time")) {
-        scheduleKickHalfTime(section);
-        return;
-    }
+    if (palmRatio > 0.7) return scheduleKickDoubleBass(section);
+    if (dominantPattern.includes("gallop")) return scheduleKickGallop(section);
+    if (dominantPattern.includes("burst")) return scheduleKickBurst(section);
+    if (dominantPattern.includes("syncopated")) return scheduleKickSyncopated(section, riffEvents);
+    if (dominantPattern.includes("open")) return scheduleKickOpen(section);
+    if (dominantPattern.includes("half_time")) return scheduleKickHalfTime(section);
 
     scheduleKickFollower(section, riffEvents);
 }
@@ -222,11 +202,18 @@ function pickRandomTom() {
     return toms[Math.floor(Math.random() * toms.length)];
 }
 
-// ============================================================
-// EXPORT
-// ============================================================
+// =====================================================================
+// EXPORT — ARCHITETTURA CORRETTA
+// =====================================================================
 
-return {
-    scheduleDrumsSection,
-    scheduleDrumsTransition
-};
+export function initDrumEngine(drumsRef, secondsPerBeatRef, scheduleIfInSectionRef) {
+
+    drums = drumsRef;
+    secondsPerBeat = secondsPerBeatRef;
+    scheduleIfInSection = scheduleIfInSectionRef;
+
+    return {
+        scheduleSection: scheduleDrumsSection,
+        scheduleTransition: scheduleDrumsTransition
+    };
+}
