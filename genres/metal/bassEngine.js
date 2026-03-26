@@ -6,7 +6,7 @@ import * as Tone from "https://esm.sh/tone";
 import { degreeToRoot } from "./metalTheory.js";
 
 
-console.log("bassEngine.js ver. 002 loaded");
+console.log("bassEngine.js ver. 003 loaded");
 
 export function initBassEngine(instruments, params, rand) {
 
@@ -608,7 +608,7 @@ function analyzeRiff(riffEvents) {
 
     function scheduleSection(section, scale, progression, riffEvents = null) {
 
-    // Se abbiamo gli eventi del riff → analisi avanzata
+    // Se abbiamo gli eventi del riff → il basso segue il riff
     if (riffEvents && riffEvents.length > 0) {
 
         const analysis = analyzeRiff(riffEvents);
@@ -616,9 +616,8 @@ function analyzeRiff(riffEvents) {
 
         const degree = progression[0];
         const root = degreeToRoot(degree, params.tonalCenter);
-        const rootLetter = toLetter(root);
 
-        // --- MAPPATURA INTELLIGENTE ---
+        // --- MAPPATURA INTELLIGENTE (solo ritmica, non armonica) ---
         let bassPattern = "pedal_8n";
 
         if (dominantPattern.includes("gallop")) bassPattern = "gallop";
@@ -629,20 +628,27 @@ function analyzeRiff(riffEvents) {
         else if (dominantPattern.includes("open_half_time")) bassPattern = "accent_third";
         else if (dominantPattern.includes("melodic")) bassPattern = "root_octave";
 
-        // Se la sezione è 90% palm → pedal_16n
+        // Sezione molto palm → pedal_16n (solo ritmica)
         if (palmRatio > 0.9) bassPattern = "pedal_16n";
 
-        // Schedulazione del pattern scelto
-        const measures = section.measures;
-        for (let i = 0; i < measures; i++) {
-            const offset = i * measureDuration;
-            scheduleBassPattern(section, scale, root, bassPattern, offset);
-        }
+        // ---------------------------------------------------------
+        // 🎯 BASSO SEGUE LE NOTE DEL RIFF
+        // ---------------------------------------------------------
+        riffEvents.forEach(ev => {
+            const bassNote = ev.note + "1"; // C → C1, G → G1, ecc.
+            const time = section.startTime + ev.beatOffset * secondsPerBeat;
+
+            scheduleIfInSection(section, time, t => {
+                bass.triggerAttackRelease(bassNote, "8n", t);
+            });
+        });
 
         return;
     }
 
-    // Fallback: pedal 8n
+    // ---------------------------------------------------------
+    // 🎯 FALLBACK: NESSUN RIFF → usa i pattern del basso
+    // ---------------------------------------------------------
     const measures = section.measures;
     for (let i = 0; i < measures; i++) {
         const degree = progression[i % progression.length];
@@ -651,8 +657,6 @@ function analyzeRiff(riffEvents) {
         scheduleBassPattern(section, scale, root, "pedal_8n", offset);
     }
 }
-
-
 
     // ============================================================
     // EXPORT
