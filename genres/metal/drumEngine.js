@@ -3,7 +3,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("drumEngine.js ver. 006 loaded");
+console.log("drumEngine.js ver. 006.1 loaded");
 
 export function initDrumEngine(instruments, params, rand) {
 
@@ -113,6 +113,43 @@ export function initDrumEngine(instruments, params, rand) {
             scheduleIfInSection(section, time, t => drums.kick(t));
         });
     }
+
+function scheduleKick(section, riffEvents, dominantPattern, palmRatio) {
+
+    if (palmRatio > 0.7) {
+        scheduleKickDoubleBass(section);
+        return;
+    }
+
+    if (dominantPattern.includes("gallop")) {
+        scheduleKickGallop(section);
+        return;
+    }
+
+    if (dominantPattern.includes("burst")) {
+        scheduleKickBurst(section);
+        return;
+    }
+
+    if (dominantPattern.includes("syncopated")) {
+        scheduleKickSyncopated(section, riffEvents);
+        return;
+    }
+
+    if (dominantPattern.includes("open")) {
+        scheduleKickOpen(section);
+        return;
+    }
+
+    if (dominantPattern.includes("half_time")) {
+        scheduleKickHalfTime(section);
+        return;
+    }
+
+    // fallback: segue il riff
+    scheduleKickFollower(section, riffEvents);
+}
+
 
     // ============================================================
     // 🥁 SNARE / HIHAT / CRASH
