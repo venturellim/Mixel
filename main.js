@@ -11,7 +11,7 @@ import * as Tone from "https://esm.sh/tone";
 import { metalInstruments, instrumentVolumeMap } from "./genres/metal/instruments.js";
 import { masterEQ, } from "./common.js";
 
-console.log("main.js ver. 003.1 loaded");
+console.log("main.js ver. 003.2 loaded");
 
 // -------------------------------------------------------------
 // Import fondamentali
@@ -426,10 +426,11 @@ function closeMixelUI() {
 // Wake Lock via video invisibile (funziona su iOS e Android)
 // -------------------------------------------------------------
 function keepScreenAwake() {
-    const v = document.getElementById("wakelock-video");
+    //const v = document.getElementById("wakelock-video");
+    document.getElementById('miniVideo').play();
     console.log("Wake Lock via video invisibile avviato");
-    if (!v) return;
-    v.play().catch(err => console.warn("WakeLock video play error:", err));
+    //if (!v) return;
+    //v.play().catch(err => console.warn("WakeLock video play error:", err));
 }
 
 function releaseScreenAwake() {
