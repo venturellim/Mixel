@@ -11,7 +11,7 @@ import * as Tone from "https://esm.sh/tone";
 import { metalInstruments, instrumentVolumeMap } from "./genres/metal/instruments.js";
 import { masterEQ, } from "./common.js";
 
-console.log("main.js ver. 003.4 loaded");
+console.log("main.js ver. 004 loaded");
 
 // -------------------------------------------------------------
 // Import fondamentali
@@ -53,14 +53,34 @@ function initOrientation() {
     const rotateOverlay = document.getElementById("rotateOverlay");
 
     function checkOrientation() {
-        const isPortrait = window.innerHeight > window.innerWidth;
-        rotateOverlay.classList.toggle("hidden", !isPortrait);
+        // Controllo universale
+        const isPortrait = window.matchMedia("(orientation: portrait)").matches || 
+                          (window.innerHeight > window.innerWidth);
+        
+        if (isPortrait) {
+            rotateOverlay.style.display = "flex";
+            rotateOverlay.classList.remove("hidden");
+        } else {
+            rotateOverlay.style.display = "none";
+            rotateOverlay.classList.add("hidden");
+        }
     }
 
-    checkOrientation();
+    // Ascolto moderno (Android Chrome / iOS Safari 14+)
+    const mql = window.matchMedia("(orientation: portrait)");
+    if (mql.addEventListener) {
+        mql.addEventListener("change", checkOrientation);
+    } else {
+        // Vecchio metodo per Android molto datati
+        window.addEventListener("orientationchange", checkOrientation);
+    }
+
+    // Backup per ridimensionamenti finestra
     window.addEventListener("resize", checkOrientation);
-    window.addEventListener("orientationchange", checkOrientation);
+
+    checkOrientation();
 }
+
 
 // -------------------------------------------------------------
 // File Loader + Preview
