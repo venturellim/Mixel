@@ -555,8 +555,8 @@
     position: absolute;
     top: 15px;
     right: 15px;
-    width: 100px;       /* La tua nuova larghezza */
-    height: 37px;      /* La tua nuova altezza */
+    width: 200px;       /* La tua nuova larghezza */
+    height: 75px;      /* La tua nuova altezza */
     overflow: hidden;
     z-index: 1001;
     background: #000;
