@@ -1,21 +1,21 @@
-// drumEngine.js — versione 006 (autosufficiente come il basso)
+// drumEngine.js — versione 006.2 (autosufficiente + Tone.Players fix)
 // Batteria power metal: groove, double kick, sezioni differenziate.
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("drumEngine.js ver. 006.1 loaded");
+console.log("drumEngine.js ver. 006.2 loaded");
 
 export function initDrumEngine(instruments, params, rand) {
 
-    // Estrae SOLO la batteria, come il basso estrae instruments.bass
+    // Estrae SOLO la batteria
     const { drums } = instruments;
 
-    // Calcolo interno, identico al basso
+    // Calcolo interno
     const secondsPerBeat = 60 / params.bpm;
     const measureDuration = secondsPerBeat * 4;
 
     // ============================================================
-    // 🎵 ANALISI RIFF (copiata dal basso, adattata)
+    // 🎵 ANALISI RIFF
     // ============================================================
 
     function analyzeRiff(riffEvents) {
@@ -41,7 +41,7 @@ export function initDrumEngine(instruments, params, rand) {
     }
 
     // ============================================================
-    // 🎵 SCHEDULER AUTOSUFFICIENTE (come il basso)
+    // 🎵 SCHEDULER
     // ============================================================
 
     function scheduleIfInSection(section, eventTime, cb) {
@@ -51,6 +51,40 @@ export function initDrumEngine(instruments, params, rand) {
     }
 
     // ============================================================
+    // 🥁 HELPERS PER TONE.PLAYERS
+    // ============================================================
+
+    const K = name => t => drums.player(name).start(t);
+
+    // Kick aliases
+    const kick      = K("kick");
+    const snare     = K("snare");
+    const hihat     = K("hihat");
+    const openhat   = K("openhat");
+    const ride      = K("ride");
+    const crash1    = K("crash1");
+    const crash2    = K("crash2");
+    const tom1      = K("tom1");
+    const tom2      = K("tom2");
+    const tom3      = K("tom3");
+    const tom4      = K("tom4");
+
+    // Crash generico
+    const crash = t => {
+        // alterna crash1 / crash2
+        if (rand() < 0.5) crash1(t);
+        else crash2(t);
+    };
+
+    // Tom random
+    const randomTom = t => {
+        const r = rand();
+        if (r < 0.33) tom1(t);
+        else if (r < 0.66) tom2(t);
+        else tom3(t);
+    };
+
+    // ============================================================
     // 🥁 KICK PATTERNS
     // ============================================================
 
@@ -58,7 +92,7 @@ export function initDrumEngine(instruments, params, rand) {
         const beats = section.measures * 4;
         for (let b = 0; b < beats; b += 0.25) {
             const time = section.startTime + b * secondsPerBeat;
-            scheduleIfInSection(section, time, t => drums.kick(t));
+            scheduleIfInSection(section, time, kick);
         }
     }
 
@@ -66,9 +100,9 @@ export function initDrumEngine(instruments, params, rand) {
         const beats = section.measures * 4;
         for (let b = 0; b < beats; b++) {
             const base = section.startTime + b * secondsPerBeat;
-            scheduleIfInSection(section, base, t => drums.kick(t));
-            scheduleIfInSection(section, base + 0.5 * secondsPerBeat, t => drums.kick(t));
-            scheduleIfInSection(section, base + 0.75 * secondsPerBeat, t => drums.kick(t));
+            scheduleIfInSection(section, base, kick);
+            scheduleIfInSection(section, base + 0.5 * secondsPerBeat, kick);
+            scheduleIfInSection(section, base + 0.75 * secondsPerBeat, kick);
         }
     }
 
@@ -76,9 +110,9 @@ export function initDrumEngine(instruments, params, rand) {
         const beats = section.measures * 4;
         for (let b = 0; b < beats; b++) {
             const base = section.startTime + b * secondsPerBeat;
-            scheduleIfInSection(section, base, t => drums.kick(t));
-            scheduleIfInSection(section, base + 0.33 * secondsPerBeat, t => drums.kick(t));
-            scheduleIfInSection(section, base + 0.66 * secondsPerBeat, t => drums.kick(t));
+            scheduleIfInSection(section, base, kick);
+            scheduleIfInSection(section, base + 0.33 * secondsPerBeat, kick);
+            scheduleIfInSection(section, base + 0.66 * secondsPerBeat, kick);
         }
     }
 
@@ -86,7 +120,7 @@ export function initDrumEngine(instruments, params, rand) {
         riffEvents.forEach(ev => {
             if (ev.beatOffset % 1 === 0.5) {
                 const time = section.startTime + ev.beatOffset * secondsPerBeat;
-                scheduleIfInSection(section, time, t => drums.kick(t));
+                scheduleIfInSection(section, time, kick);
             }
         });
     }
@@ -95,7 +129,7 @@ export function initDrumEngine(instruments, params, rand) {
         const beats = section.measures * 4;
         for (let b = 0; b < beats; b += 2) {
             const time = section.startTime + b * secondsPerBeat;
-            scheduleIfInSection(section, time, t => drums.kick(t));
+            scheduleIfInSection(section, time, kick);
         }
     }
 
@@ -103,53 +137,28 @@ export function initDrumEngine(instruments, params, rand) {
         const beats = section.measures * 4;
         for (let b = 0; b < beats; b += 2) {
             const time = section.startTime + b * secondsPerBeat;
-            scheduleIfInSection(section, time, t => drums.kick(t));
+            scheduleIfInSection(section, time, kick);
         }
     }
 
     function scheduleKickFollower(section, riffEvents) {
         riffEvents.forEach(ev => {
             const time = section.startTime + ev.beatOffset * secondsPerBeat;
-            scheduleIfInSection(section, time, t => drums.kick(t));
+            scheduleIfInSection(section, time, kick);
         });
     }
 
-function scheduleKick(section, riffEvents, dominantPattern, palmRatio) {
+    function scheduleKick(section, riffEvents, dominantPattern, palmRatio) {
 
-    if (palmRatio > 0.7) {
-        scheduleKickDoubleBass(section);
-        return;
+        if (palmRatio > 0.7) return scheduleKickDoubleBass(section);
+        if (dominantPattern.includes("gallop")) return scheduleKickGallop(section);
+        if (dominantPattern.includes("burst")) return scheduleKickBurst(section);
+        if (dominantPattern.includes("syncopated")) return scheduleKickSyncopated(section, riffEvents);
+        if (dominantPattern.includes("open")) return scheduleKickOpen(section);
+        if (dominantPattern.includes("half_time")) return scheduleKickHalfTime(section);
+
+        scheduleKickFollower(section, riffEvents);
     }
-
-    if (dominantPattern.includes("gallop")) {
-        scheduleKickGallop(section);
-        return;
-    }
-
-    if (dominantPattern.includes("burst")) {
-        scheduleKickBurst(section);
-        return;
-    }
-
-    if (dominantPattern.includes("syncopated")) {
-        scheduleKickSyncopated(section, riffEvents);
-        return;
-    }
-
-    if (dominantPattern.includes("open")) {
-        scheduleKickOpen(section);
-        return;
-    }
-
-    if (dominantPattern.includes("half_time")) {
-        scheduleKickHalfTime(section);
-        return;
-    }
-
-    // fallback: segue il riff
-    scheduleKickFollower(section, riffEvents);
-}
-
 
     // ============================================================
     // 🥁 SNARE / HIHAT / CRASH
@@ -162,7 +171,7 @@ function scheduleKick(section, riffEvents, dominantPattern, palmRatio) {
             for (let b = 0; b < beats; b++) {
                 if (b % 4 === 2) {
                     const time = section.startTime + b * secondsPerBeat;
-                    scheduleIfInSection(section, time, t => drums.snare(t));
+                    scheduleIfInSection(section, time, snare);
                 }
             }
             return;
@@ -171,7 +180,7 @@ function scheduleKick(section, riffEvents, dominantPattern, palmRatio) {
         for (let b = 0; b < beats; b++) {
             if (b % 4 === 1 || b % 4 === 3) {
                 const time = section.startTime + b * secondsPerBeat;
-                scheduleIfInSection(section, time, t => drums.snare(t));
+                scheduleIfInSection(section, time, snare);
             }
         }
     }
@@ -182,7 +191,7 @@ function scheduleKick(section, riffEvents, dominantPattern, palmRatio) {
         if (palmRatio > 0.7) {
             for (let b = 0; b < beats; b += 0.25) {
                 const time = section.startTime + b * secondsPerBeat;
-                scheduleIfInSection(section, time, t => drums.hihatClosed(t));
+                scheduleIfInSection(section, time, hihat);
             }
             return;
         }
@@ -190,26 +199,26 @@ function scheduleKick(section, riffEvents, dominantPattern, palmRatio) {
         if (dominantPattern.includes("open")) {
             for (let b = 0; b < beats; b += 0.5) {
                 const time = section.startTime + b * secondsPerBeat;
-                scheduleIfInSection(section, time, t => drums.ride(t));
+                scheduleIfInSection(section, time, ride);
             }
             return;
         }
 
         for (let b = 0; b < beats; b += 0.5) {
             const time = section.startTime + b * secondsPerBeat;
-            scheduleIfInSection(section, time, t => drums.hihatClosed(t));
+            scheduleIfInSection(section, time, hihat);
         }
     }
 
     function scheduleCrash(section, riffEvents, dominantPattern, palmRatio) {
         const startTime = section.startTime;
-        scheduleIfInSection(section, startTime, t => drums.crash(t));
+        scheduleIfInSection(section, startTime, crash);
 
         if (dominantPattern.includes("open")) {
             const beats = section.measures * 4;
             for (let b = 0; b < beats; b += 4) {
                 const time = section.startTime + b * secondsPerBeat;
-                scheduleIfInSection(section, time, t => drums.crash(t));
+                scheduleIfInSection(section, time, crash);
             }
         }
     }
@@ -220,11 +229,7 @@ function scheduleKick(section, riffEvents, dominantPattern, palmRatio) {
 
         for (let b = fillStartBeat; b < totalBeats; b += 0.25) {
             const time = section.startTime + b * secondsPerBeat;
-
-            scheduleIfInSection(section, time, t => {
-                const tom = ["tom1", "tom2", "tom3"][Math.floor(Math.random() * 3)];
-                drums[tom](t);
-            });
+            scheduleIfInSection(section, time, randomTom);
         }
     }
 
@@ -252,12 +257,12 @@ function scheduleKick(section, riffEvents, dominantPattern, palmRatio) {
     function scheduleTransition(section, transitionEvents) {
         if (transitionEvents.length > 0) {
             const t = section.startTime + transitionEvents[0].beatOffset * secondsPerBeat;
-            drums.crash(t);
+            crash(t);
         }
     }
 
     // ============================================================
-    // EXPORT (identico al basso)
+    // EXPORT
     // ============================================================
 
     return {
