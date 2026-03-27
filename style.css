@@ -549,3 +549,27 @@
 #spectrumPanel.active {
     top: 60px;
 }
+
+/* STILE PER IL MINI-WRAPPER VIDEO (PULITO E RITAGLIATO) */
+.video-mini-wrapper {
+    position: absolute; /* Si aggancia al .content */
+    top: 15px;          /* Distanza dall'alto */
+    right: 15px;        /* Distanza da destra */
+    width: 200px;       /* Larghezza del riquadro */
+    height: 70px;       /* ALTEZZA TAGLIATA: regola questa per vedere più o meno video */
+    overflow: hidden;   /* Nasconde ciò che esce dai 70px di altezza */
+    z-index: 1001;      /* Sopra lo spectrumPanel (che ha 999) */
+    background: #000;   /* Sfondo nero se il video non ha ancora caricato */
+    pointer-events: none; /* Rende il video "passante" ai click */
+    
+    /* Nota: Ho rimosso border, border-radius e shadow per la massima pulizia */
+}
+
+.video-mini-wrapper video {
+    width: 100%;        /* Il video occupa tutta la larghezza */
+    height: auto;       /* Mantiene le proporzioni */
+    display: block;
+    /* Se vuoi mostrare una parte diversa del video dentro il taglio, */
+    /* puoi sbloccare e regolare questa riga: */
+    /* transform: translateY(-10px); */ 
+}

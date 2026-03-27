@@ -58,10 +58,6 @@
 
         <input type="file" id="fileInput" class="file-input">
 
-    <!--    <button id="btnGlitch" class="side-btn hidden">
-            Ascolta file non elaborato
-        </button> -->
-
         <button id="btnElabora" class="side-btn hidden">
             Elabora file
         </button>
@@ -73,7 +69,11 @@
 
     <!-- CONTENT -->
     <main class="content">
-
+    <div class="video-mini-wrapper">
+    <video autoplay muted loop playsinline>
+        <source src="onair.mp4" type="video/mp4">
+    </video>
+</div>
         <div id="heroLogoContainer">
             <div id="heroLogo" class="hero-logo-box">
                 <img src="Mixel2.PNG"
@@ -160,12 +160,6 @@
     <input type="range" id="eqHigh" min="-12" max="12" value="0">
 
 </div>
-
-<!-- FINTO VIDEO PER TENERE SCHERMO ACCESO -->
-<video id="wakelock-video" playsinline muted loop style="display:none">
-    <source src="data:video/mp4;base64,AAAAHGZ0eXBtcDQyAAAAAG1wNDFtcDQxaXNvbWF2YzEAAAAIZnJlZQAAACBtZGF0AAAAAA==" type="video/mp4">
-</video>
-
 
 <script type="module" src="main.js"></script>
 
