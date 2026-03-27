@@ -11,7 +11,7 @@ import * as Tone from "https://esm.sh/tone";
 import { metalInstruments, instrumentVolumeMap } from "./genres/metal/instruments.js";
 import { masterEQ, } from "./common.js";
 
-console.log("main.js ver. 003.3 loaded");
+console.log("main.js ver. 003.4 loaded");
 
 // -------------------------------------------------------------
 // Import fondamentali
@@ -25,6 +25,8 @@ import { createMetalEngine, waitMetalInstruments } from "./genres/metal/metalEng
 let currentEngine = null;
 let currentGenre = null;
 let firstStart = 1;
+const miniVideo = document.querySelector('.video-mini-wrapper video'); 
+
 
 // -------------------------------------------------------------
 // Error handler globale
@@ -95,6 +97,10 @@ function initFileLoader() {
             previewImage.classList.remove("hidden");
             heroLogoContainer.style.display = "none";
             btnElabora.classList.remove("hidden");
+            if (miniVideo) {
+        miniVideo.pause();
+        miniVideo.currentTime = 0; 
+    }
 
             resetAppState();
         };
@@ -110,9 +116,8 @@ function initGenrePanel() {
     const closeGenrePanel = document.getElementById("closeGenrePanel");
 
     btnElabora.addEventListener("click", () => {
-    releaseScreenAwake();
-    keepScreenAwake();
     closeMixelUI();
+    miniVideo?.play().catch(e => console.log("Autoplay video bloccato:", e));
     if ( firstStart !== 1 ) {
     resetAudio();
     firstStart = 0;
@@ -399,8 +404,11 @@ async function resetAudio() {
 function resetAppState() {
     currentEngine?.stop();
     currentEngine = null;
-    releaseScreenAwake();
     closeMixelUI();
+    if (miniVideo) {
+        miniVideo.pause();
+        miniVideo.currentTime = 0; 
+    }
     if ( firstStart !== 1 ) {
     resetAudio();
     firstStart = 0;
@@ -427,21 +435,4 @@ function closeMixelUI() {
     document.getElementById("spectrumPanel").classList.remove("active");
     document.getElementById("previewImage").classList.remove("shift-left");
     document.getElementById("playerPanel").classList.remove("open");
-}
-
-// -------------------------------------------------------------
-// Wake Lock via video invisibile (funziona su iOS e Android)
-// -------------------------------------------------------------
-function keepScreenAwake() {
-    //const v = document.getElementById("wakelock-video");
-    //document.getElementById('miniVideo').play();
-    console.log("Wake Lock via video invisibile avviato");
-    //if (!v) return;
-    //v.play().catch(err => console.warn("WakeLock video play error:", err));
-}
-
-function releaseScreenAwake() {
-    const v = document.getElementById("wakelock-video");
-    if (!v) return;
-    v.pause();
 }
