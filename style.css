@@ -224,8 +224,9 @@
         
         /* PLAYER UI 2.0 */
 .player-ui {
-    margin-top: 30px;
-    padding: 20px;
+    margin-top: 5px;
+    padding: 0;
+    gap: 5px;
     background: rgba(20,20,20,0.7);
     border: 1px solid #444;
     border-radius: 10px;
@@ -243,7 +244,8 @@
 .player-controls button,
 .player-sections button {
     margin: 6px;
-    padding: 10px 16px;
+    padding: 6px 12px;
+    font-size: 13px;
     background: #222;
     border: 1px solid #555;
     border-radius: 6px;
@@ -367,17 +369,17 @@
 .fx-panel {
     position: fixed;
     top: 0;
-    left: -420px;
-    width: 360px;
-    height: 100vh;
-    background: #111;
-    color: white;
-    padding: 20px;
-    overflow-y: auto;
-    box-shadow: 4px 0 10px rgba(0,0,0,0.4);
-    transition: left 0.35s ease;
+    left: -100%;
+    width: 320px;       /* In orizzontale, 320px bastano e avanzano */
+    height: 100vh;      /* Occupa tutta l'altezza dello schermo */
+    background: rgba(10, 10, 10, 0.95);
+    padding: 15px;      /* Padding ridotto per guadagnare spazio */
+    overflow-y: auto;   /* FONDAMENTALE: permette di scorrere gli strumenti */
     z-index: 9999;
+    transition: left 0.3s ease;
+    border-right: 1px solid #0f0; /* Un tocco di verde Mixel */
 }
+
 
 .fx-panel.open {
     left: 0;
@@ -418,17 +420,33 @@
 
 .fx-row {
     display: flex;
+    flex-direction: row; /* Tutto su una riga per risparmiare altezza */
     align-items: center;
-    gap: 10px;
-    margin-bottom: 8px;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 10px;
+    padding: 5px 8px;
+    background: rgba(255,255,255,0.03);
+}
+
+.fx-row label {
+    flex: 0 0 80px;      /* Nome strumento corto a sinistra */
+    font-size: 12px;
+    margin-bottom: 0;    /* Tolto il margine sotto */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.fx-row input[type="range"] {
+    flex: 1;
+    height: 20px;        /* Slider più sottile */
 }
 
 .fx-btn {
-    padding: 4px 8px;
-    font-size: 12px;
-    cursor: pointer;
+    padding: 4px 8px;    /* Pulsanti più piccoli */
+    font-size: 11px;
 }
-
 
 #loadingOverlay {
     position: fixed;
@@ -480,9 +498,10 @@
 #playerPanel {
     position: absolute;
     left: 0;
-    bottom: -220px;   /* altezza chiusura */
+    bottom: -140px;   /* altezza chiusura */
+    padding: 10px;
     width: 100%;
-    height: 220px;    /* altezza apertura */
+    height: 140px;    /* altezza apertura */
     padding-top: 0;
     background: rgba(20,20,20,0.9);
     box-shadow: 0 0 15px rgba(0,255,0,0.2);
