@@ -1,8 +1,8 @@
-// drumEngine.js — versione 006.3 (autosufficiente + Tone.Players fix + transition fix)
+// drumEngine.js — versione 006.4 (transition fix definitivo)
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("drumEngine.js ver. 006.3 loaded");
+console.log("drumEngine.js ver. 006.4 loaded");
 
 export function initDrumEngine(instruments, params, rand) {
 
@@ -38,12 +38,20 @@ export function initDrumEngine(instruments, params, rand) {
     }
 
     // ============================================================
-    // 🎵 SCHEDULER
+    // 🎵 SCHEDULER (fixato per transizioni)
     // ============================================================
 
-    function scheduleIfInSection(section, eventTime, cb) {
-        const end = section.startTime + section.measures * measureDuration;
+    function scheduleIfInSection(section, eventTime, cb, overrideDurationBeats = null) {
+
+        const durationBeats =
+            overrideDurationBeats != null
+                ? overrideDurationBeats
+                : section.measures * 4;
+
+        const end = section.startTime + durationBeats * secondsPerBeat;
+
         if (eventTime >= end) return;
+
         Tone.Transport.schedule(cb, eventTime);
     }
 
@@ -245,10 +253,17 @@ export function initDrumEngine(instruments, params, rand) {
     function scheduleTransition(section, transitionEvents) {
         if (!transitionEvents || transitionEvents.length === 0) return;
 
-        const eventTime = section.startTime + transitionEvents[0].beatOffset * secondsPerBeat;
+        const first = transitionEvents[0];
+        const eventTime = section.startTime + first.beatOffset * secondsPerBeat;
 
-        // SCHEDULAZIONE CORRETTA (non crash(t) diretto!)
-        scheduleIfInSection(section, eventTime, t => crash(t));
+        const durationBeats = section.transition.durationBeats;
+
+        scheduleIfInSection(
+            section,
+            eventTime,
+            t => crash(t),
+            durationBeats
+        );
     }
 
     // ============================================================
