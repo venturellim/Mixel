@@ -11,7 +11,7 @@ import * as Tone from "https://esm.sh/tone";
 import { metalInstruments, instrumentVolumeMap } from "./genres/metal/instruments.js";
 import { masterEQ, } from "./common.js";
 
-console.log("main.js ver. 003.2 loaded");
+console.log("main.js ver. 003.3 loaded");
 
 // -------------------------------------------------------------
 // Import fondamentali
@@ -24,6 +24,7 @@ import { createMetalEngine, waitMetalInstruments } from "./genres/metal/metalEng
 
 let currentEngine = null;
 let currentGenre = null;
+let firstStart = 1;
 
 // -------------------------------------------------------------
 // Error handler globale
@@ -112,7 +113,10 @@ function initGenrePanel() {
     releaseScreenAwake();
     keepScreenAwake();
     closeMixelUI();
+    if ( firstStart !== 1 ) {
     resetAudio();
+    firstStart = 0;
+    }
     genrePanel.classList.add("show");
 
 genrePanel.classList.remove("hidden");
@@ -397,7 +401,10 @@ function resetAppState() {
     currentEngine = null;
     releaseScreenAwake();
     closeMixelUI();
+    if ( firstStart !== 1 ) {
     resetAudio();
+    firstStart = 0;
+    }
 }
 
 // -------------------------------------------------------------
@@ -427,7 +434,7 @@ function closeMixelUI() {
 // -------------------------------------------------------------
 function keepScreenAwake() {
     //const v = document.getElementById("wakelock-video");
-    document.getElementById('miniVideo').play();
+    //document.getElementById('miniVideo').play();
     console.log("Wake Lock via video invisibile avviato");
     //if (!v) return;
     //v.play().catch(err => console.warn("WakeLock video play error:", err));
