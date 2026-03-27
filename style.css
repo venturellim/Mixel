@@ -556,7 +556,7 @@
     top: 15px;          /* Distanza dall'alto */
     right: 15px;        /* Distanza da destra */
     width: 130px;       /* Larghezza del riquadro */
-    height: 60px;       /* ALTEZZA TAGLIATA: regola questa per vedere più o meno video */
+    height: 65px;       /* ALTEZZA TAGLIATA: regola questa per vedere più o meno video */
     overflow: hidden;   /* Nasconde ciò che esce dai 70px di altezza */
     z-index: 1001;      /* Sopra lo spectrumPanel (che ha 999) */
     background: #000;   /* Sfondo nero se il video non ha ancora caricato */
