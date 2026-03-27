@@ -574,13 +574,3 @@
     /* transform: translateY(-10px); */ 
 }
 
-/* Rimuove eventuali tasti residui su browser Webkit (Chrome/Safari) */
-video::-webkit-media-controls {
-    display: none !important;
-}
-
-/* Impedisce la comparsa del tasto play centrale su alcuni sistemi */
-video::-webkit-media-controls-start-playback-button {
-    display: none !important;
-    -webkit-appearance: none;
-}
