@@ -1,385 +1,250 @@
 
-        /* RESET */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: "Segoe UI", sans-serif;
-            background: linear-gradient(to bottom, #000, #222);
-            color: #fff;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        /* LAYOUT */
-        .app-container {
-            display: flex;
-            height: 100vh;
-            width: 100vw;
-        }
-
-        /* SIDEBAR */
-        .sidebar {
-            width: 260px;
-            background: rgba(30, 30, 30, 0.85);
-            backdrop-filter: blur(10px);
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            border-right: 1px solid #444;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.4);
-        }
-
-        /* Placeholder logo */
-        .sidebar-logo-box {
-            width: 90px;
-            height: 60px;
-            margin: 0 auto;
-            background: #333;
-            border-radius: 6px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            opacity: 0.7;
-            object-fit: contain;
-            margin: 20px auto;
-            border-radius: 10px;
-            box-shadow: 0 0 15px rgba(255,255,255,0.2);
-        }
-
-        /* Input file */
-        .file-input {
-            background: #111;
-            padding: 12px;
-            border-radius: 6px;
-            border: 1px solid #555;
-            color: #ccc;
-            cursor: pointer;
-        }
-
-        /* Pulsanti */
-        .side-btn {
-            width: 100%;
-            padding: 12px;
-            background: #333;
-            border: none;
-            border-radius: 6px;
-            color: #fff;
-            font-size: 15px;
-            cursor: pointer;
-            transition: 0.3s ease;
-        }
-
-        .side-btn:hover {
-            background: #00ff00;
-            color: #000;
-            box-shadow: 0 0 10px #00ff00;
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        /* CONTENT */
-        .content {
-            flex: 1;
-            padding: 30px;
-            overflow-y: auto;
-            position: relative;
-        }
-
-        /* Placeholder logo grande */
-        .hero-logo-box {
-        display: block;
-            width: 250px;
-            height: 170px; /* Limite verticale */
-            object-fit: contain;
-            margin: 20px auto;
-            border-radius: 10px;
-            box-shadow: 0 0 15px rgba(255,255,255,0.2);
-        }
-       
-
-          /* PRIMA IMMAGINE LIMITATA */
-        .preview {
-            display: block;
-            max-width: 70%;
-            max-height: 45vh; /* Limite verticale */
-            margin-bottom: 240px; /* leggermente più dell’altezza del pannello */
-            object-fit: contain;
-            margin: 20px auto;
-            border-radius: 10px;
-            box-shadow: 0 0 15px rgba(255,255,255,0.2);
-        }
-        
-        #previewImage {
-    position: absolute;
-    left: 50%;
-    top: 40px;
-    transform: translateX(-50%);
-    transition: left 0.45s ease;
-    max-width: 90%;
-    object-fit: contain;
+        /* ==========================================
+   1. RESET E IMPOSTAZIONI DI BASE
+   ========================================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
+body {
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(to bottom, #000, #222);
+    color: #fff;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden; /* Blocca scroll fuori posto */
+}
 
-        /* Player */
-        #audioPlayer {
-            display: block;
-            width: 80%;
-            margin: 20px auto;
-        }
+/* Contenitore principale */
+.app-container {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+}
 
-        /* PANNELLO SLIDE-IN */
-        .genre-panel {
-            position: fixed;
-            top: 0;
-            right: -300px;
-            width: 300px;
-            height: 100vh;
-            background: linear-gradient(to bottom, #000, #444);
-            border-left: 1px solid #555;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            transition: right 0.4s ease;
-            z-index: 2000;
-        }
-
-        .genre-panel.show {
-            right: 0;
-        }
-
-        .genre-panel h2 {
-            text-align: center;
-            margin-bottom: 10px;
-        }
-
-        .genre-btn {
-            padding: 12px;
-            background: #222;
-            border: none;
-            border-radius: 6px;
-            color: #fff;
-            cursor: pointer;
-            transition: 0.3s ease;
-        }
-
-        .genre-btn:hover {
-            background: #ffa500;
-            box-shadow: 0 0 10px #ffa500;
-        }
-
-        .close-panel-btn {
-            margin-top: auto;
-            padding: 10px;
-            background: #555;
-            border: none;
-            border-radius: 6px;
-            color: #fff;
-            cursor: pointer;
-        }
-
-        .close-panel-btn:hover {
-            background: #ff4444;
-            box-shadow: 0 0 10px #ff4444;
-        }
-
-        /* OVERLAY ORIENTAMENTO */
-        .rotate-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(0,0,0,0.9);
-            backdrop-filter: blur(8px);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 5000;
-            text-align: center;
-            padding: 20px;
-        }
-
-        .rotate-box {
-            color: #fff;
-            font-size: 22px;
-            opacity: 0.9;
-        }
-
-        .rotate-icon {
-            font-size: 60px;
-            margin-bottom: 20px;
-        }
-
-        .rotate-overlay.hidden {
-            display: none;
-        }
-        
-        /* PLAYER UI 2.0 */
-.player-ui {
-    margin-top: 5px;
-    padding: 0;
-    gap: 5px;
-    background: rgba(20,20,20,0.7);
-    border: 1px solid #444;
-    border-radius: 10px;
-    box-shadow: 0 0 15px rgba(0,255,0,0.2);
-    text-align: center;
-    height: 100%;              /* IMPORTANTE */
+/* ==========================================
+   2. SIDEBAR (SINISTRA)
+   ========================================== */
+.sidebar {
+    width: 260px;
+    background: rgba(30, 30, 30, 0.9);
+    backdrop-filter: blur(10px);
+    padding: 20px;
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
-    align-items: stretch;
-    border: none;
-    box-shadow: none;
+    gap: 15px;
+    border-right: 1px solid #444;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+    z-index: 100;
 }
 
-.player-controls button,
-.player-sections button {
-    margin: 6px;
-    padding: 6px 12px;
+.sidebar-logo-box {
+    width: 100px;
+    height: 70px;
+    margin: 10px auto;
+    background: #222;
+    border-radius: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 0 15px rgba(255,255,255,0.1);
+}
+
+.file-input {
+    background: #111;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #555;
+    color: #ccc;
     font-size: 13px;
+    cursor: pointer;
+    width: 100%;
+}
+
+.side-btn {
+    width: 100%;
+    padding: 12px;
+    background: #333;
+    border: none;
+    border-radius: 6px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+.side-btn:hover {
+    background: #00ff00;
+    color: #000;
+    box-shadow: 0 0 15px #00ff00;
+}
+
+.hidden { display: none !important; }
+
+/* ==========================================
+   3. AREA CONTENUTO (MAIN)
+   ========================================== */
+.content {
+    flex: 1;
+    position: relative;
+    padding: 20px;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Video On-Air (Alto a destra, ritagliato) */
+.video-mini-wrapper {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 130px;
+    height: 65px;
+    overflow: hidden;
+    z-index: 1001;
+    background: #000;
+    pointer-events: none;
+}
+
+.video-mini-wrapper video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Logo Hero (iniziale) */
+.hero-logo-box {
+    width: 250px;
+    height: auto;
+    opacity: 0.8;
+}
+
+/* Immagine Preview (La Foto) */
+#previewImage {
+    position: absolute;
+    left: 50%;
+    top: 35%; /* Alzata per lasciare spazio al player */
+    transform: translate(-50%, -50%);
+    max-width: 85%;
+    max-height: 50vh; /* Non tocca mai il player basso */
+    object-fit: contain;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(255,255,255,0.2);
+    transition: all 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Spostamento a sinistra quando parte l'analisi */
+#previewImage.shift-left {
+    left: 25%;
+    transform: translate(-50%, -50%) scale(0.9);
+    max-width: 45%;
+}
+
+/* ==========================================
+   4. ANALIZZATORE DI SPETTRO
+   ========================================== */
+#spectrumPanel {
+    position: absolute;
+    top: -300px; /* Nascosto sopra */
+    left: 55%;
+    width: 40%;
+    height: 45vh;
+    background: rgba(15, 15, 15, 0.7);
+    border: 1px solid rgba(0, 255, 0, 0.3);
+    backdrop-filter: blur(5px);
+    transition: top 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+    z-index: 900;
+}
+
+#spectrumPanel.active {
+    top: 10vh; /* Allineato alla foto */
+}
+
+#spectrumCanvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* ==========================================
+   5. PLAYER (SLIDE-UP)
+   ========================================== */
+#playerPanel {
+    position: absolute;
+    left: 0;
+    bottom: -160px; /* Nascosto */
+    width: 100%;
+    height: 150px;
+    background: rgba(20, 20, 20, 0.95);
+    border-top: 1px solid #444;
+    padding: 15px;
+    transition: bottom 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    z-index: 1000;
+}
+
+#playerPanel.open {
+    bottom: 0;
+}
+
+.player-ui {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.player-controls {
+    display: flex;
+    gap: 15px;
+}
+
+.player-controls button {
+    padding: 8px 16px;
     background: #222;
     border: 1px solid #555;
     border-radius: 6px;
     color: #fff;
     cursor: pointer;
-    transition: 0.2s ease;
-    flex: 0 0 auto; /* impedisce che si allarghino */
+    font-size: 14px;
 }
 
-.player-controls {
-    width: 100%;
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap; /* utile su mobile */
-}
-
-.player-controls button:hover,
-.player-sections button:hover {
+.player-controls button:hover {
     background: #00ff00;
     color: #000;
-    box-shadow: 0 0 10px #00ff00;
-}
-
-
-
-.player-seek {
-    margin: 15px 0;
 }
 
 #seekBar {
-    width: 80%;
+    width: 70%;
+    cursor: pointer;
 }
 
 .player-time {
-    margin-top: 5px;
-    font-size: 14px;
-    opacity: 0.8;
+    font-size: 12px;
+    opacity: 0.7;
 }
 
-/* CANVAS — bordo verde visibile */
-.spectrum {
-    width: 100%;
-    height: 100%;
-    margin: 0;
-
-    background: black;
-
-    /* bordo verde */
-    border: 1px solid #0f0;
-
-    /* glow verde */
-    box-shadow: 0 0 15px rgba(0,255,0,0.3);
-
-    box-sizing: border-box;
-}
-
-
-
-
-/* PLAYER SLIDE-UP INTERNO */
-.player-slideup {
-    position: absolute;
-    left: 0;
-    bottom: -220px;
-    width: 100%;
-    height: 220px;
-    background: rgba(20,20,20,0.9);
-    padding: 15px;
-    box-shadow: 0 -4px 15px rgba(0,0,0,0.5);
-    transition: bottom 0.7s cubic-bezier(0.22, 1, 0.36, 1);
-    z-index: 10;
-    height: 220px; /* altezza fissa */
-}
-.player-slideup.open {
-    bottom: 0;
-}
-
-/* Player invisibile quando il pannello è chiuso */
-.player-slideup .player-ui {
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.4s ease;
-}
-
-/* Player visibile quando il pannello è aperto */
-.player-slideup.open .player-ui {
-    opacity: 1;
-    pointer-events: auto;
-}
-
-
-#fxControls {
-    margin-top: 20px;
-    padding: 20px;
-    background: rgba(10,10,10,0.7);
-    border: 1px solid #444;
-    border-radius: 10px;
-    box-shadow: 0 0 15px rgba(0,255,0,0.2);
-}
-
-#fxControls h3 {
-    margin: 10px 0;
-    color: #0f0;
-}
-
-#fxControls label {
-    display: block;
-    margin-top: 12px;
-    font-weight: bold;
-    color: #ccc;
-}
-
-#fxControls input[type=range] {
-    width: 100%;
-    margin-bottom: 10px;
-}
-
+/* ==========================================
+   6. PANNELLO FX (CONTROLLI AUDIO)
+   ========================================== */
 .fx-panel {
     position: fixed;
     top: 0;
     left: -100%;
-    width: 320px;       /* In orizzontale, 320px bastano e avanzano */
-    height: 100vh;      /* Occupa tutta l'altezza dello schermo */
-    background: rgba(10, 10, 10, 0.95);
-    padding: 15px;      /* Padding ridotto per guadagnare spazio */
-    overflow-y: auto;   /* FONDAMENTALE: permette di scorrere gli strumenti */
-    z-index: 9999;
-    transition: left 0.3s ease;
-    border-right: 1px solid #0f0; /* Un tocco di verde Mixel */
+    width: 320px;
+    height: 100vh;
+    background: rgba(10, 10, 10, 0.98);
+    color: white;
+    padding: 20px;
+    overflow-y: auto;
+    z-index: 2000;
+    transition: left 0.4s ease;
+    border-right: 1px solid #0f0;
 }
-
 
 .fx-panel.open {
     left: 0;
@@ -389,209 +254,82 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-bottom: 20px;
 }
 
 .close-fx-btn {
     background: none;
     border: none;
-    color: white;
-    font-size: 20px;
+    color: #ff4444;
+    font-size: 24px;
     cursor: pointer;
-}
-
-/* Separatori tra sezioni */
-.fx-panel h3 {
-    margin-top: 25px;
-    padding-top: 15px;
-    border-top: 1px solid #444;
-}
-
-/* Allineamento controlli */
-.fx-panel label {
-    display: block;
-    margin-top: 12px;
-    font-size: 14px;
-}
-
-.fx-panel input[type="range"] {
-    width: 100%;
-    margin-top: 4px;
 }
 
 .fx-row {
     display: flex;
-    flex-direction: row; /* Tutto su una riga per risparmiare altezza */
     align-items: center;
     justify-content: space-between;
-    gap: 8px;
-    margin-bottom: 10px;
-    padding: 5px 8px;
-    background: rgba(255,255,255,0.03);
+    gap: 10px;
+    margin-bottom: 15px;
+    padding: 8px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 6px;
 }
 
 .fx-row label {
-    flex: 0 0 80px;      /* Nome strumento corto a sinistra */
+    flex: 0 0 70px;
     font-size: 12px;
-    margin-bottom: 0;    /* Tolto il margine sotto */
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 .fx-row input[type="range"] {
     flex: 1;
-    height: 20px;        /* Slider più sottile */
 }
 
 .fx-btn {
-    padding: 4px 8px;    /* Pulsanti più piccoli */
+    padding: 4px 8px;
     font-size: 11px;
+    background: #444;
+    border: none;
+    color: #fff;
+    border-radius: 3px;
 }
 
-#loadingOverlay {
+/* ==========================================
+   7. GENRE PANEL
+   ========================================== */
+.genre-panel {
     position: fixed;
     top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.75);
-    display: none;
+    right: -320px;
+    width: 300px;
+    height: 100vh;
+    background: linear-gradient(to bottom, #111, #333);
+    padding: 25px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    z-index: 1500;
+    transition: right 0.4s ease;
+}
+
+.genre-panel.show { right: 0; }
+
+/* ==========================================
+   8. OVERLAY ORIENTAMENTO E LOADING
+   ========================================== */
+.rotate-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.95);
+    z-index: 9999;
+    display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 99999;
-}
-
-#loadingBox {
-    background: #111;
-    padding: 25px 35px;
-    border-radius: 12px;
     text-align: center;
-    color: white;
-    width: 260px;
-    box-shadow: 0 0 20px rgba(0,0,0,0.5);
 }
 
-#loadingText {
-    margin-bottom: 15px;
-    font-size: 18px;
-}
+.rotate-icon { font-size: 50px; margin-bottom: 15px; }
 
-#loadingBarContainer {
-    width: 100%;
-    height: 10px;
-    background: #333;
-    border-radius: 5px;
-    overflow: hidden;
-}
-
-#loadingBar {
-    width: 0%;
-    height: 100%;
-    background: linear-gradient(90deg, #4af, #08f);
-    transition: width 0.2s ease-out;
-}
-
-/* ================================
-   PLAYER: sale dal basso
-   ================================ */
-/* PLAYER PANEL — contenitore invisibile, solo glow verde */
-#playerPanel {
-    position: absolute;
-    left: 0;
-    bottom: -140px;   /* altezza chiusura */
-    padding: 10px;
-    width: 100%;
-    height: 140px;    /* altezza apertura */
-    padding-top: 0;
-    background: rgba(20,20,20,0.9);
-    box-shadow: 0 0 15px rgba(0,255,0,0.2);
-    /* bordo grigio invisibile */
-    border: none;
-    transition: bottom 0.7s cubic-bezier(0.22, 1, 0.36, 1);
-    z-index: 20;
-}
-
-#playerPanel.open {
-    bottom: 0;
-}
-
-
-/* ================================
-   PREVIEW: si sposta a sinistra
-   ================================ */
-
-#previewImage {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%); /* Centrata perfettamente all'avvio */
-    transition: all 0.6s cubic-bezier(0.25, 1, 0.5, 1);
-    max-width: 80%;
-    max-height: 70vh;
-    object-fit: contain;
-}
-
-/* Quando si attiva l'analizzatore */
-#previewImage.shift-left {
-    left: 25%; /* Si sposta nel centro della metà sinistra */
-    max-width: 45%; /* Si rimpicciolisce un po' per non soffocare */
-}
-
-
-/* ================================
-   ANALIZZATORE: scende dall’alto
-   ================================ */
-/* SPECTRUM PANEL — contenitore invisibile, centrato */
-/* PANNELLO ANALIZZATORE - Responsive & Moderno */
-#spectrumPanel {
-    position: absolute;
-    top: -120px;            /* Nascosto sopra */
-    right: 20px;
-    width: 35vw;            /* Occupa il 35% della larghezza disponibile */
-    max-width: 400px;
-    height: 100px;          /* Più basso per non coprire la preview */
-    background: rgba(0, 0, 0, 0.4); /* Più trasparente */
-    backdrop-filter: blur(5px);
-    border-radius: 0 0 15px 15px; /* Arrotondato solo sotto */
-    border: 1px solid rgba(0, 255, 0, 0.2);
-    border-top: none;
-    transition: top 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    z-index: 998;
-    overflow: hidden;
-}
-
-#spectrumPanel.active {
-    top: 0;                 /* Si attacca al bordo superiore */
-}
-
-/* Il Canvas deve riempire il pannello */
-#spectrumCanvas {
-    width: 100%;
-    height: 100%;
-    display: block;
-}
-
-
-/* STILE PER IL MINI-WRAPPER VIDEO (PULITO E RITAGLIATO) */
-.video-mini-wrapper {
-    position: absolute; /* Si aggancia al .content */
-    top: 15px;          /* Distanza dall'alto */
-    right: 15px;        /* Distanza da destra */
-    width: 130px;       /* Larghezza del riquadro */
-    height: 65px;       /* ALTEZZA TAGLIATA: regola questa per vedere più o meno video */
-    overflow: hidden;   /* Nasconde ciò che esce dai 70px di altezza */
-    z-index: 1001;      /* Sopra lo spectrumPanel (che ha 999) */
-    background: #000;   /* Sfondo nero se il video non ha ancora caricato */
-    pointer-events: none; /* Rende il video "passante" ai click */
-    
-    /* Nota: Ho rimosso border, border-radius e shadow per la massima pulizia */
-}
-
-.video-mini-wrapper video {
-    width: 100%;        /* Il video occupa tutta la larghezza */
-    height: auto;       /* Mantiene le proporzioni */
-    display: block;
-    /* Se vuoi mostrare una parte diversa del video dentro il taglio, */
-    /* puoi sbloccare e regolare questa riga: */
-    /* transform: translateY(-10px); */ 
+#loadingOverlay {
+    z-index: 10000;
 }
