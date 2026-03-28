@@ -2,7 +2,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("drumEngine.js ver. 006.4 loaded");
+console.log("drumEngine.js ver. 007 loaded");
 
 export function initDrumEngine(instruments, params, rand) {
 
@@ -250,21 +250,63 @@ export function initDrumEngine(instruments, params, rand) {
     // 🥁 TRANSIZIONI (FIX DEFINITIVO)
     // ============================================================
 
-    function scheduleTransition(section, transitionEvents) {
-        if (!transitionEvents || transitionEvents.length === 0) return;
+    function scheduleTransition(section, transitionEvents, transitionInfo) {
+    if (!transitionEvents || transitionEvents.length === 0) return;
 
-        const first = transitionEvents[0];
-        const eventTime = section.startTime + first.beatOffset * secondsPerBeat;
+    const durationBeats = transitionInfo.durationBeats;
+    const start = section.startTime;
 
-        const durationBeats = section.transition.durationBeats;
+    const type = transitionInfo.type;
 
-        scheduleIfInSection(
-            section,
-            eventTime,
-            t => crash(t),
-            durationBeats
-        );
+    // 1) KICK PATTERN
+    if (type === "pm_burst_9" || type === "pm_burst_12") {
+        // burst = 3 colpi per beat
+        for (let b = 0; b < durationBeats; b++) {
+            const base = start + b * secondsPerBeat;
+            scheduleIfInSection(section, base, t => kick(t), durationBeats);
+            scheduleIfInSection(section, base + 0.33 * secondsPerBeat, t => kick(t), durationBeats);
+            scheduleIfInSection(section, base + 0.66 * secondsPerBeat, t => kick(t), durationBeats);
+        }
     }
+
+    if (type === "gallop_9") {
+        for (let b = 0; b < durationBeats; b++) {
+            const base = start + b * secondsPerBeat;
+            scheduleIfInSection(section, base, t => kick(t), durationBeats);
+            scheduleIfInSection(section, base + 0.5 * secondsPerBeat, t => kick(t), durationBeats);
+            scheduleIfInSection(section, base + 0.75 * secondsPerBeat, t => kick(t), durationBeats);
+        }
+    }
+
+    if (type === "power_walk" || type === "power_slide") {
+        // double kick lineare
+        for (let b = 0; b < durationBeats; b += 0.25) {
+            const time = start + b * secondsPerBeat;
+            scheduleIfInSection(section, time, t => kick(t), durationBeats);
+        }
+    }
+
+    if (type === "scale_up" || type === "scale_down") {
+        // snare roll
+        for (let b = 0; b < durationBeats; b += 0.25) {
+            const time = start + b * secondsPerBeat;
+            scheduleIfInSection(section, time, t => snare(t), durationBeats);
+        }
+    }
+
+    if (type === "melodic_run") {
+        // tom run
+        for (let b = 0; b < durationBeats; b += 0.25) {
+            const time = start + b * secondsPerBeat;
+            scheduleIfInSection(section, time, t => randomTom(t), durationBeats);
+        }
+    }
+
+    // 2) CRASH FINALE
+    const finalTime = start + (durationBeats - 0.25) * secondsPerBeat;
+    scheduleIfInSection(section, finalTime, t => crash(t), durationBeats);
+}
+
 
     // ============================================================
     // EXPORT
