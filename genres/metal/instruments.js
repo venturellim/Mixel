@@ -8,7 +8,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("instruments.js ver. 004.2 loaded");
+console.log("instruments.js ver. 004.3 loaded");
 
 // ============================================================
 // 🎚 BUS SPECIFICI DEL METAL
@@ -47,10 +47,10 @@ const mixer = {
 
 
 // Valori di default (soundcheck iniziale)
-guitarBus.gain.value = 0;   // 0 dB
-bassBus.gain.value   = 0;   // 0 dB
-drumBus.gain.value   = 0;   // 0 dB
-leadBus.gain.value   = 0;   // 0 dB
+guitarBus.gain.value = -4;   // 0 dB
+bassBus.gain.value   = -2;   // 0 dB
+drumBus.gain.value   = -3;   // 0 dB
+leadBus.gain.value   = -8;   // 0 dB
 
 export function setVolume(busName, dbValue) {
     const bus = mixer[busName];

@@ -2,7 +2,7 @@
 // Generatore di tema power metal basato su DNA melodico
 // Ogni immagine produce un tema unico, coerente e deterministico
 
-console.log("themeEngine.js ver. 002.0 loaded");
+console.log("themeEngine.js ver. 002.1 loaded");
 
 export function initThemeEngine(metalParams, imageParams, rand) {
 
@@ -167,14 +167,49 @@ export function initThemeEngine(metalParams, imageParams, rand) {
     // ------------------------------------------------------------
 
     function generateTheme(section, sectionScale, progression) {
-        const profile = getThemeProfile(imageParams);
-        const dna = imageParams.dna ?? 123456;
+    const profile = getThemeProfile(imageParams);
+    const dna = imageParams.dna ?? 123456;
 
-        const m1 = generateMeasure1(sectionScale, profile, dna);
-        const m2 = generateMeasure2(sectionScale, profile, dna, m1);
+    // Tema base (2 misure)
+    const m1 = generateMeasure1(sectionScale, profile, dna);
+    const m2 = generateMeasure2(sectionScale, profile, dna, m1);
+    const base = [...m1, ...m2];
 
-        return [...m1, ...m2];
-    }
+    // Variazione leggera (misure 3–4)
+    const variation = base.map(ev => ({
+        ...ev,
+        beatOffset: ev.beatOffset + 4, // sposta di 1 misura
+        velocity: ev.velocity * 0.95,
+        note: (Math.random() < 0.3)
+            ? pickNeighbor(sectionScale, ev.note, 1)
+            : ev.note
+    }));
+
+    // Ripetizione del tema base (misure 5–6)
+    const base2 = base.map(ev => ({
+        ...ev,
+        beatOffset: ev.beatOffset + 8
+    }));
+
+    // Virtuosismo finale (misure 7–8)
+    const virtuoso = base.map(ev => {
+        const newNote =
+            Math.random() < 0.4
+                ? pickNeighbor(sectionScale, ev.note, 1)
+                : ev.note;
+
+        return {
+            ...ev,
+            beatOffset: ev.beatOffset + 12,
+            note: newNote,
+            velocity: ev.velocity * 1.05,
+            duration: ev.duration * 0.9
+        };
+    });
+
+    return [...base, ...variation, ...base2, ...virtuoso];
+}
+
 
     return { generateTheme };
 }
