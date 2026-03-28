@@ -1,10 +1,10 @@
-// themeEngine.js — versione 001.5
+// themeEngine.js — versione 001.6
 // Generatore di tema power metal (2 misure, lead ibrida, immagine-influenced)
-// FIX: gestione bemolle, niente ASCII, niente note inesistenti
+// FIX: gestione bemolle, rimozione ottave dalla scala, niente note invalide
 
 import { nearestNatural } from "../../utils/harmonyUtils.js";
 
-console.log("themeEngine.js ver. 001.5 loaded");
+console.log("themeEngine.js ver. 001.6 loaded");
 
 export function initThemeEngine(metalParams, imageParams, rand) {
 
@@ -14,9 +14,15 @@ export function initThemeEngine(metalParams, imageParams, rand) {
     // UTILITIES
     // ------------------------------------------------------------
 
+    // Rimuove l'ottava da una nota ("A2" → "A", "Bb3" → "Bb")
+    function stripOctave(note) {
+        if (typeof note !== "string") return "C";
+        return note.replace(/[0-9]/g, "");
+    }
+
     // Converte nota in ottava 4 (es: "Eb" → "Eb4")
     function toLeadNote(letter) {
-        return letter + "4";
+        return stripOctave(letter) + "4";
     }
 
     // Sceglie una nota valida dalla scala della sezione (mantiene i bemolle!)
@@ -24,19 +30,24 @@ export function initThemeEngine(metalParams, imageParams, rand) {
         if (!sectionScale || sectionScale.length === 0) return "C4";
 
         const nat = sectionScale
-            .map(n => nearestNatural(n)) // mantiene Bb, Eb, Ab
-            .filter(n => typeof n === "string");
+            .map(n => nearestNatural(n))       // normalizza (niente diesis)
+            .filter(n => typeof n === "string")
+            .map(stripOctave);                 // togliamo sempre l’ottava
 
         if (nat.length === 0) return "C4";
 
-        const note = nat[Math.floor(rand() * nat.length)];
-        return toLeadNote(note);
+        const letter = nat[Math.floor(rand() * nat.length)];
+        return toLeadNote(letter);
     }
 
     // Sceglie una nota vicina nella scala (dir = +1 o -1)
     function pickNeighbor(sectionScale, note, dir) {
-        const nat = sectionScale.map(n => nearestNatural(n));
-        const base = nearestNatural(note.replace("4", ""));
+        const nat = sectionScale
+            .map(n => nearestNatural(n))
+            .filter(n => typeof n === "string")
+            .map(stripOctave);
+
+        const base = stripOctave(nearestNatural(stripOctave(note)));
 
         const idx = nat.indexOf(base);
         if (idx === -1) return toLeadNote(base);
@@ -45,7 +56,7 @@ export function initThemeEngine(metalParams, imageParams, rand) {
         return toLeadNote(nat[idx2]);
     }
 
-    // Quinta naturale (mantiene solo la lettera, ma la scala corregge i bemolle)
+    // Quinta naturale (lavora su lettere senza ottava)
     const fifthMap = {
         "C": "G",
         "D": "A",
@@ -67,8 +78,8 @@ export function initThemeEngine(metalParams, imageParams, rand) {
     function getThemeProfile(imageParams) {
         return {
             energy: imageParams.energy ?? 0.5,
-            darkness: imageParams.texture ?? 0.5,      // texture = “darkness”
-            color: imageParams.complexity ?? 0.5,      // complexity = “colorfulness”
+            darkness: imageParams.texture ?? 0.5,      // texture ~ “darkness”
+            color: imageParams.complexity ?? 0.5,      // complexity ~ “colorfulness”
             calm: 1 - (imageParams.energy ?? 0.5)      // calm inverso dell’energia
         };
     }
@@ -83,7 +94,7 @@ export function initThemeEngine(metalParams, imageParams, rand) {
 
         // 1) Nota iniziale: salto di quinta o tonica
         const root = pickScaleNote(sectionScale);
-        const rootLetter = nearestNatural(root.replace("4", ""));
+        const rootLetter = stripOctave(nearestNatural(stripOctave(root)));
 
         const startLetter =
             profile.energy > 0.6
@@ -153,6 +164,7 @@ export function initThemeEngine(metalParams, imageParams, rand) {
 
         // Prima nota variata
         const first = measure1[0].note;
+
         const embellish =
             profile.color > 0.6
                 ? pickScaleNote(sectionScale)
@@ -196,7 +208,7 @@ export function initThemeEngine(metalParams, imageParams, rand) {
 
         // Chiusura sulla tonica o quinta
         const root = pickScaleNote(sectionScale);
-        const rootLetter = nearestNatural(root.replace("4", ""));
+        const rootLetter = stripOctave(nearestNatural(stripOctave(root)));
 
         const closeLetter =
             profile.darkness > 0.5

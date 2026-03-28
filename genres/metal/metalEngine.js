@@ -443,10 +443,10 @@ if (sec.name === "intro" || sec.name === "outro") {
     sec.progression
 );
 
+console.log("[THEME EVENTS]", themeEvents);
 
     themeEvents.forEach(ev => {
         const eventTime = sec.startTime + ev.beatOffset * secondsPerBeat;
-
         Tone.Transport.schedule(time => {
             metalInstruments.lead.triggerAttackRelease(
                 ev.note,
