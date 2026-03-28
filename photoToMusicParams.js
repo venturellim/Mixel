@@ -16,7 +16,7 @@
 // Combina luminosità, contrasto, complessità e texture.
 // È il parametro più importante: guida BPM, densità, energia.
 
-console.log("photoToMusicParams.js ver. 001 loaded");
+console.log("photoToMusicParams.js ver. 001.1 loaded");
 
 function computeIntensity(analysis) {
     const { brightness, energy, entropy, edges } = analysis;
@@ -170,10 +170,19 @@ export function photoToMusicParams(analysis) {
 
     // --- DNA deterministico ---
     const dna = hashStringToNumber(JSON.stringify(analysis));
+    const imageParams = {
+    brightness: analysis.brightness,
+    energy: analysis.energy,
+    texture: analysis.texture,
+    complexity: analysis.complexity,
+    direction: analysis.direction,
+    colorTemperature: analysis.colorTemperature
+};
+
 
     return {
-        dna,   // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< AGGIUNTO QUI
-
+        dna,   
+        imageParams,
         global: {
             intensity,
             mood,
