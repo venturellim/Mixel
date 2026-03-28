@@ -11,7 +11,7 @@ import * as Tone from "https://esm.sh/tone";
 import { metalInstruments, instrumentVolumeMap } from "./genres/metal/instruments.js";
 import { masterEQ, } from "./common.js";
 
-console.log("main.js ver. 004 loaded");
+console.log("main.js ver. 004.1 loaded");
 
 // -------------------------------------------------------------
 // Import fondamentali
@@ -138,6 +138,7 @@ function initGenrePanel() {
     btnElabora.addEventListener("click", () => {
     closeMixelUI();
     miniVideo?.play().catch(e => console.log("Autoplay video bloccato:", e));
+    requestWakeLock()
     if ( firstStart !== 1 ) {
     resetAudio();
     firstStart = 0;
@@ -457,6 +458,7 @@ function resetAppState() {
         miniVideo.pause();
         miniVideo.currentTime = 0; 
     }
+    releaseWakeLock();
     if ( firstStart !== 1 ) {
     resetAudio();
     firstStart = 0;
@@ -484,3 +486,31 @@ function closeMixelUI() {
     document.getElementById("previewImage").classList.remove("shift-left");
     document.getElementById("playerPanel").classList.remove("open");
 }
+
+let wakeLock = null;
+
+async function requestWakeLock() {
+    try {
+        // Questa è l'API moderna per tenere lo schermo acceso
+        if ('wakeLock' in navigator) {
+            wakeLock = await navigator.wakeLock.request('screen');
+            console.log("✅ Schermo bloccato: non si spegnerà.");
+            
+            // Se l'utente minimizza il browser e poi torna, dobbiamo riattivarlo
+            wakeLock.addEventListener('release', () => {
+                console.log("Wake Lock rilasciato.");
+            });
+        }
+    } catch (err) {
+        console.error(`❌ Errore Wake Lock: ${err.name}, ${err.message}`);
+    }
+}
+
+function releaseWakeLock() {
+    if (wakeLock !== null) {
+        wakeLock.release();
+        wakeLock = null;
+        console.log("💤 Schermo libero: ora può spegnersi.");
+    }
+}
+
