@@ -5,7 +5,7 @@
 // Risoluzione: 64×64
 //
 
-console.log("imageAnalysis.js loaded");
+console.log("imageAnalysis.js ver. 001 loaded");
 
 // -------------------------------------------------------------
 // Utility
