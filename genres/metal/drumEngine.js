@@ -2,7 +2,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("drumEngine.js ver. 007 loaded");
+console.log("drumEngine.js ver. 008 loaded");
 
 export function initDrumEngine(instruments, params, rand) {
 
@@ -81,6 +81,49 @@ export function initDrumEngine(instruments, params, rand) {
         else if (r < 0.66) tom2(t);
         else tom3(t);
     };
+
+// ============================================================
+// 🥁 RIFINITURE
+// ============================================================
+
+// Humanization: leggero random su timing e volume
+function humanizeTime(t) {
+    return t + (rand() - 0.5) * 0.01; // ±10ms
+}
+
+function humanizeVolume(vol = 1) {
+    return vol * (0.9 + rand() * 0.2); // ±10%
+}
+
+// Ghost snare (snare leggero)
+function ghostSnare(t) {
+    drums.player("snare").start(humanizeTime(t), 0, undefined, 0.3);
+}
+
+// Crash choke (crash + stop immediato)
+function crashChoke(t) {
+    const chosen = rand() < 0.5 ? "crash1" : "crash2";
+    drums.player(chosen).start(t);
+    drums.player(chosen).stop(t + 0.15); // soffocato
+}
+
+// Final fill avanzato (tom + snare + kick)
+function finalFill(section, durationBeats) {
+    const base = section.startTime + (durationBeats - 1) * secondsPerBeat;
+
+    const fill = [
+        t => tom3(t),
+        t => snare(t),
+        t => tom2(t),
+        t => kick(t)
+    ];
+
+    fill.forEach((inst, i) => {
+        const tFill = base + i * 0.25 * secondsPerBeat;
+        scheduleIfInSection(section, tFill, inst, durationBeats);
+    });
+}
+
 
     // ============================================================
     // 🥁 KICK PATTERNS
@@ -255,58 +298,178 @@ export function initDrumEngine(instruments, params, rand) {
 
     const durationBeats = transitionInfo.durationBeats;
     const start = section.startTime;
-
     const type = transitionInfo.type;
 
-    // 1) KICK PATTERN
+    // pm_burst_9 / pm_burst_12
     if (type === "pm_burst_9" || type === "pm_burst_12") {
-        // burst = 3 colpi per beat
         for (let b = 0; b < durationBeats; b++) {
             const base = start + b * secondsPerBeat;
-            scheduleIfInSection(section, base, t => kick(t), durationBeats);
-            scheduleIfInSection(section, base + 0.33 * secondsPerBeat, t => kick(t), durationBeats);
-            scheduleIfInSection(section, base + 0.66 * secondsPerBeat, t => kick(t), durationBeats);
+
+            // Accento sul beat 1 e 3
+            if (b % 2 === 0) {
+                scheduleIfInSection(section, base, t => snare(humanizeTime(t)), durationBeats);
+            }
+
+            // burst base
+            scheduleIfInSection(section, base, t => kick(humanizeTime(t)), durationBeats);
+            scheduleIfInSection(section, base + 0.33 * secondsPerBeat, t => kick(humanizeTime(t)), durationBeats);
+            scheduleIfInSection(section, base + 0.66 * secondsPerBeat, t => kick(humanizeTime(t)), durationBeats);
+
+            // crescendo dal beat 2
+            if (b >= 1) {
+                scheduleIfInSection(section, base + 0.16 * secondsPerBeat, t => kick(humanizeTime(t)), durationBeats);
+                scheduleIfInSection(section, base + 0.50 * secondsPerBeat, t => kick(humanizeTime(t)), durationBeats);
+            }
+
+            // snare accent ultimi 2 beat
+            if (b >= durationBeats - 2) {
+                scheduleIfInSection(section, base, t => snare(humanizeTime(t)), durationBeats);
+            }
+
+            // snare roll ultimo beat
+            if (b === durationBeats - 1) {
+                for (let r = 0; r < 1; r += 0.25) {
+                    const tRoll = base + r * secondsPerBeat;
+                    scheduleIfInSection(section, tRoll, t => snare(humanizeTime(t)), durationBeats);
+                }
+            }
         }
     }
 
+    // gallop_9
     if (type === "gallop_9") {
         for (let b = 0; b < durationBeats; b++) {
             const base = start + b * secondsPerBeat;
-            scheduleIfInSection(section, base, t => kick(t), durationBeats);
-            scheduleIfInSection(section, base + 0.5 * secondsPerBeat, t => kick(t), durationBeats);
-            scheduleIfInSection(section, base + 0.75 * secondsPerBeat, t => kick(t), durationBeats);
+
+            // Accento extra sul beat 3
+            if (b === 2) {
+                scheduleIfInSection(section, base, t => snare(humanizeTime(t)), durationBeats);
+            }
+
+            // kick gallop
+            scheduleIfInSection(section, base, t => kick(humanizeTime(t)), durationBeats);
+            scheduleIfInSection(section, base + 0.5 * secondsPerBeat, t => kick(humanizeTime(t)), durationBeats);
+            scheduleIfInSection(section, base + 0.75 * secondsPerBeat, t => kick(humanizeTime(t)), durationBeats);
+
+            // ride 8th
+            scheduleIfInSection(section, base, t => ride(humanizeTime(t)), durationBeats);
+            scheduleIfInSection(section, base + 0.5 * secondsPerBeat, t => ride(humanizeTime(t)), durationBeats);
+
+            // snare accent beat 2 e 4
+            if (b % 2 === 1) {
+                scheduleIfInSection(section, base, t => snare(humanizeTime(t)), durationBeats);
+            }
         }
     }
 
+    // power_walk / power_slide
     if (type === "power_walk" || type === "power_slide") {
-        // double kick lineare
-        for (let b = 0; b < durationBeats; b += 0.25) {
-            const time = start + b * secondsPerBeat;
-            scheduleIfInSection(section, time, t => kick(t), durationBeats);
+        for (let b = 0; b < durationBeats; b++) {
+            const base = start + b * secondsPerBeat;
+
+            // double kick 16th
+            for (let s = 0; s < 1; s += 0.25) {
+                const tKick = base + s * secondsPerBeat;
+                scheduleIfInSection(section, tKick, t => kick(humanizeTime(t)), durationBeats);
+            }
+
+            // ride 8th
+            scheduleIfInSection(section, base, t => ride(humanizeTime(t)), durationBeats);
+            scheduleIfInSection(section, base + 0.5 * secondsPerBeat, t => ride(humanizeTime(t)), durationBeats);
+
+            // ghost notes
+            if (rand() < 0.25) {
+                const tGhost = base + 0.25 * secondsPerBeat;
+                scheduleIfInSection(section, tGhost, t => ghostSnare(t), durationBeats);
+            }
+
+            // snare accent beat 2 e 4
+            if (b % 2 === 1) {
+                scheduleIfInSection(section, base, t => snare(humanizeTime(t)), durationBeats);
+            }
+
+            // tom fill ultimi 2 beat
+            if (b >= durationBeats - 2) {
+                const toms = [tom1, tom2, tom3, tom4];
+                const tomIndex = b % 4;
+                scheduleIfInSection(section, base + 0.25 * secondsPerBeat, t => toms[tomIndex](t), durationBeats);
+            }
         }
     }
 
+    // scale_up / scale_down
     if (type === "scale_up" || type === "scale_down") {
-        // snare roll
-        for (let b = 0; b < durationBeats; b += 0.25) {
-            const time = start + b * secondsPerBeat;
-            scheduleIfInSection(section, time, t => snare(t), durationBeats);
+        for (let b = 0; b < durationBeats; b++) {
+            const base = start + b * secondsPerBeat;
+
+            // kick 8th
+            scheduleIfInSection(section, base, t => kick(humanizeTime(t)), durationBeats);
+            scheduleIfInSection(section, base + 0.5 * secondsPerBeat, t => kick(humanizeTime(t)), durationBeats);
+
+            // snare roll
+            if (b === 0) {
+                scheduleIfInSection(section, base + 0.5 * secondsPerBeat, t => snare(humanizeTime(t)), durationBeats);
+            }
+            if (b === 1) {
+                scheduleIfInSection(section, base, t => snare(humanizeTime(t)), durationBeats);
+                scheduleIfInSection(section, base + 0.5 * secondsPerBeat, t => snare(humanizeTime(t)), durationBeats);
+            }
+            if (b === 2 || b === durationBeats - 1) {
+                for (let r = 0; r < 1; r += 0.25) {
+                    const tRoll = base + r * secondsPerBeat;
+                    scheduleIfInSection(section, tRoll, t => snare(humanizeTime(t)), durationBeats);
+                }
+            }
+
+            // tom accents
+            const tomIndex = type === "scale_up" ? b % 4 : (3 - (b % 4));
+            const toms = [tom1, tom2, tom3, tom4];
+            scheduleIfInSection(section, base, t => toms[tomIndex](t), durationBeats);
         }
     }
 
+    // melodic_run
     if (type === "melodic_run") {
-        // tom run
-        for (let b = 0; b < durationBeats; b += 0.25) {
-            const time = start + b * secondsPerBeat;
-            scheduleIfInSection(section, time, t => randomTom(t), durationBeats);
+        const tomPattern = [tom1, tom3, tom2, tom4];
+
+        for (let b = 0; b < durationBeats; b++) {
+            const base = start + b * secondsPerBeat;
+
+            const tomIndex = b % tomPattern.length;
+            scheduleIfInSection(section, base, t => tomPattern[tomIndex](t), durationBeats);
+            scheduleIfInSection(section, base + 0.5 * secondsPerBeat, t => tomPattern[(tomIndex + 1) % 4](t), durationBeats);
+
+            // ride 8th
+            scheduleIfInSection(section, base, t => ride(humanizeTime(t)), durationBeats);
+            scheduleIfInSection(section, base + 0.5 * secondsPerBeat, t => ride(humanizeTime(t)), durationBeats);
+
+            // ghost notes per beat
+            if (rand() < 0.3) {
+                const tGhost = base + 0.25 * secondsPerBeat;
+                scheduleIfInSection(section, tGhost, t => ghostSnare(t), durationBeats);
+            }
         }
+
+        // kick follower
+        transitionEvents.forEach(ev => {
+            const tKick = start + ev.beatOffset * secondsPerBeat;
+            scheduleIfInSection(section, tKick, t => kick(humanizeTime(t)), durationBeats);
+        });
+
+        // snare accent sugli accenti melodici
+        transitionEvents.forEach(ev => {
+            if (ev.isAccent) {
+                const tSnare = start + ev.beatOffset * secondsPerBeat;
+                scheduleIfInSection(section, tSnare, t => snare(humanizeTime(t)), durationBeats);
+            }
+        });
     }
 
-    // 2) CRASH FINALE
+    // finale: crash choke + fill
     const finalTime = start + (durationBeats - 0.25) * secondsPerBeat;
-    scheduleIfInSection(section, finalTime, t => crash(t), durationBeats);
+    scheduleIfInSection(section, finalTime, t => crashChoke(t), durationBeats);
+    finalFill(section, durationBeats);
 }
-
 
     // ============================================================
     // EXPORT
