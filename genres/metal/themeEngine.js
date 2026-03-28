@@ -2,7 +2,7 @@
 // Generatore di tema power metal basato su DNA melodico
 // Ogni immagine produce un tema unico, coerente e deterministico
 
-console.log("themeEngine.js ver. 002.1 loaded");
+console.log("themeEngine.js ver. 002.2 loaded");
 
 export function initThemeEngine(metalParams, imageParams, rand) {
 
@@ -30,6 +30,20 @@ export function initThemeEngine(metalParams, imageParams, rand) {
     function pickFromPool(pool, r) {
         return pool[Math.floor(r() * pool.length)];
     }
+    
+    function pickNeighbor(sectionScale, note, dir) {
+    const pool = scalePool(sectionScale);
+    if (pool.length === 0) return "C4";
+
+    const base = stripOctave(note);
+    let idx = pool.indexOf(base);
+
+    if (idx === -1) idx = 0;
+
+    const idx2 = Math.min(pool.length - 1, Math.max(0, idx + dir));
+    return toLeadNote(pool[idx2]);
+}
+
 
     // ------------------------------------------------------------
     // DNA MELODICO
