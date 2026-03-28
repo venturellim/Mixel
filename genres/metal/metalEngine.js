@@ -19,7 +19,7 @@ import { initThemeEngine } from "./themeEngine.js";
 import { generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 016.5 loaded");
+console.log("metalEngine.js ver. 017 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
@@ -433,7 +433,30 @@ console.log(
 bass.scheduleSection(sec, sec.scale, sec.progression, sec.riffResult.events);
 drums.scheduleSection(sec, sec.scale, sec.progression, sec.riffResult.events);
 
-            // theme.scheduleSection(sec, sec.scale, sec.progression);
+            // THEME ENGINE (solo intro/outro)
+if (sec.name === "intro" || sec.name === "outro") {
+
+    const themeEvents = theme.generateTheme(
+        sec,
+        sec.scale,
+        sec.progression,
+        params.imageParams
+    );
+
+    themeEvents.forEach(ev => {
+        const eventTime = sec.startTime + ev.beatOffset * secondsPerBeat;
+
+        Tone.Transport.schedule(time => {
+            metalInstruments.lead.triggerAttackRelease(
+                ev.note,
+                ev.duration,
+                time,
+                ev.velocity
+            );
+        }, eventTime);
+    });
+}
+
             // lead.scheduleSection(sec, sec.scale, sec.progression);
 
         } else {

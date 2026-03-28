@@ -1,148 +1,227 @@
-// themeEngine.js — versione compatibile con la nuova architettura
-// Tema principale: motivo ricorrente, variato per sezione.
+// themeEngine.js — versione 001
+// Generatore di tema power metal (2 misure, lead ibrida, immagine-influenced)
 
-import * as Tone from "https://esm.sh/tone";
-
-import { noteToMidi, midiToNote } from "../../utils/harmonyUtils.js";
-import { melodicStep } from "../../utils/scaleUtils.js";
-import { buildSectionTimeline } from "../../utils/structureUtils.js";
+import { nearestNatural } from "../../utils/harmonyUtils.js";
 
 console.log("themeEngine.js ver. 001 loaded");
 
-function toFlat(note) {
-    return Tone.Frequency(note).toNote("flat");
-}
+export function initThemeEngine(params, rand) {
 
-export function initThemeEngine(instruments, params, rand) {
-
-    const { guitarLead } = instruments;
-
-    const MIN_MIDI = noteToMidi("C4");
-    const MAX_MIDI = noteToMidi("C6");
+    const secondsPerBeat = 60 / params.bpm;
 
     // ------------------------------------------------------------
-    // Conversione sicura MIDI → nota
+    // UTILITIES
     // ------------------------------------------------------------
-    function safeMidiToNote(midi) {
-        if (isNaN(midi)) return "C4";
-        if (midi < MIN_MIDI) midi = MIN_MIDI;
-        if (midi > MAX_MIDI) midi = MAX_MIDI;
-        return toFlat(midiToNote(midi));
+
+    // Converte nota in ottava 4 (es: "E" → "E4")
+    function toLeadNote(letter) {
+        return letter + "4";
+    }
+
+    // Sceglie una nota valida dalla scala della sezione
+    function pickScaleNote(sectionScale) {
+        if (!sectionScale || sectionScale.length === 0) return "C4";
+
+        const nat = sectionScale
+            .map(n => nearestNatural(n)) // niente diesis
+            .filter(n => n !== undefined)
+            .map(n => n[0]); // solo lettera
+
+        if (nat.length === 0) return "C4";
+
+        const letter = nat[Math.floor(rand() * nat.length)];
+        return toLeadNote(letter);
+    }
+
+    // Intervallo di quinta naturale
+    const fifthMap = {
+        "C": "G",
+        "D": "A",
+        "E": "B",
+        "F": "C",
+        "G": "D",
+        "A": "E",
+        "B": "F"
+    };
+
+    function getFifth(noteLetter) {
+        return fifthMap[noteLetter] || "G";
     }
 
     // ------------------------------------------------------------
-    // Clamping sicuro
+    // INFLUENZA IMMAGINE
     // ------------------------------------------------------------
-    function clampLead(note) {
-        if (!note) return "C4";
-        const midi = noteToMidi(note);
-        return safeMidiToNote(midi);
+
+    function getThemeProfile(imageParams) {
+        return {
+            energy: imageParams.energy ?? 0.5,
+            darkness: imageParams.darkness ?? 0.5,
+            color: imageParams.colorfulness ?? 0.5,
+            calm: imageParams.calm ?? 0.5
+        };
     }
 
     // ------------------------------------------------------------
-    // Step melodico sicuro
+    // GENERAZIONE MISURA 1
     // ------------------------------------------------------------
-    function safeMelodicStep(current, step, sectionScale) {
-        if (!sectionScale || sectionScale.length === 0) return clampLead(current);
 
-        let next = melodicStep(sectionScale, current, step);
+    function generateMeasure1(sectionScale, profile) {
 
-        if (!next) next = current;
+        const events = [];
 
-        return clampLead(next);
-    }
+        // 1) Nota iniziale: salto di quinta o ottava
+        const root = pickScaleNote(sectionScale);
+        const rootLetter = root[0];
 
-    // ------------------------------------------------------------
-    // Generazione tema principale (basato sulla scala della sezione)
-    // ------------------------------------------------------------
-    function generateTheme(sectionScale) {
-        const length = params.themeStyle === "heroic" ? 8 : 6;
+        const startNoteLetter =
+            profile.energy > 0.6
+                ? getFifth(rootLetter) // salto di quinta
+                : rootLetter;          // nota semplice
 
-        let note = sectionScale.length > 0
-            ? clampLead(sectionScale[Math.floor(rand() * sectionScale.length)])
-            : "C4";
+        const startNote = toLeadNote(startNoteLetter);
 
-        const theme = [note];
+        events.push({
+            beatOffset: 0,
+            note: startNote,
+            duration: 0.5,
+            velocity: 0.95
+        });
 
-        for (let i = 1; i < length; i++) {
-            const direction = params.themeStyle === "heroic" ? 1 : -1;
-            const bigJump = rand() < 0.25;
-            const step = bigJump ? direction * 2 : direction;
+        // 2) Frase discendente o ascendente
+        const dir = profile.darkness > 0.5 ? -1 : 1;
 
-            note = safeMelodicStep(note, step, sectionScale);
-            theme.push(note);
+        const midNote = pickScaleNote(sectionScale);
+        const midLetter = midNote[0];
+
+        const mid2Letter = nearestNatural(
+            String.fromCharCode(midLetter.charCodeAt(0) + dir)
+        )[0];
+
+        const mid2 = toLeadNote(mid2Letter);
+
+        events.push({
+            beatOffset: 0.5,
+            note: midNote,
+            duration: 0.5,
+            velocity: 0.85
+        });
+
+        events.push({
+            beatOffset: 1,
+            note: mid2,
+            duration: 0.5,
+            velocity: 0.85
+        });
+
+        // 3) Passing note (solo se colorfulness alta)
+        if (profile.color > 0.5) {
+            const pass = pickScaleNote(sectionScale);
+            events.push({
+                beatOffset: 1.5,
+                note: pass,
+                duration: 0.25,
+                velocity: 0.75
+            });
         }
 
-        return theme;
-    }
+        // 4) Nota lunga finale
+        const endNote = pickScaleNote(sectionScale);
 
-    // ------------------------------------------------------------
-    // Varianti del tema
-    // ------------------------------------------------------------
-    function themeSimple(theme) {
-        return theme.slice(0, Math.ceil(theme.length / 2));
-    }
-
-    function themeFull(theme) {
-        return theme;
-    }
-
-    function themeExpanded(theme, sectionScale) {
-        const out = [];
-        theme.forEach(n => {
-            out.push(n);
-            if (rand() < 0.4) {
-                const step = rand() < 0.5 ? 1 : -1;
-                const extra = safeMelodicStep(n, step, sectionScale);
-                out.push(extra);
-            }
+        events.push({
+            beatOffset: 2,
+            note: endNote,
+            duration: profile.calm > 0.5 ? 2 : 1,
+            velocity: 0.9
         });
-        return out;
-    }
 
-    function themeOutro(theme) {
-        return theme.slice(0, 3);
+        return events;
     }
 
     // ------------------------------------------------------------
-    // Scheduling tema
+    // GENERAZIONE MISURA 2 (variazione)
     // ------------------------------------------------------------
-    function scheduleTheme(section, notes) {
-        const timeline = buildSectionTimeline(section, "4n");
-        if (!timeline || timeline.length === 0) return;
 
-        notes.forEach((note, i) => {
-            const t = timeline[i];
-            if (!t) return;
+    function generateMeasure2(sectionScale, profile, measure1) {
 
-            Tone.Transport.schedule(time => {
-                guitarLead.triggerAttackRelease(note, "4n", time);
-            }, t);
+        const events = [];
+
+        // Copia la prima nota ma con abbellimento
+        const first = measure1[0].note;
+        const firstLetter = first[0];
+
+        const embellish =
+            profile.color > 0.6
+                ? pickScaleNote(sectionScale)
+                : first;
+
+        events.push({
+            beatOffset: 4, // misura 2
+            note: embellish,
+            duration: 0.5,
+            velocity: 0.95
         });
+
+        // Variazione della frase
+        const mid = pickScaleNote(sectionScale);
+        events.push({
+            beatOffset: 4.5,
+            note: mid,
+            duration: 0.5,
+            velocity: 0.85
+        });
+
+        const mid2 = pickScaleNote(sectionScale);
+        events.push({
+            beatOffset: 5,
+            note: mid2,
+            duration: 0.5,
+            velocity: 0.85
+        });
+
+        // Passing note opzionale
+        if (profile.color > 0.7) {
+            const pass = pickScaleNote(sectionScale);
+            events.push({
+                beatOffset: 5.5,
+                note: pass,
+                duration: 0.25,
+                velocity: 0.75
+            });
+        }
+
+        // Chiusura sulla tonica o quinta
+        const root = pickScaleNote(sectionScale);
+        const rootLetter = root[0];
+        const closeLetter =
+            profile.darkness > 0.5
+                ? rootLetter
+                : getFifth(rootLetter);
+
+        const close = toLeadNote(closeLetter);
+
+        events.push({
+            beatOffset: 6,
+            note: close,
+            duration: profile.calm > 0.5 ? 2 : 1,
+            velocity: 0.9
+        });
+
+        return events;
     }
 
     // ------------------------------------------------------------
-    // Scheduling di una singola sezione
+    // GENERATORE PRINCIPALE
     // ------------------------------------------------------------
-    function scheduleSection(section, sectionScale, root) {
 
-        // Generiamo il tema sulla scala della sezione
-        const theme = generateTheme(sectionScale);
+    function generateTheme(section, sectionScale, progression, imageParams) {
 
-        if (section.name === "intro")  return scheduleTheme(section, themeSimple(theme));
-        if (section.name === "verse")  return; // niente tema nel verse
-        if (section.name === "chorus") return scheduleTheme(section, themeFull(theme));
-        if (section.name === "solo")   return scheduleTheme(section, themeExpanded(theme, sectionScale));
-        if (section.name === "outro")  return scheduleTheme(section, themeOutro(theme));
+        const profile = getThemeProfile(imageParams);
 
-        // fallback
-        scheduleTheme(section, themeSimple(theme));
+        const m1 = generateMeasure1(sectionScale, profile);
+        const m2 = generateMeasure2(sectionScale, profile, m1);
+
+        return [...m1, ...m2];
     }
 
-    // ------------------------------------------------------------
-    // EXPORT
-    // ------------------------------------------------------------
-    return {
-        scheduleSection
-    };
+    return { generateTheme };
 }
