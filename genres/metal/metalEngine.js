@@ -19,7 +19,7 @@ import { initThemeEngine } from "./themeEngine.js";
 import { generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 017.2 loaded");
+console.log("metalEngine.js ver. 017.3 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
@@ -465,7 +465,7 @@ if (sec.name === "intro" || sec.name === "outro") {
                         return;
                     }
 
-                    metalInstruments.lead.triggerAttackRelease(
+                    metalInstruments.guitarLead.triggerAttackRelease(
                         ev.note,
                         ev.duration,
                         time,
