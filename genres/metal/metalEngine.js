@@ -19,7 +19,7 @@ import { initThemeEngine } from "./themeEngine.js";
 import { generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 017.3 loaded");
+console.log("metalEngine.js ver. 017.4 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
@@ -438,44 +438,54 @@ drums.scheduleSection(sec, sec.scale, sec.progression, sec.riffResult.events);
 if (sec.name === "intro" || sec.name === "outro") {
 
     const themeEvents = theme.generateTheme(
-    sec,
-    sec.scale,
-    sec.progression
-);
+        sec,
+        sec.scale,
+        sec.progression
+    );
 
-            themeEvents.forEach(ev => {
-            const eventTime = sec.startTime + ev.beatOffset * secondsPerBeat;
+    themeEvents.forEach(ev => {
 
-            Tone.Transport.schedule(time => {
-                try {
-                    console.log(
-                        "%c[THEME PLAY] lead →",
-                        "color:#ff8800; font-weight:bold;",
-                        ev.note,
-                        "@",
-                        eventTime,
-                        "dur:",
-                        ev.duration,
-                        "vel:",
-                        ev.velocity
-                    );
+        // 🔥 Allineamento PERFETTO al riff
+        const riffStart = sec.riffResult.startTimeReal ?? sec.startTime;
+        const eventTime = riffStart + ev.beatOffset * secondsPerBeat;
 
-                    if (!ev.note || typeof ev.note !== "string") {
-                        console.warn("[THEME WARNING] nota invalida, skip:", ev);
-                        return;
-                    }
+        Tone.Transport.schedule(time => {
+            try {
+                console.log(
+                    "%c[THEME PLAY] lead →",
+                    "color:#ff8800; font-weight:bold;",
+                    ev.note,
+                    "@",
+                    eventTime,
+                    "dur:",
+                    ev.duration,
+                    "vel:",
+                    ev.velocity
+                );
 
-                    metalInstruments.guitarLead.triggerAttackRelease(
-                        ev.note,
-                        ev.duration,
-                        time,
-                        ev.velocity
-                    );
-                } catch (e) {
-                    console.error("🔥 THEME ERROR in callback:", e, "event:", ev);
+                // ❗ Filtro anti-note invalide
+                if (
+                    !ev.note ||
+                    typeof ev.note !== "string" ||
+                    !/^[A-G](b)?4$/.test(ev.note)
+                ) {
+                    console.warn("[THEME WARNING] nota invalida, skip:", ev);
+                    return;
                 }
-            }, eventTime);
-        });
+
+                // 🎸 Lead corretta (guitarLead)
+                metalInstruments.guitarLead.triggerAttackRelease(
+                    ev.note,
+                    ev.duration,
+                    time,
+                    ev.velocity
+                );
+
+            } catch (e) {
+                console.error("🔥 THEME ERROR in callback:", e, "event:", ev);
+            }
+        }, eventTime);
+    });
 }
 
             // lead.scheduleSection(sec, sec.scale, sec.progression);

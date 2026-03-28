@@ -8,7 +8,7 @@ import { buildSectionTimeline } from "../../utils/structureUtils.js";
 import { chooseRiffPattern } from "./riffPatterns.js";
 import { degreeToRoot } from "./metalTheory.js";
 
-console.log("riffEngine.js ver. 029.1 loaded");
+console.log("riffEngine.js ver. 029.2 loaded");
 
 // ------------------------------------------------------------
 // UTILITIES
@@ -1033,6 +1033,13 @@ console.log(
     "color:#ffaa00; font-weight:bold;", 
     patternMap
 );
+
+let startTimeReal = section.startTime;
+if (events.length > 0) {
+    const secondsPerBeat = measureDuration / 4;
+    const firstBeatOffset = events[0].beatOffset ?? 0;
+    startTimeReal = section.startTime + firstBeatOffset * secondsPerBeat;
+}
 
 return {
     patternMap,
