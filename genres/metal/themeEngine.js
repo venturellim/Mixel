@@ -3,12 +3,12 @@
 
 import { nearestNatural } from "../../utils/harmonyUtils.js";
 
-console.log("themeEngine.js ver. 001.1 loaded");
+console.log("themeEngine.js ver. 001.2 loaded");
 
 export function initThemeEngine(metalParams, imageParams, rand)
  {
 
-    const secondsPerBeat = 60 / params.bpm;
+    const secondsPerBeat = 60 / metalParams.bpm;
 
     // ------------------------------------------------------------
     // UTILITIES
