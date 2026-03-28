@@ -257,31 +257,59 @@ let peaks = new Array(256).fill(0);
 
 function drawSpectrum() {
     requestAnimationFrame(drawSpectrum);
+    
+    // Recuperiamo le dimensioni REALI del canvas in quel momento
+    const rect = canvas.getBoundingClientRect();
+    
+    // Se le dimensioni interne del canvas non corrispondono a quelle CSS, le aggiorniamo
+    if (canvas.width !== canvas.clientWidth || canvas.height !== canvas.clientHeight) {
+        canvas.width = canvas.clientWidth;
+        canvas.height = canvas.clientHeight;
+    }
+
+    const W = canvas.width;
+    const H = canvas.height;
+    
     const values = fft.getValue();
     ctx.clearRect(0, 0, W, H);
+
+    // Se non ci sono dati o il pannello è chiuso, usciamo
+    if (W === 0) return;
 
     const barWidth = W / values.length;
 
     for (let i = 0; i < values.length; i++) {
         const v = values[i];
-        const magnitude = (v + 140) / 140;
-        const barHeight = magnitude * H;
+        
+        // Normalizzazione: -140 è il silenzio quasi totale, 0 è il massimo.
+        // Usiamo 120 per renderlo un po' più "reattivo" visivamente
+        const magnitude = (v + 120) / 120; 
+        const barHeight = Math.max(0, magnitude * H);
 
-        const startHue = 320;
-        const endHue = 220;
+        // Colori: manteniamo i tuoi HSL ma li rendiamo più vibranti
+        const startHue = 320; // Viola/Fucsia
+        const endHue = 220;   // Blu/Azzurro
         const hue = startHue + (endHue - startHue) * magnitude;
         ctx.fillStyle = `hsl(${hue}, 100%, 60%)`;
 
         const x = i * barWidth;
         const y = H - barHeight;
-        ctx.fillRect(x, y, barWidth - 1, barHeight);
+        
+        // Disegniamo la barra (togliamo 1 pixel per distanziarle bene)
+        ctx.fillRect(x, y, Math.max(1, barWidth - 1), barHeight);
 
-        if (barHeight > peaks[i]) peaks[i] = barHeight;
-        else peaks[i] *= 0.98;
+        // Gestione dei PICCHI (Peak Meter)
+        if (barHeight > peaks[i]) {
+            peaks[i] = barHeight;
+        } else {
+            // Caduta fluida dei picchi
+            peaks[i] *= 0.97; 
+        }
 
         ctx.fillStyle = "#FFFFFF";
         const peakY = H - peaks[i];
-        ctx.fillRect(x, peakY, barWidth - 1, 3);
+        // Disegna il trattino del picco leggermente sopra la barra
+        ctx.fillRect(x, peakY - 2, Math.max(1, barWidth - 1), 2);
     }
 }
 
