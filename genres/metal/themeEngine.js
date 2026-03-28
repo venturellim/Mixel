@@ -1,8 +1,8 @@
-// themeEngine.js — versione 001.7
-// Generatore di tema power metal (2 misure, lead ibrida, immagine-influenced)
-// FIX: niente nearestNatural, niente NaN, solo note dalla scala
+// themeEngine.js — versione 002.0
+// Generatore di tema power metal basato su DNA melodico
+// Ogni immagine produce un tema unico, coerente e deterministico
 
-console.log("themeEngine.js ver. 001.7 loaded");
+console.log("themeEngine.js ver. 002.0 loaded");
 
 export function initThemeEngine(metalParams, imageParams, rand) {
 
@@ -12,71 +12,76 @@ export function initThemeEngine(metalParams, imageParams, rand) {
     // UTILITIES
     // ------------------------------------------------------------
 
-    // Rimuove l'ottava da una nota ("A2" → "A", "Bb3" → "Bb")
     function stripOctave(note) {
         if (typeof note !== "string") return "C";
         return note.replace(/[0-9]/g, "");
     }
 
-    // Converte nota in ottava 4 (es: "Eb" → "Eb4")
     function toLeadNote(letter) {
         return stripOctave(letter) + "4";
     }
 
-    // Sceglie una nota valida dalla scala della sezione (mantiene i bemolle!)
-    function pickScaleNote(sectionScale) {
-        if (!Array.isArray(sectionScale) || sectionScale.length === 0) {
-            return "C4";
-        }
-
-        const pool = sectionScale
+    function scalePool(sectionScale) {
+        return sectionScale
             .map(stripOctave)
-            .filter(n => typeof n === "string" && /^[A-G](b)?$/.test(n));
-
-        if (pool.length === 0) return "C4";
-
-        const letter = pool[Math.floor(rand() * pool.length)];
-        return toLeadNote(letter);
+            .filter(n => /^[A-G](b)?$/.test(n));
     }
 
-    // Sceglie una nota vicina nella scala (dir = +1 o -1)
-    function pickNeighbor(sectionScale, note, dir) {
-        if (!Array.isArray(sectionScale) || sectionScale.length === 0) {
-            return "C4";
-        }
-
-        const pool = sectionScale
-            .map(stripOctave)
-            .filter(n => typeof n === "string" && /^[A-G](b)?$/.test(n));
-
-        if (pool.length === 0) return "C4";
-
-        const base = stripOctave(note);
-        let idx = pool.indexOf(base);
-        if (idx === -1) idx = 0;
-
-        const idx2 = Math.min(pool.length - 1, Math.max(0, idx + dir));
-        return toLeadNote(pool[idx2]);
-    }
-
-    // Quinta naturale (lavora su lettere senza ottava, senza bemolle)
-    const fifthMap = {
-        "C": "G",
-        "D": "A",
-        "E": "B",
-        "F": "C",
-        "G": "D",
-        "A": "E",
-        "B": "F"
-    };
-
-    function getFifth(noteLetter) {
-        const base = noteLetter[0]; // ignora eventuale 'b'
-        return fifthMap[base] || "G";
+    function pickFromPool(pool, r) {
+        return pool[Math.floor(r() * pool.length)];
     }
 
     // ------------------------------------------------------------
-    // INFLUENZA IMMAGINE
+    // DNA MELODICO
+    // ------------------------------------------------------------
+
+    function createDNASeededRandom(dna) {
+        let seed = dna >>> 0;
+        return function () {
+            seed = (seed * 1664525 + 1013904223) >>> 0;
+            return seed / 0xFFFFFFFF;
+        };
+    }
+
+    function generateIntervalPattern(dna, profile) {
+        const r = createDNASeededRandom(dna);
+
+        const length =
+            profile.energy > 0.7 ? 10 :
+            profile.energy > 0.4 ? 8 :
+            6;
+
+        const maxStep =
+            profile.color > 0.7 ? 3 :
+            profile.color > 0.4 ? 2 :
+            1;
+
+        const pattern = [];
+        for (let i = 0; i < length; i++) {
+            const step = Math.floor(r() * (maxStep * 2 + 1)) - maxStep;
+            pattern.push(step);
+        }
+
+        return pattern;
+    }
+
+    function applyPattern(sectionScale, pattern, startIndex) {
+        const pool = scalePool(sectionScale);
+        if (pool.length === 0) return ["C4"];
+
+        let idx = Math.min(pool.length - 1, Math.max(0, startIndex));
+        const notes = [];
+
+        for (const step of pattern) {
+            idx = Math.min(pool.length - 1, Math.max(0, idx + step));
+            notes.push(toLeadNote(pool[idx]));
+        }
+
+        return notes;
+    }
+
+    // ------------------------------------------------------------
+    // PROFILO IMMAGINE
     // ------------------------------------------------------------
 
     function getThemeProfile(imageParams) {
@@ -89,143 +94,69 @@ export function initThemeEngine(metalParams, imageParams, rand) {
     }
 
     // ------------------------------------------------------------
-    // GENERAZIONE MISURA 1
+    // GENERAZIONE MISURA 1 (DOMANDA)
     // ------------------------------------------------------------
 
-    function generateMeasure1(sectionScale, profile) {
+    function generateMeasure1(sectionScale, profile, dna) {
+
+        const pool = scalePool(sectionScale);
+        if (pool.length === 0) return [];
+
+        const r = createDNASeededRandom(dna);
+
+        const startIndex = Math.floor(r() * pool.length);
+        const pattern = generateIntervalPattern(dna, profile);
+        const notes = applyPattern(sectionScale, pattern, startIndex);
 
         const events = [];
 
-        // 1) Nota iniziale: salto di quinta o tonica
-        const root = pickScaleNote(sectionScale);
-        const rootLetter = stripOctave(root);
-
-        const startLetter =
-            profile.energy > 0.6
-                ? getFifth(rootLetter)
-                : rootLetter;
-
-        const startNote = toLeadNote(startLetter);
-
-        events.push({
-            beatOffset: 0,
-            note: startNote,
-            duration: 0.5,
-            velocity: 0.95
-        });
-
-        // 2) Frase ascendente o discendente
-        const dir = profile.darkness > 0.5 ? -1 : 1;
-
-        const mid = pickScaleNote(sectionScale);
-        const mid2 = pickNeighbor(sectionScale, mid, dir);
-
-        events.push({
-            beatOffset: 0.5,
-            note: mid,
-            duration: 0.5,
-            velocity: 0.85
-        });
-
-        events.push({
-            beatOffset: 1,
-            note: mid2,
-            duration: 0.5,
-            velocity: 0.85
-        });
-
-        // 3) Passing note
-        if (profile.color > 0.5) {
-            const pass = pickScaleNote(sectionScale);
+        for (let i = 0; i < notes.length; i++) {
+            const beatOffset = i * 0.5; // 8n grid
             events.push({
-                beatOffset: 1.5,
-                note: pass,
-                duration: 0.25,
-                velocity: 0.75
+                beatOffset,
+                note: notes[i],
+                duration: 0.5,
+                velocity: 0.85 + (i === 0 ? 0.1 : 0)
             });
         }
-
-        // 4) Nota lunga finale
-        const end = pickScaleNote(sectionScale);
-
-        events.push({
-            beatOffset: 2,
-            note: end,
-            duration: profile.calm > 0.5 ? 2 : 1,
-            velocity: 0.9
-        });
 
         return events;
     }
 
     // ------------------------------------------------------------
-    // GENERAZIONE MISURA 2 (variazione)
+    // GENERAZIONE MISURA 2 (RISPOSTA)
     // ------------------------------------------------------------
 
-    function generateMeasure2(sectionScale, profile, measure1) {
+    function generateMeasure2(sectionScale, profile, dna, measure1) {
+
+        const pool = scalePool(sectionScale);
+        if (pool.length === 0) return [];
+
+        const r = createDNASeededRandom(dna + 12345);
+
+        const pattern = generateIntervalPattern(dna + 999, profile);
+        const startIndex = Math.floor(r() * pool.length);
+        const notes = applyPattern(sectionScale, pattern, startIndex);
 
         const events = [];
 
-        // Prima nota variata
-        const first = measure1[0].note;
-
-        const embellish =
-            profile.color > 0.6
-                ? pickScaleNote(sectionScale)
-                : first;
-
-        events.push({
-            beatOffset: 4,
-            note: embellish,
-            duration: 0.5,
-            velocity: 0.95
-        });
-
-        // Variazione frase
-        const mid = pickScaleNote(sectionScale);
-        const mid2 = pickScaleNote(sectionScale);
-
-        events.push({
-            beatOffset: 4.5,
-            note: mid,
-            duration: 0.5,
-            velocity: 0.85
-        });
-
-        events.push({
-            beatOffset: 5,
-            note: mid2,
-            duration: 0.5,
-            velocity: 0.85
-        });
-
-        // Passing note
-        if (profile.color > 0.7) {
-            const pass = pickScaleNote(sectionScale);
+        for (let i = 0; i < notes.length; i++) {
+            const beatOffset = 4 + i * 0.5; // seconda misura
             events.push({
-                beatOffset: 5.5,
-                note: pass,
-                duration: 0.25,
-                velocity: 0.75
+                beatOffset,
+                note: notes[i],
+                duration: 0.5,
+                velocity: 0.85
             });
         }
 
-        // Chiusura sulla tonica o quinta
-        const root = pickScaleNote(sectionScale);
-        const rootLetter = stripOctave(root);
-
-        const closeLetter =
-            profile.darkness > 0.5
-                ? rootLetter
-                : getFifth(rootLetter);
-
-        const close = toLeadNote(closeLetter);
-
+        // chiusura sulla tonica
+        const tonic = toLeadNote(pool[0]);
         events.push({
-            beatOffset: 6,
-            note: close,
+            beatOffset: 4 + notes.length * 0.5,
+            note: tonic,
             duration: profile.calm > 0.5 ? 2 : 1,
-            velocity: 0.9
+            velocity: 0.95
         });
 
         return events;
@@ -237,9 +168,10 @@ export function initThemeEngine(metalParams, imageParams, rand) {
 
     function generateTheme(section, sectionScale, progression) {
         const profile = getThemeProfile(imageParams);
+        const dna = imageParams.dna ?? 123456;
 
-        const m1 = generateMeasure1(sectionScale, profile);
-        const m2 = generateMeasure2(sectionScale, profile, m1);
+        const m1 = generateMeasure1(sectionScale, profile, dna);
+        const m2 = generateMeasure2(sectionScale, profile, dna, m1);
 
         return [...m1, ...m2];
     }
