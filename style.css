@@ -170,7 +170,7 @@ body {
 }
 
 #spectrumPanel.active {
-    top: 30vh; /* Allineato alla foto */
+    top: 20vh; /* Allineato alla foto */
 }
 
 #spectrumCanvas {
@@ -239,6 +239,21 @@ body {
 /* ==========================================
    6. PANNELLO FX (CONTROLLI AUDIO)
    ========================================== */
+   
+.fx-panel {
+    position: fixed;
+    top: 0;
+    left: -100%;
+    width: 320px;       
+    height: 100vh;      
+    background: rgba(10, 10, 10, 0.95);
+    padding: 15px;
+    overflow-y: auto;
+    z-index: 9999;
+    transition: left 0.3s ease;
+    border-right: 1px solid #0f0; 
+}
+
 .fx-panel.open {
     left: 0;
 }
