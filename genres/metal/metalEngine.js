@@ -19,7 +19,7 @@ import { initThemeEngine } from "./themeEngine.js";
 import { generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 017 loaded");
+console.log("metalEngine.js ver. 017.1 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
@@ -312,7 +312,8 @@ export async function createMetalEngine(params) {
     const lead  = initLeadEngine(metalInstruments, metalParams, rand);
     const bass  = initBassEngine(metalInstruments, metalParams, rand);
     const drums = initDrumEngine(metalInstruments, metalParams, rand);
-    const theme = initThemeEngine(metalInstruments, metalParams, rand);
+    const theme = initThemeEngine(metalParams, params.imageParams, rand);
+
 
     // ============================================================
     // PRIMA PASSATA: costruiamo sezioni + transizioni (NO SCHEDULAZIONE)
@@ -437,11 +438,11 @@ drums.scheduleSection(sec, sec.scale, sec.progression, sec.riffResult.events);
 if (sec.name === "intro" || sec.name === "outro") {
 
     const themeEvents = theme.generateTheme(
-        sec,
-        sec.scale,
-        sec.progression,
-        params.imageParams
-    );
+    sec,
+    sec.scale,
+    sec.progression
+);
+
 
     themeEvents.forEach(ev => {
         const eventTime = sec.startTime + ev.beatOffset * secondsPerBeat;

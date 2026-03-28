@@ -3,9 +3,10 @@
 
 import { nearestNatural } from "../../utils/harmonyUtils.js";
 
-console.log("themeEngine.js ver. 001 loaded");
+console.log("themeEngine.js ver. 001.1 loaded");
 
-export function initThemeEngine(params, rand) {
+export function initThemeEngine(metalParams, imageParams, rand)
+ {
 
     const secondsPerBeat = 60 / params.bpm;
 
@@ -213,9 +214,8 @@ export function initThemeEngine(params, rand) {
     // GENERATORE PRINCIPALE
     // ------------------------------------------------------------
 
-    function generateTheme(section, sectionScale, progression, imageParams) {
-
-        const profile = getThemeProfile(imageParams);
+    function generateTheme(section, sectionScale, progression) {
+    const profile = getThemeProfile(imageParams);
 
         const m1 = generateMeasure1(sectionScale, profile);
         const m2 = generateMeasure2(sectionScale, profile, m1);
