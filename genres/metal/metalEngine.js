@@ -476,6 +476,7 @@ if (sec.name === "intro" || sec.name === "outro") {
                 }
             }, eventTime);
         });
+}
 
             // lead.scheduleSection(sec, sec.scale, sec.progression);
 
