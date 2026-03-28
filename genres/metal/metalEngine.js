@@ -19,7 +19,7 @@ import { initThemeEngine } from "./themeEngine.js";
 import { generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 017.1 loaded");
+console.log("metalEngine.js ver. 017.2 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
@@ -443,20 +443,39 @@ if (sec.name === "intro" || sec.name === "outro") {
     sec.progression
 );
 
-console.log("[THEME EVENTS]", themeEvents);
+            themeEvents.forEach(ev => {
+            const eventTime = sec.startTime + ev.beatOffset * secondsPerBeat;
 
-    themeEvents.forEach(ev => {
-        const eventTime = sec.startTime + ev.beatOffset * secondsPerBeat;
-        Tone.Transport.schedule(time => {
-            metalInstruments.lead.triggerAttackRelease(
-                ev.note,
-                ev.duration,
-                time,
-                ev.velocity
-            );
-        }, eventTime);
-    });
-}
+            Tone.Transport.schedule(time => {
+                try {
+                    console.log(
+                        "%c[THEME PLAY] lead →",
+                        "color:#ff8800; font-weight:bold;",
+                        ev.note,
+                        "@",
+                        eventTime,
+                        "dur:",
+                        ev.duration,
+                        "vel:",
+                        ev.velocity
+                    );
+
+                    if (!ev.note || typeof ev.note !== "string") {
+                        console.warn("[THEME WARNING] nota invalida, skip:", ev);
+                        return;
+                    }
+
+                    metalInstruments.lead.triggerAttackRelease(
+                        ev.note,
+                        ev.duration,
+                        time,
+                        ev.velocity
+                    );
+                } catch (e) {
+                    console.error("🔥 THEME ERROR in callback:", e, "event:", ev);
+                }
+            }, eventTime);
+        });
 
             // lead.scheduleSection(sec, sec.scale, sec.progression);
 
