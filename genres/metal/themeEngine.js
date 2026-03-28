@@ -2,7 +2,7 @@
 // Generatore di tema power metal basato su DNA melodico
 // Ogni immagine produce un tema unico, coerente e deterministico
 
-console.log("themeEngine.js ver. 002.2 loaded");
+console.log("themeEngine.js ver. 002.3 loaded");
 
 export function initThemeEngine(metalParams, imageParams, rand) {
 
@@ -190,36 +190,36 @@ export function initThemeEngine(metalParams, imageParams, rand) {
     const base = [...m1, ...m2];
 
     // Variazione leggera (misure 3–4)
-    const variation = base.map(ev => ({
-        ...ev,
-        beatOffset: ev.beatOffset + 4, // sposta di 1 misura
-        velocity: ev.velocity * 0.95,
-        note: (Math.random() < 0.3)
+const variation = base.map(ev => ({
+    ...ev,
+    beatOffset: ev.beatOffset + 8, // 2 misure = 8 beat
+    velocity: ev.velocity * 0.95,
+    note: (Math.random() < 0.3)
+        ? pickNeighbor(sectionScale, ev.note, 1)
+        : ev.note
+}));
+
+// Ripetizione del tema base (misure 5–6)
+const base2 = base.map(ev => ({
+    ...ev,
+    beatOffset: ev.beatOffset + 16 // 4 misure = 16 beat
+}));
+
+// Virtuosismo finale (misure 7–8)
+const virtuoso = base.map(ev => {
+    const newNote =
+        Math.random() < 0.4
             ? pickNeighbor(sectionScale, ev.note, 1)
-            : ev.note
-    }));
+            : ev.note;
 
-    // Ripetizione del tema base (misure 5–6)
-    const base2 = base.map(ev => ({
+    return {
         ...ev,
-        beatOffset: ev.beatOffset + 8
-    }));
-
-    // Virtuosismo finale (misure 7–8)
-    const virtuoso = base.map(ev => {
-        const newNote =
-            Math.random() < 0.4
-                ? pickNeighbor(sectionScale, ev.note, 1)
-                : ev.note;
-
-        return {
-            ...ev,
-            beatOffset: ev.beatOffset + 12,
-            note: newNote,
-            velocity: ev.velocity * 1.05,
-            duration: ev.duration * 0.9
-        };
-    });
+        beatOffset: ev.beatOffset + 24, // 6 misure = 24 beat
+        note: newNote,
+        velocity: ev.velocity * 1.05,
+        duration: ev.duration * 0.9
+    };
+});
 
     return [...base, ...variation, ...base2, ...virtuoso];
 }
