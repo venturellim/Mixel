@@ -1,6 +1,8 @@
 // padEngine.js — ver. 001.5
 // Multi-Style Deterministic Pad Selector + Lead Accent Reactivity
 
+import * as Tone from "https://esm.sh/tone";
+
 console.log("padEngine.js ver. 001.5 loaded");
 
 export function initPadEngine(instruments, metalParams, rand, imageParams) {
