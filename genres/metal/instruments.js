@@ -8,7 +8,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("instruments.js ver. 004.3 loaded");
+console.log("instruments.js ver. 004.4 loaded");
 
 // ============================================================
 // 🎚 BUS SPECIFICI DEL METAL
@@ -24,7 +24,7 @@ export const padBus = new Tone.Gain(1);
 const guitarEQ = new Tone.EQ3({ low: -4, mid: 2, high: 3 });
 const bassEQ   = new Tone.EQ3({ low: 4, mid: -2, high: -4 });
 const drumEQ   = new Tone.EQ3({ low: 2, mid: 1, high: 3 });
-const leadEQ   = new Tone.EQ3({ low: -3, mid: 2, high: 4 });
+const leadEQ   = new Tone.EQ3({ low: -3, mid: 2, high: 6 });
 
 const drumComp = new Tone.Compressor({
     threshold: -18,
@@ -47,10 +47,10 @@ const mixer = {
 
 
 // Valori di default (soundcheck iniziale)
-guitarBus.gain.value = -4;   // 0 dB
-bassBus.gain.value   = -2;   // 0 dB
-drumBus.gain.value   = -3;   // 0 dB
-leadBus.gain.value   = -8;   // 0 dB
+guitarBus.gain.value = 0;   // 0 dB
+bassBus.gain.value   = 0;   // 0 dB
+drumBus.gain.value   = 0;  // 0 dB
+leadBus.gain.value   = 0;   // 0 dB
 
 export function setVolume(busName, dbValue) {
     const bus = mixer[busName];
@@ -62,10 +62,10 @@ export function setVolume(busName, dbValue) {
     console.log(`[MIXER] ${busName} volume → ${dbValue} dB`);
 }
 
-setVolume("guitar", -4);
+setVolume("guitar", -6);
 setVolume("bass", -2);
-setVolume("drums", -3);
-setVolume("lead", -8);
+setVolume("drums", -12);
+setVolume("lead", +3);
 setVolume("pad", -12);
 
 
@@ -190,13 +190,13 @@ guitarLead.set({
 export const leadChorus = new Tone.Chorus({
     frequency: 4,
     delayTime: 2.5,
-    depth: 0.4,
+    depth: 0.3,
     spread: 180
 }).start();
 
 export const leadDelay = new Tone.FeedbackDelay({
     delayTime: "8n",
-    feedback: 0.35
+    feedback: 0.4
 });
 
 export const leadReverb = new Tone.Reverb({
