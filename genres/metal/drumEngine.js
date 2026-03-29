@@ -2,7 +2,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("drumEngine.js ver. 008 loaded");
+console.log("drumEngine.js ver. 008.1 loaded");
 
 export function initDrumEngine(instruments, params, rand) {
 
@@ -124,6 +124,56 @@ function finalFill(section, durationBeats) {
     });
 }
 
+// ------------------------------------------------------------
+// 🥁 MICRO-FILL DI SEZIONE (non sfasano nulla)
+// ------------------------------------------------------------
+
+// Fill leggero alla fine della misura 4
+function microFill_M4(section) {
+    const beat = 4 * 4 - 0.25; // ultimo sedicesimo della misura 4
+    const t = section.startTime + beat * secondsPerBeat;
+
+    const r = rand();
+
+    if (r < 0.33) {
+        // doppio tom
+        scheduleIfInSection(section, t, tt => tom2(humanizeTime(tt)));
+        scheduleIfInSection(section, t + 0.125 * secondsPerBeat, tt => tom3(humanizeTime(tt)));
+    }
+    else if (r < 0.66) {
+        // flam di rullante
+        scheduleIfInSection(section, t - 0.03 * secondsPerBeat, tt => snare(humanizeTime(tt)));
+        scheduleIfInSection(section, t, tt => snare(humanizeTime(tt)));
+    }
+    else {
+        // crash leggero
+        scheduleIfInSection(section, t, tt => crash(humanizeTime(tt)));
+    }
+}
+
+// Fill epico alla fine della misura 8
+function microFill_M8(section) {
+    const beat = 8 * 4 - 0.5; // ultimi due sedicesimi della misura 8
+    const t = section.startTime + beat * secondsPerBeat;
+
+    const r = rand();
+
+    if (r < 0.33) {
+        // tom run finale
+        scheduleIfInSection(section, t, tt => tom2(humanizeTime(tt)));
+        scheduleIfInSection(section, t + 0.125 * secondsPerBeat, tt => tom3(humanizeTime(tt)));
+        scheduleIfInSection(section, t + 0.25 * secondsPerBeat, tt => tom4(humanizeTime(tt)));
+    }
+    else if (r < 0.66) {
+        // snare accent + crash
+        scheduleIfInSection(section, t, tt => snare(humanizeTime(tt)));
+        scheduleIfInSection(section, t + 0.25 * secondsPerBeat, tt => crash(humanizeTime(tt)));
+    }
+    else {
+        // china finale (molto power metal)
+        scheduleIfInSection(section, t + 0.25 * secondsPerBeat, tt => drums.player("china").start(humanizeTime(tt)));
+    }
+}
 
     // ============================================================
     // 🥁 KICK PATTERNS
@@ -287,6 +337,12 @@ function finalFill(section, durationBeats) {
         scheduleCrash(section, riffEvents, dominantPattern, palmRatio);
 
         scheduleFill(section, dominantPattern);
+        // micro-fill misura 4 e 8 (solo se la sezione è lunga almeno 8 misure)
+if (section.measures >= 8) {
+    microFill_M4(section);
+    microFill_M8(section);
+}
+
     }
 
     // ============================================================

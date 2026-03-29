@@ -184,46 +184,102 @@ export function initThemeEngine(metalParams, imageParams, rand) {
     const profile = getThemeProfile(imageParams);
     const dna = imageParams.dna ?? 123456;
 
-    // Tema base (2 misure)
+    // Tema base (misure 1–2)
     const m1 = generateMeasure1(sectionScale, profile, dna);
     const m2 = generateMeasure2(sectionScale, profile, dna, m1);
     const base = [...m1, ...m2];
 
-    // Variazione leggera (misure 3–4)
-const variation = base.map(ev => ({
-    ...ev,
-    beatOffset: ev.beatOffset + 8, // 2 misure = 8 beat
-    velocity: ev.velocity * 0.95,
-    note: (Math.random() < 0.3)
-        ? pickNeighbor(sectionScale, ev.note, 1)
-        : ev.note
-}));
+    // ------------------------------------------------------------
+    // MISURE 3–4 — Variazione ritmica leggera
+    // ------------------------------------------------------------
+    const variation = base.map(ev => {
+        const ev2 = { ...ev, beatOffset: ev.beatOffset + 8 };
 
-// Ripetizione del tema base (misure 5–6)
-const base2 = base.map(ev => ({
-    ...ev,
-    beatOffset: ev.beatOffset + 16 // 4 misure = 16 beat
-}));
+        // 30%: anticipi o ritardi di 1/16
+        if (Math.random() < 0.3) {
+            const shift = Math.random() < 0.5 ? -0.25 : 0.25;
+            ev2.beatOffset += shift;
+        }
 
-// Virtuosismo finale (misure 7–8)
-const virtuoso = base.map(ev => {
-    const newNote =
-        Math.random() < 0.4
-            ? pickNeighbor(sectionScale, ev.note, 1)
-            : ev.note;
+        // 30%: nota vicina
+        if (Math.random() < 0.3) {
+            ev2.note = pickNeighbor(sectionScale, ev.note, Math.random() < 0.5 ? 1 : -1);
+        }
 
-    return {
+        return ev2;
+    });
+
+    // ------------------------------------------------------------
+    // MISURE 5–6 — Ripresa del tema base
+    // ------------------------------------------------------------
+    const base2 = base.map(ev => ({
         ...ev,
-        beatOffset: ev.beatOffset + 24, // 6 misure = 24 beat
-        note: newNote,
-        velocity: ev.velocity * 1.05,
-        duration: ev.duration * 0.9
+        beatOffset: ev.beatOffset + 16
+    }));
+
+    // ------------------------------------------------------------
+    // MISURE 7–8 — Finale epico (virtuosismo leggero)
+    // ------------------------------------------------------------
+    const virtuoso = base.map(ev => {
+        const ev2 = { ...ev, beatOffset: ev.beatOffset + 24 };
+
+        // 40%: nota vicina
+        if (Math.random() < 0.4) {
+            ev2.note = pickNeighbor(sectionScale, ev.note, Math.random() < 0.5 ? 1 : -1);
+        }
+
+        // 20%: salto di quinta (power metal)
+        if (Math.random() < 0.2) {
+            const pool = scalePool(sectionScale);
+            const idx = pool.indexOf(stripOctave(ev.note));
+            const idx2 = Math.min(pool.length - 1, idx + 3);
+            ev2.note = toLeadNote(pool[idx2]);
+        }
+
+        // leggero aumento di energia
+        ev2.velocity *= 1.08;
+        ev2.duration *= 0.9;
+
+        return ev2;
+    });
+
+    // ------------------------------------------------------------
+    // MISURA 8 — Terze parallele + nota lunga finale
+    // ------------------------------------------------------------
+    const pool = scalePool(sectionScale);
+    const tonic = toLeadNote(pool[0]);
+
+    const finalNote = {
+        beatOffset: 28, // inizio misura 8
+        note: tonic,
+        duration: 4, // nota lunga
+        velocity: 1.0
     };
-});
 
-    return [...base, ...variation, ...base2, ...virtuoso];
+    // terza parallela (solo se esiste)
+    let third = null;
+    if (pool.length >= 3) {
+        third = {
+            beatOffset: 28,
+            note: toLeadNote(pool[2]),
+            duration: 4,
+            velocity: 0.85
+        };
+    }
+
+    const finale = third ? [finalNote, third] : [finalNote];
+
+    // ------------------------------------------------------------
+    // Ritorno completo
+    // ------------------------------------------------------------
+    return [
+        ...base,
+        ...variation,
+        ...base2,
+        ...virtuoso,
+        ...finale
+    ];
 }
-
 
     return { generateTheme };
 }
