@@ -2,7 +2,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("drumEngine.js ver. 008.1 loaded");
+console.log("drumEngine.js ver. 008.2 loaded");
 
 export function initDrumEngine(instruments, params, rand) {
 
@@ -125,7 +125,7 @@ function finalFill(section, durationBeats) {
 }
 
 // ------------------------------------------------------------
-// 🥁 MICRO-FILL DI SEZIONE (non sfasano nulla)
+// 🥁 MICRO-FILL DETERMINISTICI (M4 e M8)
 // ------------------------------------------------------------
 
 // Fill leggero alla fine della misura 4
@@ -133,46 +133,86 @@ function microFill_M4(section) {
     const beat = 4 * 4 - 0.25; // ultimo sedicesimo della misura 4
     const t = section.startTime + beat * secondsPerBeat;
 
-    const r = rand();
+    const r = rand(); // deterministico
 
     if (r < 0.33) {
-        // doppio tom
+        // tom-tom deterministico
         scheduleIfInSection(section, t, tt => tom2(humanizeTime(tt)));
         scheduleIfInSection(section, t + 0.125 * secondsPerBeat, tt => tom3(humanizeTime(tt)));
     }
     else if (r < 0.66) {
-        // flam di rullante
+        // flam deterministico
         scheduleIfInSection(section, t - 0.03 * secondsPerBeat, tt => snare(humanizeTime(tt)));
         scheduleIfInSection(section, t, tt => snare(humanizeTime(tt)));
     }
     else {
-        // crash leggero
+        // crash deterministico
         scheduleIfInSection(section, t, tt => crash(humanizeTime(tt)));
     }
 }
 
-// Fill epico alla fine della misura 8
+// Fill epico deterministico alla fine della misura 8
 function microFill_M8(section) {
     const beat = 8 * 4 - 0.5; // ultimi due sedicesimi della misura 8
     const t = section.startTime + beat * secondsPerBeat;
 
-    const r = rand();
+    const r = rand(); // deterministico
 
     if (r < 0.33) {
-        // tom run finale
+        // tom run finale deterministico
         scheduleIfInSection(section, t, tt => tom2(humanizeTime(tt)));
         scheduleIfInSection(section, t + 0.125 * secondsPerBeat, tt => tom3(humanizeTime(tt)));
         scheduleIfInSection(section, t + 0.25 * secondsPerBeat, tt => tom4(humanizeTime(tt)));
     }
     else if (r < 0.66) {
-        // snare accent + crash
+        // snare accent + crash deterministico
         scheduleIfInSection(section, t, tt => snare(humanizeTime(tt)));
         scheduleIfInSection(section, t + 0.25 * secondsPerBeat, tt => crash(humanizeTime(tt)));
     }
     else {
-        // china finale (molto power metal)
+        // china finale deterministica
         scheduleIfInSection(section, t + 0.25 * secondsPerBeat, tt => drums.player("china").start(humanizeTime(tt)));
     }
+}
+
+// ------------------------------------------------------------
+// 🥁 ACCENTI DELLA LEAD (basati sul THEME) — deterministici
+// ------------------------------------------------------------
+
+function scheduleLeadAccents(section, themeEvents) {
+    if (!themeEvents || themeEvents.length === 0) return;
+
+    themeEvents.forEach(ev => {
+        const beat = ev.beatOffset;
+        const t = section.startTime + beat * secondsPerBeat;
+
+        // criteri deterministici per accento
+        const isAccent =
+            ev.velocity > 0.9 ||
+            ev.duration >= 1 ||
+            beat % 1 === 0 ||
+            Math.abs((beat % 4) - 3.5) < 0.01; // fine misura
+
+        if (!isAccent) return;
+
+        const r = rand(); // deterministico
+
+        // Reazioni deterministiche
+        if (r < 0.33) {
+            // crash accent
+            scheduleIfInSection(section, t, tt => crash(humanizeTime(tt)));
+        }
+        else if (r < 0.66) {
+            // snare accent
+            scheduleIfInSection(section, t, tt => snare(humanizeTime(tt)));
+        }
+        else {
+            // tom accent
+            const toms = [tom1, tom2, tom3, tom4];
+            const idx = Math.floor(rand() * toms.length);
+            scheduleIfInSection(section, t, tt => toms[idx](humanizeTime(tt)));
+        }
+    });
 }
 
     // ============================================================
@@ -335,9 +375,12 @@ function microFill_M8(section) {
         scheduleSnare(section, riffEvents, dominantPattern, palmRatio);
         scheduleHihat(section, riffEvents, dominantPattern, palmRatio);
         scheduleCrash(section, riffEvents, dominantPattern, palmRatio);
-
+// micro-fill misura 4 e 8 (solo se la sezione è lunga almeno 8 misure)
         scheduleFill(section, dominantPattern);
-        // micro-fill misura 4 e 8 (solo se la sezione è lunga almeno 8 misure)
+        
+        // accenti deterministici basati sul theme
+scheduleLeadAccents(section, section.themeEvents);
+
 if (section.measures >= 8) {
     microFill_M4(section);
     microFill_M8(section);

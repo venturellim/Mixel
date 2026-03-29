@@ -62,9 +62,9 @@ export function setVolume(busName, dbValue) {
     console.log(`[MIXER] ${busName} volume → ${dbValue} dB`);
 }
 
-setVolume("guitar", -6);
+setVolume("guitar", -4);
 setVolume("bass", -2);
-setVolume("drums", -12);
+setVolume("drums", -14);
 setVolume("lead", +3);
 setVolume("pad", -12);
 
