@@ -8,7 +8,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("instruments.js ver. 005 loaded");
+console.log("instruments.js ver. 005.1 loaded");
 
 // ============================================================
 // 🎚 BUS SPECIFICI DEL METAL
@@ -319,11 +319,22 @@ export const breathingPad = new Tone.PolySynth(Tone.Synth, {
 
 const breathingFilter = new Tone.Filter({ type: "lowpass", frequency: 2000 });
 const breathingLFO = new Tone.LFO("4n", 400, 2000).start(); 
+
 // LFO che apre/chiude il filtro
 
 breathingLFO.connect(breathingFilter.frequency);
 
 breathingPad.chain(breathingFilter, padBus);
+
+// Fermiamo l’LFO quando il transport si ferma
+Tone.Transport.on("stop", () => {
+    try { breathingLFO.stop(); } catch(e) {}
+});
+
+// Riattiviamo l’LFO quando riparte
+Tone.Transport.on("start", () => {
+    try { breathingLFO.start(); } catch(e) {}
+});
 
 // ============================================================
 // 🎹 CHOIR PAD
@@ -355,6 +366,10 @@ wrapSampler("guitarPalm", guitarPalm);
 wrapSampler("guitarOpen", guitarOpen);
 wrapSampler("guitarLead", guitarLead);
 wrapSampler("bass", bass);
+wrapSampler("ambientPad", ambientPad);
+wrapSampler("harmonicPad", harmonicPad);
+wrapSampler("breathingPad", breathingPad);
+wrapSampler("choirPad", choirPad);
 
 function wrapPlayer(name, player) {
     const orig = player.start.bind(player);

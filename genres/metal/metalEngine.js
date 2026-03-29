@@ -21,7 +21,7 @@ import { initPadEngine } from "./padEngine.js";
 import { generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 018.1 loaded");
+console.log("metalEngine.js ver. 018.2 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
@@ -586,10 +586,35 @@ bass.scheduleTransition(sec, sec.transition);
     Tone.Transport.loopEnd = currentTime;
 
     return {
-        totalDuration: currentTime,
-        play() { Tone.Transport.start("+0.1"); },
-        pause() { Tone.Transport.pause(); },
-        stop() { Tone.Transport.stop(); Tone.Transport.seconds = 0; },
-        seek(s) { Tone.Transport.seconds = s; }
-    };
-}
+    totalDuration: currentTime,
+
+    play() {
+        // Riattiva il padBus
+        metalInstruments.padBus.gain.rampTo(1, 0.2);
+
+        // Riattiva eventuali LFO
+        try { Tone.Transport.emit("start"); } catch(e) {}
+
+        Tone.Transport.start("+0.1");
+    },
+
+    pause() {
+        Tone.Transport.pause();
+    },
+
+    stop() {
+        Tone.Transport.stop();
+        Tone.Transport.seconds = 0;
+
+        // Silenzia immediatamente il pad
+        metalInstruments.padBus.gain.rampTo(0, 0.2);
+
+        // Ferma eventuali LFO
+        try { Tone.Transport.emit("stop"); } catch(e) {}
+    },
+
+    seek(s) {
+        Tone.Transport.seconds = s;
+    }
+};
+
