@@ -15,11 +15,13 @@ import { initLeadEngine } from "./leadEngine.js";
 import { initBassEngine } from "./bassEngine.js";
 import { initDrumEngine } from "./drumEngine.js";
 import { initThemeEngine } from "./themeEngine.js";
+import { initPadEngine } from "./padEngine.js";
+
 
 import { generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 018 loaded");
+console.log("metalEngine.js ver. 018.1 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
@@ -313,6 +315,8 @@ export async function createMetalEngine(params) {
     const bass  = initBassEngine(metalInstruments, metalParams, rand);
     const drums = initDrumEngine(metalInstruments, metalParams, rand);
     const theme = initThemeEngine(metalParams, params.imageParams, rand);
+    const pad  = initPadEngine(metalInstruments, metalParams, rand, params.imageParams);
+
 
 
     // ============================================================
@@ -489,6 +493,21 @@ if (sec.name === "intro" || sec.name === "outro") {
         }, eventTime);
     });
 }
+
+const riffAnalysis = {
+    dominantPattern: sec.riffResult.dominantPattern ?? "pedal_8n",
+    palmRatio: sec.riffResult.palmRatio ?? 0.5
+};
+
+pad.scheduleSection(
+    sec,
+    sec.scale,
+    sec.progression,
+    sec.riffResult.events,
+    riffAnalysis,
+    themeEvents 
+);
+
 
 drums.scheduleSection(
     sec,
