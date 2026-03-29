@@ -618,3 +618,4 @@ bass.scheduleTransition(sec, sec.transition);
     }
 };
 
+}
