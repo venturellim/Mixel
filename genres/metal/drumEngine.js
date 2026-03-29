@@ -214,8 +214,7 @@ function scheduleLeadAccents(section, themeEvents) {
         }
     });
 }
-
-    // ============================================================
+   // ============================================================
     // 🥁 KICK PATTERNS
     // ============================================================
 
@@ -366,7 +365,9 @@ function scheduleLeadAccents(section, themeEvents) {
     // 🥁 SEZIONE PRINCIPALE
     // ============================================================
 
-    function scheduleSection(section, scale, progression, riffEvents) {
+    function scheduleSection(section, scale, progression, riffEvents, themeEvents)
+ {
+ section.themeEvents = themeEvents;
 
         const analysis = analyzeRiff(riffEvents);
         const { dominantPattern, palmRatio } = analysis;

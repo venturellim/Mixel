@@ -1,4 +1,4 @@
-// metalEngine.js — versione 016
+// metalEngine.js — versione 018
 // Timeline robusta: nessuna schedulazione prima del ricalcolo
 
 import * as Tone from "https://esm.sh/tone";
@@ -19,7 +19,7 @@ import { initThemeEngine } from "./themeEngine.js";
 import { generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 017.4 loaded");
+console.log("metalEngine.js ver. 018 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
@@ -432,12 +432,15 @@ console.log(
 
             riff.scheduleSection(sec, sec.scale, sec.progression);
 bass.scheduleSection(sec, sec.scale, sec.progression, sec.riffResult.events);
-drums.scheduleSection(sec, sec.scale, sec.progression, sec.riffResult.events);
+riff.scheduleSection(sec, sec.scale, sec.progression);
+bass.scheduleSection(sec, sec.scale, sec.progression, sec.riffResult.events);
 
-            // THEME ENGINE (solo intro/outro)
+// THEME ENGINE (solo intro/outro)
+let themeEvents = null;
+
 if (sec.name === "intro" || sec.name === "outro") {
 
-    const themeEvents = theme.generateTheme(
+    themeEvents = theme.generateTheme(
         sec,
         sec.scale,
         sec.progression
@@ -445,7 +448,6 @@ if (sec.name === "intro" || sec.name === "outro") {
 
     themeEvents.forEach(ev => {
 
-        // 🔥 Allineamento PERFETTO al riff
         const riffStart = sec.riffResult.startTimeReal ?? sec.startTime;
         const eventTime = riffStart + ev.beatOffset * secondsPerBeat;
 
@@ -488,7 +490,15 @@ if (sec.name === "intro" || sec.name === "outro") {
     });
 }
 
-            // lead.scheduleSection(sec, sec.scale, sec.progression);
+drums.scheduleSection(
+    sec,
+    sec.scale,
+    sec.progression,
+    sec.riffResult.events,
+    themeEvents
+);
+   
+           // lead.scheduleSection(sec, sec.scale, sec.progression);
 
         } else {
 
