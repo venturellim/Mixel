@@ -372,23 +372,30 @@ function wrapPlayer(name, player) {
     wrapPlayer("drums."+key, drums.player(key));
 });
 
-// ============================================================
-// EXPORT OGGETTO UNICO
-// ============================================================
-
 export const metalInstruments = {
     guitarPalm,
     guitarOpen,
     guitarLead,
     bass,
     drums,
-    orchestraPad,
+
+    // 🎹 PADs (4 stili)
+    ambientPad,
+    harmonicPad,
+    breathingPad,
+    choirPad,
+
+    // 🎛 BUS
     guitarBus,
     bassBus,
     drumBus,
     leadBus,
+    padBus,
+
+    // 🔊 Utility
     setVolume
 };
+
 
 export const instrumentVolumeMap = {
     guitar: "Chitarre",
