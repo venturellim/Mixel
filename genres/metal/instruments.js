@@ -8,7 +8,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("instruments.js ver. 005.2 loaded");
+console.log("instruments.js ver. 005.3 loaded");
 
 // ============================================================
 // 🎚 BUS SPECIFICI DEL METAL
@@ -289,8 +289,8 @@ export const ambientPad = new Tone.PolySynth(Tone.Synth, {
     envelope: { attack: 1.2, decay: 0.5, sustain: 0.8, release: 3 }
 });
 
-const ambientFilter = new Tone.Filter({ type: "lowpass", frequency: 2200 });
-const ambientReverb = new Tone.Reverb({ decay: 7, wet: 0.65 });
+export const ambientFilter = new Tone.Filter({ type: "lowpass", frequency: 2200 });
+export const ambientReverb = new Tone.Reverb({ decay: 7, wet: 0.65 });
 
 ambientPad.chain(ambientFilter, ambientReverb, padBus);
 
@@ -304,8 +304,8 @@ export const harmonicPad = new Tone.PolySynth(Tone.Synth, {
     envelope: { attack: 0.35, decay: 0.25, sustain: 0.7, release: 1.4 }
 });
 
-const harmonicFilter = new Tone.Filter({ type: "lowpass", frequency: 4200 });
-const harmonicReverb = new Tone.Reverb({ decay: 3.5, wet: 0.28 });
+export const harmonicFilter = new Tone.Filter({ type: "lowpass", frequency: 4200 });
+export const harmonicReverb = new Tone.Reverb({ decay: 3.5, wet: 0.28 });
 
 harmonicPad.chain(harmonicFilter, harmonicReverb, padBus);
 
@@ -318,7 +318,7 @@ export const breathingPad = new Tone.PolySynth(Tone.Synth, {
     envelope: { attack: 0.1, decay: 0.2, sustain: 0.6, release: 0.8 }
 });
 
-const breathingFilter = new Tone.Filter({ type: "lowpass", frequency: 1800 });
+export const breathingFilter = new Tone.Filter({ type: "lowpass", frequency: 1800 });
 const breathingLFO = new Tone.LFO("4n", 350, 1800).start();
 
 breathingLFO.connect(breathingFilter.frequency);
@@ -337,8 +337,8 @@ export const choirPad = new Tone.PolySynth(Tone.Synth, {
     envelope: { attack: 0.8, decay: 0.4, sustain: 0.9, release: 2.5 }
 });
 
-const choirFilter = new Tone.Filter({ type: "bandpass", frequency: 1100, Q: 1 });
-const choirReverb = new Tone.Reverb({ decay: 8, wet: 0.75 });
+export const choirFilter = new Tone.Filter({ type: "bandpass", frequency: 1100, Q: 1 });
+export const choirReverb = new Tone.Reverb({ decay: 8, wet: 0.75 });
 
 choirPad.chain(choirFilter, choirReverb, padBus);
 
@@ -364,8 +364,8 @@ export const counterPad = new Tone.PolySynth(Tone.Synth, {
     }
 });
 
-const counterFilter = new Tone.Filter({ type: "lowpass", frequency: 3500 });
-const counterReverb = new Tone.Reverb({ decay: 2.5, wet: 0.35 });
+export const counterFilter = new Tone.Filter({ type: "lowpass", frequency: 3500 });
+export const counterReverb = new Tone.Reverb({ decay: 2.5, wet: 0.35 });
 
 counterPad.chain(counterFilter, counterReverb, padBus);
 
@@ -434,23 +434,28 @@ export const metalInstruments = {
     bass,
     drums,
 
-    // 🎹 PADs (4 stili)
     ambientPad,
     harmonicPad,
     breathingPad,
     choirPad,
 
-    // 🎛 BUS
+    // FX pad
+    ambientFilter,
+    harmonicFilter,
+    breathingFilter,
+    choirFilter,
+    choirReverb,
+    counterFilter,
+    counterReverb,
+
     guitarBus,
     bassBus,
     drumBus,
     leadBus,
     padBus,
 
-    // 🔊 Utility
     setVolume
 };
-
 
 export const instrumentVolumeMap = {
     guitar: "Chitarre",

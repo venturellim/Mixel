@@ -3,19 +3,27 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("padEngine.js ver. 002.4 loaded");
+console.log("padEngine.js ver. 002.5 loaded");
 
 export function initPadEngine(instruments, metalParams, rand, imageParams) {
 
     const {
-        ambientPad,
-        harmonicPad,
-        breathingPad,
-        choirPad,
-        arpeggioPad,
-        counterPad,
-        padBus
-    } = instruments;
+    ambientPad,
+    harmonicPad,
+    breathingPad,
+    choirPad,
+    arpeggioPad,
+    counterPad,
+    padBus,
+
+    ambientFilter,
+    harmonicFilter,
+    breathingFilter,
+    choirFilter,
+    choirReverb,
+    counterFilter
+} = instruments;
+
 
     const bpm = metalParams.bpm;
     const secondsPerBeat = 60 / bpm;
@@ -414,40 +422,7 @@ export function initPadEngine(instruments, metalParams, rand, imageParams) {
     // -------------------------
 
     function applyPadMicroMovement(section, profile) {
-    const start = section.startTime;
-    const end = section.endTime;
-
-    // AmbientPad micro cutoff
-    Tone.Transport.scheduleRepeat(time => {
-        const base = 2000;
-        const jitter = 200 * Math.sin(time * 0.5);
-        ambientFilter.frequency.value = base + jitter;
-    }, "2n", start, end - start);
-
-    // HarmonicPad micro volume
-    Tone.Transport.scheduleRepeat(time => {
-        const jitter = 0.05 * Math.sin(time * 0.8);
-        harmonicPad.volume.value = jitter;
-    }, "4n", start, end - start);
-
-    // BreathingPad LFO depth dinamico
-    Tone.Transport.scheduleRepeat(time => {
-        const depth = 0.5 + 0.2 * Math.sin(time * 1.2);
-        breathingFilter.Q.value = depth;
-    }, "8n", start, end - start);
-
-    // ChoirPad micro wet
-    Tone.Transport.scheduleRepeat(time => {
-        const jitter = 0.05 * Math.sin(time * 0.3);
-        choirReverb.wet.value = 0.7 + jitter;
-    }, "2n", start, end - start);
-
-    // CounterPad micro cutoff
-    Tone.Transport.scheduleRepeat(time => {
-        const base = 3500;
-        const jitter = 150 * Math.sin(time * 1.5);
-        counterFilter.frequency.value = base + jitter;
-    }, "8n", start, end - start);
+    
 }
 
     // -------------------------
