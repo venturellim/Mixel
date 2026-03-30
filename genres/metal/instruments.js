@@ -66,7 +66,7 @@ setVolume("guitar", -4);
 setVolume("bass", -2);
 setVolume("drums", -14);
 setVolume("lead", +3);
-setVolume("pad", -12);
+setVolume("pad", -16);
 
 
 // Routing bus → EQ → master
