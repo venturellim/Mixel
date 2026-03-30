@@ -16,7 +16,7 @@ import { initBassEngine } from "./bassEngine.js";
 import { initDrumEngine } from "./drumEngine.js";
 import { initThemeEngine } from "./themeEngine.js";
 import { initPadEngine } from "./padEngine.js";
-
+import { initKeyboardEngine } from "./keyboardEngine.js";
 
 import { generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
@@ -316,8 +316,7 @@ export async function createMetalEngine(params) {
     const drums = initDrumEngine(metalInstruments, metalParams, rand);
     const theme = initThemeEngine(metalParams, params.imageParams, rand);
     const pad  = initPadEngine(metalInstruments, metalParams, rand, params.imageParams);
-
-
+    const keyboard = initKeyboardEngine(metalInstruments, metalParams, rand, params.imageParams);
 
     // ============================================================
     // PRIMA PASSATA: costruiamo sezioni + transizioni (NO SCHEDULAZIONE)
@@ -423,6 +422,28 @@ console.log(
 
         currentTime = sec.endTime;
     });
+    
+    function shouldKeyboardPlay(section, imageParams) {
+    const energy = imageParams?.energy ?? 0.5;
+    const darkness = imageParams?.texture ?? 0.5;
+    const complexity = imageParams?.complexity ?? 0.5;
+
+    // Sempre nel solo
+    if (section.name === "solo") return true;
+
+    // Intro/outro → tastiera se non c’è theme
+    if ((section.name === "intro" || section.name === "outro") && complexity > 0.4) {
+        return true;
+    }
+
+    // Verse/chorus → tastiera se foto lo suggerisce
+    if (energy > 0.7 || complexity > 0.7) return true;
+
+    // Foto molto luminosa → tastiera melodica
+    if (darkness < 0.3) return true;
+
+    return false;
+}
 
     // ============================================================
     // TERZA PASSATA: schedulazione engine (ORA È SICURA)
@@ -507,6 +528,16 @@ pad.scheduleSection(
     riffAnalysis,
     themeEvents 
 );
+
+// KEYBOARD ENGINE (foto-driven)
+if (shouldKeyboardPlay(sec, params.imageParams)) {
+    keyboard.scheduleKeyboard(
+        sec,
+        sec.scale,
+        sec.riffResult.events,
+        themeEvents
+    );
+}
 
 
 drums.scheduleSection(

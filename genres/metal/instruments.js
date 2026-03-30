@@ -8,7 +8,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("instruments.js ver. 005.1 loaded");
+console.log("instruments.js ver. 005.2 loaded");
 
 // ============================================================
 // 🎚 BUS SPECIFICI DEL METAL
@@ -289,10 +289,11 @@ export const ambientPad = new Tone.PolySynth(Tone.Synth, {
     envelope: { attack: 1.2, decay: 0.5, sustain: 0.8, release: 3 }
 });
 
-const ambientFilter = new Tone.Filter({ type: "lowpass", frequency: 2500 });
-const ambientReverb = new Tone.Reverb({ decay: 6, wet: 0.6 });
+const ambientFilter = new Tone.Filter({ type: "lowpass", frequency: 2200 });
+const ambientReverb = new Tone.Reverb({ decay: 7, wet: 0.65 });
 
 ambientPad.chain(ambientFilter, ambientReverb, padBus);
+
 
 // ============================================================
 // 🎹 HARMONIC PAD
@@ -300,11 +301,11 @@ ambientPad.chain(ambientFilter, ambientReverb, padBus);
 
 export const harmonicPad = new Tone.PolySynth(Tone.Synth, {
     oscillator: { type: "triangle" },
-    envelope: { attack: 0.4, decay: 0.3, sustain: 0.7, release: 1.5 }
+    envelope: { attack: 0.35, decay: 0.25, sustain: 0.7, release: 1.4 }
 });
 
-const harmonicFilter = new Tone.Filter({ type: "lowpass", frequency: 4500 });
-const harmonicReverb = new Tone.Reverb({ decay: 3, wet: 0.3 });
+const harmonicFilter = new Tone.Filter({ type: "lowpass", frequency: 4200 });
+const harmonicReverb = new Tone.Reverb({ decay: 3.5, wet: 0.28 });
 
 harmonicPad.chain(harmonicFilter, harmonicReverb, padBus);
 
@@ -317,24 +318,15 @@ export const breathingPad = new Tone.PolySynth(Tone.Synth, {
     envelope: { attack: 0.1, decay: 0.2, sustain: 0.6, release: 0.8 }
 });
 
-const breathingFilter = new Tone.Filter({ type: "lowpass", frequency: 2000 });
-const breathingLFO = new Tone.LFO("4n", 400, 2000).start(); 
-
-// LFO che apre/chiude il filtro
+const breathingFilter = new Tone.Filter({ type: "lowpass", frequency: 1800 });
+const breathingLFO = new Tone.LFO("4n", 350, 1800).start();
 
 breathingLFO.connect(breathingFilter.frequency);
 
 breathingPad.chain(breathingFilter, padBus);
 
-// Fermiamo l’LFO quando il transport si ferma
-Tone.Transport.on("stop", () => {
-    try { breathingLFO.stop(); } catch(e) {}
-});
-
-// Riattiviamo l’LFO quando riparte
-Tone.Transport.on("start", () => {
-    try { breathingLFO.start(); } catch(e) {}
-});
+Tone.Transport.on("stop", () => { try { breathingLFO.stop(); } catch(e) {} });
+Tone.Transport.on("start", () => { try { breathingLFO.start(); } catch(e) {} });
 
 // ============================================================
 // 🎹 CHOIR PAD
@@ -345,10 +337,58 @@ export const choirPad = new Tone.PolySynth(Tone.Synth, {
     envelope: { attack: 0.8, decay: 0.4, sustain: 0.9, release: 2.5 }
 });
 
-const choirFilter = new Tone.Filter({ type: "bandpass", frequency: 1200, Q: 1 });
-const choirReverb = new Tone.Reverb({ decay: 8, wet: 0.7 });
+const choirFilter = new Tone.Filter({ type: "bandpass", frequency: 1100, Q: 1 });
+const choirReverb = new Tone.Reverb({ decay: 8, wet: 0.75 });
 
 choirPad.chain(choirFilter, choirReverb, padBus);
+
+// ============================================================
+// 🎹 COUNTER PAD
+// ============================================================
+
+export const counterPad = new Tone.PolySynth(Tone.Synth, {
+    oscillator: { type: "sawtooth" },
+    envelope: {
+        attack: 0.02,
+        decay: 0.15,
+        sustain: 0.4,
+        release: 0.3
+    },
+    filterEnvelope: {
+        attack: 0.01,
+        decay: 0.2,
+        sustain: 0.5,
+        release: 0.2,
+        baseFrequency: 400,
+        octaves: 2.5
+    }
+});
+
+const counterFilter = new Tone.Filter({ type: "lowpass", frequency: 3500 });
+const counterReverb = new Tone.Reverb({ decay: 2.5, wet: 0.35 });
+
+counterPad.chain(counterFilter, counterReverb, padBus);
+
+const padEQ = new Tone.EQ3({
+    low: -2,
+    mid: -1,
+    high: +1
+});
+
+const padGlue = new Tone.Compressor({
+    threshold: -18,
+    ratio: 3,
+    attack: 0.01,
+    release: 0.2
+});
+
+const padSpace = new Tone.Reverb({
+    decay: 2,
+    wet: 0.15
+});
+
+padBus.chain(padEQ, padGlue, padSpace, Tone.Destination);
+
 
 // ============================================================
 // 🎵 LOGGING (wrapping)
