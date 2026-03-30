@@ -1,10 +1,10 @@
-// padEngine.js — ver. 001.7 (stable)
+// padEngine.js — ver. 001.8 (stable)
 // Multi-Style Deterministic Pad Selector + Lead Accent Reactivity
-// Fix: note infinite + releaseAll() automatico
+// Fix: note infinite + wrapper + durate musicali sicure
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("padEngine.js ver. 001.7 loaded");
+console.log("padEngine.js ver. 001.8 loaded");
 
 export function initPadEngine(instruments, metalParams, rand, imageParams) {
 
@@ -81,18 +81,16 @@ export function initPadEngine(instruments, metalParams, rand, imageParams) {
     }
 
     // ------------------------------------------------------------
-    // PAD SCHEDULERS (SAFE)
+    // PAD SCHEDULERS (SAFE + WRAPPER-FRIENDLY)
     // ------------------------------------------------------------
 
     function scheduleAmbientPad(section, scale) {
         const start = section.startTime;
-        const dur = section.measures + "m"; // durata musicale stabile
-
         const note = safeRoot(scale) + "3";
 
         Tone.Transport.schedule(time => {
             try {
-                ambientPad.triggerAttackRelease(note, dur, time, 0.4);
+                ambientPad.triggerAttackRelease(note, "4m", time, 0.4);
             } catch (e) {
                 console.error("[PAD AMBIENT ERROR]", e);
             }
@@ -137,7 +135,6 @@ export function initPadEngine(instruments, metalParams, rand, imageParams) {
 
     function scheduleChoirPad(section, scale) {
         const start = section.startTime;
-        const dur = section.measures + "m";
 
         const root = safeRoot(scale);
         const third = scale?.[2]?.[0] ?? root;
@@ -152,7 +149,7 @@ export function initPadEngine(instruments, metalParams, rand, imageParams) {
         Tone.Transport.schedule(time => {
             try {
                 notes.forEach((n, i) => {
-                    choirPad.triggerAttackRelease(n, dur, time, 0.25 + i * 0.05);
+                    choirPad.triggerAttackRelease(n, "4m", time, 0.25 + i * 0.05);
                 });
             } catch (e) {
                 console.error("[PAD CHOIR ERROR]", e);
