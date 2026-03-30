@@ -3,7 +3,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("padEngine.js ver. 001.5 loaded");
+console.log("padEngine.js ver. 001.6 loaded");
 
 export function initPadEngine(instruments, metalParams, rand, imageParams) {
 
@@ -75,88 +75,105 @@ export function initPadEngine(instruments, metalParams, rand, imageParams) {
     // PAD SCHEDULERS
     // ------------------------------------------------------------
 
-    function scheduleAmbientPad(section, scale, progression) {
-        const start = section.startTime;
-        const duration = section.measures * 4 * secondsPerBeat;
+    // ------------------------------------------------------------
+// PAD SCHEDULERS (versione corretta, solo note valide A–G)
+// ------------------------------------------------------------
 
-        const root = progression?.[0] ?? scale?.[0] ?? "C";
-        const note = root + "3";
+// Utility: prende SEMPRE una nota valida dalla scala
+function safeRoot(scale) {
+    if (!scale || scale.length === 0) return "C";
+    const n = scale[0];
+    if (typeof n !== "string") return "C";
+    const letter = n[0].toUpperCase();
+    return "ABCDEFG".includes(letter) ? letter : "C";
+}
+
+function scheduleAmbientPad(section, scale) {
+    const start = section.startTime;
+    const duration = section.measures * 4 * secondsPerBeat;
+
+    const root = safeRoot(scale);
+    const note = root + "3";
+
+    Tone.Transport.schedule(time => {
+        try {
+            ambientPad.triggerAttackRelease(note, duration, time, 0.4);
+        } catch (e) {
+            console.error("[PAD AMBIENT ERROR]", e);
+        }
+    }, start);
+}
+
+function scheduleHarmonicPad(section, scale) {
+    const start = section.startTime;
+    const beats = section.measures * 4;
+
+    const root = safeRoot(scale);
+    const note = root + "3";
+
+    for (let m = 0; m < section.measures; m++) {
+        const t = start + m * 4 * secondsPerBeat;
 
         Tone.Transport.schedule(time => {
             try {
-                ambientPad.triggerAttackRelease(note, duration, time, 0.4);
+                harmonicPad.triggerAttackRelease(note, 4 * secondsPerBeat, time, 0.45);
             } catch (e) {
-                console.error("[PAD AMBIENT ERROR]", e);
+                console.error("[PAD HARMONIC ERROR]", e);
             }
-        }, start);
+        }, t);
     }
+}
 
-    function scheduleHarmonicPad(section, scale, progression) {
-        const start = section.startTime;
+function scheduleBreathingPad(section, scale) {
+    const start = section.startTime;
+    const beats = section.measures * 4;
 
-        const chords = progression && progression.length > 0
-            ? progression
-            : [scale?.[0] ?? "C"];
+    const root = safeRoot(scale);
+    const note = root + "3";
 
-        for (let m = 0; m < section.measures; m++) {
-            const root = chords[m % chords.length];
-            const note = root + "3";
-            const t = start + m * 4 * secondsPerBeat;
-
-            Tone.Transport.schedule(time => {
-                try {
-                    harmonicPad.triggerAttackRelease(note, 4 * secondsPerBeat, time, 0.45);
-                } catch (e) {
-                    console.error("[PAD HARMONIC ERROR]", e);
-                }
-            }, t);
-        }
-    }
-
-    function scheduleBreathingPad(section, scale, progression) {
-        const start = section.startTime;
-        const beats = section.measures * 4;
-
-        const root = progression?.[0] ?? scale?.[0] ?? "C";
-        const note = root + "3";
-
-        for (let b = 0; b < beats; b++) {
-            const t = start + b * secondsPerBeat;
-            const dur = 0.75 * secondsPerBeat;
-            const vel = 0.3 + 0.1 * Math.sin(b * Math.PI / 2);
-
-            Tone.Transport.schedule(time => {
-                try {
-                    breathingPad.triggerAttackRelease(note, dur, time, vel);
-                } catch (e) {
-                    console.error("[PAD BREATHING ERROR]", e);
-                }
-            }, t);
-        }
-    }
-
-    function scheduleChoirPad(section, scale, progression) {
-        const start = section.startTime;
-        const beats = section.measures * 4;
-
-        const root = progression?.[0] ?? scale?.[0] ?? "C";
-        const third = scale?.[2] ?? root;
-        const fifth = scale?.[4] ?? root;
-
-        const notes = [root + "3", third + "3", fifth + "3"];
-        const dur = beats * secondsPerBeat;
+    for (let b = 0; b < beats; b++) {
+        const t = start + b * secondsPerBeat;
+        const dur = 0.75 * secondsPerBeat;
+        const vel = 0.3 + 0.1 * Math.sin(b * Math.PI / 2);
 
         Tone.Transport.schedule(time => {
             try {
-                notes.forEach((n, i) => {
-                    const vel = 0.25 + i * 0.05;
-                    choirPad.triggerAttackRelease(n, dur, time, vel);
-                });
+                breathingPad.triggerAttackRelease(note, dur, time, vel);
             } catch (e) {
-                console.error("[PAD CHOIR ERROR]", e);
+                console.error("[PAD BREATHING ERROR]", e);
             }
-        }, start);
+        }, t);
     }
+}
+
+function scheduleChoirPad(section, scale) {
+    const start = section.startTime;
+    const beats = section.measures * 4;
+
+    const root = safeRoot(scale);
+    const third = scale?.[2]?.[0] ?? root;
+    const fifth = scale?.[4]?.[0] ?? root;
+
+    const notes = [
+        root + "3",
+        third + "3",
+        fifth + "3"
+    ];
+
+    const dur = beats * secondsPerBeat;
+
+    Tone.Transport.schedule(time => {
+        try {
+            notes.forEach((n, i) => {
+                const vel = 0.25 + i * 0.05;
+                choirPad.triggerAttackRelease(n, dur, time, vel);
+            });
+        } catch (e) {
+            console.error("[PAD CHOIR ERROR]", e);
+        }
+    }, start);
+}
+
 
     // ------------------------------------------------------------
     // LEAD ACCENT REACTIVITY (musical, non-rhythmic)
@@ -217,19 +234,20 @@ export function initPadEngine(instruments, metalParams, rand, imageParams) {
 
         // Pad principale
         switch (padType) {
-            case "ambient":
-                scheduleAmbientPad(section, scale, progression);
-                break;
-            case "harmonic":
-                scheduleHarmonicPad(section, scale, progression);
-                break;
-            case "breathing":
-                scheduleBreathingPad(section, scale, progression);
-                break;
-            case "choir":
-                scheduleChoirPad(section, scale, progression);
-                break;
-        }
+    case "ambient":
+        scheduleAmbientPad(section, scale);
+        break;
+    case "harmonic":
+        scheduleHarmonicPad(section, scale);
+        break;
+    case "breathing":
+        scheduleBreathingPad(section, scale);
+        break;
+    case "choir":
+        scheduleChoirPad(section, scale);
+        break;
+}
+
 
         // Reattività agli accenti della lead
         schedulePadAccents(section, themeEvents, padType);
