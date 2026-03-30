@@ -8,7 +8,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("instruments.js ver. 005.3 loaded");
+console.log("instruments.js ver. 005.3 test loaded");
 
 // ============================================================
 // 🎚 BUS SPECIFICI DEL METAL
@@ -314,9 +314,17 @@ harmonicPad.chain(harmonicFilter, harmonicReverb, padBus);
 // ============================================================
 
 export const breathingPad = new Tone.PolySynth(Tone.Synth, {
+    maxPolyphony: 8,
+    volume: -6,
     oscillator: { type: "sine" },
-    envelope: { attack: 0.1, decay: 0.2, sustain: 0.6, release: 0.8 }
+    envelope: {
+        attack: 0.2,
+        decay: 0.4,
+        sustain: 0.7,
+        release: 1.2
+    }
 });
+
 
 export const breathingFilter = new Tone.Filter({ type: "lowpass", frequency: 1800 });
 const breathingLFO = new Tone.LFO("4n", 350, 1800).start();
