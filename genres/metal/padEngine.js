@@ -1,29 +1,29 @@
-// padEngine.js — ver. 2.3
-// Power Metal Keyboardist: Pad Layering + Arpeggi + Contro‑melodie + Dynamic Orchestration + Reverse Swell
+// padEngine.js — ver. 3.0
+// Power Metal Keyboardist: Pad Layering + Arpeggi + Contro‑melodie + Reverse Swell
+// Versione LFO-driven: nessuna automazione param live nel mezzo del playback
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("padEngine.js ver. 002.5 loaded");
+console.log("padEngine.js ver. 003.0 loaded");
 
 export function initPadEngine(instruments, metalParams, rand, imageParams) {
 
     const {
-    ambientPad,
-    harmonicPad,
-    breathingPad,
-    choirPad,
-    arpeggioPad,
-    counterPad,
-    padBus,
+        ambientPad,
+        harmonicPad,
+        breathingPad,
+        choirPad,
+        arpeggioPad,
+        counterPad,
+        padBus,
 
-    ambientFilter,
-    harmonicFilter,
-    breathingFilter,
-    choirFilter,
-    choirReverb,
-    counterFilter
-} = instruments;
-
+        ambientFilter,
+        harmonicFilter,
+        breathingFilter,
+        choirFilter,
+        choirReverb,
+        counterFilter
+    } = instruments;
 
     const bpm = metalParams.bpm;
     const secondsPerBeat = 60 / bpm;
@@ -42,7 +42,7 @@ export function initPadEngine(instruments, metalParams, rand, imageParams) {
     }
 
     // ------------------------------------------------------------
-    // SAFE NOTE UTILITY
+    // SAFE NOTE UTILITY (solo per evitare note strane)
     // ------------------------------------------------------------
 
     function safeRoot(scale) {
@@ -52,10 +52,6 @@ export function initPadEngine(instruments, metalParams, rand, imageParams) {
         const letter = n[0].toUpperCase();
         return "ABCDEFG".includes(letter) ? letter : "C";
     }
-
-    // ------------------------------------------------------------
-    // POWER METAL VOICING (triade + ottava)
-    // ------------------------------------------------------------
 
     function buildVoicing(scale) {
         const root = safeRoot(scale);
@@ -68,6 +64,15 @@ export function initPadEngine(instruments, metalParams, rand, imageParams) {
             fifth + "3",
             root + "4"
         ];
+    }
+
+    function buildScaleInRange(scale, lowOct, highOct) {
+        const letters = scale.map(n => n[0].toUpperCase());
+        const notes = [];
+        for (let o = lowOct; o <= highOct; o++) {
+            letters.forEach(l => notes.push(l + o));
+        }
+        return notes;
     }
 
     // ------------------------------------------------------------
@@ -129,14 +134,13 @@ export function initPadEngine(instruments, metalParams, rand, imageParams) {
     }
 
     // ------------------------------------------------------------
-    // ARPEGGI POWER METAL (4 STILI)
+    // ARPEGGI POWER METAL
     // ------------------------------------------------------------
 
     function scheduleArp8th(section, scale) {
         const start = section.startTime;
         const notes = buildVoicing(scale);
         const pattern = notes;
-
         const beats = section.measures * 4;
 
         for (let b = 0; b < beats; b++) {
@@ -153,7 +157,6 @@ export function initPadEngine(instruments, metalParams, rand, imageParams) {
         const start = section.startTime;
         const notes = buildVoicing(scale);
         const pattern = notes;
-
         const steps = section.measures * 16;
 
         for (let s = 0; s < steps; s++) {
@@ -220,7 +223,7 @@ export function initPadEngine(instruments, metalParams, rand, imageParams) {
     }
 
     // ------------------------------------------------------------
-    // CONTRO‑MELODIE POWER METAL
+    // CONTRO‑MELODIE
     // ------------------------------------------------------------
 
     function pickCounterMelodyStyle(profile) {
@@ -229,15 +232,6 @@ export function initPadEngine(instruments, metalParams, rand, imageParams) {
         if (energy > 0.7) return "energetic";
         if (darkness > 0.6) return "epic";
         return "lyric";
-    }
-
-    function buildScaleInRange(scale, lowOct, highOct) {
-        const letters = scale.map(n => n[0].toUpperCase());
-        const notes = [];
-        for (let o = lowOct; o <= highOct; o++) {
-            letters.forEach(l => notes.push(l + o));
-        }
-        return notes;
     }
 
     function isSafeAgainstLead(note, themeEvents) {
@@ -252,7 +246,6 @@ export function initPadEngine(instruments, metalParams, rand, imageParams) {
     function scheduleCounterMelodyLyrical(section, scale, themeEvents, profile) {
         const start = section.startTime;
         const beats = section.measures * 4;
-
         const notesPool = buildScaleInRange(scale, 4, 5);
 
         for (let b = 0; b < beats; b += 2) {
@@ -271,7 +264,6 @@ export function initPadEngine(instruments, metalParams, rand, imageParams) {
     function scheduleCounterMelodyEnergetic(section, scale, themeEvents, profile) {
         const start = section.startTime;
         const beats = section.measures * 4;
-
         const notesPool = buildScaleInRange(scale, 4, 5);
 
         for (let s = 0; s < beats * 2; s++) {
@@ -332,102 +324,47 @@ export function initPadEngine(instruments, metalParams, rand, imageParams) {
     }
 
     // ------------------------------------------------------------
-    // STEP 4 — DYNAMIC PAD ORCHESTRATION
+    // LFO-BASED MOVEMENT (no scheduleRepeat)
     // ------------------------------------------------------------
 
-    // -------------------------
-    // 4.1 Macro‑automazioni sul padBus
-    // -------------------------
+    // Qui creiamo LFO lenti e li colleghiamo ai filtri/reverb.
+    // Nessuna automazione via callback, solo modulazione continua.
 
-    function applyPadBusAutomation(section, profile) {
-        const start = section.startTime;
-        const end = section.endTime;
+    const ambientLFO = new Tone.LFO({
+        type: "sine",
+        frequency: 0.05, // molto lento
+        min: 1500,
+        max: 2500
+    }).start();
+    ambientLFO.connect(ambientFilter.frequency);
 
-        const padFilter = padBus._filter ?? (padBus._filter = new Tone.Filter(4000).connect(padBus));
-        const padReverb = padBus._reverb ?? (padBus._reverb = new Tone.Reverb({ decay: 2, wet: 0.15 }).connect(padBus));
+    const breathingQLFO = new Tone.LFO({
+        type: "sine",
+        frequency: 0.07,
+        min: 0.5,
+        max: 1.2
+    }).start();
+    breathingQLFO.connect(breathingFilter.Q);
 
-        // Volume dinamico
-        let volStart = -12;
-        let volEnd = -12;
+    const choirWetLFO = new Tone.LFO({
+        type: "sine",
+        frequency: 0.03,
+        min: 0.6,
+        max: 0.8
+    }).start();
+    choirWetLFO.connect(choirReverb.wet);
 
-        if (section.name === "intro") {
-            volStart = -24;
-            volEnd = -12;
-        }
-        if (section.name === "chorus") {
-            volStart = -12;
-            volEnd = -8;
-        }
-        if (section.name === "solo") {
-            volStart = -14;
-            volEnd = -12;
-        }
-        if (section.name === "outro") {
-            volStart = -12;
-            volEnd = -24;
-        }
+    const counterCutoffLFO = new Tone.LFO({
+        type: "sine",
+        frequency: 0.09,
+        min: 2800,
+        max: 3800
+    }).start();
+    counterCutoffLFO.connect(counterFilter.frequency);
 
-        Tone.Transport.schedule(time => {
-            padBus.gain.setValueAtTime(Tone.dbToGain(volStart), time);
-            padBus.gain.linearRampToValueAtTime(Tone.dbToGain(volEnd), end);
-        }, start);
-
-        // Filtro globale
-        let cutoffStart = 2000;
-        let cutoffEnd = 4000;
-
-        if (section.name === "intro") {
-            cutoffStart = 800;
-            cutoffEnd = 3500;
-        }
-        if (section.name === "chorus") {
-            cutoffStart = 3000;
-            cutoffEnd = 6000;
-        }
-        if (section.name === "outro") {
-            cutoffStart = 3000;
-            cutoffEnd = 800;
-        }
-
-        Tone.Transport.schedule(time => {
-            padFilter.frequency.setValueAtTime(cutoffStart, time);
-            padFilter.frequency.linearRampToValueAtTime(cutoffEnd, end);
-        }, start);
-
-        // Reverb globale
-        let wetStart = 0.1;
-        let wetEnd = 0.15;
-
-        if (section.name === "intro") {
-            wetStart = 0.2;
-            wetEnd = 0.15;
-        }
-        if (section.name === "chorus") {
-            wetStart = 0.15;
-            wetEnd = 0.25;
-        }
-        if (section.name === "outro") {
-            wetStart = 0.15;
-            wetEnd = 0.3;
-        }
-
-        Tone.Transport.schedule(time => {
-            padReverb.wet.setValueAtTime(wetStart, time);
-            padReverb.wet.linearRampToValueAtTime(wetEnd, end);
-        }, start);
-    }
-
-    // -------------------------
-    // 4.2 Micro‑movimenti sui singoli pad
-    // -------------------------
-
-    function applyPadMicroMovement(section, profile) {
-    
-}
-
-    // -------------------------
-    // 4.3 Reverse Swell procedurale (solo intro/chorus)
-    // -------------------------
+    // ------------------------------------------------------------
+    // REVERSE SWELL (solo intro/chorus)
+    // ------------------------------------------------------------
 
     function scheduleReverseSwell(section, scale, profile) {
         if (section.name !== "intro" && section.name !== "chorus") return;
@@ -467,38 +404,152 @@ export function initPadEngine(instruments, metalParams, rand, imageParams) {
         }, t);
     }
 
-        // ------------------------------------------------------------
-    // PUBLIC API
+    // ------------------------------------------------------------
+    // DYNAMIC TRANSITIONS (solo sul padBus, ma statiche per sezione)
     // ------------------------------------------------------------
 
-        function scheduleSection(section, scale, progression, riffEvents, riffAnalysis, themeEvents, prevSection) {
+    function applyPadBusAutomation(section, profile) {
+        const start = section.startTime;
+        const end = section.endTime;
 
-        const profile = getProfile(imageParams);
-        const layers = pickLayers(section);
+        const padFilter = padBus._filter ?? (padBus._filter = new Tone.Filter(4000).connect(padBus));
+        const padReverb = padBus._reverb ?? (padBus._reverb = new Tone.Reverb({ decay: 2, wet: 0.15 }).connect(padBus));
 
-        // Dynamic transitions
-        applyDynamicTransitions(prevSection, section, scale, profile);
+        let volStart = -12;
+        let volEnd = -12;
 
-        // Dynamic orchestration
-        applyPadBusAutomation(section, profile);
-        applyPadMicroMovement(section, profile);
-        scheduleReverseSwell(section, scale, profile);
+        if (section.name === "intro") {
+            volStart = -24;
+            volEnd = -12;
+        }
+        if (section.name === "chorus") {
+            volStart = -12;
+            volEnd = -8;
+        }
+        if (section.name === "solo") {
+            volStart = -14;
+            volEnd = -12;
+        }
+        if (section.name === "outro") {
+            volStart = -12;
+            volEnd = -24;
+        }
 
-        // Pads
-        scheduleLayeredPads(section, scale, layers);
+        Tone.Transport.schedule(time => {
+            padBus.gain.setValueAtTime(Tone.dbToGain(volStart), time);
+            padBus.gain.linearRampToValueAtTime(Tone.dbToGain(volEnd), end);
+        }, start);
 
-        // Arpeggi
-        scheduleArpeggio(section, scale, profile);
+        let cutoffStart = 2000;
+        let cutoffEnd = 4000;
 
-        // Contro‑melodie
-        scheduleCounterMelody(section, scale, themeEvents, profile);
+        if (section.name === "intro") {
+            cutoffStart = 800;
+            cutoffEnd = 3500;
+        }
+        if (section.name === "chorus") {
+            cutoffStart = 3000;
+            cutoffEnd = 6000;
+        }
+        if (section.name === "outro") {
+            cutoffStart = 3000;
+            cutoffEnd = 800;
+        }
 
-        // Release
-        forcePadRelease(section);
+        Tone.Transport.schedule(time => {
+            padFilter.frequency.setValueAtTime(cutoffStart, time);
+            padFilter.frequency.linearRampToValueAtTime(cutoffEnd, end);
+        }, start);
+
+        let wetStart = 0.1;
+        let wetEnd = 0.15;
+
+        if (section.name === "intro") {
+            wetStart = 0.2;
+            wetEnd = 0.15;
+        }
+        if (section.name === "chorus") {
+            wetStart = 0.15;
+            wetEnd = 0.25;
+        }
+        if (section.name === "outro") {
+            wetStart = 0.15;
+            wetEnd = 0.3;
+        }
+
+        Tone.Transport.schedule(time => {
+            padReverb.wet.setValueAtTime(wetStart, time);
+            padReverb.wet.linearRampToValueAtTime(wetEnd, end);
+        }, start);
+    }
+
+    function applyDynamicTransitions(prevSection, nextSection, scale, profile) {
+        if (!prevSection || !nextSection) return;
+
+        const prevEnd = prevSection.endTime;
+        const nextStart = nextSection.startTime;
+        const energyDelta = (profile.energy ?? 0.5);
+
+        Tone.Transport.schedule(time => {
+            padBus.gain.cancelScheduledValues(time);
+            padBus.gain.setValueAtTime(padBus.gain.value, time);
+            padBus.gain.linearRampToValueAtTime(
+                Tone.dbToGain(-18),
+                prevEnd - 0.1
+            );
+        }, prevEnd - 0.5);
+
+        Tone.Transport.schedule(time => {
+            padBus._filter.frequency.cancelScheduledValues(time);
+            padBus._filter.frequency.setValueAtTime(
+                padBus._filter.frequency.value,
+                time
+            );
+            padBus._filter.frequency.linearRampToValueAtTime(
+                800 + 400 * (1 - energyDelta),
+                prevEnd
+            );
+        }, prevEnd - 0.5);
+
+        if (profile.complexity > 0.6) {
+            const clusterNotes = buildScaleInRange(scale, 4, 5).slice(0, 3);
+            clusterNotes.forEach((n, i) => {
+                Tone.Transport.schedule(time => {
+                    ambientPad.triggerAttackRelease(n, "2n", time, 0.15);
+                }, prevEnd - 0.4 + i * 0.03);
+            });
+        }
+
+        Tone.Transport.schedule(time => {
+            padBus.gain.setValueAtTime(Tone.dbToGain(-18), time);
+            padBus.gain.linearRampToValueAtTime(
+                Tone.dbToGain(-12 + energyDelta * 4),
+                nextStart + 0.5
+            );
+        }, nextStart);
+
+        Tone.Transport.schedule(time => {
+            padBus._filter.frequency.setValueAtTime(
+                1200 + 800 * energyDelta,
+                time
+            );
+            padBus._filter.frequency.linearRampToValueAtTime(
+                4000 + 2000 * energyDelta,
+                nextStart + 1
+            );
+        }, nextStart);
+
+        Tone.Transport.schedule(time => {
+            padBus._reverb.wet.setValueAtTime(0.1, time);
+            padBus._reverb.wet.linearRampToValueAtTime(
+                0.2 + 0.1 * energyDelta,
+                nextStart + 1
+            );
+        }, nextStart);
     }
 
     // ------------------------------------------------------------
-    // LAYERING INTELLIGENTE PER SEZIONE
+    // PUBLIC API
     // ------------------------------------------------------------
 
     function pickLayers(section) {
@@ -522,95 +573,22 @@ export function initPadEngine(instruments, metalParams, rand, imageParams) {
             }
         });
     }
-    
-        // ------------------------------------------------------------
-    // STEP 4.5 — DYNAMIC TRANSITIONS
-    // ------------------------------------------------------------
 
-    function applyDynamicTransitions(prevSection, nextSection, scale, profile) {
-        if (!prevSection || !nextSection) return;
+    function scheduleSection(section, scale, progression, riffEvents, riffAnalysis, themeEvents, prevSection) {
 
-        const prevEnd = prevSection.endTime;
-        const nextStart = nextSection.startTime;
+        const profile = getProfile(imageParams);
+        const layers = pickLayers(section);
 
-        const energyDelta = (profile.energy ?? 0.5);
+        applyDynamicTransitions(prevSection, section, scale, profile);
+        applyPadBusAutomation(section, profile);
+        scheduleReverseSwell(section, scale, profile);
 
-        // -------------------------
-        // TRANSITION OUT (prevSection)
-        // -------------------------
+        scheduleLayeredPads(section, scale, layers);
+        scheduleArpeggio(section, scale, profile);
+        scheduleCounterMelody(section, scale, themeEvents, profile);
 
-        // Volume dip
-        Tone.Transport.schedule(time => {
-            padBus.gain.cancelScheduledValues(time);
-            padBus.gain.setValueAtTime(padBus.gain.value, time);
-            padBus.gain.linearRampToValueAtTime(
-                Tone.dbToGain(-18),
-                prevEnd - 0.1
-            );
-        }, prevEnd - 0.5);
-
-        // Filter closing
-        Tone.Transport.schedule(time => {
-            padBus._filter.frequency.cancelScheduledValues(time);
-            padBus._filter.frequency.setValueAtTime(
-                padBus._filter.frequency.value,
-                time
-            );
-            padBus._filter.frequency.linearRampToValueAtTime(
-                800 + 400 * (1 - energyDelta),
-                prevEnd
-            );
-        }, prevEnd - 0.5);
-
-        // Optional cluster (solo se foto complessa)
-        if (profile.complexity > 0.6) {
-            const clusterNotes = buildScaleInRange(scale, 4, 5).slice(0, 3);
-            clusterNotes.forEach((n, i) => {
-                Tone.Transport.schedule(time => {
-                    ambientPad.triggerAttackRelease(n, "2n", time, 0.15);
-                }, prevEnd - 0.4 + i * 0.03);
-            });
-        }
-
-        // -------------------------
-        // TRANSITION IN (nextSection)
-        // -------------------------
-
-        // Bloom (volume)
-        Tone.Transport.schedule(time => {
-            padBus.gain.setValueAtTime(Tone.dbToGain(-18), time);
-            padBus.gain.linearRampToValueAtTime(
-                Tone.dbToGain(-12 + energyDelta * 4),
-                nextStart + 0.5
-            );
-        }, nextStart);
-
-        // Filter opening
-        Tone.Transport.schedule(time => {
-            padBus._filter.frequency.setValueAtTime(
-                1200 + 800 * energyDelta,
-                time
-            );
-            padBus._filter.frequency.linearRampToValueAtTime(
-                4000 + 2000 * energyDelta,
-                nextStart + 1
-            );
-        }, nextStart);
-
-        // Reverb bloom
-        Tone.Transport.schedule(time => {
-            padBus._reverb.wet.setValueAtTime(0.1, time);
-            padBus._reverb.wet.linearRampToValueAtTime(
-                0.2 + 0.1 * energyDelta,
-                nextStart + 1
-            );
-        }, nextStart);
+        forcePadRelease(section);
     }
-
-
-    // ------------------------------------------------------------
-    // EXPORT
-    // ------------------------------------------------------------
 
     return {
         scheduleSection
