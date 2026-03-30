@@ -4,7 +4,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("padEngine.js ver. 003.0 loaded");
+console.log("padEngine.js ver. 003.0 test loaded");
 
 export function initPadEngine(instruments, metalParams, rand, imageParams) {
 
@@ -27,6 +27,16 @@ export function initPadEngine(instruments, metalParams, rand, imageParams) {
 
     const bpm = metalParams.bpm;
     const secondsPerBeat = 60 / bpm;
+    
+    function dropFourthOctave(note) {
+    if (!note || typeof note !== "string") return note;
+    const letter = note[0];
+    const oct = parseInt(note.slice(1), 10);
+    if (Number.isNaN(oct)) return note;
+    if (oct >= 4) return letter + "3";
+    return note;
+}
+
 
     // ------------------------------------------------------------
     // PROFILE FROM IMAGE
@@ -106,21 +116,24 @@ export function initPadEngine(instruments, metalParams, rand, imageParams) {
     }
 
     function scheduleBreathingPad(section, scale) {
-        const start = section.startTime;
-        const beats = section.measures * 4;
-        const notes = buildVoicing(scale);
+    const start = section.startTime;
+    const beats = section.measures * 4;
+    const rawNotes = buildVoicing(scale);
 
-        for (let b = 0; b < beats; b++) {
-            const t = start + b * secondsPerBeat;
-            const vel = 0.25 + 0.1 * Math.sin(b * Math.PI / 2);
+    // qui applichiamo il clamp difensivo
+    const notes = rawNotes.map(dropFourthOctave);
 
-            Tone.Transport.schedule(time => {
-                notes.forEach(n =>
-                    breathingPad.triggerAttackRelease(n, "8n", time, vel)
-                );
-            }, t);
-        }
+    for (let b = 0; b < beats; b++) {
+        const t = start + b * secondsPerBeat;
+        const vel = 0.25 + 0.1 * Math.sin(b * Math.PI / 2);
+
+        Tone.Transport.schedule(time => {
+            notes.forEach(n =>
+                breathingPad.triggerAttackRelease(n, "8n", time, vel)
+            );
+        }, t);
     }
+}
 
     function scheduleChoirPad(section, scale) {
         const start = section.startTime;
