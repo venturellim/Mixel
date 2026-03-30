@@ -391,9 +391,10 @@ const padGlue = new Tone.Compressor({
 });
 
 const padSpace = new Tone.Reverb({
-    decay: 2,
-    wet: 0.15
+    decay: 1.5,
+    wet: 0.1
 });
+
 
 padBus.chain(padEQ, padGlue, padSpace, Tone.Destination);
 
