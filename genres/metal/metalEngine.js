@@ -21,7 +21,7 @@ import { initKeyboardEngine } from "./keyboardEngine.js";
 import { generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 018.2 loaded");
+console.log("metalEngine.js ver. 018.3 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
@@ -519,15 +519,6 @@ const riffAnalysis = {
     dominantPattern: sec.riffResult.dominantPattern ?? "pedal_8n",
     palmRatio: sec.riffResult.palmRatio ?? 0.5
 };
-
-pad.scheduleSection(
-    sec,
-    sec.scale,
-    sec.progression,
-    sec.riffResult.events,
-    riffAnalysis,
-    themeEvents 
-);
 
 // KEYBOARD ENGINE (foto-driven)
 if (shouldKeyboardPlay(sec, params.imageParams)) {

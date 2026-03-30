@@ -8,7 +8,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("instruments.js ver. 005.3 test loaded");
+console.log("instruments.js ver. 005.3 loaded");
 
 // ============================================================
 // 🎚 BUS SPECIFICI DEL METAL
