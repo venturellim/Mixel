@@ -16,11 +16,11 @@ import { initBassEngine } from "./bassEngine.js";
 import { initDrumEngine } from "./drumEngine.js";
 import { initThemeEngine } from "./themeEngine.js";
 import { initKeyboardEngine } from "./keyboardEngine.js";
-
+import { pickTransition } from "./transitionEngine.js";
 import { generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 019 loaded");
+console.log("metalEngine.js ver. 020 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
@@ -52,233 +52,6 @@ function normalizeStructurePreset(preset) {
     };
 
     return STRUCTURE_LIBRARY[preset] ?? STRUCTURE_LIBRARY.standard;
-}
-
-function chooseTransitionByDistance(fromNote, toNote, rand) {
-    const letters = ["C","D","E","F","G","A","B"];
-
-    const i1 = letters.indexOf(fromNote);
-    const i2 = letters.indexOf(toNote);
-
-    // Fallback elegante
-    if (i1 === -1 || i2 === -1) {
-        return {
-    type: "pm_burst_9",
-    durationBeats: 4,
-    instrument: "palm"
-};
-    }
-
-    let dist = Math.abs(i1 - i2);
-    if (dist > 3) dist = 7 - dist;
-
-    // Utility per scelta pesata
-    function weightedChoice(options) {
-        const total = options.reduce((s, o) => s + o.weight, 0);
-        let r = rand() * total;
-        for (const o of options) {
-            if (r < o.weight) return o.value;
-            r -= o.weight;
-        }
-        return options[options.length - 1].value;
-    }
-
-    // ---------------------------------------------------------
-    // DISTANZA 0 → tremolo o gallop (non statico)
-    // ---------------------------------------------------------
-    if (dist === 0) {
-        return weightedChoice([
-        { value: { type: "pm_burst_9", durationBeats: 4, instrument: "palm" }, weight: 1.6 },
-        { value: { type: "pm_burst_12", durationBeats: 4, instrument: "palm" }, weight: 1.6 },
-            { value: { type: "tremolo_burst", durationBeats: 4, instrument: "palm" }, weight: 1.2 },
-            { value: { type: "gallop_9",      durationBeats: 4, instrument: "palm" }, weight: 1.0 }
-        ]);
-    }
-
-    // ---------------------------------------------------------
-    // DISTANZA 1 → gallop o syncopated (ma non 4 colpi distanti)
-    // ---------------------------------------------------------
-    if (dist === 1) {
-        return weightedChoice([
-        { value: { type: "pm_burst_9", durationBeats: 4, instrument: "palm" }, weight: 1.6 },
-        { value: { type: "pm_burst_12", durationBeats: 4, instrument: "palm" }, weight: 1.6 },
-            { value: { type: "gallop_9",      durationBeats: 4, instrument: "palm" }, weight: 1.5 },
-            { value: { type: "tremolo_burst", durationBeats: 4, instrument: "palm" }, weight: 1.0 }
-        ]);
-    }
-
-    // ---------------------------------------------------------
-    // DISTANZA 2–3 → dinamica vera
-    // ---------------------------------------------------------
-    if (dist === 2 || dist === 3) {
-        return weightedChoice([
-            { value: { type: "power_walk",       durationBeats: 6, instrument: "mixed" }, weight: 1.4 },
-            { value: { type: "power_slide",      durationBeats: 6, instrument: "mixed" }, weight: 1.0 },
-            { value: { type: "scale_up_short",   durationBeats: 6, instrument: "mixed" }, weight: 1.2 },
-            { value: { type: "scale_down_short", durationBeats: 6, instrument: "mixed" }, weight: 1.2 }
-        ]);
-    }
-
-    // ---------------------------------------------------------
-    // DISTANZA 4–6 → melodica vera
-    // ---------------------------------------------------------
-    return weightedChoice([
-        { value: { type: "scale_up",    durationBeats: 8, instrument: "lead" }, weight: 1.4 },
-        { value: { type: "scale_down",  durationBeats: 8, instrument: "lead" }, weight: 1.4 },
-        { value: { type: "melodic_run", durationBeats: 8, instrument: "lead" }, weight: 1.2 }
-    ]);
-}
-
-
-function buildTransitionEvents(fromNote, toNote, scale, transitionInfo, rand) {
-    const { type, durationBeats, instrument } = transitionInfo;
-    const events = [];
-
-    // Utility per trovare indice nella scala
-    const idx = scale.indexOf(fromNote);
-    const idx2 = scale.indexOf(toNote);
-
-    const safeIdx = idx === -1 ? 0 : idx;
-    const safeIdx2 = idx2 === -1 ? 0 : idx2;
-
-    // ---------------------------------------------------------
-    // PATTERN: STATICA (gallop, tremolo, syncopated, open_hit)
-    // ---------------------------------------------------------
-    if (instrument === "palm") {
-        if (type === "gallop_9") {
-            // gallop classico: 0, 0.5, 0.75
-            for (let b = 0; b < durationBeats; b += 1) {
-                events.push({ beatOffset: b, note: fromNote });
-                events.push({ beatOffset: b + 0.5, note: fromNote });
-                events.push({ beatOffset: b + 0.75, note: fromNote });
-            }
-        }
-        
-        if (type === "pm_burst_9") {
-    // 3 colpi per beat × 3 beat = 9 colpi totali
-    for (let b = 0; b < 3; b++) {
-        events.push({ beatOffset: b,       note: fromNote });
-        events.push({ beatOffset: b + 0.33, note: fromNote });
-        events.push({ beatOffset: b + 0.66, note: fromNote });
-    }
-}
-        
-        if (type === "pm_burst_12") {
-    for (let b = 0; b < durationBeats; b++) {
-        events.push({ beatOffset: b,       note: fromNote });
-        events.push({ beatOffset: b + 0.33, note: fromNote });
-        events.push({ beatOffset: b + 0.66, note: fromNote });
-    }
-}
-
-        if (type === "tremolo_burst") {
-            for (let b = 0; b < durationBeats; b += 0.25) {
-                events.push({ beatOffset: b, note: fromNote });
-            }
-        }
-
-        if (type === "syncopated_hits") {
-            for (let b = 0; b < durationBeats; b += 1) {
-                events.push({ beatOffset: b + 0.5, note: fromNote });
-            }
-        }
-
-        if (type === "open_hit") {
-            events.push({ beatOffset: 0, note: fromNote });
-        }
-    }
-
-    // ---------------------------------------------------------
-    // PATTERN: DINAMICA (power_walk, slide, scale_short)
-    // ---------------------------------------------------------
-    if (instrument === "mixed") {
-        if (type === "power_walk") {
-            // camminata: 1 nota per beat
-            const step = safeIdx < safeIdx2 ? 1 : -1;
-            let pos = safeIdx;
-
-            for (let b = 0; b < durationBeats - 1; b++) {
-                const note = scale[pos] || fromNote;
-                events.push({ beatOffset: b, note });
-                pos += step;
-                if (pos < 0) pos = 0;
-                if (pos >= scale.length) pos = scale.length - 1;
-            }
-
-            // open finale
-            events.push({ beatOffset: durationBeats - 1, note: toNote });
-        }
-
-        if (type === "power_slide") {
-            // slide: solo due note
-            events.push({ beatOffset: 0, note: fromNote });
-            events.push({ beatOffset: durationBeats - 1, note: toNote });
-        }
-
-        if (type === "scale_up_short" || type === "scale_down_short") {
-            const step = safeIdx < safeIdx2 ? 1 : -1;
-            let pos = safeIdx;
-
-            for (let b = 0; b < durationBeats - 1; b += 0.5) {
-                const note = scale[pos] || fromNote;
-                events.push({ beatOffset: b, note });
-                pos += step;
-                if (pos < 0) pos = 0;
-                if (pos >= scale.length) pos = scale.length - 1;
-            }
-
-            events.push({ beatOffset: durationBeats - 1, note: toNote });
-        }
-    }
-
-    // ---------------------------------------------------------
-    // PATTERN: MELODICA (scale_up, scale_down, melodic_run)
-    // ---------------------------------------------------------
-    if (instrument === "lead") {
-        if (type === "scale_up" || type === "scale_down") {
-            const step = safeIdx < safeIdx2 ? 1 : -1;
-            let pos = safeIdx;
-
-            for (let b = 0; b < durationBeats - 1; b += 0.5) {
-                const note = scale[pos] || fromNote;
-                events.push({ beatOffset: b, note });
-                pos += step;
-                if (pos < 0) pos = 0;
-                if (pos >= scale.length) pos = scale.length - 1;
-            }
-
-            // open finale
-            events.push({ beatOffset: durationBeats - 1, note: toNote });
-        }
-
-        if (type === "melodic_run") {
-            for (let b = 0; b < durationBeats - 1; b += 0.25) {
-                const pos = Math.floor(rand() * scale.length);
-                events.push({ beatOffset: b, note: scale[pos] });
-            }
-            events.push({ beatOffset: durationBeats - 1, note: toNote });
-        }
-    }
-
-    // Normalizzazione: ogni nota deve essere una lettera naturale A–G
-function safeLetter(n) {
-    const letters = ["A","B","C","D","E","F","G"];
-    if (!n || typeof n !== "string") return "A";
-    return n[0]; // prende solo la lettera iniziale
-}
- 
-// Applichiamo la normalizzazione a TUTTI gli eventi
-events.forEach(ev => {
-    ev.note = safeLetter(ev.note);
-});
-
-return {
-    type,
-    durationBeats,
-    instrument,
-    events
-};
-
 }
 
 // ============================================================
@@ -373,22 +146,16 @@ if (nextSection) {
     fromNote, "→", toNote
 );
     
-    const transitionInfo = chooseTransitionByDistance(fromNote, toNote, rand);
+    const transitionModule = pickTransition(fromNote, toNote, nextScale, params.imageParams, rand);
 
 console.log(
     "%c[TRANSITION DEBUG] chosen:", 
     "color:#00aaff; font-weight:bold;", 
-    transitionInfo
+    transitionModule
 );
 
     // 4) Costruiamo gli eventi della transizione
-    const transition = buildTransitionEvents(
-        fromNote,
-        toNote,
-        nextScale,
-        transitionInfo,
-        rand
-    );
+    const transition = transitionModule.generate(fromNote, toNote, nextScale, rand);
 
     // 5) Aggiungiamo la transizione alla timeline
     enriched.push({
@@ -542,43 +309,80 @@ drums.scheduleSection(
         } else {
 
     const t = sec.transition;
-    
-    drums.scheduleTransition(sec, sec.transition.events, sec.transition);
 
     t.events.forEach(ev => {
-        const eventTime = sec.startTime + ev.beatOffset * secondsPerBeat;
+    const eventTime = sec.startTime + ev.beatOffset * secondsPerBeat;
 
-        Tone.Transport.schedule(time => {
+    Tone.Transport.schedule(time => {
 
-            // STRUMENTO DELLA TRANSIZIONE
-            if (t.instrument === "palm") {
-                metalInstruments.guitarPalm.triggerAttackRelease(
-                    ev.note + "2",
-                    "16n",
-                    time
-                );
-            }
+        // 1) EVENTO DI BATTERIA
+        if (ev.drum) {
+            metalInstruments.drums.player(ev.drum).start(time);
+            return;
+        }
+        // 1bis) EVENTO DI TRANSIZIONE DRUM (tom_fill, snare_roll, ecc.)
+if (t.instrument === "drums" && ev.drum) {
+    metalInstruments.drums.player(ev.drum).start(time);
+    return;
+}
+        // 2) EVENTO DI BASSO
+        if (ev.note && t.instrument === "bass") {
+            metalInstruments.bass.triggerAttackRelease(
+                ev.note,   // già include l’ottava
+                "16n",
+                time
+            );
+            return;
+        }
 
-            if (t.instrument === "mixed") {
-                metalInstruments.guitarPalm.triggerAttackRelease(
-                    ev.note + "2",
-                    "16n",
-                    time
-                );
-            }
+        // 3) EVENTO DI CHITARRA (transizioni classiche)
+        if (ev.note && t.instrument === "palm") {
+            metalInstruments.guitarPalm.triggerAttackRelease(
+                ev.note + "2",
+                "16n",
+                time
+            );
+            return;
+        }
 
-            if (t.instrument === "lead") {
-                metalInstruments.lead.triggerAttackRelease(
-                    ev.note + "4",
-                    "16n",
-                    time
-                );
-            }
+        if (ev.note && t.instrument === "mixed") {
+            metalInstruments.guitarPalm.triggerAttackRelease(
+                ev.note + "2",
+                "16n",
+                time
+            );
+            return;
+        }
 
-        }, eventTime);
-    });
-bass.scheduleTransition(sec, sec.transition);
+        if (ev.note && t.instrument === "lead") {
+            metalInstruments.guitarLead.triggerAttackRelease(
+                ev.note + "4",
+                "16n",
+                time
+            );
+            return;
+        }
+// 3bis) EVENTO CINEMATICO (silence, reverse_swell, ecc.)
+if (t.instrument === "none") {
+    // Non suoniamo nulla, ma lasciamo scorrere il tempo
+    return;
+}
 
+        // 4) EVENTO DI SILENZIO
+        // (non facciamo nulla)
+
+    }, eventTime);
+});
+
+// 3ter) EVENTO DI TASTIERA (transizioni keyboard)
+if (ev.note && t.instrument === "keyboard") {
+    metalInstruments.keyboardLead.triggerAttackRelease(
+        ev.note,
+        "16n",
+        time
+    );
+    return;
+}
 
     // ---------------------------------------------------------
     // OPEN CHORD FINALE (solo per mixed e lead)
