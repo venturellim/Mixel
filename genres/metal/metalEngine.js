@@ -20,7 +20,7 @@ import { pickTransition } from "./transitionEngine.js";
 import { generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 020.2 loaded");
+console.log("metalEngine.js ver. 020.3 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
@@ -145,7 +145,8 @@ if (nextSection) {
     "color:#00aaff; font-weight:bold;", 
     fromNote, "→", toNote
 );
-    
+    const safeScale = scale.map(n => safeLetter(n));
+
     const transitionModule = pickTransition(fromNote, toNote, nextScale, params.imageParams, rand);
 
 console.log(
@@ -158,13 +159,16 @@ console.log(
     const transition = transitionModule.generate(fromNote, toNote, nextScale, rand);
 
     // 5) Aggiungiamo la transizione alla timeline
-    enriched.push({
+
+enriched.push({
     type: "transition",
     name: `transition_${section.name}`,
     transition,
-    scale: nextScale,        // <<--- AGGIUNTO
-    progression: [nextRoot]  // opzionale ma utile
+    instrument: transitionModule.instrument,   // 👈 aggiungi questo
+    scale: nextScale,
+    progression: [nextRoot]
 });
+
 
 }
 });
@@ -309,7 +313,7 @@ drums.scheduleSection(
         } else {
         
         const t = sec.transition;
-
+        const instrument = sec.instrument;
     t.events.forEach(ev => {
     const eventTime = sec.startTime + ev.beatOffset * secondsPerBeat;
 
