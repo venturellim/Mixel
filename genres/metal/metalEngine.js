@@ -20,7 +20,7 @@ import { pickTransition, safeLetter } from "./transitionEngine.js";
 import { generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 020.5 loaded");
+console.log("metalEngine.js ver. 020.6 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
@@ -311,84 +311,65 @@ drums.scheduleSection(
            // lead.scheduleSection(sec, sec.scale, sec.progression);
 
         } else {
-        
-        const t = sec.transition;
-        const instrument = sec.instrument;
+
+    const t = sec.transition;
+    const instrument = sec.instrument;
+
     t.events.forEach(ev => {
-    const eventTime = sec.startTime + ev.beatOffset * secondsPerBeat;
+        const eventTime = sec.startTime + ev.beatOffset * secondsPerBeat;
 
-    Tone.Transport.schedule(time => {
+        Tone.Transport.schedule(time => {
 
-        // 1) EVENTO DI BATTERIA (classico)
-        if (ev.drum && instrument !== "drums") {
-            metalInstruments.drums.player(ev.drum).start(time);
-            return;
-        }
+            // ---------------------------------------------------------
+            // 1) STRUMENTO PRINCIPALE DELLA TRANSIZIONE
+            // ---------------------------------------------------------
 
-        // 1bis) EVENTO DI TRANSIZIONE DRUM
-        if (instrument === "drums" && ev.drum) {
-            metalInstruments.drums.player(ev.drum).start(time);
-            return;
-        }
+            // DRUMS (transizione drums)
+            if (instrument === "drums" && ev.drum) {
+                metalInstruments.drums.player(ev.drum).start(time);
+            }
 
-        // 2) EVENTO DI BASSO
-        if (ev.note && instrument === "bass") {
-            metalInstruments.bass.triggerAttackRelease(
-                ev.note,
-                "16n",
-                time
-            );
-            return;
-        }
+            // BASS (transizione bass)
+            if (instrument === "bass" && ev.note) {
+                metalInstruments.bass.triggerAttackRelease(ev.note, "16n", time);
+            }
 
-        // 3) EVENTO DI CHITARRA
-        if (ev.note && instrument === "palm") {
-            metalInstruments.guitarPalm.triggerAttackRelease(
-                ev.note + "2",
-                "16n",
-                time
-            );
-            return;
-        }
+            // PALM / MIXED (chitarra ritmica)
+            if ((instrument === "palm" || instrument === "mixed") && ev.note) {
+                metalInstruments.guitarPalm.triggerAttackRelease(ev.note + "2", "16n", time);
+            }
 
-        if (ev.note && instrument === "mixed") {
-            metalInstruments.guitarPalm.triggerAttackRelease(
-                ev.note + "2",
-                "16n",
-                time
-            );
-            return;
-        }
+            // KEYBOARD (transizione keyboard)
+            if (instrument === "keyboard" && ev.note) {
+                metalInstruments.keyboardLead.triggerAttackRelease(ev.note, "16n", time);
+            }
 
-        if (ev.note && instrument === "lead") {
-            metalInstruments.guitarLead.triggerAttackRelease(
-                ev.note + "4",
-                "16n",
-                time
-            );
-            return;
-        }
+            // LEAD → NON SUONA MAI NELLE TRANSIZIONI
+            // (nessun ramo per la lead)
 
-        // 3ter) EVENTO DI TASTIERA (transizioni keyboard)
-        if (ev.note && instrument === "keyboard") {
-            metalInstruments.keyboardLead.triggerAttackRelease(
-                ev.note,
-                "16n",
-                time
-            );
-            return;
-        }
+            // ---------------------------------------------------------
+            // 2) LAYER AUTOMATICI: FULL BAND (tranne lead)
+            // ---------------------------------------------------------
 
-        // 3bis) EVENTO CINEMATICO
-        if (instrument === "none") {
-            return;
-        }
+            // BASSO sotto tutte le transizioni tranne quelle bass
+            if (ev.note && instrument !== "bass") {
+                metalInstruments.bass.triggerAttackRelease(ev.note, "16n", time);
+            }
 
-        // 4) EVENTO DI SILENZIO → non facciamo nulla
+            // BATTERIA sotto tutte le transizioni tranne quelle drums
+            if (instrument !== "drums") {
+                // Kick su ogni beat intero
+                if (Math.abs(ev.beatOffset % 1) < 0.001) {
+                    metalInstruments.drums.player("kick").start(time);
+                }
+                // Snare su 2 e 4
+                if (Math.abs((ev.beatOffset - 1) % 2) < 0.001) {
+                    metalInstruments.drums.player("snare").start(time);
+                }
+            }
 
-    }, eventTime);
-});
-
+        }, eventTime);
+    });
 
     // ---------------------------------------------------------
     // OPEN CHORD FINALE (solo per mixed e lead)
