@@ -20,7 +20,7 @@ import { pickTransition } from "./transitionEngine.js";
 import { generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 020.1 loaded");
+console.log("metalEngine.js ver. 020.2 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
@@ -307,6 +307,8 @@ drums.scheduleSection(
            // lead.scheduleSection(sec, sec.scale, sec.progression);
 
         } else {
+        
+        const t = sec.transition;
 
     t.events.forEach(ev => {
     const eventTime = sec.startTime + ev.beatOffset * secondsPerBeat;
