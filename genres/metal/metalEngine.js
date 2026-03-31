@@ -20,7 +20,7 @@ import { pickTransition, safeLetter } from "./transitionEngine.js";
 import { generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 020.4 loaded");
+console.log("metalEngine.js ver. 020.5 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
@@ -320,19 +320,19 @@ drums.scheduleSection(
     Tone.Transport.schedule(time => {
 
         // 1) EVENTO DI BATTERIA (classico)
-        if (ev.drum && t.instrument !== "drums") {
+        if (ev.drum && instrument !== "drums") {
             metalInstruments.drums.player(ev.drum).start(time);
             return;
         }
 
         // 1bis) EVENTO DI TRANSIZIONE DRUM
-        if (t.instrument === "drums" && ev.drum) {
+        if (instrument === "drums" && ev.drum) {
             metalInstruments.drums.player(ev.drum).start(time);
             return;
         }
 
         // 2) EVENTO DI BASSO
-        if (ev.note && t.instrument === "bass") {
+        if (ev.note && instrument === "bass") {
             metalInstruments.bass.triggerAttackRelease(
                 ev.note,
                 "16n",
@@ -342,7 +342,7 @@ drums.scheduleSection(
         }
 
         // 3) EVENTO DI CHITARRA
-        if (ev.note && t.instrument === "palm") {
+        if (ev.note && instrument === "palm") {
             metalInstruments.guitarPalm.triggerAttackRelease(
                 ev.note + "2",
                 "16n",
@@ -351,7 +351,7 @@ drums.scheduleSection(
             return;
         }
 
-        if (ev.note && t.instrument === "mixed") {
+        if (ev.note && instrument === "mixed") {
             metalInstruments.guitarPalm.triggerAttackRelease(
                 ev.note + "2",
                 "16n",
@@ -360,7 +360,7 @@ drums.scheduleSection(
             return;
         }
 
-        if (ev.note && t.instrument === "lead") {
+        if (ev.note && instrument === "lead") {
             metalInstruments.guitarLead.triggerAttackRelease(
                 ev.note + "4",
                 "16n",
@@ -370,7 +370,7 @@ drums.scheduleSection(
         }
 
         // 3ter) EVENTO DI TASTIERA (transizioni keyboard)
-        if (ev.note && t.instrument === "keyboard") {
+        if (ev.note && instrument === "keyboard") {
             metalInstruments.keyboardLead.triggerAttackRelease(
                 ev.note,
                 "16n",
@@ -380,7 +380,7 @@ drums.scheduleSection(
         }
 
         // 3bis) EVENTO CINEMATICO
-        if (t.instrument === "none") {
+        if (instrument === "none") {
             return;
         }
 
@@ -393,7 +393,7 @@ drums.scheduleSection(
     // ---------------------------------------------------------
     // OPEN CHORD FINALE (solo per mixed e lead)
     // ---------------------------------------------------------
-    if (t.instrument === "mixed" || t.instrument === "lead") {
+    if (instrument === "mixed" || instrument === "lead") {
         const finalEventTime = sec.startTime + (t.durationBeats - 0.5) * secondsPerBeat;
 
         Tone.Transport.schedule(time => {
