@@ -4,6 +4,8 @@
 // UTILITY
 // ============================================================
 
+console.log("transitionEngine.js ver. 020 loaded");
+
 // Normalizza una nota in lettera naturale A–G
 function safeLetter(n) {
     if (!n || typeof n !== "string") return "A";
