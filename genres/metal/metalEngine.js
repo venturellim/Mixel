@@ -15,13 +15,12 @@ import { initLeadEngine } from "./leadEngine.js";
 import { initBassEngine } from "./bassEngine.js";
 import { initDrumEngine } from "./drumEngine.js";
 import { initThemeEngine } from "./themeEngine.js";
-import { initPadEngine } from "./padEngine.js";
 import { initKeyboardEngine } from "./keyboardEngine.js";
 
 import { generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 018.3 loaded");
+console.log("metalEngine.js ver. 019 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
@@ -315,7 +314,6 @@ export async function createMetalEngine(params) {
     const bass  = initBassEngine(metalInstruments, metalParams, rand);
     const drums = initDrumEngine(metalInstruments, metalParams, rand);
     const theme = initThemeEngine(metalParams, params.imageParams, rand);
-    const pad  = initPadEngine(metalInstruments, metalParams, rand, params.imageParams);
     const keyboard = initKeyboardEngine(metalInstruments, metalParams, rand, params.imageParams);
 
     // ============================================================
@@ -612,10 +610,6 @@ bass.scheduleTransition(sec, sec.transition);
 
     play() {
         // Riattiva il padBus
-        metalInstruments.padBus.gain.rampTo(1, 0.2);
-
-        // Riattiva eventuali LFO
-        try { Tone.Transport.emit("start"); } catch(e) {}
 
         Tone.Transport.start("+0.1");
     },
@@ -628,11 +622,6 @@ bass.scheduleTransition(sec, sec.transition);
         Tone.Transport.stop();
         Tone.Transport.seconds = 0;
 
-        // Silenzia immediatamente il pad
-        metalInstruments.padBus.gain.rampTo(0, 0.2);
-
-        // Ferma eventuali LFO
-        try { Tone.Transport.emit("stop"); } catch(e) {}
     },
 
     seek(s) {

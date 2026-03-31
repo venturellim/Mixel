@@ -15,20 +15,7 @@ export function initKeyboardEngine(instruments, metalParams, rand, imageParams) 
     // 🎹 Synth Lead (alla Jens Johansson)
     // ------------------------------------------------------------
 
-    const soloLead = new Tone.MonoSynth({
-        oscillator: { type: "sawtooth" },
-        filter: { type: "lowpass", frequency: 8000 },
-        envelope: { attack: 0.01, decay: 0.2, sustain: 0.6, release: 0.3 },
-        filterEnvelope: {
-            attack: 0.01,
-            decay: 0.2,
-            sustain: 0.5,
-            release: 0.2,
-            baseFrequency: 600,
-            octaves: 3
-        },
-        portamento: 0.05
-    }).connect(leadBus);
+    const { keyboardLead: soloLead } = instruments;
 
     // ------------------------------------------------------------
     // PROFILE FROM IMAGE

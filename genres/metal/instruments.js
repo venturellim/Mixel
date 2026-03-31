@@ -8,7 +8,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("instruments.js ver. 005.3 loaded");
+console.log("instruments.js ver. 006 loaded");
 
 // ============================================================
 // 🎚 BUS SPECIFICI DEL METAL
@@ -18,7 +18,7 @@ export const guitarBus = new Tone.Gain(1);
 export const bassBus = new Tone.Gain(1);
 export const drumBus = new Tone.Gain(1);
 export const leadBus = new Tone.Gain(1);
-export const padBus = new Tone.Gain(1);
+export const keyboardBus = new Tone.Gain(1);
 
 // EQ specifici del metal
 const guitarEQ = new Tone.EQ3({ low: -4, mid: 2, high: 3 });
@@ -42,7 +42,7 @@ const mixer = {
     bass: bassBus,
     drums: drumBus,
     lead: leadBus,
-    pad: padBus
+    keyboard: keyboardBus
 };
 
 
@@ -66,7 +66,7 @@ setVolume("guitar", -4);
 setVolume("bass", -2);
 setVolume("drums", -14);
 setVolume("lead", +3);
-setVolume("pad", -16);
+setVolume("keyboard", -16);
 
 
 // Routing bus → EQ → master
@@ -74,7 +74,7 @@ guitarBus.connect(guitarEQ).connect(masterEQ);
 bassBus.connect(bassEQ).connect(masterEQ);
 drumBus.connect(drumEQ).connect(drumComp).connect(masterEQ);
 leadBus.connect(leadEQ).connect(masterEQ);
-padBus.connect(masterEQ);
+keyboardBus.connect(masterEQ);
 
 
 // ============================================================
@@ -281,122 +281,40 @@ export const drums = new Tone.Players({
 }).connect(drumBus);
 
 // ============================================================
-// 🎹 AMBIENT PAD (ex orchestraPad)
+// 🎹 KEYBOARD LEAD (Power Metal Synth)
 // ============================================================
 
-export const ambientPad = new Tone.PolySynth(Tone.Synth, {
-    oscillator: { type: "sawtooth" },
-    envelope: { attack: 1.2, decay: 0.5, sustain: 0.8, release: 3 }
-});
-
-export const ambientFilter = new Tone.Filter({ type: "lowpass", frequency: 2200 });
-export const ambientReverb = new Tone.Reverb({ decay: 7, wet: 0.65 });
-
-ambientPad.chain(ambientFilter, ambientReverb, padBus);
-
-
-// ============================================================
-// 🎹 HARMONIC PAD
-// ============================================================
-
-export const harmonicPad = new Tone.PolySynth(Tone.Synth, {
-    oscillator: { type: "triangle" },
-    envelope: { attack: 0.35, decay: 0.25, sustain: 0.7, release: 1.4 }
-});
-
-export const harmonicFilter = new Tone.Filter({ type: "lowpass", frequency: 4200 });
-export const harmonicReverb = new Tone.Reverb({ decay: 3.5, wet: 0.28 });
-
-harmonicPad.chain(harmonicFilter, harmonicReverb, padBus);
-
-// ============================================================
-// 🎹 BREATHING PAD (LFO pulsante)
-// ============================================================
-
-export const breathingPad = new Tone.PolySynth(Tone.Synth, {
+export const keyboardLead = new Tone.PolySynth(Tone.Synth, {
     maxPolyphony: 8,
-    volume: -6,
-    oscillator: { type: "sine" },
-    envelope: {
-        attack: 0.2,
-        decay: 0.4,
-        sustain: 0.7,
-        release: 1.2
-    }
-});
-
-
-export const breathingFilter = new Tone.Filter({ type: "lowpass", frequency: 1800 });
-const breathingLFO = new Tone.LFO("4n", 350, 1800).start();
-
-breathingLFO.connect(breathingFilter.frequency);
-
-breathingPad.chain(breathingFilter, padBus);
-
-Tone.Transport.on("stop", () => { try { breathingLFO.stop(); } catch(e) {} });
-Tone.Transport.on("start", () => { try { breathingLFO.start(); } catch(e) {} });
-
-// ============================================================
-// 🎹 CHOIR PAD
-// ============================================================
-
-export const choirPad = new Tone.PolySynth(Tone.Synth, {
-    oscillator: { type: "sawtooth" },
-    envelope: { attack: 0.8, decay: 0.4, sustain: 0.9, release: 2.5 }
-});
-
-export const choirFilter = new Tone.Filter({ type: "bandpass", frequency: 1100, Q: 1 });
-export const choirReverb = new Tone.Reverb({ decay: 8, wet: 0.75 });
-
-choirPad.chain(choirFilter, choirReverb, padBus);
-
-// ============================================================
-// 🎹 COUNTER PAD
-// ============================================================
-
-export const counterPad = new Tone.PolySynth(Tone.Synth, {
-    oscillator: { type: "sawtooth" },
-    envelope: {
-        attack: 0.02,
-        decay: 0.15,
-        sustain: 0.4,
-        release: 0.3
+    oscillator: {
+        type: "sawtooth"
     },
-    filterEnvelope: {
+    envelope: {
         attack: 0.01,
         decay: 0.2,
-        sustain: 0.5,
-        release: 0.2,
-        baseFrequency: 400,
-        octaves: 2.5
+        sustain: 0.7,
+        release: 0.3
     }
+}).connect(keyboardBus);
+
+const kbChorus = new Tone.Chorus({
+    frequency: 3,
+    delayTime: 2.5,
+    depth: 0.3,
+    spread: 180
+}).start();
+
+const kbDelay = new Tone.FeedbackDelay({
+    delayTime: "8n",
+    feedback: 0.35
 });
 
-export const counterFilter = new Tone.Filter({ type: "lowpass", frequency: 3500 });
-export const counterReverb = new Tone.Reverb({ decay: 2.5, wet: 0.35 });
-
-counterPad.chain(counterFilter, counterReverb, padBus);
-
-const padEQ = new Tone.EQ3({
-    low: -2,
-    mid: -1,
-    high: +1
+const kbReverb = new Tone.Reverb({
+    decay: 3.5,
+    wet: 0.25
 });
 
-const padGlue = new Tone.Compressor({
-    threshold: -18,
-    ratio: 3,
-    attack: 0.01,
-    release: 0.2
-});
-
-const padSpace = new Tone.Reverb({
-    decay: 1.5,
-    wet: 0.1
-});
-
-
-padBus.chain(padEQ, padGlue, padSpace, Tone.Destination);
+keyboardBus.chain(kbChorus, kbDelay, kbReverb);
 
 
 // ============================================================
@@ -415,10 +333,8 @@ wrapSampler("guitarPalm", guitarPalm);
 wrapSampler("guitarOpen", guitarOpen);
 wrapSampler("guitarLead", guitarLead);
 wrapSampler("bass", bass);
-wrapSampler("ambientPad", ambientPad);
-wrapSampler("harmonicPad", harmonicPad);
-wrapSampler("breathingPad", breathingPad);
-wrapSampler("choirPad", choirPad);
+wrapSampler("keyboardLead", keyboardLead);
+
 
 function wrapPlayer(name, player) {
     const orig = player.start.bind(player);
@@ -442,26 +358,13 @@ export const metalInstruments = {
     guitarLead,
     bass,
     drums,
-
-    ambientPad,
-    harmonicPad,
-    breathingPad,
-    choirPad,
-
-    // FX pad
-    ambientFilter,
-    harmonicFilter,
-    breathingFilter,
-    choirFilter,
-    choirReverb,
-    counterFilter,
-    counterReverb,
+    keyboardLead,
 
     guitarBus,
     bassBus,
     drumBus,
     leadBus,
-    padBus,
+    keyboardBus,
 
     setVolume
 };
@@ -471,6 +374,6 @@ export const instrumentVolumeMap = {
     bass: "Basso",
     drums: "Batteria",
     lead: "Lead",
-    pad: "Pad / Orchestra"
+    keyboard: "keyboard"
 };
 
