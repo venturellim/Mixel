@@ -4,10 +4,10 @@
 // UTILITY
 // ============================================================
 
-console.log("transitionEngine.js ver. 020 loaded");
+console.log("transitionEngine.js ver. 002.1 loaded");
 
 // Normalizza una nota in lettera naturale A–G
-function safeLetter(n) {
+export function safeLetter(n) {
     if (!n || typeof n !== "string") return "A";
     return n[0].toUpperCase();
 }

@@ -16,11 +16,11 @@ import { initBassEngine } from "./bassEngine.js";
 import { initDrumEngine } from "./drumEngine.js";
 import { initThemeEngine } from "./themeEngine.js";
 import { initKeyboardEngine } from "./keyboardEngine.js";
-import { pickTransition } from "./transitionEngine.js";
+import { pickTransition, safeLetter } from "./transitionEngine.js";
 import { generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 020.3 loaded");
+console.log("metalEngine.js ver. 020.4 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
