@@ -20,7 +20,7 @@ import { pickTransition } from "./transitionEngine.js";
 import { generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 020 loaded");
+console.log("metalEngine.js ver. 020.1 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
@@ -308,34 +308,34 @@ drums.scheduleSection(
 
         } else {
 
-    const t = sec.transition;
-
     t.events.forEach(ev => {
     const eventTime = sec.startTime + ev.beatOffset * secondsPerBeat;
 
     Tone.Transport.schedule(time => {
 
-        // 1) EVENTO DI BATTERIA
-        if (ev.drum) {
+        // 1) EVENTO DI BATTERIA (classico)
+        if (ev.drum && t.instrument !== "drums") {
             metalInstruments.drums.player(ev.drum).start(time);
             return;
         }
-        // 1bis) EVENTO DI TRANSIZIONE DRUM (tom_fill, snare_roll, ecc.)
-if (t.instrument === "drums" && ev.drum) {
-    metalInstruments.drums.player(ev.drum).start(time);
-    return;
-}
+
+        // 1bis) EVENTO DI TRANSIZIONE DRUM
+        if (t.instrument === "drums" && ev.drum) {
+            metalInstruments.drums.player(ev.drum).start(time);
+            return;
+        }
+
         // 2) EVENTO DI BASSO
         if (ev.note && t.instrument === "bass") {
             metalInstruments.bass.triggerAttackRelease(
-                ev.note,   // già include l’ottava
+                ev.note,
                 "16n",
                 time
             );
             return;
         }
 
-        // 3) EVENTO DI CHITARRA (transizioni classiche)
+        // 3) EVENTO DI CHITARRA
         if (ev.note && t.instrument === "palm") {
             metalInstruments.guitarPalm.triggerAttackRelease(
                 ev.note + "2",
@@ -362,27 +362,27 @@ if (t.instrument === "drums" && ev.drum) {
             );
             return;
         }
-// 3bis) EVENTO CINEMATICO (silence, reverse_swell, ecc.)
-if (t.instrument === "none") {
-    // Non suoniamo nulla, ma lasciamo scorrere il tempo
-    return;
-}
 
-        // 4) EVENTO DI SILENZIO
-        // (non facciamo nulla)
+        // 3ter) EVENTO DI TASTIERA (transizioni keyboard)
+        if (ev.note && t.instrument === "keyboard") {
+            metalInstruments.keyboardLead.triggerAttackRelease(
+                ev.note,
+                "16n",
+                time
+            );
+            return;
+        }
+
+        // 3bis) EVENTO CINEMATICO
+        if (t.instrument === "none") {
+            return;
+        }
+
+        // 4) EVENTO DI SILENZIO → non facciamo nulla
 
     }, eventTime);
 });
 
-// 3ter) EVENTO DI TASTIERA (transizioni keyboard)
-if (ev.note && t.instrument === "keyboard") {
-    metalInstruments.keyboardLead.triggerAttackRelease(
-        ev.note,
-        "16n",
-        time
-    );
-    return;
-}
 
     // ---------------------------------------------------------
     // OPEN CHORD FINALE (solo per mixed e lead)
