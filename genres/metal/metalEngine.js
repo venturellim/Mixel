@@ -16,7 +16,7 @@ import { initBassEngine } from "./bassEngine.js";
 import { initDrumEngine } from "./drumEngine.js";
 import { initThemeEngine } from "./themeEngine.js";
 import { initKeyboardEngine } from "./keyboardEngine.js";
-import { pickTransition, safeLetter } from "./transitionEngine.js";
+import { pickTransition } from "./transitionEngine.js";
 import { pickDrumPattern, generateDrumEvents } from "./transitionDrumEngine.js";
 import { pickKeyboardPattern, generateKeyboardEvents } from "./transitionKeyboardEngine.js";
 
@@ -33,6 +33,54 @@ console.log("metalEngine.js ver. 021.1 loaded");
 export async function waitMetalInstruments() {
     await waitForInstruments(4);
 }
+
+export function normalizeNote(note, instrument) {
+    if (!note || typeof note !== "string") return "A";
+
+    const first = note[0].toUpperCase();
+    const second = note[1];
+
+    // ---------------------------------------------------------
+    // 1) CHITARRE RITMICHE (solo naturali)
+    // ---------------------------------------------------------
+    if (instrument === "guitarPalm" || instrument === "guitarOpen") {
+        return first; // ignoriamo # e b
+    }
+
+    // ---------------------------------------------------------
+    // 2) LEAD E BASSO (naturali + bemolle, NO diesis)
+    // ---------------------------------------------------------
+    if (instrument === "guitarLead" || instrument === "bass") {
+
+        // caso bemolle → ok
+        if (second === "b") return first + "b";
+
+        // caso diesis → convertiamo in bemolle
+        if (second === "#") {
+            const sharpToFlat = {
+                "C#": "Db",
+                "D#": "Eb",
+                "F#": "Gb",
+                "G#": "Ab",
+                "A#": "Bb"
+            };
+            return sharpToFlat[first + "#"] ?? first;
+        }
+
+        // caso naturale
+        return first;
+    }
+
+    // ---------------------------------------------------------
+    // 3) SYNTH / TASTIERE (accettano tutto)
+    // ---------------------------------------------------------
+    if (second === "#" || second === "b") {
+        return first + second;
+    }
+
+    return first;
+}
+
 
 function normalizeStructurePreset(preset) {
 
@@ -149,7 +197,6 @@ if (nextSection) {
     "color:#00aaff; font-weight:bold;", 
     fromNote, "→", toNote
 );
-    const safeScale = scale.map(n => safeLetter(n));
 
     const transitionModule = pickTransition(fromNote, toNote, nextScale, params.imageParams, rand);
 
@@ -255,7 +302,17 @@ function pickTransitionDrumPattern(instrument, imageParams, rand) {
         if (sec.type === "main") {
 
             riff.scheduleSection(sec, sec.scale, sec.progression);
-bass.scheduleSection(sec, sec.scale, sec.progression, sec.riffResult.events);
+//bass.scheduleSection(sec, sec.scale, sec.progression, sec.riffResult.events);
+bass.scheduleSection(
+    sec,
+    sec.scale,
+    sec.progression,
+    sec.riffResult.events.map(ev => ({
+        ...ev,
+        note: normalizeNote(ev.note, "bass")
+    }))
+);
+
 riff.scheduleSection(sec, sec.scale, sec.progression);
 bass.scheduleSection(sec, sec.scale, sec.progression, sec.riffResult.events);
 
@@ -300,12 +357,19 @@ if (sec.name === "intro" || sec.name === "outro") {
                 }
 
                 // 🎸 Lead corretta (guitarLead)
+                //metalInstruments.guitarLead.triggerAttackRelease(
+                    //ev.note,
+                    //ev.duration,
+                    //time,
+                    //ev.velocity
+                //);
                 metalInstruments.guitarLead.triggerAttackRelease(
-                    ev.note,
-                    ev.duration,
-                    time,
-                    ev.velocity
-                );
+    normalizeNote(ev.note, "guitarLead") + "4",
+    ev.duration,
+    time,
+    ev.velocity
+);
+
 
             } catch (e) {
                 console.error("🔥 THEME ERROR in callback:", e, "event:", ev);
@@ -321,12 +385,20 @@ const riffAnalysis = {
 
 // KEYBOARD ENGINE (foto-driven)
 if (shouldKeyboardPlay(sec, params.imageParams)) {
-    keyboard.scheduleKeyboard(
-        sec,
-        sec.scale,
-        sec.riffResult.events,
-        themeEvents
-    );
+    //keyboard.scheduleKeyboard(
+        //sec,
+        //sec.scale,
+        //sec.riffResult.events,
+        //themeEvents
+    //);
+    const pureScale = sec.scale.map(n => normalizeNote(n, "keyboardLead"));
+keyboard.scheduleKeyboard(
+    sec,
+    pureScale,
+    sec.riffResult.events,
+    themeEvents
+);
+
 }
 
 
@@ -352,7 +424,9 @@ else {
     // 1) GENERAZIONE PATTERN TASTIERA (UNA VOLTA SOLA)
     // ---------------------------------------------------------
     const kbPattern = pickKeyboardPattern(instrument, params.imageParams, rand);
-    const kbLayer = generateKeyboardEvents(kbPattern, sec.scale, t.durationBeats, rand);
+    const pureScale = sec.scale.map(n => normalizeNote(n, "keyboardLead"));
+const kbLayer = generateKeyboardEvents(kbPattern, pureScale, t.durationBeats, rand);
+
 
 
     // ---------------------------------------------------------
@@ -378,19 +452,37 @@ else {
 
             // BASS (transizione bass)
             if (instrument === "bass" && ev.note) {
-                metalInstruments.bass.triggerAttackRelease(ev.note + "2", "16n", time);
+                //metalInstruments.bass.triggerAttackRelease(ev.note + "2", "16n", time);
+                metalInstruments.bass.triggerAttackRelease(
+    normalizeNote(ev.note, "bass") + "2",
+    "16n",
+    time
+);
+
             }
 
             // PALM / MIXED (chitarra ritmica)
             if ((instrument === "palm" || instrument === "mixed") && ev.note) {
-                metalInstruments.guitarPalm.triggerAttackRelease(ev.note + "2", "16n", time);
+                //metalInstruments.guitarPalm.triggerAttackRelease(ev.note + "2", "16n", time);
+                metalInstruments.guitarPalm.triggerAttackRelease(
+    normalizeNote(ev.note, "guitarPalm") + "2",
+    "16n",
+    time
+);
+
             }
 
             // LEAD → NON SUONA MAI NELLE TRANSIZIONI
 
             // FULL BAND: BASSO SOTTO TUTTO
             if (ev.note && instrument !== "bass") {
-                metalInstruments.bass.triggerAttackRelease(ev.note + "2", "16n", time);
+                //metalInstruments.bass.triggerAttackRelease(ev.note + "2", "16n", time);
+                metalInstruments.bass.triggerAttackRelease(
+    normalizeNote(ev.note, "bass") + "2",
+    "16n",
+    time
+);
+
             }
 
         }, eventTime);
@@ -432,12 +524,18 @@ else {
             sec.startTime + (t.durationBeats - 0.5) * secondsPerBeat;
 
         Tone.Transport.schedule(time => {
-            metalInstruments.guitarOpen.triggerAttackRelease(
-                t.events[t.events.length - 1].note + "2",
-                "1n",
-                time
-            );
-        }, finalEventTime);
+            //metalInstruments.guitarOpen.triggerAttackRelease(
+                //t.events[t.events.length - 1].note + "2",
+              //  "1n",
+                //time
+            //);
+        //}, finalEventTime);
+        metalInstruments.guitarOpen.triggerAttackRelease(
+    normalizeNote(t.events[t.events.length - 1].note, "guitarOpen") + "2",
+    "1n",
+    time
+);
+
     }
 
 }
