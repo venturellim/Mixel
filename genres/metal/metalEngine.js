@@ -1,4 +1,4 @@
-// metalEngine.js — versione 022
+// metalEngine.js — versione 018
 // Timeline robusta: nessuna schedulazione prima del ricalcolo
 
 import * as Tone from "https://esm.sh/tone";
@@ -20,10 +20,11 @@ import { pickTransition } from "./transitionEngine.js";
 import { pickDrumPattern, generateDrumEvents } from "./transitionDrumEngine.js";
 import { pickKeyboardPattern, generateKeyboardEvents } from "./transitionKeyboardEngine.js";
 
-import { generateSongProgressions } from "./metalTheory.js";
+import 
+{ generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 022 loaded");
+console.log("metalEngine.js ver. 021.2 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
@@ -32,10 +33,6 @@ console.log("metalEngine.js ver. 022 loaded");
 export async function waitMetalInstruments() {
     await waitForInstruments(4);
 }
-
-// ============================================================
-// 🎼 NORMALIZZAZIONE NOTE PER STRUMENTO
-// ============================================================
 
 export function normalizeNote(note, instrument) {
     if (!note || typeof note !== "string") return "A";
@@ -47,7 +44,7 @@ export function normalizeNote(note, instrument) {
     // 1) CHITARRE RITMICHE (solo naturali)
     // ---------------------------------------------------------
     if (instrument === "guitarPalm" || instrument === "guitarOpen") {
-        return first;
+        return first; // ignoriamo # e b
     }
 
     // ---------------------------------------------------------
@@ -55,8 +52,10 @@ export function normalizeNote(note, instrument) {
     // ---------------------------------------------------------
     if (instrument === "guitarLead" || instrument === "bass") {
 
+        // caso bemolle → ok
         if (second === "b") return first + "b";
 
+        // caso diesis → convertiamo in bemolle
         if (second === "#") {
             const sharpToFlat = {
                 "C#": "Db",
@@ -68,6 +67,7 @@ export function normalizeNote(note, instrument) {
             return sharpToFlat[first + "#"] ?? first;
         }
 
+        // caso naturale
         return first;
     }
 
@@ -81,11 +81,9 @@ export function normalizeNote(note, instrument) {
     return first;
 }
 
-// ============================================================
-// NORMALIZZAZIONE STRUTTURA
-// ============================================================
 
 function normalizeStructurePreset(preset) {
+
     if (Array.isArray(preset)) return preset;
 
     if (typeof preset === "object") {
@@ -114,6 +112,7 @@ function normalizeStructurePreset(preset) {
 
 export async function createMetalEngine(params) {
 
+    // Forziamo struttura power metal lunga
     params.structure = "standard";
 
     const rand = createSeededRandom(params.dna);
@@ -122,9 +121,11 @@ export async function createMetalEngine(params) {
     Tone.Transport.bpm.value = metalParams.bpm;
     const secondsPerBeat = 60 / metalParams.bpm;
 
+    // 1) Struttura originale
     const structurePreset = normalizeStructurePreset(params.structure);
     const structure = buildSongStructure(structurePreset, metalParams.bpm);
 
+    // 2) Progressioni armoniche
     const songProgressions = generateSongProgressions(
         structure,
         params.imageParams,
@@ -132,6 +133,7 @@ export async function createMetalEngine(params) {
         rand
     );
 
+    // 3) Engine
     const riff  = initRiffEngine(metalInstruments, metalParams, rand, { enableLog: true });
     const lead  = initLeadEngine(metalInstruments, metalParams, rand);
     const bass  = initBassEngine(metalInstruments, metalParams, rand);
@@ -140,7 +142,7 @@ export async function createMetalEngine(params) {
     const keyboard = initKeyboardEngine(metalInstruments, metalParams, rand, params.imageParams);
 
     // ============================================================
-    // PRIMA PASSATA: costruzione sezioni + transizioni
+    // PRIMA PASSATA: costruiamo sezioni + transizioni (NO SCHEDULAZIONE)
     // ============================================================
 
     const enriched = [];
@@ -151,9 +153,12 @@ export async function createMetalEngine(params) {
         const progression = info.progression;
         const root = info.root;
         const scale = buildScaleFromTonic(root, metalParams.scaleType);
-
+        
+        
+        // IMPORTANTE: qui NON scheduliamo nulla
         const riffResult = riff.scheduleSection(section, scale, progression);
 
+        // Aggiungiamo la sezione principale
         enriched.push({
             type: "main",
             name: section.name,
@@ -163,11 +168,18 @@ export async function createMetalEngine(params) {
             riffResult
         });
 
+        // ------------------------------------------------------------
+        // CALCOLO DELLA TRANSIZIONE
+        // ------------------------------------------------------------
+
         function toLetter(n) {
             return typeof n === "string" ? n[0] : null;
         }
 
-        const fromNote = toLetter(riffResult.lastNote);
+        // 1) Nota finale della sezione corrente
+        const fromNote = toLetter(riffResult.lastNote);   
+
+        // 2) Nota iniziale della prossima sezione (se esiste)
         const nextSection = structure.sections[structure.sections.indexOf(section) + 1];
 
         if (nextSection) {
@@ -175,23 +187,29 @@ export async function createMetalEngine(params) {
             const nextRoot = nextInfo.root;
             const nextScale = buildScaleFromTonic(nextRoot, metalParams.scaleType);
 
-            const toNote = toLetter(nextRoot);
+            // prima nota della prossima sezione = root della prossima sezione
+            const toNote   = toLetter(nextRoot);
 
-            const transitionModule = pickTransition(
-                fromNote,
-                toNote,
-                nextScale,
-                params.imageParams,
-                rand
+            // 3) Scegliamo la transizione in base alla distanza
+            
+            console.log(
+                "%c[TRANSITION DEBUG] from → to:", 
+                "color:#00aaff; font-weight:bold;", 
+                fromNote, "→", toNote
             );
 
-            const transition = transitionModule.generate(
-                fromNote,
-                toNote,
-                nextScale,
-                rand
+            const transitionModule = pickTransition(fromNote, toNote, nextScale, params.imageParams, rand);
+
+            console.log(
+                "%c[TRANSITION DEBUG] chosen:", 
+                "color:#00aaff; font-weight:bold;", 
+                transitionModule
             );
 
+            // 4) Costruiamo gli eventi della transizione
+            const transition = transitionModule.generate(fromNote, toNote, nextScale, rand);
+
+            // 5) Aggiungiamo la transizione alla timeline
             enriched.push({
                 type: "transition",
                 name: `transition_${section.name}`,
@@ -204,12 +222,13 @@ export async function createMetalEngine(params) {
     });
 
     // ============================================================
-    // SECONDA PASSATA: startTime / endTime
+    // SECONDA PASSATA: ricalcolo startTime / endTime
     // ============================================================
 
     let currentTime = 0;
 
     enriched.forEach(sec => {
+
         sec.startTime = currentTime;
 
         if (sec.type === "main") {
@@ -220,29 +239,81 @@ export async function createMetalEngine(params) {
 
         currentTime = sec.endTime;
     });
+    
+    function shouldKeyboardPlay(section, imageParams) {
+        const energy = imageParams?.energy ?? 0.5;
+        const darkness = imageParams?.texture ?? 0.5;
+        const complexity = imageParams?.complexity ?? 0.5;
+
+        // Sempre nel solo
+        if (section.name === "solo") return true;
+
+        // Intro/outro → tastiera se non c’è theme
+        if ((section.name === "intro" || section.name === "outro") && complexity > 0.4) {
+            return true;
+        }
+
+        // Verse/chorus → tastiera se foto lo suggerisce
+        if (energy > 0.7 || complexity > 0.7) return true;
+
+        // Foto molto luminosa → tastiera melodica
+        if (darkness < 0.3) return true;
+
+        return false;
+    }
+
+    function pickTransitionDrumPattern(instrument, imageParams, rand) {
+
+        const energy = imageParams?.energy ?? 0.5;
+        const complexity = imageParams?.complexity ?? 0.5;
+
+        // 1) Transizioni keyboard → Tom Run
+        if (instrument === "keyboard") return "tom_run";
+
+        // 2) Transizioni lead → Blast Fill
+        if (instrument === "lead") return "blast_fill";
+
+        // 3) Palm/Mixed → Double Kick o Accent
+        if (instrument === "palm" || instrument === "mixed") {
+            return rand() > 0.4 ? "double_kick" : "double_kick_accent";
+        }
+
+        // 4) Bass → Ride Power
+        if (instrument === "bass") return "ride_power";
+
+        // 5) Drums → usa il pattern nativo
+        if (instrument === "drums") return "native";
+
+        // Default
+        return "double_kick";
+    }
+
     // ============================================================
-    // TERZA PASSATA: SCHEDULAZIONE
+    // TERZA PASSATA: schedulazione engine (ORA È SICURA)
     // ============================================================
 
     Tone.Transport.cancel(0);
 
     enriched.forEach(sec => {
 
-        // ============================================================
-        // SEZIONI PRINCIPALI
-        // ============================================================
         if (sec.type === "main") {
 
             riff.scheduleSection(sec, sec.scale, sec.progression);
+            
+            bass.scheduleSection(
+                sec,
+                sec.scale,
+                sec.progression,
+                sec.riffResult.events.map(ev => ({
+                    ...ev,
+                    note: normalizeNote(ev.note, "bass")
+                }))
+            );
 
-            const normalizedRiffEvents = sec.riffResult.events.map(ev => ({
-                ...ev,
-                note: normalizeNote(ev.note, "bass")
-            }));
+            riff.scheduleSection(sec, sec.scale, sec.progression);
+            bass.scheduleSection(sec, sec.scale, sec.progression, sec.riffResult.events);
 
-            bass.scheduleSection(sec, sec.scale, sec.progression, normalizedRiffEvents);
-
-            // THEME ENGINE
+            // THEME ENGINE (solo intro/outro)
             let themeEvents = null;
 
             if (sec.name === "intro" || sec.name === "outro") {
@@ -259,31 +330,59 @@ export async function createMetalEngine(params) {
                     const eventTime = riffStart + ev.beatOffset * secondsPerBeat;
 
                     Tone.Transport.schedule(time => {
+                        try {
+                            console.log(
+                                "%c[THEME PLAY] lead →",
+                                "color:#ff8800; font-weight:bold;",
+                                ev.note,
+                                "@",
+                                eventTime,
+                                "dur:",
+                                ev.duration,
+                                "vel:",
+                                ev.velocity
+                            );
 
-                        const ln = normalizeNote(ev.note, "guitarLead");
+                            // ❗ Filtro anti-note invalide
+                            if (
+                                !ev.note ||
+                                typeof ev.note !== "string" ||
+                                !/^[A-G](b)?4$/.test(ev.note)
+                            ) {
+                                console.warn("[THEME WARNING] nota invalida, skip:", ev);
+                                return;
+                            }
 
-                        metalInstruments.guitarLead.triggerAttackRelease(
-                            ln + "4",
-                            ev.duration,
-                            time,
-                            ev.velocity
-                        );
+                            metalInstruments.guitarLead.triggerAttackRelease(
+                                normalizeNote(ev.note, "guitarLead") + "4",
+                                ev.duration,
+                                time,
+                                ev.velocity
+                            );
 
+                        } catch (e) {
+                            console.error("🔥 THEME ERROR in callback:", e, "event:", ev);
+                        }
                     }, eventTime);
                 });
             }
 
-            // KEYBOARD ENGINE
-            const pureScaleMain = sec.scale.map(n => normalizeNote(n, "keyboardLead"));
+            const riffAnalysis = {
+                dominantPattern: sec.riffResult.dominantPattern ?? "pedal_8n",
+                palmRatio: sec.riffResult.palmRatio ?? 0.5
+            };
 
-            keyboard.scheduleKeyboard(
-                sec,
-                pureScaleMain,
-                sec.riffResult.events,
-                themeEvents
-            );
+            // KEYBOARD ENGINE (foto-driven)
+            if (shouldKeyboardPlay(sec, params.imageParams)) {
+                const pureScale = sec.scale.map(n => normalizeNote(n, "keyboardLead"));
+                keyboard.scheduleKeyboard(
+                    sec,
+                    pureScale,
+                    sec.riffResult.events,
+                    themeEvents
+                );
+            }
 
-            // DRUMS
             drums.scheduleSection(
                 sec,
                 sec.scale,
@@ -291,56 +390,81 @@ export async function createMetalEngine(params) {
                 sec.riffResult.events,
                 themeEvents
             );
+   
+            // lead.scheduleSection(sec, sec.scale, sec.progression);
 
-        }
-
-        // ============================================================
+        } 
+        // ==========================================================
         // TRANSIZIONI
-        // ============================================================
+        // ==========================================================
         else {
 
             const t = sec.transition;
             const instrument = sec.instrument;
 
-            // 1) Tastiera transizione
+            // ---------------------------------------------------------
+            // 1) GENERAZIONE PATTERN TASTIERA (UNA VOLTA SOLA)
+            // ---------------------------------------------------------
             const kbPattern = pickKeyboardPattern(instrument, params.imageParams, rand);
             const pureScale = sec.scale.map(n => normalizeNote(n, "keyboardLead"));
             const kbLayer = generateKeyboardEvents(kbPattern, pureScale, t.durationBeats, rand);
 
-            // 2) Batteria transizione
+            // ---------------------------------------------------------
+            // 2) GENERAZIONE PATTERN BATTERIA (UNA VOLTA SOLA)
+            // ---------------------------------------------------------
             const drumPattern = pickDrumPattern(instrument, params.imageParams, rand);
             const drumLayer = generateDrumEvents(drumPattern, t.durationBeats, rand);
 
-            // 3) Eventi principali
+            // ---------------------------------------------------------
+            // 3) SCHEDULAZIONE EVENTI PRINCIPALI DELLA TRANSIZIONE
+            // ---------------------------------------------------------
             t.events.forEach(ev => {
-
                 const eventTime = sec.startTime + ev.beatOffset * secondsPerBeat;
 
                 Tone.Transport.schedule(time => {
 
+                    // STRUMENTO PRINCIPALE DELLA TRANSIZIONE
+
+                    // DRUMS (transizione drums)
                     if (instrument === "drums" && ev.drum) {
                         metalInstruments.drums.player(ev.drum).start(time);
                     }
 
+                    // BASS (transizione bass)
                     if (instrument === "bass" && ev.note) {
-                        const n = normalizeNote(ev.note, "bass");
-                        metalInstruments.bass.triggerAttackRelease(n + "2", "16n", time);
+                        metalInstruments.bass.triggerAttackRelease(
+                            normalizeNote(ev.note, "bass") + "2",
+                            "16n",
+                            time
+                        );
                     }
 
+                    // PALM / MIXED (chitarra ritmica)
                     if ((instrument === "palm" || instrument === "mixed") && ev.note) {
-                        const n = normalizeNote(ev.note, "guitarPalm");
-                        metalInstruments.guitarPalm.triggerAttackRelease(n + "2", "16n", time);
+                        metalInstruments.guitarPalm.triggerAttackRelease(
+                            normalizeNote(ev.note, "guitarPalm") + "2",
+                            "16n",
+                            time
+                        );
                     }
 
+                    // LEAD → NON SUONA MAI NELLE TRANSIZIONI
+
+                    // FULL BAND: BASSO SOTTO TUTTO
                     if (ev.note && instrument !== "bass") {
-                        const nb = normalizeNote(ev.note, "bass");
-                        metalInstruments.bass.triggerAttackRelease(nb + "2", "16n", time);
+                        metalInstruments.bass.triggerAttackRelease(
+                            normalizeNote(ev.note, "bass") + "2",
+                            "16n",
+                            time
+                        );
                     }
 
                 }, eventTime);
             });
 
-            // 4) Layer tastiera
+            // ---------------------------------------------------------
+            // 4) SCHEDULAZIONE LAYER TASTIERA (Transition Keyboard Engine)
+            // ---------------------------------------------------------
             kbLayer.events.forEach(e => {
                 const kbTime = sec.startTime + e.beatOffset * secondsPerBeat;
 
@@ -354,7 +478,9 @@ export async function createMetalEngine(params) {
                 }, kbTime);
             });
 
-            // 5) Layer batteria
+            // ---------------------------------------------------------
+            // 5) SCHEDULAZIONE LAYER BATTERIA (Transition Drum Engine)
+            // ---------------------------------------------------------
             drumLayer.events.forEach(d => {
                 const drumTime = sec.startTime + d.beatOffset * secondsPerBeat;
 
@@ -363,20 +489,17 @@ export async function createMetalEngine(params) {
                 }, drumTime);
             });
 
-            // 6) Open chord finale
+            // ---------------------------------------------------------
+            // 6) OPEN CHORD FINALE (solo per mixed e lead)
+            // ---------------------------------------------------------
             if (instrument === "mixed" || instrument === "lead") {
 
                 const finalEventTime =
                     sec.startTime + (t.durationBeats - 0.5) * secondsPerBeat;
 
-                const finalNote = normalizeNote(
-                    t.events[t.events.length - 1].note,
-                    "guitarOpen"
-                );
-
                 Tone.Transport.schedule(time => {
                     metalInstruments.guitarOpen.triggerAttackRelease(
-                        finalNote + "2",
+                        normalizeNote(t.events[t.events.length - 1].note, "guitarOpen") + "2",
                         "1n",
                         time
                     );
@@ -396,6 +519,7 @@ export async function createMetalEngine(params) {
         totalDuration: currentTime,
 
         play() {
+            // Riattiva il padBus
             Tone.Transport.start("+0.1");
         },
 
