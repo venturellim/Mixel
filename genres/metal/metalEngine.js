@@ -340,7 +340,10 @@ drums.scheduleSection(
    
            // lead.scheduleSection(sec, sec.scale, sec.progression);
 
-        } else {
+        } // ==========================================================
+// TRANSIZIONI
+// ==========================================================
+else {
 
     const t = sec.transition;
     const instrument = sec.instrument;
@@ -358,7 +361,7 @@ drums.scheduleSection(
     const drumLayer = generateDrumEvents(drumPattern, t.durationBeats, rand);
 
     // ---------------------------------------------------------
-    // 3) SCHEDULAZIONE EVENTI DELLA TRANSIZIONE (NOTE PRINCIPALI)
+    // 3) SCHEDULAZIONE EVENTI PRINCIPALI DELLA TRANSIZIONE
     // ---------------------------------------------------------
     t.events.forEach(ev => {
         const eventTime = sec.startTime + ev.beatOffset * secondsPerBeat;
@@ -393,10 +396,11 @@ drums.scheduleSection(
     });
 
     // ---------------------------------------------------------
-    // 4) SCHEDULAZIONE LAYER TASTIERA
+    // 4) SCHEDULAZIONE LAYER TASTIERA (Transition Keyboard Engine)
     // ---------------------------------------------------------
     kbLayer.events.forEach(e => {
         const kbTime = sec.startTime + e.beatOffset * secondsPerBeat;
+
         Tone.Transport.schedule(time => {
             metalInstruments.keyboardLead.triggerAttackRelease(
                 e.note,
@@ -408,22 +412,23 @@ drums.scheduleSection(
     });
 
     // ---------------------------------------------------------
-    // 5) SCHEDULAZIONE LAYER BATTERIA
+    // 5) SCHEDULAZIONE LAYER BATTERIA (Transition Drum Engine)
     // ---------------------------------------------------------
     drumLayer.events.forEach(d => {
         const drumTime = sec.startTime + d.beatOffset * secondsPerBeat;
+
         Tone.Transport.schedule(time => {
             metalInstruments.drums.player(d.drum).start(time);
         }, drumTime);
     });
 
-}
-
     // ---------------------------------------------------------
-    // OPEN CHORD FINALE (solo per mixed e lead)
+    // 6) OPEN CHORD FINALE (solo per mixed e lead)
     // ---------------------------------------------------------
     if (instrument === "mixed" || instrument === "lead") {
-        const finalEventTime = sec.startTime + (t.durationBeats - 0.5) * secondsPerBeat;
+
+        const finalEventTime =
+            sec.startTime + (t.durationBeats - 0.5) * secondsPerBeat;
 
         Tone.Transport.schedule(time => {
             metalInstruments.guitarOpen.triggerAttackRelease(
@@ -433,9 +438,8 @@ drums.scheduleSection(
             );
         }, finalEventTime);
     }
-}
 
-    });
+}
 
     // ============================================================
     // LOOP E DURATA
