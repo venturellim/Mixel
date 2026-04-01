@@ -24,7 +24,7 @@ import
 { generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 021 loaded");
+console.log("metalEngine.js ver. 021.1 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
@@ -352,7 +352,8 @@ else {
     // 1) GENERAZIONE PATTERN TASTIERA (UNA VOLTA SOLA)
     // ---------------------------------------------------------
     const kbPattern = pickKeyboardPattern(instrument, params.imageParams, rand);
-    const kbLayer = generateKeyboardEvents(kbPattern, t.scale, t.durationBeats, rand);
+    const kbLayer = generateKeyboardEvents(kbPattern, sec.scale, t.durationBeats, rand);
+
 
     // ---------------------------------------------------------
     // 2) GENERAZIONE PATTERN BATTERIA (UNA VOLTA SOLA)
