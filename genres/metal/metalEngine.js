@@ -340,9 +340,6 @@ function pickKeyboardPatternForSubsection(sectionName, index, imageParams, rand)
                 }))
             );
 
-            riff.scheduleSection(sec, sec.scale, sec.progression);
-            bass.scheduleSection(sec, sec.scale, sec.progression, sec.riffResult.events);
-
             // THEME ENGINE (solo intro/outro)
             let themeEvents = null;
 
