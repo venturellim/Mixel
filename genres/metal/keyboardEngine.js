@@ -5,7 +5,38 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("keyboardEngine.js ver. 1.0 loaded");
+console.log("keyboardEngine.js ver. 001.1 loaded");
+
+export function scheduleKeyboardSubsection(
+    section,
+    scale,
+    riffEvents,
+    themeEvents,
+    startTime,
+    measures,
+    patternName
+) {
+    const secondsPerBeat = 60 / section.bpm;
+    const durationBeats = measures * 4;
+
+    const pattern = keyboardPatterns[patternName];
+    if (!pattern) return;
+
+    const events = pattern.generate(scale, durationBeats, Math.random).events;
+
+    events.forEach(ev => {
+        const eventTime = startTime + ev.beatOffset * secondsPerBeat;
+
+        Tone.Transport.schedule(time => {
+            metalInstruments.keyboardLead.triggerAttackRelease(
+                ev.note,
+                ev.duration ?? "16n",
+                time,
+                ev.velocity
+            );
+        }, eventTime);
+    });
+}
 
 export function initKeyboardEngine(instruments, metalParams, rand, imageParams) {
 

@@ -24,7 +24,7 @@ import
 { generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 021.2 loaded");
+console.log("metalEngine.js ver. 023 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
@@ -160,13 +160,25 @@ export async function createMetalEngine(params) {
 
         // Aggiungiamo la sezione principale
         enriched.push({
-            type: "main",
-            name: section.name,
-            measures: section.measures,
-            progression,
-            scale,
-            riffResult
-        });
+    type: "main",
+    name: section.name,
+    measures: section.measures,
+
+   // Sezione spezzata: se >= 8 misure → due metà
+   subsections: (section.measures >= 8)
+       ? [
+           { start: 0, measures: section.measures / 2 },
+           { start: section.measures / 2, measures: section.measures / 2 }
+         ]
+       : [
+           { start: 0, measures: section.measures }
+         ],
+
+    progression,
+    scale,
+    riffResult
+});
+
 
         // ------------------------------------------------------------
         // CALCOLO DELLA TRANSIZIONE
@@ -261,6 +273,24 @@ export async function createMetalEngine(params) {
 
         return false;
     }
+
+function pickKeyboardPatternForSubsection(sectionName, index, imageParams, rand) {
+
+    // pattern base della sezione
+    const base = pickKeyboardPattern(sectionName, imageParams, rand);
+
+    // prima metà → pattern base
+    if (index === 0) return base;
+
+    // seconda metà → 30% stesso pattern, 70% diverso
+    if (rand() < 0.3) return base;
+
+    const allPatterns = ["arp_up", "arp_down", "scale_run", "fanfare", "cluster"];
+    const alternatives = allPatterns.filter(p => p !== base);
+
+    return alternatives[Math.floor(rand() * alternatives.length)];
+}
+
 
     function pickTransitionDrumPattern(instrument, imageParams, rand) {
 
@@ -374,15 +404,31 @@ export async function createMetalEngine(params) {
 
             // KEYBOARD ENGINE (foto-driven)
             if (shouldKeyboardPlay(sec, params.imageParams)) {
-                const pureScale = sec.scale.map(n => normalizeNote(n, "keyboardLead"));
-                keyboard.scheduleKeyboard(
-                    sec,
-                    pureScale,
-                    sec.riffResult.events,
-                    themeEvents
-                );
-            }
 
+   sec.subsections.forEach((sub, i) => {
+
+       const subStart = sec.startTime + sub.start * 4 * secondsPerBeat;
+
+       const pattern = pickKeyboardPatternForSubsection(
+           sec.name,
+           i,
+           params.imageParams,
+           rand
+       );
+
+       const pureScale = sec.scale.map(n => normalizeNote(n, "keyboardLead"));
+
+       keyboard.scheduleKeyboardSubsection(
+           sec,
+           pureScale,
+           sec.riffResult.events,
+           themeEvents,
+           subStart,
+           sub.measures,
+           pattern
+       );
+   });
+}
             drums.scheduleSection(
                 sec,
                 sec.scale,
