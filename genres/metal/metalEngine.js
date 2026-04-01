@@ -348,25 +348,28 @@ drums.scheduleSection(
             // (nessun ramo per la lead)
 
             // ---------------------------------------------------------
-            // 2) LAYER AUTOMATICI: FULL BAND (tranne lead)
-            // ---------------------------------------------------------
+// 2) LAYER AUTOMATICI: FULL BAND (tranne lead)
+// ---------------------------------------------------------
 
-            // BASSO sotto tutte le transizioni tranne quelle bass
-            if (ev.note && instrument !== "bass") {
-                metalInstruments.bass.triggerAttackRelease(ev.note, "16n", time);
-            }
+// BASSO sotto tutte le transizioni tranne quelle bass
+// BASSO sotto tutte le transizioni tranne quelle bass
+if (ev.note && instrument !== "bass") {
+    metalInstruments.bass.triggerAttackRelease(ev.note + "1", "16n", time);
+}
 
-            // BATTERIA sotto tutte le transizioni tranne quelle drums
-            if (instrument !== "drums") {
-                // Kick su ogni beat intero
-                if (Math.abs(ev.beatOffset % 1) < 0.001) {
-                    metalInstruments.drums.player("kick").start(time);
-                }
-                // Snare su 2 e 4
-                if (Math.abs((ev.beatOffset - 1) % 2) < 0.001) {
-                    metalInstruments.drums.player("snare").start(time);
-                }
-            }
+
+// BATTERIA: DOUBLE-KICK POWER METAL
+if (instrument !== "drums") {
+
+    // Kick su OGNI semicroma (double kick continuo)
+    metalInstruments.drums.player("kick").start(time);
+
+    // Snare su 2 e 4 (backbeat)
+    const beat = ev.beatOffset % 4;
+    if (Math.abs(beat - 1) < 0.001 || Math.abs(beat - 3) < 0.001) {
+        metalInstruments.drums.player("snare").start(time);
+    }
+}
 
         }, eventTime);
     });
