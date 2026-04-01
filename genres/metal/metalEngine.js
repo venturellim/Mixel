@@ -17,10 +17,14 @@ import { initDrumEngine } from "./drumEngine.js";
 import { initThemeEngine } from "./themeEngine.js";
 import { initKeyboardEngine } from "./keyboardEngine.js";
 import { pickTransition, safeLetter } from "./transitionEngine.js";
-import { generateSongProgressions } from "./metalTheory.js";
+import { pickDrumPattern, generateDrumEvents } from "./transitionDrumEngine.js";
+import { pickKeyboardPattern, generateKeyboardEvents } from "./transitionKeyboardEngine.js";
+
+import 
+{ generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 020.6 loaded");
+console.log("metalEngine.js ver. 021 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
@@ -214,6 +218,32 @@ enriched.push({
     return false;
 }
 
+function pickTransitionDrumPattern(instrument, imageParams, rand) {
+
+    const energy = imageParams?.energy ?? 0.5;
+    const complexity = imageParams?.complexity ?? 0.5;
+
+    // 1) Transizioni keyboard → Tom Run
+    if (instrument === "keyboard") return "tom_run";
+
+    // 2) Transizioni lead → Blast Fill
+    if (instrument === "lead") return "blast_fill";
+
+    // 3) Palm/Mixed → Double Kick o Accent
+    if (instrument === "palm" || instrument === "mixed") {
+        return rand() > 0.4 ? "double_kick" : "double_kick_accent";
+    }
+
+    // 4) Bass → Ride Power
+    if (instrument === "bass") return "ride_power";
+
+    // 5) Drums → usa il pattern nativo
+    if (instrument === "drums") return "native";
+
+    // Default
+    return "double_kick";
+}
+
     // ============================================================
     // TERZA PASSATA: schedulazione engine (ORA È SICURA)
     // ============================================================
@@ -315,14 +345,27 @@ drums.scheduleSection(
     const t = sec.transition;
     const instrument = sec.instrument;
 
+    // ---------------------------------------------------------
+    // 1) GENERAZIONE PATTERN TASTIERA (UNA VOLTA SOLA)
+    // ---------------------------------------------------------
+    const kbPattern = pickKeyboardPattern(instrument, params.imageParams, rand);
+    const kbLayer = generateKeyboardEvents(kbPattern, t.scale, t.durationBeats, rand);
+
+    // ---------------------------------------------------------
+    // 2) GENERAZIONE PATTERN BATTERIA (UNA VOLTA SOLA)
+    // ---------------------------------------------------------
+    const drumPattern = pickDrumPattern(instrument, params.imageParams, rand);
+    const drumLayer = generateDrumEvents(drumPattern, t.durationBeats, rand);
+
+    // ---------------------------------------------------------
+    // 3) SCHEDULAZIONE EVENTI DELLA TRANSIZIONE (NOTE PRINCIPALI)
+    // ---------------------------------------------------------
     t.events.forEach(ev => {
         const eventTime = sec.startTime + ev.beatOffset * secondsPerBeat;
 
         Tone.Transport.schedule(time => {
 
-            // ---------------------------------------------------------
-            // 1) STRUMENTO PRINCIPALE DELLA TRANSIZIONE
-            // ---------------------------------------------------------
+            // STRUMENTO PRINCIPALE DELLA TRANSIZIONE
 
             // DRUMS (transizione drums)
             if (instrument === "drums" && ev.drum) {
@@ -331,7 +374,7 @@ drums.scheduleSection(
 
             // BASS (transizione bass)
             if (instrument === "bass" && ev.note) {
-                metalInstruments.bass.triggerAttackRelease(ev.note, "16n", time);
+                metalInstruments.bass.triggerAttackRelease(ev.note + "2", "16n", time);
             }
 
             // PALM / MIXED (chitarra ritmica)
@@ -339,37 +382,43 @@ drums.scheduleSection(
                 metalInstruments.guitarPalm.triggerAttackRelease(ev.note + "2", "16n", time);
             }
 
-            // KEYBOARD (transizione keyboard)
-            if (instrument === "keyboard" && ev.note) {
-                metalInstruments.keyboardLead.triggerAttackRelease(ev.note, "16n", time);
+            // LEAD → NON SUONA MAI NELLE TRANSIZIONI
+
+            // FULL BAND: BASSO SOTTO TUTTO
+            if (ev.note && instrument !== "bass") {
+                metalInstruments.bass.triggerAttackRelease(ev.note + "2", "16n", time);
             }
 
-            // LEAD → NON SUONA MAI NELLE TRANSIZIONI
-            // (nessun ramo per la lead)
+        }, eventTime);
+    });
 
-            // ---------------------------------------------------------
-// 2) LAYER AUTOMATICI: FULL BAND (tranne lead)
-// ---------------------------------------------------------
+    // ---------------------------------------------------------
+    // 4) SCHEDULAZIONE LAYER TASTIERA
+    // ---------------------------------------------------------
+    kbLayer.events.forEach(e => {
+        const kbTime = sec.startTime + e.beatOffset * secondsPerBeat;
+        Tone.Transport.schedule(time => {
+            metalInstruments.keyboardLead.triggerAttackRelease(
+                e.note,
+                "16n",
+                time,
+                e.velocity
+            );
+        }, kbTime);
+    });
 
-// BASSO sotto tutte le transizioni tranne quelle bass
-// BASSO sotto tutte le transizioni tranne quelle bass
-if (ev.note && instrument !== "bass") {
-    metalInstruments.bass.triggerAttackRelease(ev.note + "1", "16n", time);
+    // ---------------------------------------------------------
+    // 5) SCHEDULAZIONE LAYER BATTERIA
+    // ---------------------------------------------------------
+    drumLayer.events.forEach(d => {
+        const drumTime = sec.startTime + d.beatOffset * secondsPerBeat;
+        Tone.Transport.schedule(time => {
+            metalInstruments.drums.player(d.drum).start(time);
+        }, drumTime);
+    });
+
 }
 
-
-// BATTERIA: DOUBLE-KICK POWER METAL
-if (instrument !== "drums") {
-
-    // Kick su OGNI semicroma (double kick continuo)
-    metalInstruments.drums.player("kick").start(time);
-
-    // Snare su 2 e 4 (backbeat)
-    const beat = ev.beatOffset % 4;
-    if (Math.abs(beat - 1) < 0.001 || Math.abs(beat - 3) < 0.001) {
-        metalInstruments.drums.player("snare").start(time);
-    }
-}
 
         }, eventTime);
     });
