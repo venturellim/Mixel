@@ -335,6 +335,17 @@ function pickKeyboardPatternForSubsection(sectionName, index, imageParams, rand)
             if (sec.riffMute === 0) {
     riff.scheduleSection(sec, sec.scale, sec.progression);
 }
+
+let themeEvents = null;
+
+            if (sec.name === "intro" || sec.name === "outro") {
+
+                themeEvents = theme.generateTheme(
+                    sec,
+                    sec.scale,
+                    sec.progression
+                );
+
             
    const riffPattern = sec.riffResult?.dominantPattern;
 const bassPattern = bass.pickBassPatternForSubsection(riffPattern, sec.riffMute);
@@ -377,16 +388,6 @@ if (bassPattern === "followRiff") {
 
 
             // THEME ENGINE (solo intro/outro)
-            let themeEvents = null;
-
-            if (sec.name === "intro" || sec.name === "outro") {
-
-                themeEvents = theme.generateTheme(
-                    sec,
-                    sec.scale,
-                    sec.progression
-                );
-
                 themeEvents.forEach(ev => {
 
                     const riffStart = sec.riffResult.startTimeReal ?? sec.startTime;
