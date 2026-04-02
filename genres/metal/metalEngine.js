@@ -136,7 +136,7 @@ export async function createMetalEngine(params) {
     // 3) Engine
     const riff  = initRiffEngine(metalInstruments, metalParams, rand, { enableLog: true });
     const lead  = initLeadEngine(metalInstruments, metalParams, rand);
-    const bass  = initBassEngine(metalInstruments, metalParams, rand);
+    const bass = initBassEngine(instruments, params, rand);
     const drums = initDrumEngine(metalInstruments, metalParams, rand);
     const theme = initThemeEngine(metalParams, params.imageParams, rand);
     const keyboard = initKeyboardEngine(metalInstruments, metalParams, rand, params.imageParams);
@@ -336,12 +336,19 @@ function pickKeyboardPatternForSubsection(sectionName, index, imageParams, rand)
     riff.scheduleSection(sec, sec.scale, sec.progression);
 }
             
-   const bassPattern = bass.pickBassPattern(
+   const riffPattern = sec.riffResult?.dominantPattern;
+const bassPattern = bass.pickBassPatternForSubsection(riffPattern, sec.riffMute);
+
+bass.scheduleBassSubsection(
     sec,
-    sec.riffMute,
-    params.imageParams,
-    rand
+    pureScale,
+    sec.riffResult.events,
+    themeEvents,
+    subStart,
+    sub.measures,
+    bassPattern
 );
+
 
 if (bassPattern === "followRiff") {
 
