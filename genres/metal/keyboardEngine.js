@@ -1,74 +1,127 @@
-// keyboardEngine.js — ver. 1.0
+// keyboardEngine.js — ver. 1.1
 // Power Metal Keyboardist Lead Engine
 // Frasi shred, melodiche, arpeggi, armonizzazioni, call & response
 // Foto-driven, sezione-driven, tonalità-driven
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("keyboardEngine.js ver. 001.2 loaded");
-
-// ============================================================
-// 🎹 SCHEDULAZIONE PER SOTTOSEZIONE (v23+)
-// ============================================================
-//
-// Questa funzione è identica a scheduleKeyboard, ma:
-// - usa uno startTime personalizzato
-// - usa una durata personalizzata (solo metà sezione)
-// - forza un pattern specifico
-//
-// Il metalEngine la chiama per ogni "subsection".
-// ============================================================
-
-function scheduleKeyboardSubsection(
-    section,
-    scale,
-    riffEvents,
-    themeEvents,
-    startTime,
-    measures,
-    patternName
-) {
-    const secondsPerBeat = 60 / section.bpm;
-    const durationBeats = measures * 4;
-
-    // Recupera il pattern dalla tua pattern library
-    const pattern = keyboardPatterns[patternName];
-    if (!pattern) {
-        console.warn("[KEYBOARD] Pattern non trovato:", patternName);
-        return;
-    }
-
-    // Genera gli eventi del pattern
-    const events = pattern.generate(scale, durationBeats, Math.random).events;
-
-    // Schedula gli eventi
-    events.forEach(ev => {
-        const eventTime = startTime + ev.beatOffset * secondsPerBeat;
-
-        Tone.Transport.schedule(time => {
-            metalInstruments.keyboardLead.triggerAttackRelease(
-                ev.note,
-                ev.duration ?? "16n",
-                time,
-                ev.velocity
-            );
-        }, eventTime);
-    });
-}
+console.log("keyboardEngine.js ver. 001.3 loaded");
 
 export function initKeyboardEngine(instruments, metalParams, rand, imageParams) {
 
-    const { leadBus } = instruments;
-
-    // ------------------------------------------------------------
-    // 🎹 Synth Lead (alla Jens Johansson)
-    // ------------------------------------------------------------
-
     const { keyboardLead: soloLead } = instruments;
 
-    // ------------------------------------------------------------
+    // ============================================================
+    // 🎹 KEYBOARD PATTERN LIBRARY (per sezioni spezzate)
+    // ============================================================
+
+    const keyboardPatterns = {
+
+        // Arpeggio ascendente
+        arp_up: {
+            generate(scale, durationBeats, rand) {
+                const events = [];
+                for (let i = 0; i < durationBeats * 2; i++) {
+                    const note = scale[i % scale.length] + "5";
+                    events.push({
+                        beatOffset: i * 0.5,
+                        note,
+                        duration: "8n",
+                        velocity: 0.8
+                    });
+                }
+                return { events };
+            }
+        },
+
+        // Arpeggio discendente
+        arp_down: {
+            generate(scale, durationBeats, rand) {
+                const events = [];
+                for (let i = 0; i < durationBeats * 2; i++) {
+                    const note = scale[(scale.length - 1 - (i % scale.length))] + "5";
+                    events.push({
+                        beatOffset: i * 0.5,
+                        note,
+                        duration: "8n",
+                        velocity: 0.8
+                    });
+                }
+                return { events };
+            }
+        },
+
+        // Scala veloce
+        scale_run: {
+            generate(scale, durationBeats, rand) {
+                const events = [];
+                for (let i = 0; i < durationBeats * 4; i++) {
+                    const note = scale[i % scale.length] + "5";
+                    events.push({
+                        beatOffset: i * 0.25,
+                        note,
+                        duration: "16n",
+                        velocity: 0.7
+                    });
+                }
+                return { events };
+            }
+        },
+
+        // Fanfara epica (triadi)
+        fanfare: {
+            generate(scale, durationBeats, rand) {
+                const events = [];
+                for (let i = 0; i < durationBeats; i++) {
+                    const root = scale[i % scale.length] + "5";
+                    const third = scale[(i + 2) % scale.length] + "5";
+                    const fifth = scale[(i + 4) % scale.length] + "5";
+
+                    events.push({
+                        beatOffset: i,
+                        note: root,
+                        duration: "4n",
+                        velocity: 0.9
+                    });
+                    events.push({
+                        beatOffset: i,
+                        note: third,
+                        duration: "4n",
+                        velocity: 0.9
+                    });
+                    events.push({
+                        beatOffset: i,
+                        note: fifth,
+                        duration: "4n",
+                        velocity: 0.9
+                    });
+                }
+                return { events };
+            }
+        },
+
+        // Cluster (accordi densi)
+        cluster: {
+            generate(scale, durationBeats, rand) {
+                const events = [];
+                for (let i = 0; i < durationBeats; i++) {
+                    scale.forEach(n => {
+                        events.push({
+                            beatOffset: i,
+                            note: n + "4",
+                            duration: "4n",
+                            velocity: 0.5
+                        });
+                    });
+                }
+                return { events };
+            }
+        }
+    };
+
+    // ============================================================
     // PROFILE FROM IMAGE
-    // ------------------------------------------------------------
+    // ============================================================
 
     function getProfile(imageParams) {
         return {
@@ -79,9 +132,9 @@ export function initKeyboardEngine(instruments, metalParams, rand, imageParams) 
         };
     }
 
-    // ------------------------------------------------------------
+    // ============================================================
     // SCALE UTILITIES
-    // ------------------------------------------------------------
+    // ============================================================
 
     function buildScaleInRange(scale, lowOct, highOct) {
         const letters = scale.map(n => n[0].toUpperCase());
@@ -96,9 +149,9 @@ export function initKeyboardEngine(instruments, metalParams, rand, imageParams) 
         return arr[Math.floor(Math.random() * arr.length)];
     }
 
-    // ------------------------------------------------------------
+    // ============================================================
     // SOLO STYLE SELECTION
-    // ------------------------------------------------------------
+    // ============================================================
 
     function pickSoloStyle(profile) {
         const { energy, darkness, complexity } = profile;
@@ -109,11 +162,10 @@ export function initKeyboardEngine(instruments, metalParams, rand, imageParams) 
         return "melodic";
     }
 
-    // ------------------------------------------------------------
+    // ============================================================
     // PHRASE GENERATORS
-    // ------------------------------------------------------------
+    // ============================================================
 
-    // 1) SHRED (Jens Johansson)
     function generateShredPattern(scale) {
         const pool = buildScaleInRange(scale, 4, 6);
         const phrase = [];
@@ -127,7 +179,6 @@ export function initKeyboardEngine(instruments, metalParams, rand, imageParams) 
         return phrase;
     }
 
-    // 2) EPIC (Rhapsody)
     function generateEpicPhrase(scale) {
         const pool = buildScaleInRange(scale, 4, 5);
         const phrase = [];
@@ -141,7 +192,6 @@ export function initKeyboardEngine(instruments, metalParams, rand, imageParams) 
         return phrase;
     }
 
-    // 3) LYRIC (Nightwish)
     function generateLyricPhrase(scale) {
         const pool = buildScaleInRange(scale, 4, 5);
         return [
@@ -150,7 +200,6 @@ export function initKeyboardEngine(instruments, metalParams, rand, imageParams) 
         ];
     }
 
-    // 4) MELODIC (Sonata Arctica)
     function generateMelodicPhrase(scale) {
         const pool = buildScaleInRange(scale, 4, 5);
         const phrase = [];
@@ -164,9 +213,9 @@ export function initKeyboardEngine(instruments, metalParams, rand, imageParams) 
         return phrase;
     }
 
-    // ------------------------------------------------------------
-    // HARMONIZATION (a terza)
-    // ------------------------------------------------------------
+    // ============================================================
+    // HARMONIZATION
+    // ============================================================
 
     function harmonizeLine(line, scale) {
         const letters = scale.map(n => n[0].toUpperCase());
@@ -184,9 +233,9 @@ export function initKeyboardEngine(instruments, metalParams, rand, imageParams) 
         });
     }
 
-    // ------------------------------------------------------------
+    // ============================================================
     // SCHEDULING
-    // ------------------------------------------------------------
+    // ============================================================
 
     function schedulePhrase(section, phrase, volume = 0.8) {
         const start = section.startTime;
@@ -200,9 +249,9 @@ export function initKeyboardEngine(instruments, metalParams, rand, imageParams) 
         });
     }
 
-    // ------------------------------------------------------------
-    // PUBLIC API
-    // ------------------------------------------------------------
+    // ============================================================
+    // PUBLIC API — MAIN KEYBOARD
+    // ============================================================
 
     function scheduleKeyboard(section, scale, riffEvents, themeEvents) {
 
@@ -219,19 +268,58 @@ export function initKeyboardEngine(instruments, metalParams, rand, imageParams) 
             default:        phrase = generateMelodicPhrase(scale); break;
         }
 
-        // Armonizzazione se foto complessa
         if (profile.complexity > 0.7) {
             const harmony = harmonizeLine(phrase, scale);
             schedulePhrase(section, harmony, 0.5);
         }
 
-        // Linea principale
         schedulePhrase(section, phrase, 0.9);
     }
 
-    return {
-    scheduleKeyboard,
-    scheduleKeyboardSubsection
-};
+    // ============================================================
+    // 🎹 SCHEDULAZIONE PER SOTTOSEZIONE (v23+)
+    // ============================================================
 
+    function scheduleKeyboardSubsection(
+        section,
+        scale,
+        riffEvents,
+        themeEvents,
+        startTime,
+        measures,
+        patternName
+    ) {
+        const secondsPerBeat = 60 / section.bpm;
+        const durationBeats = measures * 4;
+
+        const pattern = keyboardPatterns[patternName];
+        if (!pattern) {
+            console.warn("[KEYBOARD] Pattern non trovato:", patternName);
+            return;
+        }
+
+        const events = pattern.generate(scale, durationBeats, rand).events;
+
+        events.forEach(ev => {
+            const eventTime = startTime + ev.beatOffset * secondsPerBeat;
+
+            Tone.Transport.schedule(time => {
+                instruments.keyboardLead.triggerAttackRelease(
+                    ev.note,
+                    ev.duration ?? "16n",
+                    time,
+                    ev.velocity
+                );
+            }, eventTime);
+        });
+    }
+
+    // ============================================================
+    // EXPORT
+    // ============================================================
+
+    return {
+        scheduleKeyboard,
+        scheduleKeyboardSubsection
+    };
 }
