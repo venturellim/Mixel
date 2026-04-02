@@ -1,303 +1,200 @@
-// pianoEngine.js — Photo Piano Cinematic + Minimal Hybrid (FINAL)
+// pianoEngine.js — piano con SoundFont MusyngKite
 
 import * as Tone from "https://esm.sh/tone";
-import { humanizeTime } from "./common.js";
 
-console.log("pianoEngine FINAL loaded");
+console.log("pianoEngine.js ver. 001 loaded");
 
-// synth piano (puoi sostituire con sampler dopo)
-const piano = new Tone.PolySynth(Tone.Synth).toDestination();
+let piano = null;
+let isLoaded = false;
 
-export function createPianoEngine(analysis, params, timeline, rand) {
+// --------------------------------------------------
+// LOADER
+// --------------------------------------------------
 
-    const { stepsPerMeasure, totalSteps } = timeline;
-    const scale = params.scale;
-    const dna = analysis.dna || 123456;
+export async function waitPianoInstruments() {
 
-    // --------------------------------------------------------
-    // 🎚️ STYLE BLEND
-    // --------------------------------------------------------
+    if (isLoaded) return;
 
-    const cinematicFactor =
-        (1 - analysis.energy) * 0.6 +
-        analysis.complexity * 0.4;
+    const overlay = document.getElementById("loadingOverlay");
+    const bar = document.getElementById("loadingBar");
+    const text = document.getElementById("loadingText");
 
-    const minimalFactor = 1 - cinematicFactor;
+    overlay.style.display = "flex";
 
-    // --------------------------------------------------------
-    // 🎬 STRUTTURA EMOTIVA
-    // --------------------------------------------------------
+    text.innerText = "Caricamento Piano (MusyngKite)...";
 
-    function getSectionEnergy(section) {
-        switch (section) {
-            case "intro": return 0.3;
-            case "A": return 0.5;
-            case "B": return 0.7;
-            case "climax": return 1.0;
-            case "outro": return 0.2;
-            default: return 0.5;
+    // SoundFont load
+    piano = await Soundfont.instrument(
+        Tone.getContext().rawContext,
+        "acoustic_grand_piano",
+        {
+            soundfont: "MusyngKite",
+            format: "mp3"
         }
+    );
+
+    isLoaded = true;
+
+    bar.style.width = "100%";
+    text.innerText = "Piano pronto 🎹";
+
+    await new Promise(res => setTimeout(res, 300));
+
+    overlay.style.display = "none";
+}
+
+// --------------------------------------------------
+// ENGINE
+// --------------------------------------------------
+
+export async function createPianoEngine(params, analysis) {
+
+    await Tone.loaded();
+
+    Tone.Transport.bpm.value = params.bpm;
+
+    const scale = params.scale;
+
+    const totalMeasures = 32;
+    const beatsPerMeasure = 4;
+
+    const totalDuration =
+        totalMeasures * beatsPerMeasure * (60 / params.bpm);
+
+    // --------------------------------------------------
+    // MODE SELEZIONE DA IMMAGINE
+    // --------------------------------------------------
+
+    const mode =
+        analysis.energy > 0.6
+            ? "pattern"
+            : "arp";
+
+    console.log("🎹 Piano mode:", mode);
+
+    // --------------------------------------------------
+    // UTILS
+    // --------------------------------------------------
+
+    function pickNote() {
+        const idx = Math.floor(Math.random() * scale.length);
+        return scale[idx] + "4";
     }
-
-    // --------------------------------------------------------
-    // 🎵 DNA RHYTHM
-    // --------------------------------------------------------
-
-    const rhythmPattern = [];
-
-    for (let i = 0; i < stepsPerMeasure; i++) {
-        rhythmPattern.push(((dna >> i) & 1) === 1);
-    }
-
-    // --------------------------------------------------------
-    // 🎼 CHORD BUILDER
-    // --------------------------------------------------------
 
     function buildChord(root) {
-
         const midi = Tone.Frequency(root).toMidi();
-
-        const chord = [
-            Tone.Frequency(midi, "midi").toNote(),
-            Tone.Frequency(midi + 7, "midi").toNote(),
-            Tone.Frequency(midi + 12, "midi").toNote()
+        return [
+            root,
+            Tone.Frequency(midi + 4, "midi").toNote(),
+            Tone.Frequency(midi + 7, "midi").toNote()
         ];
-
-        if (cinematicFactor > 0.5 && rand() < cinematicFactor) {
-            chord.push(
-                Tone.Frequency(midi + 11, "midi").toNote()
-            );
-        }
-
-        return chord;
     }
 
-    // --------------------------------------------------------
-    // 🎼 PROGRESSION
-    // --------------------------------------------------------
+    // --------------------------------------------------
+    // PROGRESSIONE
+    // --------------------------------------------------
 
-    const progressionSets = [
-        [0,4,5,3],
-        [0,5,3,4],
-        [0,3,4,5]
-    ];
+    const progression = [0, 4, 5, 3];
 
-    const progression =
-        progressionSets[
-            Math.floor(rand() * progressionSets.length)
-        ];
-
-    const chordTimeline = new Array(totalSteps);
-
-    for (let step = 0; step < totalSteps; step++) {
-
-        const measure = Math.floor(step / stepsPerMeasure);
+    function getChord(measure) {
         const degree = progression[measure % progression.length];
-
-        const root = scale[degree] + 3;
-        chordTimeline[step] = buildChord(root);
+        const root = scale[degree] + "3";
+        return buildChord(root);
     }
 
-    // --------------------------------------------------------
-    // 🎹 MANO SINISTRA (BASSO PIANO)
-    // --------------------------------------------------------
+    // --------------------------------------------------
+    // LOOP
+    // --------------------------------------------------
 
-    function playLeftHand(chord, time, sectionEnergy) {
+    let step = 0;
 
-        const root = chord[0];
-        const fifth = chord[1];
+    const loop = new Tone.Loop((time) => {
 
-        const pattern = rand() < 0.5
-            ? [root, null, fifth, null]
-            : [root, fifth, root, null];
+        if (!piano) return;
 
-        const stepDur = "8n";
+        const measure = Math.floor(step / 8);
+        const stepInMeasure = step % 8;
 
-        pattern.forEach((n, i) => {
-            if (!n) return;
+        const chord = getChord(measure);
 
-            const t = Tone.Time(time) + Tone.Time(stepDur) * i;
+        // ----------------------------------------------
+        // ARPEGGIO MODE
+        // ----------------------------------------------
 
-            piano.triggerAttackRelease(
-                n,
-                "8n",
-                humanizeTime(t, rand),
-                0.5 + sectionEnergy * 0.3
+        if (mode === "arp") {
+
+            const note = chord[stepInMeasure % chord.length];
+
+            piano.play(
+                note,
+                time,
+                { duration: 0.8, gain: 0.6 }
             );
-        });
-    }
-
-    // --------------------------------------------------------
-    // 🎵 TEMA (HOOK)
-    // --------------------------------------------------------
-
-    function generateTheme() {
-
-        const len = 4 + Math.floor(rand() * 4);
-        const theme = [];
-
-        let idx = Math.floor(rand() * scale.length);
-
-        for (let i = 0; i < len; i++) {
-
-            theme.push(scale[idx] + 5);
-
-            idx += rand() < 0.5 ? 1 : -1;
-            if (idx < 0) idx = 0;
-            if (idx >= scale.length) idx = scale.length - 1;
         }
 
-        return theme;
-    }
+        // ----------------------------------------------
+        // PATTERN MODE (EINAUDI STYLE)
+        // ----------------------------------------------
 
-    const theme = generateTheme();
+        else {
 
-    // --------------------------------------------------------
-    // 🎵 PHRASES
-    // --------------------------------------------------------
+            if (stepInMeasure % 2 === 0) {
 
-    let currentPhrase = [];
-    let phraseIndex = 0;
+                const note = chord[0];
 
-    function generatePhrase(sectionEnergy) {
-
-        const len = 3 + Math.floor(sectionEnergy * 5);
-        const phrase = [];
-
-        let idx = Math.floor(rand() * scale.length);
-
-        for (let i = 0; i < len; i++) {
-
-            phrase.push(scale[idx] + 5);
-
-            idx += rand() < 0.6 ? 1 : -1;
-            if (idx < 0) idx = 0;
-            if (idx >= scale.length) idx = scale.length - 1;
-        }
-
-        return phrase;
-    }
-
-    // --------------------------------------------------------
-    // 🎼 ENGINE
-    // --------------------------------------------------------
-
-    return function pianoEngine(time, step) {
-
-        const idx = step % totalSteps;
-
-        const { stepInMeasure, section } =
-            timeline.getStepData(step);
-
-        const sectionEnergy = getSectionEnergy(section);
-        const chord = chordTimeline[idx];
-
-        if (!chord) return;
-
-        // ----------------------------------------------------
-        // 🎹 CHORD (sustain cinematic)
-        // ----------------------------------------------------
-
-        if (stepInMeasure === 0) {
-
-            const dur =
-                cinematicFactor > 0.6 ? "1m" : "2n";
-
-            piano.triggerAttackRelease(
-                chord,
-                dur,
-                humanizeTime(time, rand),
-                0.6 + sectionEnergy * 0.3
-            );
-
-            // mano sinistra
-            playLeftHand(chord, time, sectionEnergy);
-        }
-
-        // ----------------------------------------------------
-        // 🎵 NUOVA FRASE
-        // ----------------------------------------------------
-
-        if (stepInMeasure === 0) {
-
-            if (rand() < (0.3 - sectionEnergy * 0.2)) {
-                currentPhrase = [];
-            } else {
-                currentPhrase = generatePhrase(sectionEnergy);
+                piano.play(
+                    note,
+                    time,
+                    { duration: 1.2, gain: 0.7 }
+                );
             }
 
-            phraseIndex = 0;
+            if (Math.random() < 0.4) {
+
+                const note = pickNote();
+
+                piano.play(
+                    note,
+                    time,
+                    { duration: 0.5, gain: 0.5 }
+                );
+            }
         }
 
-        // ----------------------------------------------------
-        // 🎼 TEMA (ritorna nel B e climax)
-        // ----------------------------------------------------
+        step++;
 
-        if (
-            (section === "B" || section === "climax") &&
-            rand() < 0.5
-        ) {
+    }, "8n");
 
-            const note =
-                theme[stepInMeasure % theme.length];
+    // --------------------------------------------------
+    // CONTROLLI
+    // --------------------------------------------------
 
-            piano.triggerAttackRelease(
-                note,
-                "8n",
-                humanizeTime(time, rand),
-                0.8
-            );
+    function play() {
+        loop.start(0);
+
+        if (Tone.Transport.state !== "started") {
+            Tone.Transport.start();
         }
+    }
 
-        // ----------------------------------------------------
-        // 🎵 FRASE
-        // ----------------------------------------------------
+    function pause() {
+        Tone.Transport.pause();
+    }
 
-        if (currentPhrase.length > 0 && rand() < 0.8) {
+    function stop() {
+        loop.stop();
+        Tone.Transport.stop();
+    }
 
-            const note =
-                currentPhrase[
-                    phraseIndex % currentPhrase.length
-                ];
+    function seek(seconds) {
+        Tone.Transport.start(undefined, seconds);
+    }
 
-            phraseIndex++;
-
-            const dur =
-                cinematicFactor > 0.6
-                    ? "4n"
-                    : (rand() < 0.5 ? "16n" : "8n");
-
-            const vel =
-                0.6 +
-                Math.sin(
-                    (phraseIndex / currentPhrase.length) * Math.PI
-                ) * 0.4;
-
-            piano.triggerAttackRelease(
-                note,
-                dur,
-                humanizeTime(time, rand),
-                vel
-            );
-        }
-
-        // ----------------------------------------------------
-        // 💥 CLIMAX BOOST
-        // ----------------------------------------------------
-
-        if (section === "climax" && rand() < 0.7) {
-
-            const idxScale =
-                Math.floor(rand() * scale.length);
-
-            const note = scale[idxScale] + 5;
-
-            piano.triggerAttackRelease(
-                note,
-                "16n",
-                humanizeTime(time, rand),
-                0.9
-            );
-        }
+    return {
+        play,
+        pause,
+        stop,
+        seek,
+        totalDuration
     };
 }
