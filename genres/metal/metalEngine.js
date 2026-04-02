@@ -136,7 +136,7 @@ export async function createMetalEngine(params) {
     // 3) Engine
     const riff  = initRiffEngine(metalInstruments, metalParams, rand, { enableLog: true });
     const lead  = initLeadEngine(metalInstruments, metalParams, rand);
-    const bass = initBassEngine(instruments, params, rand);
+    const bass = initBassEngine(metalInstruments, params, rand);
     const drums = initDrumEngine(metalInstruments, metalParams, rand);
     const theme = initThemeEngine(metalParams, params.imageParams, rand);
     const keyboard = initKeyboardEngine(metalInstruments, metalParams, rand, params.imageParams);
