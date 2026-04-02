@@ -338,10 +338,11 @@ function pickKeyboardPatternForSubsection(sectionName, index, imageParams, rand)
             
    const riffPattern = sec.riffResult?.dominantPattern;
 const bassPattern = bass.pickBassPatternForSubsection(riffPattern, sec.riffMute);
+const pureScaleBass = sec.scale.map(n => normalizeNote(n, "bass"));
 
 bass.scheduleBassSubsection(
     sec,
-    pureScale,
+    pureScaleBass,
     sec.riffResult.events,
     themeEvents,
     subStart,
