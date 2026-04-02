@@ -8,7 +8,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("instruments.js ver. 006 loaded");
+console.log("instruments.js ver. 006.1 loaded");
 
 // ============================================================
 // 🎚 BUS SPECIFICI DEL METAL
@@ -294,6 +294,19 @@ export const keyboardLead = new Tone.PolySynth(Tone.Synth, {
         decay: 0.2,
         sustain: 0.7,
         release: 0.3
+    }
+}).connect(keyboardBus);
+
+export const keyboardPad = new Tone.PolySynth(Tone.Synth, {
+    maxPolyphony: 16,
+    oscillator: {
+        type: "sawtooth"
+    },
+    envelope: {
+        attack: 0.05,
+        decay: 0.2,
+        sustain: 0.8,
+        release: 0.4
     }
 }).connect(keyboardBus);
 

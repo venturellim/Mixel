@@ -24,7 +24,7 @@ import
 { generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 023 loaded");
+console.log("metalEngine.js ver. 023.1 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
@@ -163,21 +163,25 @@ export async function createMetalEngine(params) {
     type: "main",
     name: section.name,
     measures: section.measures,
+    subsections: (section.measures >= 8)
+        ? [
+            { start: 0, measures: section.measures / 2 },
+            { start: section.measures / 2, measures: section.measures / 2 }
+          ]
+        : [
+            { start: 0, measures: section.measures }
+          ],
 
-   // Sezione spezzata: se >= 8 misure → due metà
-   subsections: (section.measures >= 8)
-       ? [
-           { start: 0, measures: section.measures / 2 },
-           { start: section.measures / 2, measures: section.measures / 2 }
-         ]
-       : [
-           { start: 0, measures: section.measures }
-         ],
+   // Riff mute: solo intro e verse, probabilità 50%
+   riffMute: (section.name === "intro" || section.name === "verse")
+       ? (rand() < 0.5 ? 1 : 0)
+       : 0,
 
     progression,
     scale,
     riffResult
 });
+
 
 
         // ------------------------------------------------------------
@@ -328,17 +332,41 @@ function pickKeyboardPatternForSubsection(sectionName, index, imageParams, rand)
 
         if (sec.type === "main") {
 
-            riff.scheduleSection(sec, sec.scale, sec.progression);
+            if (sec.riffMute === 0) {
+    riff.scheduleSection(sec, sec.scale, sec.progression);
+}
             
-            bass.scheduleSection(
-                sec,
-                sec.scale,
-                sec.progression,
-                sec.riffResult.events.map(ev => ({
-                    ...ev,
-                    note: normalizeNote(ev.note, "bass")
-                }))
-            );
+   const bassPattern = bass.pickBassPattern(
+    sec,
+    sec.riffMute,
+    params.imageParams,
+    rand
+);
+
+if (bassPattern === "followRiff") {
+
+    bass.scheduleSection(
+        sec,
+        sec.scale,
+        sec.progression,
+        sec.riffResult.events.map(ev => ({
+            ...ev,
+            note: normalizeNote(ev.note, "bass")
+        }))
+    );
+
+} else {
+
+    const events = bass.generateIndependentBass(
+        bassPattern,
+        sec.scale,
+        sec.measures,
+        rand
+    );
+
+    bass.scheduleIndependent(sec, events);
+}
+
 
             // THEME ENGINE (solo intro/outro)
             let themeEvents = null;
@@ -415,6 +443,9 @@ function pickKeyboardPatternForSubsection(sectionName, index, imageParams, rand)
 
        const pureScale = sec.scale.map(n => normalizeNote(n, "keyboardLead"));
 
+const riffPattern = sec.riffResult?.dominantPattern;
+const kbPattern = keyboard.pickKeyboardPatternForSubsection(riffPattern);
+
        keyboard.scheduleKeyboardSubsection(
            sec,
            pureScale,
@@ -422,7 +453,7 @@ function pickKeyboardPatternForSubsection(sectionName, index, imageParams, rand)
            themeEvents,
            subStart,
            sub.measures,
-           pattern
+           kbPattern
        );
    });
 }

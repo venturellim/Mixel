@@ -5,7 +5,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("keyboardEngine.js ver. 001.3 loaded");
+console.log("keyboardEngine.js ver. 001.4 loaded");
 
 export function initKeyboardEngine(instruments, metalParams, rand, imageParams) {
 
@@ -118,6 +118,35 @@ export function initKeyboardEngine(instruments, metalParams, rand, imageParams) 
             }
         }
     };
+    
+    function pickKeyboardPatternForSubsection(riffPattern) {
+
+    const original = riffPattern;
+    if (!riffPattern) riffPattern = "unknown";
+
+    riffPattern = riffPattern.toLowerCase();
+
+    let kbPattern = "arp_up";
+
+    if (riffPattern.includes("gallop")) kbPattern = "arp_up";
+    else if (riffPattern.includes("reverse")) kbPattern = "arp_down";
+    else if (riffPattern.includes("pedal")) kbPattern = "fanfare";
+    else if (riffPattern.includes("syncopated")) kbPattern = "cluster";
+    else if (riffPattern.includes("open_epic")) kbPattern = "fanfare";
+    else if (riffPattern.includes("open_drive")) kbPattern = "arp_up";
+    else if (riffPattern.includes("open_half_time")) kbPattern = "cluster";
+    else if (riffPattern.includes("melodic")) kbPattern = "arp_up";
+
+    // 🔥 DEBUG LOG
+    console.log(
+        `%c[KEYBOARD] Riff → Keyboard`,
+        "color:#ffcc00; font-weight:bold;",
+        `riffPattern="${original}" → keyboardPattern="${kbPattern}"`
+    );
+
+    return kbPattern;
+}
+
 
     // ============================================================
     // PROFILE FROM IMAGE
@@ -281,45 +310,56 @@ export function initKeyboardEngine(instruments, metalParams, rand, imageParams) 
     // ============================================================
 
     function scheduleKeyboardSubsection(
-        section,
-        scale,
-        riffEvents,
-        themeEvents,
-        startTime,
-        measures,
-        patternName
-    ) {
-        const secondsPerBeat = 60 / section.bpm;
-        const durationBeats = measures * 4;
+    section,
+    scale,
+    riffEvents,
+    themeEvents,
+    startTime,
+    measures,
+    patternName
+) {
+    const secondsPerBeat = 60 / section.bpm;
+    const durationBeats = measures * 4;
 
-        const pattern = keyboardPatterns[patternName];
-        if (!pattern) {
-            console.warn("[KEYBOARD] Pattern non trovato:", patternName);
-            return;
-        }
-
-        const events = pattern.generate(scale, durationBeats, rand).events;
-
-        events.forEach(ev => {
-            const eventTime = startTime + ev.beatOffset * secondsPerBeat;
-
-            Tone.Transport.schedule(time => {
-                instruments.keyboardLead.triggerAttackRelease(
-                    ev.note,
-                    ev.duration ?? "16n",
-                    time,
-                    ev.velocity
-                );
-            }, eventTime);
-        });
+    const pattern = keyboardPatterns[patternName];
+    if (!pattern) {
+        console.warn("[KEYBOARD] Pattern non trovato:", patternName);
+        return;
     }
+
+    // 🔥 DEBUG LOG
+    console.log(
+        `%c[KEYBOARD] Subsection`,
+        "color:#66ccff; font-weight:bold;",
+        `section="${section.name}", measures=${measures}, pattern="${patternName}"`
+    );
+
+    const events = pattern.generate(scale, durationBeats, rand).events;
+
+    events.forEach(ev => {
+        const eventTime = startTime + ev.beatOffset * secondsPerBeat;
+
+        Tone.Transport.schedule(time => {
+            instruments.keyboardPad.triggerAttackRelease(
+                ev.note,
+                ev.duration ?? "16n",
+                time,
+                ev.velocity
+            );
+        }, eventTime);
+    });
+}
+
+
 
     // ============================================================
     // EXPORT
     // ============================================================
 
     return {
-        scheduleKeyboard,
-        scheduleKeyboardSubsection
-    };
+    scheduleKeyboard,
+    scheduleKeyboardSubsection,
+  pickKeyboardPatternForSubsection
+};
+
 }
