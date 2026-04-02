@@ -5,9 +5,21 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("keyboardEngine.js ver. 001.1 loaded");
+console.log("keyboardEngine.js ver. 001.2 loaded");
 
-export function scheduleKeyboardSubsection(
+// ============================================================
+// 🎹 SCHEDULAZIONE PER SOTTOSEZIONE (v23+)
+// ============================================================
+//
+// Questa funzione è identica a scheduleKeyboard, ma:
+// - usa uno startTime personalizzato
+// - usa una durata personalizzata (solo metà sezione)
+// - forza un pattern specifico
+//
+// Il metalEngine la chiama per ogni "subsection".
+// ============================================================
+
+function scheduleKeyboardSubsection(
     section,
     scale,
     riffEvents,
@@ -19,11 +31,17 @@ export function scheduleKeyboardSubsection(
     const secondsPerBeat = 60 / section.bpm;
     const durationBeats = measures * 4;
 
+    // Recupera il pattern dalla tua pattern library
     const pattern = keyboardPatterns[patternName];
-    if (!pattern) return;
+    if (!pattern) {
+        console.warn("[KEYBOARD] Pattern non trovato:", patternName);
+        return;
+    }
 
+    // Genera gli eventi del pattern
     const events = pattern.generate(scale, durationBeats, Math.random).events;
 
+    // Schedula gli eventi
     events.forEach(ev => {
         const eventTime = startTime + ev.beatOffset * secondsPerBeat;
 
@@ -212,6 +230,8 @@ export function initKeyboardEngine(instruments, metalParams, rand, imageParams) 
     }
 
     return {
-        scheduleKeyboard
-    };
+    scheduleKeyboard,
+    scheduleKeyboardSubsection
+};
+
 }
