@@ -11,6 +11,7 @@
         eruda.init();
         console.log("🟦 Eruda inizializzato");
     </script>
+    <script src="https://unpkg.com/soundfont-player"></script>
 </head>
 
 <body>
@@ -70,7 +71,7 @@
     <!-- CONTENT -->
     <main class="content">
     <div class="video-mini-wrapper">
-    <video muted loop playsinline>
+    <video autoplay muted loop playsinline>
         <source src="onair.mp4" type="video/mp4">
     </video>
 </div>
@@ -94,6 +95,7 @@
         <!--    <button class="genre-btn" data-genre="ambient">Ambient</button>
             <button class="genre-btn" data-genre="chiptune">Chiptune</button> -->
             <button class="genre-btn" data-genre="metal">Metal</button>
+              <button class="genre-btn" data-genre="piano">Piano</button>
 
             <button id="closeGenrePanel" class="close-panel-btn">
                 Chiudi

@@ -9,6 +9,8 @@
 import * as Tone from "https://esm.sh/tone";
 
 import { metalInstruments, instrumentVolumeMap } from "./genres/metal/instruments.js";
+import { createPianoEngine, waitPianoInstruments } 
+from "./genres/piano/pianoEngine.js";
 import { masterEQ, } from "./common.js";
 
 console.log("main.js ver. 004.1 loaded");
@@ -178,7 +180,10 @@ async function selectGenre(genre) {
         currentEngine = await createMetalEngine(params);
 await waitMetalInstruments();   // <-- strumenti pronti
     }
-
+if (genre === "piano") {
+    currentEngine = await createPianoEngine(params, analysis);
+    await waitPianoInstruments();
+}
     if (!currentEngine) {
         console.error("❌ Engine non creato!");
         return;
