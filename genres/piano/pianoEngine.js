@@ -1,200 +1,68 @@
-// pianoEngine.js — piano con SoundFont MusyngKite
-
-import * as Tone from "https://esm.sh/tone";
-
-console.log("pianoEngine.js ver. 001 loaded");
-
-let piano = null;
-let isLoaded = false;
-
-// --------------------------------------------------
-// LOADER
-// --------------------------------------------------
-
-export async function waitPianoInstruments() {
-
-    if (isLoaded) return;
-
-    const overlay = document.getElementById("loadingOverlay");
-    const bar = document.getElementById("loadingBar");
-    const text = document.getElementById("loadingText");
-
-    overlay.style.display = "flex";
-
-    text.innerText = "Caricamento Piano (MusyngKite)...";
-
-    // SoundFont load
-    piano = await Soundfont.instrument(
-        Tone.getContext().rawContext,
-        "acoustic_grand_piano",
-        {
-            soundfont: "MusyngKite",
-            format: "mp3"
-        }
-    );
-
-    isLoaded = true;
-
-    bar.style.width = "100%";
-    text.innerText = "Piano pronto 🎹";
-
-    await new Promise(res => setTimeout(res, 300));
-
-    overlay.style.display = "none";
-}
-
-// --------------------------------------------------
-// ENGINE
-// --------------------------------------------------
+// pianoEngine.js - Versione Deterministica
 
 export async function createPianoEngine(params, analysis) {
+    const dna = params.dna; // L'hash univoco della foto
+    const intensity = params.global.intensity;
+    const complexity = params.global.complexity;
+    
+    // 1. Generiamo una "tavolozza" di note basata sulla scala scelta
+    const tonalCenter = params.harmony.tonalCenter;
+    const scaleNotes = getScale(tonalCenter, params.harmony.scaleProfile);
 
-    await Tone.loaded();
+    // 2. Funzione per estrarre un valore deterministico dal DNA
+    // Questo ci permette di avere la stessa melodia per la stessa foto
+    const getDnaValue = (offset) => {
+        return (dna >> (offset % 24)) & 0xFF; // Estrae un byte dall'hash
+    };
 
-    Tone.Transport.bpm.value = params.bpm;
-
-    const scale = params.scale;
-
-    const totalMeasures = 32;
-    const beatsPerMeasure = 4;
-
-    const totalDuration =
-        totalMeasures * beatsPerMeasure * (60 / params.bpm);
-
-    // --------------------------------------------------
-    // MODE SELEZIONE DA IMMAGINE
-    // --------------------------------------------------
-
-    const mode =
-        analysis.energy > 0.6
-            ? "pattern"
-            : "arp";
-
-    console.log("🎹 Piano mode:", mode);
-
-    // --------------------------------------------------
-    // UTILS
-    // --------------------------------------------------
-
-    function pickNote() {
-        const idx = Math.floor(Math.random() * scale.length);
-        return scale[idx] + "4";
-    }
-
-    function buildChord(root) {
-        const midi = Tone.Frequency(root).toMidi();
-        return [
-            root,
-            Tone.Frequency(midi + 4, "midi").toNote(),
-            Tone.Frequency(midi + 7, "midi").toNote()
-        ];
-    }
-
-    // --------------------------------------------------
-    // PROGRESSIONE
-    // --------------------------------------------------
-
-    const progression = [0, 4, 5, 3];
-
-    function getChord(measure) {
-        const degree = progression[measure % progression.length];
-        const root = scale[degree] + "3";
-        return buildChord(root);
-    }
-
-    // --------------------------------------------------
-    // LOOP
-    // --------------------------------------------------
+    // 3. Creazione della progressione armonica basata sulla foto
+    const progression = [
+        getDnaValue(0) % scaleNotes.length,
+        getDnaValue(8) % scaleNotes.length,
+        getDnaValue(16) % scaleNotes.length,
+        getDnaValue(24) % scaleNotes.length
+    ];
 
     let step = 0;
-
     const loop = new Tone.Loop((time) => {
+        if (!isLoaded) return;
 
-        if (!piano) return;
+        const measure = Math.floor(step / 16);
+        const currentChordIndex = progression[measure % progression.length];
+        
+        // Velocity basata sull'intensità dell'immagine + una piccola variazione deterministica
+        const baseVel = 0.3 + (intensity * 0.5);
+        const dynamicVel = baseVel + ((getDnaValue(step) / 255) * 0.2);
 
-        const measure = Math.floor(step / 8);
-        const stepInMeasure = step % 8;
-
-        const chord = getChord(measure);
-
-        // ----------------------------------------------
-        // ARPEGGIO MODE
-        // ----------------------------------------------
-
-        if (mode === "arp") {
-
-            const note = chord[stepInMeasure % chord.length];
-
-            piano.play(
-                note,
-                time,
-                { duration: 0.8, gain: 0.6 }
-            );
+        // LOGICA MELODICA DETERMINISTICA
+        // Usiamo la 'complexity' per decidere quante note suonare
+        if (step % 4 === 0 || (complexity > 0.5 && step % 2 === 0)) {
+            
+            // Scegliamo la nota basandoci sul DNA e sulla direzione dell'immagine
+            const noteOffset = getDnaValue(step + 10) % 7;
+            const octave = 3 + Math.floor(analysis.brightness * 3); // Brightness guida l'altezza
+            
+            const note = scaleNotes[noteOffset] + octave;
+            
+            piano.triggerAttackRelease(note, "8n", time, dynamicVel);
         }
 
-        // ----------------------------------------------
-        // PATTERN MODE (EINAUDI STYLE)
-        // ----------------------------------------------
-
-        else {
-
-            if (stepInMeasure % 2 === 0) {
-
-                const note = chord[0];
-
-                piano.play(
-                    note,
-                    time,
-                    { duration: 1.2, gain: 0.7 }
-                );
-            }
-
-            if (Math.random() < 0.4) {
-
-                const note = pickNote();
-
-                piano.play(
-                    note,
-                    time,
-                    { duration: 0.5, gain: 0.5 }
-                );
-            }
+        // Accompagnamento (Bassi) basato sulla texture
+        if (step % 16 === 0 && analysis.texture > 0.3) {
+            const bassNote = scaleNotes[currentChordIndex] + "2";
+            piano.triggerAttackRelease(bassNote, "2n", time, baseVel * 0.8);
         }
 
         step++;
+    }, "16n"); // Usiamo i sedicesimi per più dettaglio
 
-    }, "8n");
-
-    // --------------------------------------------------
-    // CONTROLLI
-    // --------------------------------------------------
-
-    function play() {
-        loop.start(0);
-
-        if (Tone.Transport.state !== "started") {
-            Tone.Transport.start();
-        }
-    }
-
-    function pause() {
-        Tone.Transport.pause();
-    }
-
-    function stop() {
-        loop.stop();
-        Tone.Transport.stop();
-    }
-
-    function seek(seconds) {
-        Tone.Transport.start(undefined, seconds);
-    }
+    // ... resto dell'engine (play, stop, pause)
+}
 
     return {
-        play,
-        pause,
-        stop,
-        seek,
-        totalDuration
+        play: () => { loop.start(0); Tone.Transport.start(); },
+        pause: () => Tone.Transport.pause(),
+        stop: () => { loop.stop(); Tone.Transport.stop(); step = 0; },
+        totalDuration: 32 * 4 * (60 / params.bpm)
     };
 }
