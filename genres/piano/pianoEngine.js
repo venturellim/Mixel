@@ -8,7 +8,7 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { progressions } from "../metal/metalTheory.js"; 
 import { waitForInstruments } from "../../common.js";
 
-console.log("pianoEngine.js ver. 003.1 loaded");
+console.log("pianoEngine.js ver. 003.2 loaded");
 
 // Mappa di traduzione: dal nome del pattern metal al movimento pianistico
 const PIANO_INTERPRETER = {
@@ -129,7 +129,6 @@ if (style.rh[patternIdx] > 0) {
                 piano.triggerAttackRelease(note, "2n", time + strum, Math.max(0.1, Math.min(1, dynamicVel * 0.5)));
             }, stepTime + h);
         });
-    }
                         } else {
                             // Suona l'accordo pieno
                             chordNotes.forEach((note, idx) => {
