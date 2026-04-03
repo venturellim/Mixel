@@ -1,75 +1,68 @@
-// pianoEngine.js
+// pianoEngine.js — ver. 004
 import * as Tone from "https://esm.sh/tone";
 import { piano } from "./pianoInstruments.js";
+import { buildPianoParams } from "./pianoParams.js";
 import { createSeededRandom } from "../../utils/randomUtils.js";
 import { buildSongStructure } from "../../utils/structureUtils.js";
 import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { progressions } from "../metal/metalTheory.js"; 
 import { waitForInstruments } from "../../common.js";
 
-console.log("pianoEngine.js ver. 001 loaded");
-
-
 export async function waitPianoInstruments() {
-    await waitForInstruments(1);
+    await waitForInstruments(1); // Salamander C5
 }
 
 export async function createPianoEngine(params) {
-    // 1. Controllo di sicurezza sui parametri
-    console.log("Parametri ricevuti:", params) 
-
-    if (!params || !params.rhythm || !params.rhythm.tempoProfile) {
-        console.warn("Parametri ritmici mancanti, uso default 120bpm");
-    }
-
-    const rand = createSeededRandom(params.dna || 12345);
-    const bpm = params.rhythm?.tempoProfile || 120; // Fallback a 120
+    const rand = createSeededRandom(params.dna);
     
-    // Tone.js vuole un numero finito
-    Tone.Transport.bpm.value = bpm;
+    // Traduciamo i parametri grezzi in parametri specifici per piano
+    const p = buildPianoParams(rand, params.imageParams);
 
-    const structure = buildSongStructure(params.structure, bpm);
-    const scale = buildScaleFromTonic(params.harmony.tonalCenter + "4", params.harmony.scaleProfile);
+    // Configurazione Transport
+    Tone.Transport.bpm.value = p.bpm;
+
+    // Costruzione timeline e scala
+    const structure = buildSongStructure(p.structure, p.bpm);
+    const scale = buildScaleFromTonic(p.tonalCenter, p.scaleType);
+
+    const secondsPerBeat = 60 / p.bpm;
+    const measureDur = secondsPerBeat * 4;
 
     structure.sections.forEach(section => {
-        const sectionProg = progressions[section.name] ? 
-            progressions[section.name][Math.floor(rand() * progressions[section.name].length)] :
-            ["i", "VI", "III", "VII"];
+        // Scegliamo una progressione dalla teoria (condivisa col metal)
+        const possibleProgs = progressions[section.name] || progressions.verse;
+        const sectionProg = possibleProgs[Math.floor(rand() * possibleProgs.length)];
 
-        const measureDur = (60 / bpm) * 4;
-        
         for (let m = 0; m < section.measures; m++) {
             const measureStartTime = section.startTime + (m * measureDur);
             
             sectionProg.forEach((degree, i) => {
                 const chordTime = measureStartTime + (i * (measureDur / sectionProg.length));
-                // Durata dell'accordo: lo facciamo durare quasi fino al prossimo per non interromperlo bruscamente
                 const duration = (measureDur / sectionProg.length) * 0.9;
                 
+                // 1. MANO SINISTRA: Nota singola (Basso)
                 const rootNote = getScaleDegree(scale, degreeToIndex(degree));
-                
-                // Costruiamo l'accordo della mano destra
+                const bassNote = Tone.Frequency(rootNote).transpose(-12); // Un'ottava sotto
+
+                // 2. MANO DESTRA: Accordo (Fondamentale, Terza, Quinta)
                 const chordNotes = [
                     getScaleDegree(scale, degreeToIndex(degree)),     
                     getScaleDegree(scale, degreeToIndex(degree) + 2), 
                     getScaleDegree(scale, degreeToIndex(degree) + 4)  
                 ];
 
-                const velocity = 0.3 + (params.global.intensity * 0.5);
-
                 Tone.Transport.schedule((time) => {
-                    // --- MANO SINISTRA (Bassi) ---
-                    const bassNote = Tone.Frequency(rootNote).transpose(-12); 
-                    // Usiamo 'duration' per rilasciare il tasto correttamente
-                    piano.triggerAttackRelease(bassNote, duration, time, velocity * 0.8);
+                    // Esegui LH (Mano Sinistra)
+                    piano.triggerAttackRelease(bassNote, duration, time, p.velocityBase * 1.1);
 
-                    // --- MANO DESTRA (Accordi) ---
+                    // Esegui RH (Mano Destra)
                     chordNotes.forEach((note, index) => {
-                        // "Humanize": se la foto è complessa, aumentiamo leggermente l'arpeggio (strum)
-                        const strum = index * (0.02 + (params.global.complexity * 0.05)); 
-                        piano.triggerAttackRelease(note, duration, time + strum, velocity * 0.6);
+                        // Se p.useArpeggio è vero, ritarda le note (effetto arpeggio)
+                        // Il ritardo dipende dalla texture della foto
+                        const delay = p.useArpeggio ? index * (0.05 + p.texture * 0.1) : index * 0.02;
+                        
+                        piano.triggerAttackRelease(note, duration, time + delay, p.velocityBase * 0.8);
                     });
-
                 }, chordTime);
             });
         }
@@ -78,7 +71,6 @@ export async function createPianoEngine(params) {
     return {
         totalDuration: structure.totalDuration,
         play: () => {
-            // Piccolo trucco: rilasciamo tutte le note prima di partire
             piano.releaseAll();
             Tone.Transport.start("+0.1");
         },
@@ -86,7 +78,7 @@ export async function createPianoEngine(params) {
         stop: () => {
             Tone.Transport.stop();
             Tone.Transport.cancel();
-            piano.releaseAll(); // Fondamentale per non lasciare note appese
+            piano.releaseAll();
         }
     };
 }
