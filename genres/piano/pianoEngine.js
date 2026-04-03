@@ -37,6 +37,12 @@ export async function createPianoEngine(params) {
 
     const sustainValue = (params.imageParams.brightness > 0.7) ? 2.5 : 1.2; 
     piano.set({ release: sustainValue });
+    // Aumenta il volume del riverbero se la foto è "vasta" (texture bassa o brightness alta)
+piano.volume.value = params.imageParams.brightness > 0.8 ? 0 : -5; 
+// Più la foto è complessa, più il pianista è "agitato" (variazioni di volume più ampie)
+// Se la foto è semplice, il tocco è costante e meditativo.
+const humanTouch = params.imageParams.complexity * 0.2; 
+
     // -----------------------------------------
 
     const structure = buildSongStructure(p.structure, p.bpm);
@@ -80,27 +86,50 @@ export async function createPianoEngine(params) {
                     const patternIdx = s % 8;
 
                     // 1. MANO SINISTRA (Bassi)
-                    if (style.lh[patternIdx] > 0) {
-                        const bassNote = Tone.Frequency(rootNote).transpose(-12).toNote();
-                        const vel = p.velocityBase * style.lh[patternIdx] * (0.8 + rand() * 0.3);
-                        const h = (rand() - 0.5) * 0.02; // Humanize +/- 10ms
+                    // ... dentro il loop degli step (s) ...
 
-                        Tone.Transport.schedule((time) => {
-                            piano.triggerAttackRelease(bassNote, "2n", time, vel);
-                        }, stepTime + h);
-                    }
+// 1. MANO SINISTRA (Bassi)
+if (style.lh[patternIdx] > 0) {
+    const bassNote = Tone.Frequency(rootNote).transpose(-12).toNote();
+    
+    // CALCOLO VELOCITY DINAMICA
+    // Partiamo dalla base, aggiungiamo il valore del pattern, 
+    // e poi applichiamo una variazione casuale basata sulla complessità
+    const dynamicVel = (p.velocityBase * style.lh[patternIdx]) + ((rand() - 0.5) * humanTouch);
+    
+    const h = (rand() - 0.5) * 0.02; 
 
-                    // 2. MANO DESTRA (Armonia/Arpeggio)
-                    if (style.rh[patternIdx] > 0) {
-                        const vel = p.velocityBase * style.rh[patternIdx] * (0.6 + rand() * 0.3);
-                        const h = (rand() - 0.5) * 0.03;
+    Tone.Transport.schedule((time) => {
+        // Usiamo dynamicVel (limitandola tra 0.1 e 1 per sicurezza)
+        piano.triggerAttackRelease(bassNote, "2n", time, Math.max(0.1, Math.min(1, dynamicVel * 0.9)));
+    }, stepTime + h);
+}
 
-                        if (style.type === "arpeggio") {
-                            // Suona una nota alla volta dell'accordo
-                            const note = chordNotes[s % chordNotes.length];
-                            Tone.Transport.schedule((time) => {
-                                piano.triggerAttackRelease(note, "4n", time, vel * 0.7);
-                            }, stepTime + h);
+// 2. MANO DESTRA (Accordi/Arpeggi)
+if (style.rh[patternIdx] > 0) {
+    const h = (rand() - 0.5) * 0.03;
+
+    if (style.type === "arpeggio") {
+        const note = chordNotes[s % chordNotes.length];
+        
+        // Applichiamo la velocity dinamica anche qui
+        const dynamicVel = (p.velocityBase * style.rh[patternIdx]) + ((rand() - 0.5) * humanTouch);
+
+        Tone.Transport.schedule((time) => {
+            piano.triggerAttackRelease(note, "4n", time, Math.max(0.1, Math.min(1, dynamicVel * 0.7)));
+        }, stepTime + h);
+    } else {
+        // Per gli accordi pieni
+        chordNotes.forEach((note, idx) => {
+            const strum = idx * 0.02;
+            // Ogni nota dell'accordo avrà una velocity leggermente diversa
+            const dynamicVel = (p.velocityBase * style.rh[patternIdx]) + ((rand() - 0.5) * humanTouch);
+
+            Tone.Transport.schedule((time) => {
+                piano.triggerAttackRelease(note, "2n", time + strum, Math.max(0.1, Math.min(1, dynamicVel * 0.5)));
+            }, stepTime + h);
+        });
+    }
                         } else {
                             // Suona l'accordo pieno
                             chordNotes.forEach((note, idx) => {
