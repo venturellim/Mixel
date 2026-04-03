@@ -8,7 +8,7 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { progressions } from "../metal/metalTheory.js"; 
 import { waitForInstruments } from "../../common.js";
 
-console.log("pianoEngine.js ver. 003 loaded");
+console.log("pianoEngine.js ver. 003.1 loaded");
 
 // Mappa di traduzione: dal nome del pattern metal al movimento pianistico
 const PIANO_INTERPRETER = {
@@ -24,17 +24,24 @@ export async function waitPianoInstruments() {
     await waitForInstruments(1);
 }
 
+// ... (import precedenti)
+
 export async function createPianoEngine(params) {
     const rand = createSeededRandom(params.dna);
     const p = buildPianoParams(rand, params.imageParams);
 
-    // Reset della timeline
+    // 1. RESET E SETUP BPM
     Tone.Transport.stop();
     Tone.Transport.cancel();
     Tone.Transport.bpm.value = p.bpm;
 
+    const sustainValue = (params.imageParams.brightness > 0.7) ? 2.5 : 1.2; 
+    piano.set({ release: sustainValue });
+    // -----------------------------------------
+
     const structure = buildSongStructure(p.structure, p.bpm);
     const scale = buildScaleFromTonic(p.tonalCenter, p.scaleType);
+
     const measureDur = (60 / p.bpm) * 4;
     const step8n = measureDur / 8; // Divisione in ottavi
 
