@@ -345,9 +345,10 @@ let themeEvents = null;
                     sec.scale,
                     sec.progression
                 );
+                
+const subStart = sec.startTime + sub.start * 4 * secondsPerBeat;
 
-            
-   const riffPattern = sec.riffResult?.dominantPattern;
+const riffPattern = sec.riffResult?.dominantPattern;
 const bassPattern = bass.pickBassPatternForSubsection(riffPattern, sec.riffMute);
 const pureScaleBass = sec.scale.map(n => normalizeNote(n, "bass"));
 
@@ -440,8 +441,6 @@ if (bassPattern === "followRiff") {
             if (shouldKeyboardPlay(sec, params.imageParams)) {
 
    sec.subsections.forEach((sub, i) => {
-
-       const subStart = sec.startTime + sub.start * 4 * secondsPerBeat;
 
        const pattern = pickKeyboardPatternForSubsection(
            sec.name,
