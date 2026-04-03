@@ -13,7 +13,7 @@ import { createPianoEngine, waitPianoInstruments }
 from "./genres/piano/pianoEngine.js";
 import { masterEQ, } from "./common.js";
 
-console.log("main.js ver. 004.1 loaded");
+console.log("main.js ver. 004.2 loaded");
 
 // -------------------------------------------------------------
 // Import fondamentali
@@ -177,7 +177,7 @@ async function selectGenre(genre) {
 
     // 3) Creazione engine del genere
     if (genre === "metal") {
-   await MetalInstruments();   // <-- strumenti pronti
+   await waitMetalInstruments();   // <-- strumenti pronti
         currentEngine = await createMetalEngine(params);
  
     }
