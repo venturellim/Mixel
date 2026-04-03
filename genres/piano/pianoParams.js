@@ -1,5 +1,5 @@
 // pianoParams.js — ver. 002
-console.log("pianoParams.js ver. 002 loaded");
+console.log("pianoParams.js ver. 002.1 loaded");
 
 export function buildPianoParams(rand, imageParams) {
     const TONICS = ["C", "D", "E", "F", "G", "A", "B"];
@@ -10,7 +10,7 @@ export function buildPianoParams(rand, imageParams) {
 
     // BPM di sicurezza
     const energy = imageParams?.energy || 0.5;
-    const bpm = Math.floor(70 + (energy * 40));
+    const bpm = Math.floor(60 + (energy * 70));
 
 const complexity = imageParams?.complexity || 0.5;
 
