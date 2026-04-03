@@ -177,13 +177,15 @@ async function selectGenre(genre) {
 
     // 3) Creazione engine del genere
     if (genre === "metal") {
+   await MetalInstruments();   // <-- strumenti pronti
         currentEngine = await createMetalEngine(params);
-await waitMetalInstruments();   // <-- strumenti pronti
+ 
     }
 if (genre === "piano") {
-    currentEngine = await createPianoEngine(params, analysis);
-    await waitPianoInstruments();
+    await waitPianoInstruments(); // Carica i campioni se non presenti
+    currentEngine = await createPianoEngine(params, analysis); // Passa entrambi
 }
+
     if (!currentEngine) {
         console.error("❌ Engine non creato!");
         return;
