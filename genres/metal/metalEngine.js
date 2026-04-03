@@ -24,7 +24,7 @@ import
 { generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 023.1 loaded");
+console.log("metalEngine.js ver. 023.2 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
@@ -134,11 +134,11 @@ export async function createMetalEngine(params) {
     );
 
     // 3) Engine
-    const riff  = initRiffEngine(metalInstruments, metalParams, rand, { enableLog: true });
-    const lead  = initLeadEngine(metalInstruments, metalParams, rand);
-    const bass = initBassEngine(metalInstruments, params, rand);
-    const drums = initDrumEngine(metalInstruments, metalParams, rand);
-    const theme = initThemeEngine(metalParams, params.imageParams, rand);
+    const riff     = initRiffEngine(metalInstruments, metalParams, rand, { enableLog: true });
+    const lead     = initLeadEngine(metalInstruments, metalParams, rand);
+    const bass     = initBassEngine(metalInstruments, params, rand);
+    const drums    = initDrumEngine(metalInstruments, metalParams, rand);
+    const theme    = initThemeEngine(metalParams, params.imageParams, rand);
     const keyboard = initKeyboardEngine(metalInstruments, metalParams, rand, params.imageParams);
 
     // ============================================================
@@ -153,36 +153,33 @@ export async function createMetalEngine(params) {
         const progression = info.progression;
         const root = info.root;
         const scale = buildScaleFromTonic(root, metalParams.scaleType);
-        
-        
+
         // IMPORTANTE: qui NON scheduliamo nulla
         const riffResult = riff.scheduleSection(section, scale, progression);
 
         // Aggiungiamo la sezione principale
         enriched.push({
-    type: "main",
-    name: section.name,
-    measures: section.measures,
-    subsections: (section.measures >= 8)
-        ? [
-            { start: 0, measures: section.measures / 2 },
-            { start: section.measures / 2, measures: section.measures / 2 }
-          ]
-        : [
-            { start: 0, measures: section.measures }
-          ],
+            type: "main",
+            name: section.name,
+            measures: section.measures,
+            subsections: (section.measures >= 8)
+                ? [
+                    { start: 0, measures: section.measures / 2 },
+                    { start: section.measures / 2, measures: section.measures / 2 }
+                  ]
+                : [
+                    { start: 0, measures: section.measures }
+                  ],
 
-   // Riff mute: solo intro e verse, probabilità 50%
-   riffMute: (section.name === "intro" || section.name === "verse")
-       ? (rand() < 0.5 ? 1 : 0)
-       : 0,
+            // Riff mute: solo intro e verse, probabilità 50%
+            riffMute: (section.name === "intro" || section.name === "verse")
+                ? (rand() < 0.5 ? 1 : 0)
+                : 0,
 
-    progression,
-    scale,
-    riffResult
-});
-
-
+            progression,
+            scale,
+            riffResult
+        });
 
         // ------------------------------------------------------------
         // CALCOLO DELLA TRANSIZIONE
@@ -193,7 +190,7 @@ export async function createMetalEngine(params) {
         }
 
         // 1) Nota finale della sezione corrente
-        const fromNote = toLetter(riffResult.lastNote);   
+        const fromNote = toLetter(riffResult.lastNote);
 
         // 2) Nota iniziale della prossima sezione (se esiste)
         const nextSection = structure.sections[structure.sections.indexOf(section) + 1];
@@ -204,21 +201,19 @@ export async function createMetalEngine(params) {
             const nextScale = buildScaleFromTonic(nextRoot, metalParams.scaleType);
 
             // prima nota della prossima sezione = root della prossima sezione
-            const toNote   = toLetter(nextRoot);
+            const toNote = toLetter(nextRoot);
 
-            // 3) Scegliamo la transizione in base alla distanza
-            
             console.log(
-                "%c[TRANSITION DEBUG] from → to:", 
-                "color:#00aaff; font-weight:bold;", 
+                "%c[TRANSITION DEBUG] from → to:",
+                "color:#00aaff; font-weight:bold;",
                 fromNote, "→", toNote
             );
 
             const transitionModule = pickTransition(fromNote, toNote, nextScale, params.imageParams, rand);
 
             console.log(
-                "%c[TRANSITION DEBUG] chosen:", 
-                "color:#00aaff; font-weight:bold;", 
+                "%c[TRANSITION DEBUG] chosen:",
+                "color:#00aaff; font-weight:bold;",
                 transitionModule
             );
 
@@ -255,7 +250,11 @@ export async function createMetalEngine(params) {
 
         currentTime = sec.endTime;
     });
-    
+
+    // ============================================================
+    // FUNZIONI DI SUPPORTO (come nel tuo codice originale)
+    // ============================================================
+
     function shouldKeyboardPlay(section, imageParams) {
         const energy = imageParams?.energy ?? 0.5;
         const darkness = imageParams?.texture ?? 0.5;
@@ -278,23 +277,22 @@ export async function createMetalEngine(params) {
         return false;
     }
 
-function pickKeyboardPatternForSubsection(sectionName, index, imageParams, rand) {
+    function pickKeyboardPatternForSubsection(sectionName, index, imageParams, rand) {
 
-    // pattern base della sezione
-    const base = pickKeyboardPattern(sectionName, imageParams, rand);
+        // pattern base della sezione
+        const base = pickKeyboardPattern(sectionName, imageParams, rand);
 
-    // prima metà → pattern base
-    if (index === 0) return base;
+        // prima metà → pattern base
+        if (index === 0) return base;
 
-    // seconda metà → 30% stesso pattern, 70% diverso
-    if (rand() < 0.3) return base;
+        // seconda metà → 30% stesso pattern, 70% diverso
+        if (rand() < 0.3) return base;
 
-    const allPatterns = ["arp_up", "arp_down", "scale_run", "fanfare", "cluster"];
-    const alternatives = allPatterns.filter(p => p !== base);
+        const allPatterns = ["arp_up", "arp_down", "scale_run", "fanfare", "cluster"];
+        const alternatives = allPatterns.filter(p => p !== base);
 
-    return alternatives[Math.floor(rand() * alternatives.length)];
-}
-
+        return alternatives[Math.floor(rand() * alternatives.length)];
+    }
 
     function pickTransitionDrumPattern(instrument, imageParams, rand) {
 
@@ -332,11 +330,13 @@ function pickKeyboardPatternForSubsection(sectionName, index, imageParams, rand)
 
         if (sec.type === "main") {
 
+            // RIFF
             if (sec.riffMute === 0) {
-    riff.scheduleSection(sec, sec.scale, sec.progression);
-}
+                riff.scheduleSection(sec, sec.scale, sec.progression);
+            }
 
-let themeEvents = null;
+            // THEME ENGINE (solo intro/outro)
+            let themeEvents = null;
 
             if (sec.name === "intro" || sec.name === "outro") {
 
@@ -345,50 +345,7 @@ let themeEvents = null;
                     sec.scale,
                     sec.progression
                 );
-                
-const subStart = sec.startTime + sub.start * 4 * secondsPerBeat;
 
-const riffPattern = sec.riffResult?.dominantPattern;
-const bassPattern = bass.pickBassPatternForSubsection(riffPattern, sec.riffMute);
-const pureScaleBass = sec.scale.map(n => normalizeNote(n, "bass"));
-
-bass.scheduleBassSubsection(
-    sec,
-    pureScaleBass,
-    sec.riffResult.events,
-    themeEvents,
-    subStart,
-    sub.measures,
-    bassPattern
-);
-
-
-if (bassPattern === "followRiff") {
-
-    bass.scheduleSection(
-        sec,
-        sec.scale,
-        sec.progression,
-        sec.riffResult.events.map(ev => ({
-            ...ev,
-            note: normalizeNote(ev.note, "bass")
-        }))
-    );
-
-} else {
-
-    const events = bass.generateIndependentBass(
-        bassPattern,
-        sec.scale,
-        sec.measures,
-        rand
-    );
-
-    bass.scheduleIndependent(sec, events);
-}
-
-
-            // THEME ENGINE (solo intro/outro)
                 themeEvents.forEach(ev => {
 
                     const riffStart = sec.riffResult.startTimeReal ?? sec.startTime;
@@ -432,6 +389,43 @@ if (bassPattern === "followRiff") {
                 });
             }
 
+            // BASS ENGINE
+            const riffPattern = sec.riffResult?.dominantPattern;
+            const bassPattern = bass.pickBassPatternForSubsection(riffPattern, sec.riffMute);
+            const pureScaleBass = sec.scale.map(n => normalizeNote(n, "bass"));
+
+            if (bassPattern === "followRiff") {
+
+                // full-section follow riff (con note già normalizzate)
+                bass.scheduleBassSection(
+                    sec,
+                    sec.scale,
+                    sec.progression,
+                    sec.riffResult.events.map(ev => ({
+                        ...ev,
+                        note: normalizeNote(ev.note, "bass")
+                    }))
+                );
+
+            } else {
+
+                // pattern indipendente per sottosezione
+                sec.subsections.forEach(sub => {
+
+                    const subStart = sec.startTime + sub.start * 4 * secondsPerBeat;
+
+                    bass.scheduleBassSubsection(
+                        sec,
+                        pureScaleBass,
+                        sec.riffResult.events,
+                        themeEvents,
+                        subStart,
+                        sub.measures,
+                        bassPattern
+                    );
+                });
+            }
+
             const riffAnalysis = {
                 dominantPattern: sec.riffResult.dominantPattern ?? "pedal_8n",
                 palmRatio: sec.riffResult.palmRatio ?? 0.5
@@ -440,31 +434,35 @@ if (bassPattern === "followRiff") {
             // KEYBOARD ENGINE (foto-driven)
             if (shouldKeyboardPlay(sec, params.imageParams)) {
 
-   sec.subsections.forEach((sub, i) => {
+                sec.subsections.forEach((sub, i) => {
 
-       const pattern = pickKeyboardPatternForSubsection(
-           sec.name,
-           i,
-           params.imageParams,
-           rand
-       );
+                    const subStart = sec.startTime + sub.start * 4 * secondsPerBeat;
 
-       const pureScale = sec.scale.map(n => normalizeNote(n, "keyboardLead"));
+                    const pattern = pickKeyboardPatternForSubsection(
+                        sec.name,
+                        i,
+                        params.imageParams,
+                        rand
+                    );
 
-const riffPattern = sec.riffResult?.dominantPattern;
-const kbPattern = keyboard.pickKeyboardPatternForSubsection(riffPattern);
+                    const pureScale = sec.scale.map(n => normalizeNote(n, "keyboardLead"));
 
-       keyboard.scheduleKeyboardSubsection(
-           sec,
-           pureScale,
-           sec.riffResult.events,
-           themeEvents,
-           subStart,
-           sub.measures,
-           kbPattern
-       );
-   });
-}
+                    const riffPattern = sec.riffResult?.dominantPattern;
+                    const kbPattern = keyboard.pickKeyboardPatternForSubsection(riffPattern);
+
+                    keyboard.scheduleKeyboardSubsection(
+                        sec,
+                        pureScale,
+                        sec.riffResult.events,
+                        themeEvents,
+                        subStart,
+                        sub.measures,
+                        kbPattern
+                    );
+                });
+            }
+
+            // DRUMS
             drums.scheduleSection(
                 sec,
                 sec.scale,
@@ -472,10 +470,10 @@ const kbPattern = keyboard.pickKeyboardPatternForSubsection(riffPattern);
                 sec.riffResult.events,
                 themeEvents
             );
-   
-            // lead.scheduleSection(sec, sec.scale, sec.progression);
 
-        } 
+            // lead.scheduleSection(sec, sec.scale, sec.progression);
+        }
+
         // ==========================================================
         // TRANSIZIONI
         // ==========================================================
@@ -484,22 +482,16 @@ const kbPattern = keyboard.pickKeyboardPatternForSubsection(riffPattern);
             const t = sec.transition;
             const instrument = sec.instrument;
 
-            // ---------------------------------------------------------
             // 1) GENERAZIONE PATTERN TASTIERA (UNA VOLTA SOLA)
-            // ---------------------------------------------------------
             const kbPattern = pickKeyboardPattern(instrument, params.imageParams, rand);
             const pureScale = sec.scale.map(n => normalizeNote(n, "keyboardLead"));
             const kbLayer = generateKeyboardEvents(kbPattern, pureScale, t.durationBeats, rand);
 
-            // ---------------------------------------------------------
             // 2) GENERAZIONE PATTERN BATTERIA (UNA VOLTA SOLA)
-            // ---------------------------------------------------------
             const drumPattern = pickDrumPattern(instrument, params.imageParams, rand);
             const drumLayer = generateDrumEvents(drumPattern, t.durationBeats, rand);
 
-            // ---------------------------------------------------------
             // 3) SCHEDULAZIONE EVENTI PRINCIPALI DELLA TRANSIZIONE
-            // ---------------------------------------------------------
             t.events.forEach(ev => {
                 const eventTime = sec.startTime + ev.beatOffset * secondsPerBeat;
 
@@ -544,9 +536,7 @@ const kbPattern = keyboard.pickKeyboardPatternForSubsection(riffPattern);
                 }, eventTime);
             });
 
-            // ---------------------------------------------------------
             // 4) SCHEDULAZIONE LAYER TASTIERA (Transition Keyboard Engine)
-            // ---------------------------------------------------------
             kbLayer.events.forEach(e => {
                 const kbTime = sec.startTime + e.beatOffset * secondsPerBeat;
 
@@ -560,9 +550,7 @@ const kbPattern = keyboard.pickKeyboardPatternForSubsection(riffPattern);
                 }, kbTime);
             });
 
-            // ---------------------------------------------------------
             // 5) SCHEDULAZIONE LAYER BATTERIA (Transition Drum Engine)
-            // ---------------------------------------------------------
             drumLayer.events.forEach(d => {
                 const drumTime = sec.startTime + d.beatOffset * secondsPerBeat;
 
@@ -571,9 +559,7 @@ const kbPattern = keyboard.pickKeyboardPatternForSubsection(riffPattern);
                 }, drumTime);
             });
 
-            // ---------------------------------------------------------
             // 6) OPEN CHORD FINALE (solo per mixed e lead)
-            // ---------------------------------------------------------
             if (instrument === "mixed" || instrument === "lead") {
 
                 const finalEventTime =
@@ -601,7 +587,6 @@ const kbPattern = keyboard.pickKeyboardPatternForSubsection(riffPattern);
         totalDuration: currentTime,
 
         play() {
-            // Riattiva il padBus
             Tone.Transport.start("+0.1");
         },
 
