@@ -1,4 +1,4 @@
-// pianoEngine.js — ver. 008 (Extended & Dynamic)
+// pianoEngine.js — ver. 009 (Sub-Section & Dynamic Logic)
 import * as Tone from "https://esm.sh/tone";
 import { piano } from "./pianoInstruments.js";
 import { buildPianoParams } from "./pianoParams.js";
@@ -8,7 +8,7 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { progressions } from "../metal/metalTheory.js"; 
 import { waitForInstruments } from "../../common.js";
 
-console.log("pianoEngine.js ver. 008 loaded");
+console.log("pianoEngine.js ver. 009 loaded");
 
 const PIANO_INTERPRETER = {
     "pm_sparse":        { lh: [1, 0, 0, 0, 0, 0, 0, 0], rh: [1, 0, 0, 0, 0, 0, 0, 0], type: "static" },
@@ -27,16 +27,17 @@ export async function createPianoEngine(params) {
     const rand = createSeededRandom(params.dna);
     const p = buildPianoParams(rand, params.imageParams);
 
+    // 1. SETUP GLOBALE
     Tone.Transport.stop();
     Tone.Transport.cancel();
     Tone.Transport.bpm.value = p.bpm;
 
-    // Setup espressività globale
     const sustainValue = (params.imageParams.brightness > 0.7) ? 2.5 : 1.2; 
     piano.set({ release: sustainValue });
     piano.volume.value = params.imageParams.brightness > 0.8 ? 0 : -5; 
     const humanTouch = params.imageParams.complexity * 0.2; 
 
+    // 2. STRUTTURA E SCALA
     const structure = buildSongStructure(p.structure, p.bpm);
     const scale = buildScaleFromTonic(p.tonalCenter, p.scaleType);
 
@@ -47,17 +48,34 @@ export async function createPianoEngine(params) {
         const possibleProgs = progressions[section.name] || progressions.verse;
         const sectionProg = possibleProgs[Math.floor(rand() * possibleProgs.length)];
 
-        // DETERMINIAMO L'OTTAVA DELLA MANO DESTRA IN BASE ALLA SEZIONE
-        let octaveOffset = 0;
-        if (section.name === "chorus") octaveOffset = 12; // Un'ottava sopra
-        if (section.name === "solo") octaveOffset = (rand() > 0.5 ? 12 : 0);
-
-        const styleName = section.name === "chorus" ? "open_epic" : "pm_groove";
-        const style = PIANO_INTERPRETER[styleName] || PIANO_INTERPRETER.default;
+        // Calcoliamo la metà della sezione per la divisione A/B
+        const halfMeasures = Math.ceil(section.measures / 2);
 
         for (let m = 0; m < section.measures; m++) {
+            const isSecondHalf = m >= halfMeasures;
             const measureStartTime = section.startTime + (m * measureDur);
-            
+
+            // LOGICA DI SELEZIONE PATTERN (A/B)
+            let styleName;
+            if (section.name === "intro") {
+                styleName = isSecondHalf ? "pm_groove" : "pm_sparse";
+            } else if (section.name === "chorus") {
+                styleName = "open_epic";
+            } else if (section.name === "outro") {
+                styleName = "pm_sparse";
+            } else {
+                // Verse/Solo: la seconda metà ha il 50% di probabilità di diventare più epica
+                styleName = (isSecondHalf && rand() > 0.5) ? "open_epic" : "pm_groove";
+            }
+
+            const style = PIANO_INTERPRETER[styleName] || PIANO_INTERPRETER.default;
+
+            // OFFSET OTTAVA: sale nel Chorus o nella seconda metà dell'Intro
+            let octaveOffset = 0;
+            if (section.name === "chorus") octaveOffset = 12;
+            if (section.name === "solo") octaveOffset = (rand() > 0.5 ? 12 : 0);
+            if (section.name === "intro" && isSecondHalf) octaveOffset = 12;
+
             sectionProg.forEach((degree, i) => {
                 const chordStartTime = measureStartTime + (i * (measureDur / sectionProg.length));
                 const chordDuration = (measureDur / sectionProg.length);
@@ -65,7 +83,7 @@ export async function createPianoEngine(params) {
                 const rootNote = getScaleDegree(scale, degreeToIndex(degree));
                 if (!rootNote) return;
 
-                // CALCOLO CHORD NOTES CON OFFSET OTTAVA
+                // Calcolo note accordo con trasposizione
                 const chordNotes = [
                     getScaleDegree(scale, degreeToIndex(degree)),     
                     getScaleDegree(scale, degreeToIndex(degree) + 2), 
@@ -89,30 +107,38 @@ export async function createPianoEngine(params) {
                         }, stepTime + h);
                     }
 
-                    // --- MANO DESTRA EVOLUTA (Riempimento e Ottave) ---
-                    const isPatternActive = style.rh[patternIdx] > 0;
-                    const shouldFill = rand() > 0.6; // 40% possibilità nota extra
+                    // --- MANO DESTRA EVOLUTA (Logica A/B e Fill) ---
+                    let canPlayRH = true;
+                    // Nell'intro parte A, la destra suona solo raramente (ghost notes)
+                    if (section.name === "intro" && !isSecondHalf) {
+                        canPlayRH = rand() > 0.85; 
+                    }
 
-                    if (isPatternActive || shouldFill) {
-                        const h = (rand() - 0.5) * 0.04;
-                        const fillModifier = isPatternActive ? 1 : 0.4; 
-                        const dynamicVelBase = ((p.velocityBase * (style.rh[patternIdx] || 0.5)) + ((rand() - 0.5) * humanTouch)) * fillModifier;
+                    if (canPlayRH) {
+                        const isPatternActive = style.rh[patternIdx] > 0;
+                        // Più probabilità di fill (note extra) nella seconda metà delle sezioni
+                        const shouldFill = rand() > (isSecondHalf ? 0.45 : 0.75);
 
-                        if (style.type === "arpeggio" || (!isPatternActive && shouldFill)) {
-                            // Arpeggio o Ghost Note
-                            const note = chordNotes[Math.floor(rand() * chordNotes.length)];
-                            Tone.Transport.schedule((time) => {
-                                piano.triggerAttackRelease(note, "8n", time, Math.max(0.05, Math.min(1, dynamicVelBase * 0.6)));
-                            }, stepTime + h);
-                        } else {
-                            // Accordo pieno
-                            chordNotes.forEach((note, idx) => {
-                                const strum = idx * 0.025;
-                                const noteVel = dynamicVelBase + ((rand() - 0.5) * 0.1);
+                        if (isPatternActive || shouldFill) {
+                            const h = (rand() - 0.5) * 0.04;
+                            const fillModifier = isPatternActive ? 1 : 0.35; 
+                            const dynamicVelBase = ((p.velocityBase * (style.rh[patternIdx] || 0.5)) + ((rand() - 0.5) * humanTouch)) * fillModifier;
+
+                            if (style.type === "arpeggio" || (!isPatternActive && shouldFill)) {
+                                const note = chordNotes[Math.floor(rand() * chordNotes.length)];
                                 Tone.Transport.schedule((time) => {
-                                    piano.triggerAttackRelease(note, "2n", time + strum, Math.max(0.1, Math.min(1, noteVel * 0.5)));
+                                    piano.triggerAttackRelease(note, "8n", time, Math.max(0.05, Math.min(1, dynamicVelBase * 0.6)));
                                 }, stepTime + h);
-                            });
+                            } else {
+                                // Accordo pieno
+                                chordNotes.forEach((note, idx) => {
+                                    const strum = idx * 0.025;
+                                    const noteVel = dynamicVelBase + ((rand() - 0.5) * 0.1);
+                                    Tone.Transport.schedule((time) => {
+                                        piano.triggerAttackRelease(note, "2n", time + strum, Math.max(0.1, Math.min(1, noteVel * 0.5)));
+                                    }, stepTime + h);
+                                });
+                            }
                         }
                     }
                 }
