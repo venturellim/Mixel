@@ -12,12 +12,25 @@ export function buildPianoParams(rand, imageParams) {
     const energy = imageParams?.energy || 0.5;
     const bpm = Math.floor(70 + (energy * 40));
 
-    const structure = [
-        { name: "intro", measures: 2 },
-        { name: "verse", measures: 4 },
-        { name: "chorus", measures: 4 },
-        { name: "outro", measures: 2 }
-    ];
+const complexity = imageParams?.complexity || 0.5;
+
+const structure = [
+    { name: "intro", measures: 4 },
+    { name: "verse", measures: 8 },
+    { name: "prechorus", measures: 4 },
+    { name: "chorus", measures: 8 },
+    { name: "verse", measures: 8 },
+    { name: "chorus", measures: 8 },
+    { name: "solo", measures: 8 }, 
+    { name: "chorus", measures: 8 },
+    { name: "outro", measures: 6 }
+];
+
+// Se la complessità è alta, raddoppiamo alcune sezioni
+if (complexity > 0.7) {
+    structure.splice(4, 0, { name: "verse", measures: 8 });
+    structure.splice(7, 0, { name: "bridge", measures: 4 });
+}
 
     return {
         tonalCenter,
