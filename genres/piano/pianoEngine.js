@@ -7,15 +7,25 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { progressions } from "../metal/metalTheory.js"; 
 import { waitForInstruments } from "../../common.js";
 
+console.log("pianoEngine.js ver. 001 loaded");
+
+
 export async function waitPianoInstruments() {
-    // Salamander è 1 strumento, ma carichiamo molti campioni. 
-    // Assicurati che registerInstrumentLoaded() sia chiamato in pianoInstruments.js
     await waitForInstruments(1);
 }
 
 export async function createPianoEngine(params) {
-    const rand = createSeededRandom(params.dna);
-    const bpm = params.rhythm.tempoProfile;
+    // 1. Controllo di sicurezza sui parametri
+    console.log("Parametri ricevuti:", params) 
+
+    if (!params || !params.rhythm || !params.rhythm.tempoProfile) {
+        console.warn("Parametri ritmici mancanti, uso default 120bpm");
+    }
+
+    const rand = createSeededRandom(params.dna || 12345);
+    const bpm = params.rhythm?.tempoProfile || 120; // Fallback a 120
+    
+    // Tone.js vuole un numero finito
     Tone.Transport.bpm.value = bpm;
 
     const structure = buildSongStructure(params.structure, bpm);
