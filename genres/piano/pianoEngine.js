@@ -1,4 +1,4 @@
-// pianoEngine.js — ver. 004
+// pianoEngine.js — ver. 005
 import * as Tone from "https://esm.sh/tone";
 import { piano } from "./pianoInstruments.js";
 import { buildPianoParams } from "./pianoParams.js";
@@ -9,27 +9,26 @@ import { progressions } from "../metal/metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
 export async function waitPianoInstruments() {
-    await waitForInstruments(1); // Salamander C5
+    await waitForInstruments(1);
 }
 
 export async function createPianoEngine(params) {
+    // 1. Setup iniziale deterministico
     const rand = createSeededRandom(params.dna);
-    
-    // Traduciamo i parametri grezzi in parametri specifici per piano
     const p = buildPianoParams(rand, params.imageParams);
 
-    // Configurazione Transport
+    // Fermiamo e puliamo tutto prima di rischedulare
+    Tone.Transport.stop();
+    Tone.Transport.cancel();
+    
     Tone.Transport.bpm.value = p.bpm;
 
-    // Costruzione timeline e scala
     const structure = buildSongStructure(p.structure, p.bpm);
     const scale = buildScaleFromTonic(p.tonalCenter, p.scaleType);
+    const measureDur = (60 / p.bpm) * 4;
 
-    const secondsPerBeat = 60 / p.bpm;
-    const measureDur = secondsPerBeat * 4;
-
+    // 2. Programmazione della Timeline
     structure.sections.forEach(section => {
-        // Scegliamo una progressione dalla teoria (condivisa col metal)
         const possibleProgs = progressions[section.name] || progressions.verse;
         const sectionProg = possibleProgs[Math.floor(rand() * possibleProgs.length)];
 
@@ -40,30 +39,31 @@ export async function createPianoEngine(params) {
                 const chordTime = measureStartTime + (i * (measureDur / sectionProg.length));
                 const duration = (measureDur / sectionProg.length) * 0.9;
                 
-                // 1. MANO SINISTRA: Nota singola (Basso)
                 const rootNote = getScaleDegree(scale, degreeToIndex(degree));
-                const bassNote = Tone.Frequency(rootNote).transpose(-12); // Un'ottava sotto
+                if (!rootNote) return;
 
-                // 2. MANO DESTRA: Accordo (Fondamentale, Terza, Quinta)
                 const chordNotes = [
                     getScaleDegree(scale, degreeToIndex(degree)),     
                     getScaleDegree(scale, degreeToIndex(degree) + 2), 
                     getScaleDegree(scale, degreeToIndex(degree) + 4)  
                 ];
 
+                // SCHEDULING CORRETTO: Programmiamo gli eventi PRIMA che parta il brano
+                // NOTA: Non usiamo callback annidati, ma programmiamo i trigger direttamente sulla timeline
+                
+                // Mano Sinistra
+                const bassNote = Tone.Frequency(rootNote).transpose(-12).toNote();
                 Tone.Transport.schedule((time) => {
-                    // Esegui LH (Mano Sinistra)
-                    piano.triggerAttackRelease(bassNote, duration, time, p.velocityBase * 1.1);
-
-                    // Esegui RH (Mano Destra)
-                    chordNotes.forEach((note, index) => {
-                        // Se p.useArpeggio è vero, ritarda le note (effetto arpeggio)
-                        // Il ritardo dipende dalla texture della foto
-                        const delay = p.useArpeggio ? index * (0.05 + p.texture * 0.1) : index * 0.02;
-                        
-                        piano.triggerAttackRelease(note, duration, time + delay, p.velocityBase * 0.8);
-                    });
+                    piano.triggerAttackRelease(bassNote, duration, time, p.velocityBase * 0.9);
                 }, chordTime);
+
+                // Mano Destra
+                chordNotes.forEach((note, index) => {
+                    const delay = p.useArpeggio ? index * 0.08 : 0;
+                    Tone.Transport.schedule((time) => {
+                        piano.triggerAttackRelease(note, duration, time, p.velocityBase * 0.6);
+                    }, chordTime + delay);
+                });
             });
         }
     });
@@ -71,6 +71,7 @@ export async function createPianoEngine(params) {
     return {
         totalDuration: structure.totalDuration,
         play: () => {
+            if (Tone.context.state !== 'running') Tone.context.resume();
             piano.releaseAll();
             Tone.Transport.start("+0.1");
         },
