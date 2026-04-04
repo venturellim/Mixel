@@ -1,16 +1,22 @@
-// metalEngine.js — ver. 025 (REBOOT)
+// metalEngine.js — ver. 026 (FINAL REBOOT)
 import * as Tone from "https://esm.sh/tone";
 import { buildPowerMetalParams } from "./powerMetalParams.js";
 import { buildSongStructure } from "../../utils/structureUtils.js";
 import { createSeededRandom } from "../../utils/randomUtils.js";
+
+// Importiamo dal nuovo file rinominato e spostato nelle utils
+import { generateSongProgressions, degreeToRoot } from "../../utils/musicTheory.js";
+
+// Importiamo gli strumenti dal tuo nuovo file metalInstruments.js
 import { metalInstruments, metalVolumeMap } from "./metalInstruments.js";
+
+// Il motore ritmico Stratovarius
 import { scheduleRhythm } from "./metalRhythmEngine.js";
-import { generateSongProgressions } from "../../utils/musicTheory.js";
+
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 001.2 loaded");
-
 export async function waitMetalInstruments() {
+    // Aspettiamo che i campioni siano caricati
     await waitForInstruments(4);
 }
 
@@ -18,15 +24,12 @@ export function createMetalEngine(params) {
     const rand = createSeededRandom(params.dna);
     const metalParams = buildPowerMetalParams(rand);
     
-    // --- FIX ERRORE MAP: Protezione Structure ---
-    // Se params.structure non è un array valido, creiamo noi una struttura standard
+    // 1. Protezione Structure (Fix errore .map)
     const safeStructure = (params.structure && Array.isArray(params.structure)) 
         ? params.structure 
         : [
             { name: "intro", measures: 4 },
             { name: "verse", measures: 8 },
-            { name: "chorus", measures: 8 },
-            { name: "bridge", measures: 4 },
             { name: "chorus", measures: 8 },
             { name: "outro", measures: 4 }
           ];
@@ -35,24 +38,40 @@ export function createMetalEngine(params) {
     Tone.Transport.cancel();
     Tone.Transport.bpm.value = metalParams.bpm;
 
-    // Ora usiamo safeStructure invece di params.structure
+    // 2. Generazione Struttura e Progressioni
     const structure = buildSongStructure(safeStructure, metalParams.bpm);
-    
     const progressions = generateSongProgressions(structure, params.imageParams, metalParams.tonalCenter, rand);
     
+    // 3. Scheduling delle sezioni
     structure.sections.forEach(sec => {
-        const sectionProg = progressions[sec.name];
-        // Nota: Assicurati che metalInstruments sia importato correttamente
-        scheduleRhythm(sec, sectionProg, metalInstruments, metalParams, rand);
+        const info = progressions[sec.name];
+        
+        // Estraiamo i gradi (es. ["i", "VI", "VII"])
+        const degrees = (info && info.progression) ? info.progression : ["i"];
+        
+        // Estraiamo la tonica della sezione (es. "A")
+        const sectionRoot = info.root || metalParams.tonalCenter[0] || "A";
+
+        // Convertiamo i gradi in note reali (es. "i" -> "A", "VI" -> "F")
+        // così il RhythmEngine riceve note vere da normalizzare
+        const realNotes = degrees.map(d => degreeToRoot(d, sectionRoot));
+
+        // Passiamo tutto al motore ritmico
+        scheduleRhythm(sec, realNotes, metalInstruments, metalParams, rand);
     });
 
     return {
         totalDuration: structure.totalDuration,
         play: () => Tone.Transport.start("+0.1"),
         pause: () => Tone.Transport.pause(),
-        stop: () => { Tone.Transport.stop(); Tone.Transport.seconds = 0; },
+        stop: () => { 
+            Tone.Transport.stop(); 
+            Tone.Transport.seconds = 0; 
+        },
         seek: (s) => Tone.Transport.seconds = s,
-        mixerData: { instruments: metalInstruments, volumeMap: metalVolumeMap }
+        mixerData: { 
+            instruments: metalInstruments, 
+            volumeMap: metalVolumeMap 
+        }
     };
 }
-
