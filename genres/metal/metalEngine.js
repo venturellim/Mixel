@@ -3,12 +3,12 @@ import * as Tone from "https://esm.sh/tone";
 import { buildPowerMetalParams } from "./powerMetalParams.js";
 import { buildSongStructure } from "../../utils/structureUtils.js";
 import { createSeededRandom } from "../../utils/randomUtils.js";
-import { instruments, volumeMap } from "./metalInstruments.js";
+import { metalInstruments, metalVolumeMap } from "./metalInstruments.js";
 import { scheduleRhythm } from "./metalRhythmEngine.js";
 import { generateSongProgressions } from "../../utils/musicTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 001.1 loaded");
+console.log("metalEngine.js ver. 001.2 loaded");
 
 export async function waitMetalInstruments() {
     await waitForInstruments(4);
@@ -52,7 +52,7 @@ export function createMetalEngine(params) {
         pause: () => Tone.Transport.pause(),
         stop: () => { Tone.Transport.stop(); Tone.Transport.seconds = 0; },
         seek: (s) => Tone.Transport.seconds = s,
-        mixerData: { instruments: metalInstruments, volumeMap: instrumentVolumeMap }
+        mixerData: { instruments: metalInstruments, volumeMap: metalVolumeMap }
     };
 }
 

@@ -8,7 +8,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("instruments.js ver. 006.1 loaded");
+console.log("instruments.js ver. 001 loaded");
 
 // ============================================================
 // 🎚 BUS SPECIFICI DEL METAL
@@ -409,6 +409,6 @@ export function normalizeNote(note, instrument) {
     return first;
 }
 
-export const instruments = { guitarPalm, guitarOpen, guitarLead, bass, drums, keyboardLead };
-export const volumeMap = instrumentVolumeMap;
+export const metalInstruments = { guitarPalm, guitarOpen, guitarLead, bass, drums, keyboardLead };
+export const metalVolumeMap = instrumentVolumeMap;
 
