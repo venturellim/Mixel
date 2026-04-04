@@ -601,10 +601,10 @@ export async function createMetalEngine(params) {
 
         seek(s) {
             Tone.Transport.seconds = s;
-        }
+        },
         mixerData: {
             instruments: metalInstruments,
             volumeMap: instrumentVolumeMap
-        },
+        }
     };
 }
