@@ -50,7 +50,7 @@ export async function createPianoEngine(params) {
         for (let m = 0; m < section.measures; m++) {
             const measureStartTime = section.startTime + (m * measureDur);
             
-            sectionProg.forEach((degree, i) => {
+sectionProg.forEach((degree, i) => {
                 const chordStartTime = measureStartTime + (i * (measureDur / sectionProg.length));
                 
                 // Note dell'accordo corrente
@@ -68,13 +68,28 @@ export async function createPianoEngine(params) {
                 for (let s = 0; s < 8; s++) {
                     const stepTime = chordStartTime + (s * step8n);
                     
-                    // --- MANO SINISTRA (LH) ---
-                    if (s === 0 || (s === 4 && section.name !== "intro")) {
-                        const noteLH = Tone.Frequency(chordNotes[0]).transpose(-12).toNote();
-                        Tone.Transport.schedule((time) => {
-                            piano.triggerAttackRelease(noteLH, "2n", time, 0.4 * lhBus.gain.value);
-                        }, stepTime);
-                    }
+                    // --- MANO SINISTRA (LH) EVOLUTA ---
+const lhPattern = getLHPattern(section.name, rand, p.complexity);
+
+if (lhPattern[s] > 0) {
+    const isDoubleHit = (s === 3 || s === 7) && rand() > 0.7; // Raddoppio casuale
+    const noteLH = Tone.Frequency(rootNote).transpose(-12).toNote();
+    const octaveLH = Tone.Frequency(rootNote).transpose(-24).toNote(); // Ottava ancora più bassa
+
+    Tone.Transport.schedule((time) => {
+        const finalVel = Math.max(0.05, dynamicVel * 0.6 * lhBus.gain.value);
+        
+        // Alternanza ottave per dare profondità
+        const noteToPlay = (s === 0) ? octaveLH : noteLH;
+        
+        piano.triggerAttackRelease(noteToPlay, "2n", time, finalVel);
+
+        // Se è un raddoppio, suona una nota rapida subito dopo
+        if (isDoubleHit) {
+            piano.triggerAttackRelease(noteToPlay, "16n", time + (step8n / 2), finalVel * 0.7);
+        }
+    }, stepTime);
+}
 
                     // --- MANO DESTRA (RH) ---
                     let noteToPlay = null;
