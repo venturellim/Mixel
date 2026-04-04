@@ -5,7 +5,7 @@ import { buildSongStructure } from "../../utils/structureUtils.js";
 import { createSeededRandom } from "../../utils/randomUtils.js";
 import { instruments, volumeMap } from "./metalInstruments.js";
 import { scheduleRhythm } from "./metalRhythmEngine.js";
-import { generateSongProgressions } from "./metalTheory.js";
+import { generateSongProgressions } from "../../utils/musicTheory.js";
 import { waitForInstruments } from "../../common.js";
 
 console.log("metalEngine.js ver. 001 loaded");
