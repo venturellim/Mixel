@@ -1,18 +1,22 @@
-// pianoInstruments.js - FIX VER 001.2
+// pianoInstruments.js - VER 014 (Multi-Bus)
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded } from "../../common.js";
 
-console.log("pianoInstruments.js ver. 001.2 loaded");
+console.log("pianoInstruments.js ver. 014 loaded");
 
-// 1. Creiamo prima il Bus e gli Effetti
+// 1. Bus Principale e Effetti
 export const pianoBus = new Tone.Gain(1).connect(masterEQ);
+
+// 2. Bus Specifici per le Mani
+export const lhBus = new Tone.Gain(1).connect(pianoBus); // Canale Sinistra
+export const rhBus = new Tone.Gain(1).connect(pianoBus); // Canale Destra
 
 const pianoReverb = new Tone.Reverb({
     decay: 3.5,
     wet: 0.35
 }).connect(pianoBus);
 
-// 2. Creiamo il campionatore (Senza chiamare .connect(pianoBus) subito fuori)
+// 3. Campionatore Salamander C5
 export const piano = new Tone.Sampler({
     urls: {
         "A0": "A0.mp3", "C1": "C1.mp3", "D#1": "Ds1.mp3", "F#1": "Fs1.mp3",
@@ -27,20 +31,20 @@ export const piano = new Tone.Sampler({
     baseUrl: "https://tonejs.github.io/audio/salamander/",
     onload: () => {
         registerInstrumentLoaded();
-        console.log("🎹 Salamander C5 caricato correttamente");
+        console.log("🎹 Salamander C5 caricato");
     }
-}).connect(pianoReverb); // Connettiamo al riverbero che va al bus
+}).connect(pianoReverb);
 
-// 3. Esportiamo gli oggetti per il Mixer (DOPO che tutto è stato dichiarato)
+// 4. Interfaccia per il Mixer Dinamico
 export const pianoInstruments = {
     setVolume: (busName, dbValue) => {
-        if (busName === "piano") {
-            // Usiamo Tone.dbToGain per convertire i dB dello slider in guadagno reale
-            pianoBus.gain.rampTo(Tone.dbToGain(dbValue), 0.1);
-        }
+        const gain = Tone.dbToGain(dbValue);
+        if (busName === "pianoLH") lhBus.gain.rampTo(gain, 0.1);
+        if (busName === "pianoRH") rhBus.gain.rampTo(gain, 0.1);
     }
 };
 
 export const pianoVolumeMap = {
-    piano: "Pianoforte"
+    pianoLH: "Piano (Bassi/SX)",
+    pianoRH: "Piano (Melodia/DX)"
 };
