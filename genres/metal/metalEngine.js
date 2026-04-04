@@ -9,6 +9,7 @@ import { buildPowerMetalParams } from "./powerMetalParams.js";
 import { buildSongStructure } from "../../utils/structureUtils.js";
 import { buildScaleFromTonic } from "../../utils/scaleUtils.js";
 import { createSeededRandom } from "../../utils/randomUtils.js";
+import { metalInstruments, instrumentVolumeMap } from "./instruments.js";
 
 import { initRiffEngine } from "./riffEngine.js";
 import { initLeadEngine } from "./leadEngine.js";
@@ -24,7 +25,7 @@ import
 { generateSongProgressions } from "./metalTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 023.2 loaded");
+console.log("metalEngine.js ver. 023.3 loaded");
 
 // ============================================================
 // 🎧 LOADER STRUMENTI METAL
@@ -602,5 +603,9 @@ export async function createMetalEngine(params) {
         seek(s) {
             Tone.Transport.seconds = s;
         }
+        mixerData: {
+            instruments: metalInstruments,
+            volumeMap: instrumentVolumeMap
+        },
     };
 }
