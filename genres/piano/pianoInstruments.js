@@ -1,19 +1,18 @@
-// pianoInstruments.js
+// pianoInstruments.js - FIX VER 001.2
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded } from "../../common.js";
 
-console.log("pianoInstruments.js ver. 001 loaded");
+console.log("pianoInstruments.js ver. 001.2 loaded");
 
-// Bus dedicato per pulire le frequenze del piano
+// 1. Creiamo prima il Bus e gli Effetti
 export const pianoBus = new Tone.Gain(1).connect(masterEQ);
 
-// Un riverbero generoso per il Gran Coda
 const pianoReverb = new Tone.Reverb({
     decay: 3.5,
     wet: 0.35
 }).connect(pianoBus);
 
-// Il campionatore Salamander C5
+// 2. Creiamo il campionatore (Senza chiamare .connect(pianoBus) subito fuori)
 export const piano = new Tone.Sampler({
     urls: {
         "A0": "A0.mp3", "C1": "C1.mp3", "D#1": "Ds1.mp3", "F#1": "Fs1.mp3",
@@ -25,9 +24,23 @@ export const piano = new Tone.Sampler({
         "A7": "A7.mp3", "C8": "C8.mp3"
     },
     release: 1.2,
-    baseUrl: "https://tonejs.github.io/audio/salamander/", // O il tuo path locale
+    baseUrl: "https://tonejs.github.io/audio/salamander/",
     onload: () => {
         registerInstrumentLoaded();
         console.log("🎹 Salamander C5 caricato correttamente");
     }
-}).connect(pianoReverb);
+}).connect(pianoReverb); // Connettiamo al riverbero che va al bus
+
+// 3. Esportiamo gli oggetti per il Mixer (DOPO che tutto è stato dichiarato)
+export const pianoInstruments = {
+    setVolume: (busName, dbValue) => {
+        if (busName === "piano") {
+            // Usiamo Tone.dbToGain per convertire i dB dello slider in guadagno reale
+            pianoBus.gain.rampTo(Tone.dbToGain(dbValue), 0.1);
+        }
+    }
+};
+
+export const pianoVolumeMap = {
+    piano: "Pianoforte"
+};
