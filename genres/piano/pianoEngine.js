@@ -1,5 +1,5 @@
 // ==========================================
-// pianoEngine.js — ver. 014 (MELODIC & TWO HANDS)
+// pianoEngine.js — ver. 015 (THEMATIC ENGINE)
 // ==========================================
 import * as Tone from "https://esm.sh/tone";
 import { piano, pianoInstruments, pianoVolumeMap, lhBus, rhBus } from "./pianoInstruments.js";
@@ -10,17 +10,16 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { progressions } from "../../utils/musicTheory.js"; 
 import { waitForInstruments } from "../../common.js";
 
-console.log("🎹 pianoEngine v014: Independent Volume Logic");
+console.log("🎹 pianoEngine v015: Thematic Motto Active");
 
-const PIANO_INTERPRETER = {
-    "pm_sparse":    { lh: [1, 0, 0, 0, 0, 0, 0, 0], rh: [1, 0, 0, 0, 0, 0, 0, 0] },
-    "pm_groove":    { lh: [1, 0, 0.7, 0, 1, 0, 0.7, 0], rh: [0, 0, 1, 0, 0, 0, 1, 0] },
-    "open_epic":    { lh: [1, 0, 0, 0, 1, 0, 0, 0], rh: [1, 0.6, 0.8, 0.6, 1, 0.6, 0.8, 0.6] },
-    "default":      { lh: [1, 0, 0.8, 0, 1, 0, 0.8, 0], rh: [1, 0.5, 1, 0.5, 1, 0.5, 1, 0.5] }
-};
-
-export async function waitPianoInstruments() {
-    await waitForInstruments(1);
+// Funzione interna per generare il "Motto" melodico della foto
+function generateMotto(rand) {
+    const motto = [];
+    // Creiamo una sequenza di 4 indici della scala (es. 0, 2, 4, 3)
+    for (let i = 0; i < 4; i++) {
+        motto.push(Math.floor(rand() * 7)); 
+    }
+    return motto;
 }
 
 export async function createPianoEngine(params) {
@@ -31,84 +30,73 @@ export async function createPianoEngine(params) {
     Tone.Transport.cancel();
     Tone.Transport.bpm.value = p.bpm;
 
-    const sustainValue = (params.imageParams.brightness > 0.7) ? 2.5 : 1.5; 
-    piano.set({ release: sustainValue });
-    
-    const humanTouch = params.imageParams.complexity * 0.2; 
     const structure = buildSongStructure(p.structure, p.bpm);
     const scale = buildScaleFromTonic(p.tonalCenter, p.scaleType);
     const measureDur = (60 / p.bpm) * 4;
     const step8n = measureDur / 8;
 
+    // --- GENERAZIONE DEL TEMA UNICO ---
+    const mottoIndices = generateMotto(rand); 
     let lastNoteIdx = 1; 
 
     structure.sections.forEach(section => {
         const possibleProgs = progressions[section.name] || progressions.verse;
         const sectionProg = possibleProgs[Math.floor(rand() * possibleProgs.length)];
-        const halfMeasures = Math.ceil(section.measures / 2);
 
         for (let m = 0; m < section.measures; m++) {
-            const isSecondHalf = m >= halfMeasures;
             const measureStartTime = section.startTime + (m * measureDur);
-
-            let styleName = section.name === "chorus" ? "open_epic" : "pm_groove";
-            if (section.name === "intro") styleName = isSecondHalf ? "pm_groove" : "pm_sparse";
-            const style = PIANO_INTERPRETER[styleName] || PIANO_INTERPRETER.default;
-
-            let octaveOffset = (section.name === "chorus" || (section.name === "intro" && isSecondHalf)) ? 12 : 0;
-
+            
             sectionProg.forEach((degree, i) => {
                 const chordStartTime = measureStartTime + (i * (measureDur / sectionProg.length));
-                const chordDuration = (measureDur / sectionProg.length);
-                const stepsInChord = Math.floor(chordDuration / step8n);
                 
-                const rootNote = getScaleDegree(scale, degreeToIndex(degree));
-                if (!rootNote) return;
-
+                // Note dell'accordo corrente
                 const chordNotes = [
                     getScaleDegree(scale, degreeToIndex(degree)),     
                     getScaleDegree(scale, degreeToIndex(degree) + 2), 
                     getScaleDegree(scale, degreeToIndex(degree) + 4)  
-                ].map(n => Tone.Frequency(n).transpose(octaveOffset).toNote());
+                ].map(n => Tone.Frequency(n).transpose(section.name === "chorus" ? 12 : 0).toNote());
 
-                for (let s = 0; s < stepsInChord; s++) {
+                // Note del TEMA adattate all'accordo (Motto)
+                const mottoNotes = mottoIndices.map(idx => 
+                    Tone.Frequency(getScaleDegree(scale, degreeToIndex(degree) + idx)).transpose(12).toNote()
+                );
+
+                for (let s = 0; s < 8; s++) {
                     const stepTime = chordStartTime + (s * step8n);
-                    const patternIdx = s % 8;
-
-                    if (section.name === "intro" && s > 0 && rand() > 0.6) continue;
-
+                    
                     // --- MANO SINISTRA (LH) ---
-                    if (style.lh[patternIdx] > 0) {
-                        // Velocity moltiplicata per il guadagno del bus LH
-                        const dynamicVel = (p.velocityBase * style.lh[patternIdx]) + ((rand() - 0.5) * humanTouch);
-                        const noteLH = Tone.Frequency(rootNote).transpose(-12).toNote();
-                        
+                    if (s === 0 || (s === 4 && section.name !== "intro")) {
+                        const noteLH = Tone.Frequency(chordNotes[0]).transpose(-12).toNote();
                         Tone.Transport.schedule((time) => {
-                            const finalVel = Math.max(0.05, dynamicVel * 0.7 * lhBus.gain.value);
-                            piano.triggerAttackRelease(noteLH, "2n", time, finalVel);
+                            piano.triggerAttackRelease(noteLH, "2n", time, 0.4 * lhBus.gain.value);
                         }, stepTime);
                     }
 
-                    // --- MANO DESTRA (RH - Melodia Fluida) ---
-                    let canPlayRH = true;
-                    if (section.name === "intro" && !isSecondHalf) canPlayRH = rand() > 0.8;
+                    // --- MANO DESTRA (RH) ---
+                    let noteToPlay = null;
+                    let vel = 0.5;
 
-                    if (canPlayRH) {
-                        const isPatternActive = style.rh[patternIdx] > 0;
-                        if (isPatternActive || rand() > 0.6) {
+                    // LOGICA TEMATICA: Intro e Outro suonano il Motto
+                    if (section.name === "intro" || section.name === "outro" || section.name === "prechorus") {
+                        if (s % 2 === 0) { // Suona il tema ogni 2 ottavi
+                            noteToPlay = mottoNotes[(s / 2) % mottoNotes.length];
+                            vel = 0.6;
+                        }
+                    } else {
+                        // Chorus e Verse: Logica fluida solita (Punto 1)
+                        if (rand() > 0.4) {
                             const move = rand() > 0.5 ? 1 : -1;
                             lastNoteIdx = Math.max(0, Math.min(2, lastNoteIdx + move));
-                            
-                            const note = chordNotes[lastNoteIdx];
-                            const microDelay = rand() * 0.015; 
-                            const dynamicVelBase = ((p.velocityBase * (style.rh[patternIdx] || 0.6)) + ((rand() - 0.5) * humanTouch));
-                            
-                            Tone.Transport.schedule((time) => {
-                                // Velocity moltiplicata per il guadagno del bus RH
-                                const finalVel = Math.max(0.05, dynamicVelBase * 0.9 * rhBus.gain.value);
-                                piano.triggerAttackRelease(note, "1n", time + microDelay, finalVel);
-                            }, stepTime);
+                            noteToPlay = chordNotes[lastNoteIdx];
+                            vel = 0.4;
                         }
+                    }
+
+                    if (noteToPlay) {
+                        const microDelay = rand() * 0.015;
+                        Tone.Transport.schedule((time) => {
+                            piano.triggerAttackRelease(noteToPlay, "1n", time + microDelay, vel * rhBus.gain.value);
+                        }, stepTime);
                     }
                 }
             });
@@ -117,22 +105,11 @@ export async function createPianoEngine(params) {
 
     return {
         totalDuration: structure.totalDuration,
-        play: () => {
-            if (Tone.context.state !== 'running') Tone.context.resume();
-            piano.releaseAll();
-            Tone.Transport.start("+0.1");
-        },
+        play: () => { Tone.Transport.start("+0.1"); },
         pause: () => Tone.Transport.pause(),
-        stop: () => {
-            Tone.Transport.stop();
-            Tone.Transport.cancel();
-            piano.releaseAll();
-        },
+        stop: () => { Tone.Transport.stop(); Tone.Transport.cancel(); },
         seek: (s) => Tone.Transport.seconds = s,
-        mixerData: {
-            instruments: pianoInstruments,
-            volumeMap: pianoVolumeMap
-        }
+        mixerData: { instruments: pianoInstruments, volumeMap: pianoVolumeMap }
     };
 }
 
