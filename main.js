@@ -8,12 +8,11 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-import { metalInstruments, instrumentVolumeMap } from "./genres/metal/instruments.js";
 import { createPianoEngine, waitPianoInstruments } 
 from "./genres/piano/pianoEngine.js";
 import { masterEQ, } from "./common.js";
 
-console.log("main.js ver. 004.2 loaded");
+console.log("main.js ver. 005 loaded");
 
 // -------------------------------------------------------------
 // Import fondamentali
@@ -194,7 +193,7 @@ if (genre === "piano") {
     // 4) UI del genere
     initPlayerUI();
     drawSpectrum();
-    initFxPanel();
+    initFxPanel(currentEngine.mixerData);
 
     document.getElementById("genrePanel").classList.remove("show");
 }
@@ -325,7 +324,7 @@ function drawSpectrum() {
 // FX Panel
 // -------------------------------------------------------------
 
-function initFxPanel() {
+function initFxPanel(mixerData) {
     const fxPanel = document.getElementById("fxPanel");
     const btnFxPanel = document.getElementById("btnFxPanel");
     const closeFxPanel = document.getElementById("closeFxPanel");
@@ -364,7 +363,7 @@ function initFxPanel() {
     title.textContent = "Volumi Strumenti";
     volumeContainer.appendChild(title);
 
-    Object.entries(instrumentVolumeMap).forEach(([busName, label]) => {
+    Object.entries(mixerData.volumeMap).forEach(([busName, label]) => {
 
         const row = document.createElement("div");
         row.classList.add("fx-row");
@@ -380,7 +379,7 @@ function initFxPanel() {
         slider.dataset.bus = busName;
 
         slider.addEventListener("input", e => {
-            metalInstruments.setVolume(busName, Number(e.target.value));
+            mixerData.instruments.setVolume(busName, Number(e.target.value));
         });
 
         // --- SOLO ---
@@ -389,13 +388,13 @@ function initFxPanel() {
         btnSolo.classList.add("fx-btn");
 
         btnSolo.addEventListener("click", () => {
-            Object.keys(instrumentVolumeMap).forEach(otherBus => {
+            Object.keys(mixerData.volumeMap).forEach(otherBus => {
                 const otherSlider = volumeContainer.querySelector(`input[data-bus="${otherBus}"]`);
                 if (otherBus === busName) {
-                    metalInstruments.setVolume(otherBus, 0);
+                    mixerData.instruments.setVolume(otherBus, 0);
                     if (otherSlider) otherSlider.value = 0;
                 } else {
-                    metalInstruments.setVolume(otherBus, -99);
+                    mixerData.instruments.setVolume(otherBus, -99);
                     if (otherSlider) otherSlider.value = -24;
                 }
             });
@@ -407,7 +406,7 @@ function initFxPanel() {
         btnMute.classList.add("fx-btn");
 
         btnMute.addEventListener("click", () => {
-            metalInstruments.setVolume(busName, -99);
+            mixerData.instruments.setVolume(busName, -99);
             slider.value = -24;
         });
 
