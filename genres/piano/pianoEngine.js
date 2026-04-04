@@ -10,8 +10,11 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { progressions } from "../../utils/musicTheory.js"; 
 import { waitForInstruments } from "../../common.js";
 
-console.log("🎹 pianoEngine v016: Advanced LH Groove & Broken Octaves");
+console.log("pianoEngine.js ver. 016.1 loaded");
 
+export async function waitPianoInstruments() {
+    await waitForInstruments(1);
+}
 // Genera il "Motto" melodico unico per la foto
 function generateMotto(rand) {
     const motto = [];
