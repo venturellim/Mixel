@@ -2,7 +2,7 @@
 // pianoEngine.js — ver. 012 (FLUID LOGIC)
 // ==========================================
 import * as Tone from "https://esm.sh/tone";
-import { piano } from "./pianoInstruments.js";
+import { piano, pianoInstruments, pianoVolumeMap } from "./pianoInstruments.js";
 import { buildPianoParams } from "./pianoParams.js";
 import { createSeededRandom } from "../../utils/randomUtils.js";
 import { buildSongStructure } from "../../utils/structureUtils.js";
@@ -128,6 +128,10 @@ export async function createPianoEngine(params) {
             Tone.Transport.cancel();
             piano.releaseAll();
         }
+        mixerData: {
+            instruments: pianoInstruments,
+            volumeMap: pianoVolumeMap
+        },
     };
 }
 
