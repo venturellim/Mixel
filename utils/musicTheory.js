@@ -1,9 +1,9 @@
-// metalTheory.js — ver. 004
+// metalTheory.js — ver. 001
 // Sistema armonico centrale, vincolo: SOLO note naturali C2–B2
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("metalTheory.js ver. 004 loaded");
+console.log("musicTheory.js ver. 001 loaded");
 
 // ============================================================
 // 1) PROGRESSIONI (in gradi)
