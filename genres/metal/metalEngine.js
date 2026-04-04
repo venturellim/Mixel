@@ -3,7 +3,6 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-import { metalInstruments } from "./instruments.js";
 import { buildPowerMetalParams } from "./powerMetalParams.js";
 
 import { buildSongStructure } from "../../utils/structureUtils.js";
