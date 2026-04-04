@@ -365,31 +365,6 @@ function wrapPlayer(name, player) {
     wrapPlayer("drums."+key, drums.player(key));
 });
 
-export const metalInstruments = {
-    guitarPalm,
-    guitarOpen,
-    guitarLead,
-    bass,
-    drums,
-    keyboardLead,
-
-    guitarBus,
-    bassBus,
-    drumBus,
-    leadBus,
-    keyboardBus,
-
-    setVolume
-};
-
-export const instrumentVolumeMap = {
-    guitar: "Chitarre",
-    bass: "Basso",
-    drums: "Batteria",
-    lead: "Lead",
-    keyboard: "keyboard"
-};
-
 export function normalizeNote(note, instrument) {
     if (!note || typeof note !== "string") return "A";
     const first = note[0].toUpperCase();
@@ -409,6 +384,27 @@ export function normalizeNote(note, instrument) {
     return first;
 }
 
-export const metalInstruments = { guitarPalm, guitarOpen, guitarLead, bass, drums, keyboardLead };
-export const metalVolumeMap = instrumentVolumeMap;
+export const metalInstruments = {
+    guitarPalm,
+    guitarOpen,
+    guitarLead,
+    bass,
+    drums,
+    keyboardLead,
 
+    guitarBus,
+    bassBus,
+    drumBus,
+    leadBus,
+    keyboardBus,
+
+    setVolume
+};
+
+export const metalVolumeMap = {
+    guitar: "Chitarre",
+    bass: "Basso",
+    drums: "Batteria",
+    lead: "Lead",
+    keyboard: "keyboard"
+};
