@@ -10,7 +10,11 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { progressions } from "../../utils/musicTheory.js"; 
 import { waitForInstruments } from "../../common.js";
 
-console.log("🎹 pianoEngine v015: Thematic Motto Active");
+console.log("pianoEngine.js ver. 015 loaded");
+
+export async function waitPianoInstruments() {
+    await waitForInstruments(1);
+}
 
 // Funzione interna per generare il "Motto" melodico della foto
 function generateMotto(rand) {
