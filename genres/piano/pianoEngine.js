@@ -1,5 +1,5 @@
 // ==========================================
-// pianoEngine.js — ver. 016 (ADVANCED LH GROOVE)
+// pianoEngine.js — ver. 017 (RUBATO & HUMAN AGOGICS)
 // ==========================================
 import * as Tone from "https://esm.sh/tone";
 import { piano, pianoInstruments, pianoVolumeMap, lhBus, rhBus } from "./pianoInstruments.js";
@@ -10,34 +10,28 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { progressions } from "../../utils/musicTheory.js"; 
 import { waitForInstruments } from "../../common.js";
 
-console.log("pianoEngine.js ver. 016.1 loaded");
+console.log("pianoEngine.js ver. 017 loaded");
 
 export async function waitPianoInstruments() {
     await waitForInstruments(1);
 }
-// Genera il "Motto" melodico unico per la foto
+
 function generateMotto(rand) {
     const motto = [];
     for (let i = 0; i < 4; i++) motto.push(Math.floor(rand() * 7)); 
     return motto;
 }
 
-// Ritorna il pattern ritmico per la mano sinistra in base alla sezione
 function getLHPattern(sectionName, stepIdx, rand, complexity) {
-    // Pattern di base (1 = colpo, 0 = pausa)
     const patterns = {
-        intro:  [1, 0, 0, 0, 0, 0, 0, 0], // Solo l'uno
-        verse:  [1, 0, 0, 0, 1, 0, 0, 0], // 1 e 5
-        chorus: [1, 0, 1, 0, 1, 0, 1, 0], // In ottavi
+        intro:  [1, 0, 0, 0, 0, 0, 0, 0],
+        verse:  [1, 0, 0, 0, 1, 0, 0, 0],
+        chorus: [1, 0, 1, 0, 1, 0, 1, 0],
         outro:  [1, 0, 0, 0, 0, 0, 0, 0]  
     };
     const base = patterns[sectionName] || patterns.verse;
     let hit = base[stepIdx];
-
-    // Se la foto è complessa, aggiungiamo colpi extra nel Verse/Chorus
-    if (hit === 0 && complexity > 0.6 && (stepIdx === 2 || stepIdx === 6) && rand() > 0.8) {
-        hit = 0.6; // Colpo fantasma (più leggero)
-    }
+    if (hit === 0 && complexity > 0.6 && (stepIdx === 2 || stepIdx === 6) && rand() > 0.8) hit = 0.6;
     return hit;
 }
 
@@ -57,6 +51,10 @@ export async function createPianoEngine(params) {
     const mottoIndices = generateMotto(rand); 
     let lastNoteIdx = 1; 
 
+    // Parametri per il Rubato (Agogica)
+    const rubatoIntensity = params.imageParams.complexity * 0.05; // Quanto "oscilla" il tempo
+    const swingFactor = params.imageParams.saturation * 0.15;   // Ritmo più o meno "saltellante"
+
     structure.sections.forEach(section => {
         const possibleProgs = progressions[section.name] || progressions.verse;
         const sectionProg = possibleProgs[Math.floor(rand() * possibleProgs.length)];
@@ -64,6 +62,9 @@ export async function createPianoEngine(params) {
         for (let m = 0; m < section.measures; m++) {
             const measureStartTime = section.startTime + (m * measureDur);
             
+            // Ritardando naturale a fine sezione
+            const isClosingMeasure = (m === section.measures - 1);
+
             sectionProg.forEach((degree, i) => {
                 const chordStartTime = measureStartTime + (i * (measureDur / sectionProg.length));
                 
@@ -78,25 +79,28 @@ export async function createPianoEngine(params) {
                 );
 
                 for (let s = 0; s < 8; s++) {
-                    const stepTime = chordStartTime + (s * step8n);
+                    // LOGICA RUBATO: Spostamento temporale micro-variabile
+                    // Lo swing sposta leggermente i passi pari (2, 4, 6, 8)
+                    const isEvenStep = s % 2 !== 0;
+                    const swingOffset = isEvenStep ? (step8n * swingFactor) : 0;
+                    
+                    // L'onda di Rubato (accelera/decelera durante la misura)
+                    const waveRubato = Math.sin((s / 8) * Math.PI) * rubatoIntensity;
+                    
+                    // Ritardando finale (allunga il tempo negli ultimi battiti della sezione)
+                    const ritardando = (isClosingMeasure && s > 4) ? (s - 4) * 0.03 : 0;
+
+                    const stepTime = chordStartTime + (s * step8n) + swingOffset + waveRubato + ritardando;
                     
                     // --- MANO SINISTRA (LH) ---
                     const lhHit = getLHPattern(section.name, s, rand, p.complexity);
                     if (lhHit > 0) {
                         const isFirstHit = s === 0;
-                        const isDoubleHit = (s === 3 || s === 7) && rand() > 0.7 && p.complexity > 0.5;
-
-                        // Ottava spezzata: il primo colpo è bassissimo
                         const noteLH = Tone.Frequency(chordNotes[0]).transpose(isFirstHit ? -24 : -12).toNote();
 
                         Tone.Transport.schedule((time) => {
                             const vel = 0.4 * lhHit * lhBus.gain.value;
                             piano.triggerAttackRelease(noteLH, isFirstHit ? "1n" : "2n", time, vel);
-
-                            if (isDoubleHit) {
-                                // Il "ta-tam" ritmico
-                                piano.triggerAttackRelease(noteLH, "16n", time + (step8n/2), vel * 0.6);
-                            }
                         }, stepTime);
                     }
 
@@ -119,9 +123,12 @@ export async function createPianoEngine(params) {
                     }
 
                     if (noteToPlay) {
-                        const microDelay = rand() * 0.015;
+                        // Human touch sulla velocity basato sulla posizione ritmica
+                        const accent = (s === 0 || s === 4) ? 1.2 : 0.8;
+                        const microDelay = rand() * 0.01; // Ridotto perché ora c'è il rubato
+
                         Tone.Transport.schedule((time) => {
-                            piano.triggerAttackRelease(noteToPlay, "1n", time + microDelay, rhVel * rhBus.gain.value);
+                            piano.triggerAttackRelease(noteToPlay, "1n", time + microDelay, rhVel * accent * rhBus.gain.value);
                         }, stepTime);
                     }
                 }
