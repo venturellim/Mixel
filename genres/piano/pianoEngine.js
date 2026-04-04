@@ -1,5 +1,5 @@
 // ==========================================
-// pianoEngine.js — ver. 012 (FLUID LOGIC)
+// pianoEngine.js — ver. 013 (MELODIC & MIXER)
 // ==========================================
 import * as Tone from "https://esm.sh/tone";
 import { piano, pianoInstruments, pianoVolumeMap } from "./pianoInstruments.js";
@@ -7,16 +7,16 @@ import { buildPianoParams } from "./pianoParams.js";
 import { createSeededRandom } from "../../utils/randomUtils.js";
 import { buildSongStructure } from "../../utils/structureUtils.js";
 import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
-import { progressions } from "../../utils/musicTheory.js"; // Già puntato alla nuova utility!
+import { progressions } from "../../utils/musicTheory.js"; 
 import { waitForInstruments } from "../../common.js";
 
-console.log("🎹 pianoEngine v012: Fluid Logic (No Scatti)");
+console.log("🎹 pianoEngine v013: Melodic Movement & Mixer Active");
 
 const PIANO_INTERPRETER = {
-    "pm_sparse":    { lh: [1, 0, 0, 0, 0, 0, 0, 0], rh: [1, 0, 0, 0, 0, 0, 0, 0], type: "static" },
-    "pm_groove":    { lh: [1, 0, 0.7, 0, 1, 0, 0.7, 0], rh: [0, 0, 1, 0, 0, 0, 1, 0], type: "arpeggio" },
-    "open_epic":    { lh: [1, 0, 0, 0, 1, 0, 0, 0], rh: [1, 0.6, 0.8, 0.6, 1, 0.6, 0.8, 0.6], type: "arpeggio" },
-    "default":      { lh: [1, 0, 0.8, 0, 1, 0, 0.8, 0], rh: [1, 0.5, 1, 0.5, 1, 0.5, 1, 0.5], type: "arpeggio" }
+    "pm_sparse":    { lh: [1, 0, 0, 0, 0, 0, 0, 0], rh: [1, 0, 0, 0, 0, 0, 0, 0] },
+    "pm_groove":    { lh: [1, 0, 0.7, 0, 1, 0, 0.7, 0], rh: [0, 0, 1, 0, 0, 0, 1, 0] },
+    "open_epic":    { lh: [1, 0, 0, 0, 1, 0, 0, 0], rh: [1, 0.6, 0.8, 0.6, 1, 0.6, 0.8, 0.6] },
+    "default":      { lh: [1, 0, 0.8, 0, 1, 0, 0.8, 0], rh: [1, 0.5, 1, 0.5, 1, 0.5, 1, 0.5] }
 };
 
 export async function waitPianoInstruments() {
@@ -27,22 +27,21 @@ export async function createPianoEngine(params) {
     const rand = createSeededRandom(params.dna);
     const p = buildPianoParams(rand, params.imageParams);
 
-    // 1. SETUP BPM FISSO (Stabile)
     Tone.Transport.stop();
     Tone.Transport.cancel();
     Tone.Transport.bpm.value = p.bpm;
 
-    // Sustain più naturale per il telefono
     const sustainValue = (params.imageParams.brightness > 0.7) ? 2.5 : 1.5; 
     piano.set({ release: sustainValue });
-    piano.volume.value = -3; // Leggermente più alto per il telefono
     
     const humanTouch = params.imageParams.complexity * 0.2; 
-
     const structure = buildSongStructure(p.structure, p.bpm);
     const scale = buildScaleFromTonic(p.tonalCenter, p.scaleType);
     const measureDur = (60 / p.bpm) * 4;
     const step8n = measureDur / 8;
+
+    // --- LOGICA PUNTO 1: MEMORIA MELODICA ---
+    let lastNoteIdx = 1; // Inizia dalla nota centrale dell'accordo
 
     structure.sections.forEach(section => {
         const possibleProgs = progressions[section.name] || progressions.verse;
@@ -77,21 +76,18 @@ export async function createPianoEngine(params) {
                     const stepTime = chordStartTime + (s * step8n);
                     const patternIdx = s % 8;
 
-                    // Pausa intelligente (meno drastica della v011)
                     if (section.name === "intro" && s > 0 && rand() > 0.6) continue;
 
-                    // --- MANO SINISTRA (Solida) ---
+                    // --- MANO SINISTRA ---
                     if (style.lh[patternIdx] > 0) {
                         const dynamicVel = (p.velocityBase * style.lh[patternIdx]) + ((rand() - 0.5) * humanTouch);
                         const noteLH = Tone.Frequency(rootNote).transpose(-12).toNote();
-
                         Tone.Transport.schedule((time) => {
-                            // Bassi un filo più corti per evitare fango sonoro
                             piano.triggerAttackRelease(noteLH, "2n", time, Math.max(0.1, dynamicVel * 0.8));
                         }, stepTime);
                     }
 
-                    // --- MANO DESTRA (Umanizzata ma a tempo) ---
+                    // --- MANO DESTRA (Melodia Fluida) ---
                     let canPlayRH = true;
                     if (section.name === "intro" && !isSecondHalf) canPlayRH = rand() > 0.8;
 
@@ -99,14 +95,16 @@ export async function createPianoEngine(params) {
                         const isPatternActive = style.rh[patternIdx] > 0;
                         if (isPatternActive || rand() > 0.6) {
                             
-                            // Micro-ritardo casuale (solo 5-15ms), non rompe il loop
+                            // Logica di movimento Punto 1:
+                            // Invece di una nota a caso, ci spostiamo di un passo sopra o sotto l'ultima
+                            const move = rand() > 0.5 ? 1 : -1;
+                            lastNoteIdx = Math.max(0, Math.min(2, lastNoteIdx + move));
+                            
+                            const note = chordNotes[lastNoteIdx];
                             const microDelay = rand() * 0.015; 
                             const dynamicVelBase = ((p.velocityBase * (style.rh[patternIdx] || 0.6)) + ((rand() - 0.5) * humanTouch));
-
-                            const note = chordNotes[Math.floor(rand() * chordNotes.length)];
                             
                             Tone.Transport.schedule((time) => {
-                                // Nota lunga ma con release controllata dal campionatore
                                 piano.triggerAttackRelease(note, "1n", time + microDelay, Math.max(0.05, dynamicVelBase * 0.5));
                             }, stepTime);
                         }
@@ -123,15 +121,21 @@ export async function createPianoEngine(params) {
             piano.releaseAll();
             Tone.Transport.start("+0.1");
         },
+        pause: () => {
+            Tone.Transport.pause();
+        },
         stop: () => {
             Tone.Transport.stop();
             Tone.Transport.cancel();
             piano.releaseAll();
-        }
+        },
+        seek: (s) => {
+            Tone.Transport.seconds = s;
+        },
         mixerData: {
             instruments: pianoInstruments,
             volumeMap: pianoVolumeMap
-        },
+        }
     };
 }
 
