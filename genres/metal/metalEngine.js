@@ -1,4 +1,4 @@
-// metalEngine.js — ver. 008 (THE BEST OF BOTH WORLDS)
+// metalEngine.js — ver. 009 (THE BEST OF BOTH WORLDS)
 import * as Tone from "https://esm.sh/tone";
 import { buildPowerMetalParams } from "./powerMetalParams.js";
 import { buildSongStructure } from "../../utils/structureUtils.js";
@@ -8,7 +8,7 @@ import { metalInstruments, metalVolumeMap } from "./metalInstruments.js";
 import { scheduleRhythm } from "./metalRhythmEngine.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalRhythmEngine.js ver. 008 loaded");
+console.log("metalRhythmEngine.js ver. 009 loaded");
 
 export async function waitMetalInstruments() {
     await waitForInstruments(4);
@@ -22,21 +22,27 @@ export function createMetalEngine(params) {
     Tone.Transport.cancel(); 
     Tone.Transport.bpm.value = metalParams.bpm;
 
-    // 1. STRUTTURA (Logica 004 + DNA)
+    // 1. STRUTTURA CON QUADRATURA (Multipli di 4 o 2)
     const rawStructure = [
-        { name: "intro",     weight: 4 + (rand() * 4) },
-        { name: "verse",     weight: 8 + (rand() * 8) },
+        { name: "intro",     weight: 4 + (rand() * 4) }, // Sarà 4 o 8
+        { name: "verse",     weight: 8 + (rand() * 8) }, // Sarà 8, 12 o 16
         { name: "prechorus", weight: params.imageParams.energy > 0.6 ? 4 : 0 },
         { name: "chorus",    weight: 8 + (rand() * 8) },
         { name: "solo",      weight: params.imageParams.complexity > 0.7 ? 8 : 0 },
-        { name: "chorus",    weight: 4 },
+        { name: "chorus",    weight: 8 },
         { name: "outro",     weight: 4 }
     ];
 
     const finalStructure = rawStructure.map(s => {
         let m = Math.floor(s.weight);
-        if (s.name !== "prechorus" && m > 0 && m < 4) m = 4;
-        if (s.name === "prechorus" && m > 0 && m < 2) m = 2;
+        // FORZATURA QUADRATURA: 
+        // Intro, Verse, Chorus e Solo devono essere multipli di 4 per non sembrare tagliati
+        if (["intro", "verse", "chorus", "solo"].includes(s.name) && m > 0) {
+            m = Math.ceil(m / 4) * 4; 
+        } else if (m > 0) {
+            // Pre-chorus o Outro possono essere multipli di 2
+            m = Math.ceil(m / 2) * 2;
+        }
         return { name: s.name, measures: m };
     }).filter(s => s.measures > 0);
 
@@ -44,34 +50,31 @@ export function createMetalEngine(params) {
     const progressions = generateSongProgressions(structure, params.imageParams, metalParams.tonalCenter, rand);
     const measureDur = (60 / metalParams.bpm) * 4;
 
-    console.log(`%c 🤘 METAL ENGINE 008 [DNA: ${params.dna}] `, "color: #f0f; font-weight: bold;");
+    console.log(`%c 🤘 ENGINE 009: Squared Structure Generated `, "color: #f0f; font-weight: bold;");
 
-    // 2. SCHEDULING (Logica 004 + Transizioni 007)
     structure.sections.forEach((sec, index) => {
         const info = progressions[sec.name];
-        
-        // RECUPERO NOTE (Metodo 004 - quello che funziona!)
         const sectionRoot = info?.root || metalParams.tonalCenter[0] || "E";
         const degrees = info?.progression || ["i"];
-        const realNotes = degrees.map(d => degreeToRoot(d, sectionRoot));
 
-        // IDENTIFICAZIONE PROSSIMA NOTA (Per la transizione nel RhythmEngine)
+        // ADATTAMENTO PROGRESSIONE: 
+        // Se abbiamo 4 note ma la sezione è da 8, le ripetiamo. 
+        // Se la sezione è da 6 (pre-chorus), ne usiamo 6 coerenti.
+        let fullProgression = [];
+        while (fullProgression.length < sec.measures) {
+            fullProgression = fullProgression.concat(degrees);
+        }
+        fullProgression = fullProgression.slice(0, sec.measures);
+
+        const realNotes = fullProgression.map(d => degreeToRoot(d, sectionRoot));
+
         const nextSec = structure.sections[index + 1];
-        const nextInfo = nextSec ? progressions[nextSec.name] : null;
-        const nextSectionRoot = nextInfo?.root || sectionRoot;
+        const nextSectionRoot = nextSec ? (progressions[nextSec.name]?.root || sectionRoot) : sectionRoot;
 
-        // LOGGING (Il tuo piacere)
         Tone.Transport.schedule(() => {
-            console.log(`%c ▶ Inizio: ${sec.name.toUpperCase()} [Root: ${sectionRoot}] `, "color: #0ff; font-weight: bold;");
+            console.log(`%c ▶ ${sec.name.toUpperCase()} (${sec.measures} measures) | Root: ${sectionRoot} `, "color: #0ff;");
         }, sec.startTime);
 
-        if (sec.measures >= 8) {
-            Tone.Transport.schedule(() => {
-                console.log(`%c ⏩ Semi-sezione B di ${sec.name} `, "color: #0af;");
-            }, sec.startTime + (sec.duration / 2));
-        }
-
-        // Passiamo tutto al RhythmEngine ver 007.2
         scheduleRhythm(sec, realNotes, metalInstruments, metalParams, rand, measureDur, nextSectionRoot);
     });
 
