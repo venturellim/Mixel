@@ -1,24 +1,16 @@
-// metalEngine.js — ver. 001 (FINAL REBOOT)
+// metalEngine.js — ver. 002 (STABLE)
 import * as Tone from "https://esm.sh/tone";
 import { buildPowerMetalParams } from "./powerMetalParams.js";
 import { buildSongStructure } from "../../utils/structureUtils.js";
 import { createSeededRandom } from "../../utils/randomUtils.js";
-
-// Importiamo dal nuovo file rinominato e spostato nelle utils
 import { generateSongProgressions, degreeToRoot } from "../../utils/musicTheory.js";
-
-// Importiamo gli strumenti dal tuo nuovo file metalInstruments.js
-import { metalInstruments, metalVolumeMap } from "./metalInstruments.js";
-
-// Il motore ritmico Stratovarius
+import { metalInstruments, metalInstrumentMap } from "./metalInstruments.js";
 import { scheduleRhythm } from "./metalRhythmEngine.js";
-
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 001 loaded");
+console.log("metalEngine.js ver. 002 loaded");
 
 export async function waitMetalInstruments() {
-    // Aspettiamo che i campioni siano caricati
     await waitForInstruments(4);
 }
 
@@ -26,20 +18,20 @@ export function createMetalEngine(params) {
     const rand = createSeededRandom(params.dna);
     const metalParams = buildPowerMetalParams(rand);
     
-    // Fermiamo tutto prima di riprogrammare
+    // 1. RESET TOTALE
     Tone.Transport.stop();
-    Tone.Transport.cancel(); 
+    Tone.Transport.cancel(0); // Pulisce tutto dalla posizione 0
     Tone.Transport.bpm.value = metalParams.bpm;
 
     const safeStructure = (params.structure && Array.isArray(params.structure)) 
         ? params.structure 
-        : [{ name: "intro", measures: 4 }, { name: "verse", measures: 8 }];
+        : [{ name: "intro", measures: 4 }, { name: "verse", measures: 8 }, { name: "chorus", measures: 8 }];
 
     const structure = buildSongStructure(safeStructure, metalParams.bpm);
     const progressions = generateSongProgressions(structure, params.imageParams, metalParams.tonalCenter, rand);
     
-    // RESETTIAMO IL TEMPO DI PARTENZA
-    let accumulatedTime = 0;
+    // 2. SCHEDULING POSIZIONALE (usiamo i Beats per evitare gap)
+    let currentBeat = 0;
 
     structure.sections.forEach(sec => {
         const info = progressions[sec.name];
@@ -47,21 +39,18 @@ export function createMetalEngine(params) {
         const sectionRoot = info.root || metalParams.tonalCenter[0] || "A";
         const realNotes = degrees.map(d => degreeToRoot(d, sectionRoot));
 
-        // AGGIORNIAMO IL SEC.STARTTIME PER EVITARE IL SILENZIO
-        sec.startTime = accumulatedTime; 
+        // Passiamo currentBeat al motore ritmico
+        scheduleRhythm(sec, realNotes, metalInstruments, metalParams, rand, currentBeat);
         
-        scheduleRhythm(sec, realNotes, metalInstruments, metalParams, rand);
-        
-        // Sommiamo la durata esatta della sezione per la successiva
-        accumulatedTime += sec.duration;
+        // Avanziamo esattamente del numero di battute * 4 quarti
+        currentBeat += (sec.measures * 4);
     });
 
     return {
         totalDuration: structure.totalDuration,
-        // RIMOSSO IL START AUTOMATICO: ora aspetta il click dell'utente
         play: () => {
             if (Tone.context.state !== 'running') Tone.context.resume();
-            Tone.Transport.start();
+            Tone.Transport.start(); // Parte solo al click
         },
         pause: () => Tone.Transport.pause(),
         stop: () => { 
@@ -69,8 +58,11 @@ export function createMetalEngine(params) {
             Tone.Transport.seconds = 0; 
         },
         seek: (s) => {
-            Tone.Transport.seconds = s;
+            Tone.Transport.seconds = s; // Ora la seekbar sposta la testina correttamente
         },
-        mixerData: { instruments: metalInstruments, volumeMap: metalVolumeMap }
+        mixerData: { 
+            instruments: metalInstruments, 
+            volumeMap: metalInstrumentMap 
+        }
     };
 }

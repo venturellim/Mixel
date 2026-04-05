@@ -1,71 +1,55 @@
-// metalRhythmEngine.js — ver. 001 (STRATOVARIUS CORE)
+// metalRhythmEngine.js — ver. 002 (NO-GAP CORE)
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
 
-console.log("metalRhythmEngine.js ver. 001.1 loaded");
+console.log("metalRhythmEngine.js ver. 002 loaded");
 
-export function scheduleRhythm(section, progression, instruments, params, rand) {
+export function scheduleRhythm(section, progression, instruments, params, rand, startBeat) {
     const { drums, guitarPalm, guitarOpen, bass } = instruments;
-    const bpm = params.bpm;
-    const secondsPerBeat = 60 / bpm;
-
     const isChorus = section.name === "chorus";
-    // Determiniamo il groove una volta per sezione
     const grooveType = isChorus ? "double_kick" : (rand() > 0.5 ? "gallop" : "straight");
 
     progression.forEach((root, measureIdx) => {
-    // Il segreto è usare i secondi esatti calcolati dal BPM
-    const measureStart = section.startTime + (measureIdx * 4 * (60 / bpm));
-    
-    for (let step = 0; step < 16; step++) {
-        const stepTime = 0.25 * (60 / bpm);
-        const time = measureStart + (step * stepTime);
-            const isDownbeat = step % 4 === 0;
+        // Ogni misura inizia a (startBeat + misura * 4) quarti
+        const measureStartBeat = startBeat + (measureIdx * 4);
+        
+        for (let step = 0; step < 16; step++) {
+            // Ogni step è 1/4 di un quarto (un 16esimo)
+            const exactBeat = measureStartBeat + (step * 0.25);
+            
+            // Convertiamo i Beat in tempo musicale leggibile da Tone.Transport
+            const time = Tone.Time(exactBeat, "n").toSeconds();
+
             const isEighth = step % 2 === 0;
 
-            // --- 1. CHITARRA RITMICA ---
+            // --- CHITARRA ---
             let playGuitar = false;
-            let inst = guitarPalm;
+            let instName = "guitarPalm";
             
             if (isChorus) {
-                if (isEighth) { playGuitar = true; inst = guitarOpen; }
+                if (isEighth) { playGuitar = true; instName = "guitarOpen"; }
             } else {
                 if (grooveType === "gallop") {
                     if (step % 4 === 0 || step % 4 === 2 || step % 4 === 3) playGuitar = true;
-                } else {
-                    if (isEighth) playGuitar = true;
+                } else if (isEighth) {
+                    playGuitar = true;
                 }
             }
 
             if (playGuitar) {
-                const note = normalizeNote(root, inst === guitarPalm ? "guitarPalm" : "guitarOpen");
-                inst.triggerAttackRelease(note + "2", "16n", time);
+                const note = normalizeNote(root, instName);
+                instruments[instName].triggerAttackRelease(note + "2", "16n", time);
             }
 
-            // --- 2. BATTERIA ---
-            // Cassa
-            if (isChorus) {
-                drums.player("kick").start(time); 
-            } else if (playGuitar) {
-                drums.player("kick").start(time); 
-            }
-
-            // Rullante sul 2 e sul 4
-            if (step === 4 || step === 12) {
-                drums.player("snare").start(time);
-            }
-
-            // Piatti
-            if (isEighth) {
-                const cymbal = isChorus ? "ride" : "hihat";
-                drums.player(cymbal).start(time);
-            }
-
-            // --- 3. BASSO ---
+            // --- BATTERIA & BASSO (Sempre a tempo di beat) ---
             if (isChorus || playGuitar) {
-                const bassNote = normalizeNote(root, "bass");
-                bass.triggerAttackRelease(bassNote + "1", "16n", time);
+                drums.player("kick").start(time);
+                const bNote = normalizeNote(root, "bass");
+                bass.triggerAttackRelease(bNote + "1", "16n", time);
             }
+
+            if (step === 4 || step === 12) drums.player("snare").start(time);
+            if (isEighth) drums.player(isChorus ? "ride" : "hihat").start(time);
         }
     });
 }
