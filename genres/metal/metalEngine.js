@@ -8,7 +8,7 @@ import { metalInstruments, metalVolumeMap } from "./metalInstruments.js";
 import { scheduleRhythm } from "./metalRhythmEngine.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 005.1 loaded");
+console.log("metalEngine.js ver. 005.2 loaded");
 
 export async function waitMetalInstruments() {
     await waitForInstruments(4);
@@ -46,11 +46,13 @@ export function createMetalEngine(params) {
 
     structure.sections.forEach((sec, index) => {
     const info = progressions[sec.name];
+    
+    // Troviamo la root della PROSSIMA sezione per la scala di congiunzione
     const nextSecName = structure.sections[index + 1]?.name;
     const nextInfo = nextSecName ? progressions[nextSecName] : null;
     
-    const sectionRoot = info?.root || metalParams.tonalCenter[0];
-    const nextSectionRoot = nextInfo?.root || sectionRoot; // Se non c'è, usa la stessa
+    const sectionRoot = info?.root || metalParams.tonalCenter[0] || "E";
+    const nextSectionRoot = nextInfo?.root || sectionRoot; 
 
     const degrees = info?.progression || ["i"];
     const realNotes = degrees.map(d => degreeToRoot(d, sectionRoot));
