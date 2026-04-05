@@ -1,4 +1,4 @@
-// metalEngine.js — ver. 026 (FINAL REBOOT)
+// metalEngine.js — ver. 001 (FINAL REBOOT)
 import * as Tone from "https://esm.sh/tone";
 import { buildPowerMetalParams } from "./powerMetalParams.js";
 import { buildSongStructure } from "../../utils/structureUtils.js";
@@ -15,6 +15,8 @@ import { scheduleRhythm } from "./metalRhythmEngine.js";
 
 import { waitForInstruments } from "../../common.js";
 
+console.log("metalEngine.js ver. 001 loaded");
+
 export async function waitMetalInstruments() {
     // Aspettiamo che i campioni siano caricati
     await waitForInstruments(4);
@@ -24,54 +26,51 @@ export function createMetalEngine(params) {
     const rand = createSeededRandom(params.dna);
     const metalParams = buildPowerMetalParams(rand);
     
-    // 1. Protezione Structure (Fix errore .map)
-    const safeStructure = (params.structure && Array.isArray(params.structure)) 
-        ? params.structure 
-        : [
-            { name: "intro", measures: 4 },
-            { name: "verse", measures: 8 },
-            { name: "chorus", measures: 8 },
-            { name: "outro", measures: 4 }
-          ];
-
+    // Fermiamo tutto prima di riprogrammare
     Tone.Transport.stop();
-    Tone.Transport.cancel();
+    Tone.Transport.cancel(); 
     Tone.Transport.bpm.value = metalParams.bpm;
 
-    // 2. Generazione Struttura e Progressioni
+    const safeStructure = (params.structure && Array.isArray(params.structure)) 
+        ? params.structure 
+        : [{ name: "intro", measures: 4 }, { name: "verse", measures: 8 }];
+
     const structure = buildSongStructure(safeStructure, metalParams.bpm);
     const progressions = generateSongProgressions(structure, params.imageParams, metalParams.tonalCenter, rand);
     
-    // 3. Scheduling delle sezioni
+    // RESETTIAMO IL TEMPO DI PARTENZA
+    let accumulatedTime = 0;
+
     structure.sections.forEach(sec => {
         const info = progressions[sec.name];
-        
-        // Estraiamo i gradi (es. ["i", "VI", "VII"])
         const degrees = (info && info.progression) ? info.progression : ["i"];
-        
-        // Estraiamo la tonica della sezione (es. "A")
         const sectionRoot = info.root || metalParams.tonalCenter[0] || "A";
-
-        // Convertiamo i gradi in note reali (es. "i" -> "A", "VI" -> "F")
-        // così il RhythmEngine riceve note vere da normalizzare
         const realNotes = degrees.map(d => degreeToRoot(d, sectionRoot));
 
-        // Passiamo tutto al motore ritmico
+        // AGGIORNIAMO IL SEC.STARTTIME PER EVITARE IL SILENZIO
+        sec.startTime = accumulatedTime; 
+        
         scheduleRhythm(sec, realNotes, metalInstruments, metalParams, rand);
+        
+        // Sommiamo la durata esatta della sezione per la successiva
+        accumulatedTime += sec.duration;
     });
 
     return {
         totalDuration: structure.totalDuration,
-        play: () => Tone.Transport.start("+0.1"),
+        // RIMOSSO IL START AUTOMATICO: ora aspetta il click dell'utente
+        play: () => {
+            if (Tone.context.state !== 'running') Tone.context.resume();
+            Tone.Transport.start();
+        },
         pause: () => Tone.Transport.pause(),
         stop: () => { 
             Tone.Transport.stop(); 
             Tone.Transport.seconds = 0; 
         },
-        seek: (s) => Tone.Transport.seconds = s,
-        mixerData: { 
-            instruments: metalInstruments, 
-            volumeMap: metalVolumeMap 
-        }
+        seek: (s) => {
+            Tone.Transport.seconds = s;
+        },
+        mixerData: { instruments: metalInstruments, volumeMap: metalVolumeMap }
     };
 }

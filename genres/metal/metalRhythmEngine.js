@@ -1,8 +1,8 @@
 // metalRhythmEngine.js — ver. 001 (STRATOVARIUS CORE)
 import * as Tone from "https://esm.sh/tone";
-import { normalizeNote } from "./metalInstruments.js";;
+import { normalizeNote } from "./metalInstruments.js";
 
-console.log("metalRhythmEngine.js ver. 001 loaded");
+console.log("metalRhythmEngine.js ver. 001.1 loaded");
 
 export function scheduleRhythm(section, progression, instruments, params, rand) {
     const { drums, guitarPalm, guitarOpen, bass } = instruments;
@@ -13,14 +13,13 @@ export function scheduleRhythm(section, progression, instruments, params, rand) 
     // Determiniamo il groove una volta per sezione
     const grooveType = isChorus ? "double_kick" : (rand() > 0.5 ? "gallop" : "straight");
 
-    progression.forEach((rootDegree, measureIdx) => {
-        const measureStart = section.startTime + (measureIdx * 4 * secondsPerBeat);
-        
-        // rootDegree è la nota base (es. "A", "G", "F")
-        const root = rootDegree; 
-
-        for (let step = 0; step < 16; step++) {
-            const time = measureStart + (step * 0.25 * secondsPerBeat);
+    progression.forEach((root, measureIdx) => {
+    // Il segreto è usare i secondi esatti calcolati dal BPM
+    const measureStart = section.startTime + (measureIdx * 4 * (60 / bpm));
+    
+    for (let step = 0; step < 16; step++) {
+        const stepTime = 0.25 * (60 / bpm);
+        const time = measureStart + (step * stepTime);
             const isDownbeat = step % 4 === 0;
             const isEighth = step % 2 === 0;
 
