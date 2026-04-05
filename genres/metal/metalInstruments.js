@@ -64,7 +64,7 @@ export function setVolume(busName, dbValue) {
 
 setVolume("guitar", -4);
 setVolume("bass", -2);
-setVolume("drums", -14);
+setVolume("drums", -10);
 setVolume("lead", +3);
 setVolume("keyboard", -16);
 
