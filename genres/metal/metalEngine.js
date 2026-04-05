@@ -8,7 +8,7 @@ import { metalInstruments, metalVolumeMap } from "./metalInstruments.js";
 import { scheduleRhythm } from "./metalRhythmEngine.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 002 loaded");
+console.log("metalEngine.js ver. 002.1 loaded");
 
 export async function waitMetalInstruments() {
     await waitForInstruments(4);
@@ -18,9 +18,8 @@ export function createMetalEngine(params) {
     const rand = createSeededRandom(params.dna);
     const metalParams = buildPowerMetalParams(rand);
     
-    // 1. RESET TOTALE
     Tone.Transport.stop();
-    Tone.Transport.cancel(0); // Pulisce tutto dalla posizione 0
+    Tone.Transport.cancel(0); 
     Tone.Transport.bpm.value = metalParams.bpm;
 
     const safeStructure = (params.structure && Array.isArray(params.structure)) 
@@ -30,27 +29,26 @@ export function createMetalEngine(params) {
     const structure = buildSongStructure(safeStructure, metalParams.bpm);
     const progressions = generateSongProgressions(structure, params.imageParams, metalParams.tonalCenter, rand);
     
-    // 2. SCHEDULING POSIZIONALE (usiamo i Beats per evitare gap)
     let currentBeat = 0;
 
     structure.sections.forEach(sec => {
         const info = progressions[sec.name];
         const degrees = (info && info.progression) ? info.progression : ["i"];
-        const sectionRoot = info.root || metalParams.tonalCenter[0] || "A";
+        const sectionRoot = info.root || (metalParams.tonalCenter ? metalParams.tonalCenter[0] : "A");
         const realNotes = degrees.map(d => degreeToRoot(d, sectionRoot));
 
-        // Passiamo currentBeat al motore ritmico
-        scheduleRhythm(sec, realNotes, metalInstruments, metalParams, rand, currentBeat);
+        // Passiamo currentBeat assicurandoci che sia un numero
+        scheduleRhythm(sec, realNotes, metalInstruments, metalParams, rand, Number(currentBeat));
         
-        // Avanziamo esattamente del numero di battute * 4 quarti
         currentBeat += (sec.measures * 4);
     });
 
     return {
         totalDuration: structure.totalDuration,
         play: () => {
-            if (Tone.context.state !== 'running') Tone.context.resume();
-            Tone.Transport.start(); // Parte solo al click
+            // Questo risolve l'avviso "suspended"
+            if (Tone.context.state !== 'running') Tone.start(); 
+            Tone.Transport.start();
         },
         pause: () => Tone.Transport.pause(),
         stop: () => { 
@@ -58,7 +56,7 @@ export function createMetalEngine(params) {
             Tone.Transport.seconds = 0; 
         },
         seek: (s) => {
-            Tone.Transport.seconds = s; // Ora la seekbar sposta la testina correttamente
+            Tone.Transport.seconds = s;
         },
         mixerData: { 
             instruments: metalInstruments, 

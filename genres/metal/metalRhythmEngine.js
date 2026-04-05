@@ -2,23 +2,25 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
 
-console.log("metalRhythmEngine.js ver. 002 loaded");
+console.log("metalRhythmEngine.js ver. 002.1 loaded");
 
 export function scheduleRhythm(section, progression, instruments, params, rand, startBeat) {
     const { drums, guitarPalm, guitarOpen, bass } = instruments;
+    const bpm = params.bpm;
+    const secondsPerBeat = 60 / bpm; // Durata di un quarto in secondi
+
     const isChorus = section.name === "chorus";
     const grooveType = isChorus ? "double_kick" : (rand() > 0.5 ? "gallop" : "straight");
 
     progression.forEach((root, measureIdx) => {
-        // Ogni misura inizia a (startBeat + misura * 4) quarti
         const measureStartBeat = startBeat + (measureIdx * 4);
         
         for (let step = 0; step < 16; step++) {
-            // Ogni step è 1/4 di un quarto (un 16esimo)
-            const exactBeat = measureStartBeat + (step * 0.25);
-            
-            // Convertiamo i Beat in tempo musicale leggibile da Tone.Transport
-            const time = Tone.Time(exactBeat, "n").toSeconds();
+            // Calcolo manuale del tempo in secondi dallo zero del Transport
+            // (BeatCorrente * secondiPerBeat)
+            const time = (measureStartBeat + (step * 0.25)) * secondsPerBeat;
+
+            if (isNaN(time)) return; // Sicurezza extra
 
             const isEighth = step % 2 === 0;
 
@@ -41,7 +43,7 @@ export function scheduleRhythm(section, progression, instruments, params, rand, 
                 instruments[instName].triggerAttackRelease(note + "2", "16n", time);
             }
 
-            // --- BATTERIA & BASSO (Sempre a tempo di beat) ---
+            // --- BATTERIA & BASSO ---
             if (isChorus || playGuitar) {
                 drums.player("kick").start(time);
                 const bNote = normalizeNote(root, "bass");
