@@ -4,7 +4,7 @@ import { buildPowerMetalParams } from "./powerMetalParams.js";
 import { buildSongStructure } from "../../utils/structureUtils.js";
 import { createSeededRandom } from "../../utils/randomUtils.js";
 import { generateSongProgressions, degreeToRoot } from "../../utils/musicTheory.js";
-import { metalInstruments, metalInstrumentMap } from "./metalInstruments.js";
+import { metalInstruments, metalVolumeMap } from "./metalInstruments.js";
 import { scheduleRhythm } from "./metalRhythmEngine.js";
 import { waitForInstruments } from "../../common.js";
 
@@ -62,7 +62,7 @@ export function createMetalEngine(params) {
         },
         mixerData: { 
             instruments: metalInstruments, 
-            volumeMap: metalInstrumentMap 
+            volumeMap: metalVolumeMap 
         }
     };
 }
