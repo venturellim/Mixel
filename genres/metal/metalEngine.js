@@ -8,7 +8,7 @@ import { metalInstruments, metalVolumeMap } from "./metalInstruments.js";
 import { scheduleRhythm } from "./metalRhythmEngine.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 005 loaded");
+console.log("metalEngine.js ver. 005.1 loaded");
 
 export async function waitMetalInstruments() {
     await waitForInstruments(4);
@@ -44,11 +44,16 @@ export function createMetalEngine(params) {
 
     console.log(`%c 🤘 STARTING COMPOSITION [DNA: ${params.dna}] `, "background: #222; color: #f0f; font-weight: bold;");
 
-    structure.sections.forEach(sec => {
-        const info = progressions[sec.name];
-        const degrees = info?.progression || ["i"];
-        const sectionRoot = info?.root || metalParams.tonalCenter[0] || "A";
-        const realNotes = degrees.map(d => degreeToRoot(d, sectionRoot));
+    structure.sections.forEach((sec, index) => {
+    const info = progressions[sec.name];
+    const nextSecName = structure.sections[index + 1]?.name;
+    const nextInfo = nextSecName ? progressions[nextSecName] : null;
+    
+    const sectionRoot = info?.root || metalParams.tonalCenter[0];
+    const nextSectionRoot = nextInfo?.root || sectionRoot; // Se non c'è, usa la stessa
+
+    const degrees = info?.progression || ["i"];
+    const realNotes = degrees.map(d => degreeToRoot(d, sectionRoot));
 
         // LOG DI INIZIO SEZIONE
         Tone.Transport.schedule((time) => {
@@ -62,7 +67,7 @@ export function createMetalEngine(params) {
             }, sec.startTime + (sec.duration / 2));
         }
 
-        scheduleRhythm(sec, realNotes, metalInstruments, metalParams, rand, measureDur);
+        scheduleRhythm(sec, realNotes, metalInstruments, metalParams, rand, measureDur, nextSectionRoot);
     });
 
     return {

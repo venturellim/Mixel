@@ -1,78 +1,88 @@
-// metalRhythmEngine.js — ver. 006 (SUSTAINED & FULL LOGIC)
+// metalRhythmEngine.js — ver. 007 (SUSTAINED & FULL LOGIC)
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
 
-console.log("metalRhythmEngine.js ver. 006 loaded");
+console.log("metalRhythmEngine.js ver. 007 loaded");
 
-export function scheduleRhythm(section, progression, instruments, params, rand, measureDur) {
+export function scheduleRhythm(section, progression, instruments, params, rand, measureDur, nextSectionRoot) {
     const { drums, guitarPalm, guitarOpen, bass } = instruments;
     const isChorus = section.name.toLowerCase().includes("chorus");
     const isIntro = section.name.toLowerCase().includes("intro");
     const stepTime = measureDur / 16;
-
-    // Groove fissato dal DNA per questa sezione
     const sectionGroove = rand() > 0.5 ? "gallop" : "straight";
 
     for (let m = 0; m < section.measures; m++) {
         const measureStartTime = section.startTime + (m * measureDur);
         const root = progression[m % progression.length];
-        
-        const isSecondHalf = m >= (section.measures / 2);
-        // Misura di transizione (l'ultima prima del cambio)
-        const isTransitionMeasure = (m === Math.floor(section.measures / 2) - 1) || (m === section.measures - 1);
+        const isLastMeasure = (m === section.measures - 1);
+        const isHalfway = (m === Math.floor(section.measures / 2) - 1);
+        const isTransition = isLastMeasure || isHalfway;
 
         for (let s = 0; s < 16; s++) {
             const absoluteTime = measureStartTime + (s * stepTime);
             const isEighth = s % 2 === 0;
+            
+            // --- LOGICA DI CONGIUNZIONE (Ultimi 4 step della sezione) ---
+            let currentRoot = root;
+            let isLeadIn = isLastMeasure && s >= 12 && nextSectionRoot;
+
+            if (isLeadIn) {
+                // Se la nota successiva è lontana, creiamo una rampa
+                const rootMidi = Tone.Frequency(root + "2").toMidi();
+                const nextMidi = Tone.Frequency(nextSectionRoot + "2").toMidi();
+                if (Math.abs(rootMidi - nextMidi) > 2) {
+                    // Scala cromatica di avvicinamento
+                    const diff = nextMidi > rootMidi ? 1 : -1;
+                    const stepsFromEnd = 16 - s;
+                    currentRoot = Tone.Frequency(nextMidi - (stepsFromEnd * diff), "midi").toNote();
+                }
+            }
 
             // --- 1. CHITARRA & BASSO ---
-            if (isIntro && !isSecondHalf) {
-                if (m % 2 === 0 && s === 0) {
-                    const note = normalizeNote(root, "guitarOpen");
-                    Tone.Transport.schedule(t => guitarOpen.triggerAttackRelease(note + "2", "1n", t), absoluteTime);
-                    Tone.Transport.schedule(t => bass.triggerAttackRelease(normalizeNote(root, "bass") + "1", "1n", t), absoluteTime);
-                }
-            } else {
+            if (!(isIntro && m < section.measures/2)) {
                 let playGuitar = false;
-                if (isChorus) {
+                let inst = isChorus ? guitarOpen : guitarPalm;
+                
+                // Se siamo nel lead-in finale, colpi serrati su ogni step per caricare
+                if (isLeadIn) {
+                    playGuitar = true;
+                    inst = guitarPalm; 
+                } else if (isChorus) {
                     if (s % 4 === 0) playGuitar = true;
                 } else {
-                    const hit = sectionGroove === "gallop" ? (s % 4 === 0 || s % 4 === 2 || s % 4 === 3) : (isEighth);
+                    const hit = sectionGroove === "gallop" ? (s % 4 === 0 || s % 4 === 2 || s % 4 === 3) : isEighth;
                     if (hit) playGuitar = true;
                 }
 
                 if (playGuitar) {
-                    const inst = isChorus ? guitarOpen : guitarPalm;
-                    const dur = isChorus ? "2n" : "16n";
-                    const note = normalizeNote(root, isChorus ? "guitarOpen" : "guitarPalm");
-                    Tone.Transport.schedule(t => inst.triggerAttackRelease(note + "2", dur, t), absoluteTime);
-                    Tone.Transport.schedule(t => bass.triggerAttackRelease(normalizeNote(root, "bass") + "1", "16n", t), absoluteTime);
+                    const note = normalizeNote(currentRoot, isChorus && !isLeadIn ? "guitarOpen" : "guitarPalm");
+                    Tone.Transport.schedule(t => {
+                        inst.triggerAttackRelease(note + "2", isLeadIn ? "32n" : (isChorus ? "2n" : "16n"), t);
+                        bass.triggerAttackRelease(normalizeNote(currentRoot, "bass") + "1", "16n", t);
+                    }, absoluteTime);
                 }
             }
 
-            // --- 2. BATTERIA (Con Transizioni) ---
+            // --- 2. BATTERIA (SENZA BUCHI) ---
             Tone.Transport.schedule((time) => {
-                if (isIntro && !isSecondHalf) {
-                    if (s === 0) drums.player("crash1").start(time);
-                    if (s % 6 === 0) drums.player("snare").start(time);
-                    if (isEighth) drums.player("hihat").start(time);
-                    return;
+                // Accento d'inizio
+                if (s === 0 && (m === 0 || isHalfway)) drums.player("crash2").start(time);
+
+                // Ritmo Base (sempre attivo anche durante i fill!)
+                const kickHit = isChorus ? isEighth : (sectionGroove === "gallop" ? (s % 4 === 0 || s % 4 === 2 || s % 4 === 3) : isEighth);
+                if (kickHit || isLeadIn) drums.player("kick").start(time);
+
+                // Snare standard + raddoppio nei fill
+                if (s === 4 || s === 12 || (isTransition && s > 12)) {
+                    drums.player("snare").start(time);
                 }
 
-                // Accento d'inizio sezione o semi-sezione
-                if (s === 0 && (m === 0 || m === Math.floor(section.measures / 2))) {
-                    drums.player("crash2").start(time);
-                }
+                // Piatti (Ride nel chorus, HiHat nel verse)
+                if (isEighth) drums.player(isChorus ? "ride" : "hihat").start(time);
 
-                // LOGICA TRANSIZIONE: Se è l'ultima misura, carica i Tom
-                if (isTransitionMeasure && s >= 12) {
+                // Tom Fill (si sovrappone, non sostituisce)
+                if (isTransition && s >= 12) {
                     drums.player("tom" + (s - 11)).start(time);
-                } else {
-                    // Ritmo Standard
-                    const kickHit = isChorus ? isEighth : (sectionGroove === "gallop" ? (s % 4 === 0 || s % 4 === 2 || s % 4 === 3) : isEighth);
-                    if (kickHit) drums.player("kick").start(time);
-                    if (s === 4 || s === 12) drums.player("snare").start(time);
-                    if (isEighth) drums.player(isChorus ? "ride" : "hihat").start(time);
                 }
             }, absoluteTime);
         }
