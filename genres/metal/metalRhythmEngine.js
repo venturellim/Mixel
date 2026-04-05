@@ -1,8 +1,8 @@
-// metalRhythmEngine.js — ver. 007 (SUSTAINED & FULL LOGIC)
+// metalRhythmEngine.js — ver. 008.1 (SUSTAINED & FULL LOGIC)
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
 
-console.log("metalRhythmEngine.js ver. 007.2 loaded");
+console.log("metalRhythmEngine.js ver. 008.1 loaded");
 
 export function scheduleRhythm(section, progression, instruments, params, rand, measureDur, nextSectionRoot) {
     const { drums, guitarPalm, guitarOpen, bass } = instruments;
@@ -10,8 +10,12 @@ export function scheduleRhythm(section, progression, instruments, params, rand, 
     const isIntro = section.name.toLowerCase().includes("intro");
     const stepTime = measureDur / 16;
     
-    // Groove unico basato sul DNA
+    // Groove unico per i versi
     const sectionGroove = (rand() > 0.5) ? "gallop" : "straight";
+    
+    // DECISIONE CHORUS: Usiamo il DNA per decidere se questo specifico chorus è "Sustain" o "Ribattuto"
+    // In alternativa, potresti forzare il secondo chorus a essere sempre ribattuto.
+    const chorusStyle = rand() > 0.5 ? "sustainOnly" : "doublePick";
 
     for (let m = 0; m < section.measures; m++) {
         const measureStartTime = section.startTime + (m * measureDur);
@@ -28,29 +32,41 @@ export function scheduleRhythm(section, progression, instruments, params, rand, 
             let currentRoot = root;
             let isLeadIn = isLastMeasure && s >= 12;
 
-            // SCALA DI CONGIUNZIONE (Chromatical walk-up/down)
+            // --- 1. TRANSITION (Scala cromatica pulita) ---
             if (isLeadIn && nextSectionRoot && nextSectionRoot !== root) {
-                const rootMidi = Tone.Frequency(root + "2").toMidi();
-                const nextMidi = Tone.Frequency(nextSectionRoot + "2").toMidi();
-                const stepsFromEnd = 16 - s;
-                const diff = nextMidi > rootMidi ? 1 : -1;
-                currentRoot = Tone.Frequency(nextMidi - (stepsFromEnd * diff), "midi").toNote();
+                if (s === 12 || s === 14) {
+                    const rootMidi = Tone.Frequency(root + "2").toMidi();
+                    const nextMidi = Tone.Frequency(nextSectionRoot + "2").toMidi();
+                    const diff = nextMidi > rootMidi ? 1 : -1;
+                    const interval = (s === 12) ? diff : diff * 2; 
+                    currentRoot = Tone.Frequency(rootMidi + interval, "midi").toNote();
+                } else {
+                    isLeadIn = false; 
+                }
             }
 
-            // --- 1. STRUMENTI A CORDA ---
+            // --- 2. CHITARRA LOGIC (Chorus Variabili) ---
             let playGuitar = false;
             let inst = isChorus ? guitarOpen : guitarPalm;
             let dur = "16n";
 
-            if (isIntro && m < section.measures / 2) {
-                // INTRO 1: Accordi aperti potenti ogni 2 battiti
+            if (isChorus) {
+                inst = guitarOpen;
+                // COLPO PRINCIPALE (Sempre presente)
+                if (s === 0) {
+                    playGuitar = true;
+                    dur = "2n";
+                } 
+                // COLPO DI RINFORZO (Solo se lo stile è doublePick)
+                else if (chorusStyle === "doublePick" && s === 10) {
+                    playGuitar = true;
+                    dur = "8n";
+                }
+            } else if (isIntro && m < section.measures / 2) {
                 if (s % 8 === 0) { playGuitar = true; inst = guitarOpen; dur = "1n"; }
-            } else if (isChorus) {
-                // CHORUS: Accordi aperti ogni quarto
-                if (s % 4 === 0) { playGuitar = true; inst = guitarOpen; dur = "2n"; }
             } else {
-                // VERSE / SOLO / INTRO 2: Gallop o Straight
-                if (isLeadIn) { playGuitar = true; inst = guitarPalm; dur = "32n"; }
+                // VERSE / SOLO
+                if (isLeadIn) { playGuitar = true; inst = guitarPalm; dur = "16n"; }
                 else {
                     playGuitar = sectionGroove === "gallop" ? (s % 4 === 0 || s % 4 === 2 || s % 4 === 3) : isEighth;
                 }
@@ -65,9 +81,8 @@ export function scheduleRhythm(section, progression, instruments, params, rand, 
                 }, absoluteTime);
             }
 
-            // --- 2. BATTERIA ---
+            // --- 3. BATTERIA (Pulita e con transizioni umane) ---
             Tone.Transport.schedule((time) => {
-                // Intro virtuosistico (snare raddoppiato)
                 if (isIntro && m < section.measures / 2) {
                     if (s === 0) drums.player("crash1").start(time);
                     if (s % 6 === 0) drums.player("snare").start(time);
@@ -75,19 +90,19 @@ export function scheduleRhythm(section, progression, instruments, params, rand, 
                     return;
                 }
 
-                // Accento Cambio Sezione
-                if (isDownbeat && (m === 0 || isHalfway)) drums.player("crash2").start(time);
+                if (s === 0 && (m === 0 || isHalfway)) drums.player("crash2").start(time);
 
-                // Cassa e Rullante
                 const kickHit = (isChorus || isLeadIn) ? isEighth : (sectionGroove === "gallop" ? (s % 4 === 0 || s % 4 === 2 || s % 4 === 3) : isEighth);
                 if (kickHit) drums.player("kick").start(time);
                 
-                if (s === 4 || s === 12 || (isLeadIn && s % 2 === 0)) drums.player("snare").start(time);
+                if (s === 4 || s === 12) drums.player("snare").start(time);
+                if (isLastMeasure && s > 13) drums.player("snare").start(time);
 
-                // Piatti e Tom
                 if (isEighth) drums.player(isChorus ? "ride" : "hihat").start(time);
-                if ((isLastMeasure || isHalfway) && s >= 12) {
-                    drums.player("tom" + (s - 11)).start(time);
+                
+                // Tom solo su accenti (ottavi) nelle transizioni
+                if ((isLastMeasure || isHalfway) && s >= 12 && s % 2 === 0) {
+                    drums.player("tom" + (s === 12 ? 1 : 3)).start(time);
                 }
             }, absoluteTime);
         }
