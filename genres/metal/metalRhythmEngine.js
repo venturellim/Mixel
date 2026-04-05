@@ -1,8 +1,8 @@
-// metalRhythmEngine.js — ver. 010 (SUSTAINED & FULL LOGIC)
+// metalRhythmEngine.js — ver. 011 (SUSTAINED & FULL LOGIC)
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
 
-console.log("metalRhythmEngine.js ver. 010 loaded");
+console.log("metalRhythmEngine.js ver. 011 loaded");
 
 export function scheduleRhythm(section, progression, instruments, params, rand, measureDur, nextSectionRoot) {
     const { drums, guitarPalm, guitarOpen, bass } = instruments;
@@ -10,97 +10,117 @@ export function scheduleRhythm(section, progression, instruments, params, rand, 
     const isIntro = section.name.toLowerCase().includes("intro");
     const stepTime = measureDur / 16;
     
-    const sectionGroove = (rand() > 0.5) ? "gallop" : "straight";
-    const chorusStyle = rand() > 0.5 ? "sustainOnly" : "doublePick";
+    // --- 1. SELEZIONE DEL PATTERN (Basata su Energy e DNA) ---
+    const energy = params.imageParams.energy;
+    const dice = rand();
+    let grooveType = "straight";
+
+    if (isChorus) {
+        grooveType = energy > 0.7 ? "doubleKick" : "straight";
+    } else if (isIntro) {
+        grooveType = "epicHold"; // Quello che abbiamo fatto per Stratovarius
+    } else {
+        // Verse/Solo: Varietà totale
+        if (dice < 0.25) grooveType = "gallop";
+        else if (dice < 0.50) grooveType = "triplet";  // 12/8 feel (Helloween style)
+        else if (dice < 0.75 && energy > 0.6) grooveType = "doubleKick";
+        else if (energy < 0.4) grooveType = "heavySlow"; // Doom/Epic feel
+    }
 
     for (let m = 0; m < section.measures; m++) {
         const measureStartTime = section.startTime + (m * measureDur);
         const root = progression[m % progression.length];
-        
-        // Batteria: prima metà accentata, seconda metà piena
         const isIntroFirstHalf = isIntro && (m < Math.floor(section.measures / 2));
-        
         const isLastMeasure = (m === section.measures - 1);
-        const isHalfway = (m === Math.floor(section.measures / 2) - 1);
 
         for (let s = 0; s < 16; s++) {
             const absoluteTime = measureStartTime + (s * stepTime);
-            const isEighth = s % 2 === 0;
-
             let currentRoot = root;
-            let isLeadIn = isLastMeasure && s >= 12;
-
-            // --- 1. TRANSITION (Scala cromatica pulita) ---
-            if (isLeadIn && nextSectionRoot && nextSectionRoot !== root) {
-                if (s === 12 || s === 14) {
-                    const rootMidi = Tone.Frequency(root + "2").toMidi();
-                    const nextMidi = Tone.Frequency(nextSectionRoot + "2").toMidi();
-                    const diff = nextMidi > rootMidi ? 1 : -1;
-                    currentRoot = Tone.Frequency(rootMidi + (s === 12 ? diff : diff * 2), "midi").toNote();
-                } else { 
-                    isLeadIn = false; 
-                }
-            }
-
-            // --- 2. CHITARRA E BASSO (Coerenti per tutta la sezione) ---
+            
+            // --- 2. DEFINIZIONE DEGLI HIT (Cassa, Rullante, Chitarra) ---
+            let kick = false;
+            let snare = (s === 4 || s === 12);
             let playGuitar = false;
             let inst = guitarPalm;
-            let isSustainNote = false;
+            let sustain = false;
 
-            if (isChorus) {
-                isSustainNote = true;
-                inst = guitarOpen;
-                if (s === 0 || (chorusStyle === "doublePick" && s === 10)) playGuitar = true;
-            } else if (isIntro) {
-                // Intro: Chitarra uguale dall'inizio alla fine
-                isSustainNote = true; 
-                inst = guitarOpen;
-                if (s === 0 || s === 8) playGuitar = true; 
-            } else {
-                // VERSE / SOLO
-                if (isLeadIn) { 
-                    playGuitar = true; 
-                    inst = guitarPalm; 
-                } else { 
-                    playGuitar = sectionGroove === "gallop" ? (s % 4 === 0 || s % 4 === 2 || s % 4 === 3) : isEighth; 
-                }
+            switch(grooveType) {
+                case "gallop": // [1 - - 4 1 - - 4]
+                    kick = (s % 4 === 0 || s % 4 === 2 || s % 4 === 3);
+                    playGuitar = kick;
+                    break;
+
+                case "triplet": // Feel terzinato (Maiden/Helloween)
+                    // Usiamo una maschera per simulare le terzine su 16 step
+                    const tripletSteps = [0, 2, 3, 6, 8, 9, 12, 14, 15];
+                    kick = tripletSteps.includes(s);
+                    snare = (s === 6 || s === 12);
+                    playGuitar = kick;
+                    break;
+
+                case "doubleKick": // Tappeto a 16esimi
+                    kick = (s % 2 === 0); 
+                    playGuitar = (s % 4 === 0); // Chitarra più larga per non impastare
+                    break;
+
+                case "heavySlow": // Half-time pesante
+                    kick = (s === 0 || s === 6);
+                    snare = (s === 8); // Rullante spostato sul 3 (molto lento)
+                    playGuitar = (s === 0 || s === 6 || s === 8);
+                    sustain = true;
+                    inst = guitarOpen;
+                    break;
+
+                case "epicHold": // Stratovarius Style
+                    kick = (s % 8 === 0);
+                    snare = (s === 12);
+                    playGuitar = (s % 8 === 0);
+                    sustain = true;
+                    inst = guitarOpen;
+                    break;
+
+                default: // Straight (Standard 4/4)
+                    kick = (s % 4 === 0 || s % 8 === 6);
+                    playGuitar = (s % 2 === 0);
             }
 
-            if (playGuitar) {
+            // --- 3. SCHEDULING STRUMENTI ---
+            if (playGuitar || (isLastMeasure && s >= 12 && s % 2 === 0)) {
+                // Transizione cromatica (rimane attiva)
+                if (isLastMeasure && s >= 12 && nextSectionRoot && nextSectionRoot !== root) {
+                    const diff = Tone.Frequency(nextSectionRoot + "2").toMidi() > Tone.Frequency(root + "2").toMidi() ? 1 : -1;
+                    currentRoot = Tone.Frequency(Tone.Frequency(root + "2").toMidi() + (s === 12 ? diff : diff * 2), "midi").toNote();
+                    playGuitar = true; // Forza il colpo nella transizione
+                }
+
                 const gNote = normalizeNote(currentRoot, inst === guitarOpen ? "guitarOpen" : "guitarPalm");
                 const bNote = normalizeNote(currentRoot, "bass");
                 Tone.Transport.schedule(t => {
-                    inst.triggerAttackRelease(gNote + "2", isSustainNote ? "1n" : "16n", t);
-                    bass.triggerAttackRelease(bNote + "1", isSustainNote ? "1n" : "16n", t);
+                    inst.triggerAttackRelease(gNote + "2", sustain ? "1n" : "16n", t);
+                    bass.triggerAttackRelease(bNote + "1", sustain ? "1n" : "16n", t);
                 }, absoluteTime);
             }
 
-            // --- 3. BATTERIA (Dinamica) ---
-            Tone.Transport.schedule((time) => {
+            // --- 4. SCHEDULING BATTERIA (Dinamica) ---
+            Tone.Transport.schedule(time => {
                 if (isIntroFirstHalf) {
-                    // PARTE 1: Solo accenti (Crash + Cassa + Tom) a inizio misura
                     if (s === 0) {
                         drums.player("crash1").start(time);
                         drums.player("kick").start(time);
                         drums.player("tom1").start(time);
                     }
-                    return; 
+                    return;
                 }
-
-                // PARTE 2: Batteria Piena
-                if (s === 0 && (m === 0 || isHalfway)) drums.player("crash2").start(time);
                 
-                const kickHit = (isChorus || isLeadIn || (isIntro && !isIntroFirstHalf)) ? isEighth : (sectionGroove === "gallop" ? (s % 4 === 0 || s % 4 === 2 || s % 4 === 3) : isEighth);
-                if (kickHit) drums.player("kick").start(time);
+                if (kick) drums.player("kick").start(time);
+                if (snare) drums.player("snare").start(time);
                 
-                if (s === 4 || s === 12) drums.player("snare").start(time);
-                if (isLastMeasure && s > 13) drums.player("snare").start(time);
+                // Piatti: Ride nel chorus, HiHat nel resto
+                if (s % 2 === 0) drums.player(isChorus ? "ride" : "hihat").start(time);
                 
-                if (isEighth) drums.player(isChorus ? "ride" : "hihat").start(time);
-                
-                if ((isLastMeasure || isHalfway) && s >= 12 && s % 2 === 0) {
-                    drums.player("tom" + (s === 12 ? 1 : 3)).start(time);
-                }
+                // Accenti e Fill
+                if (s === 0 && (m === 0 || isLastMeasure)) drums.player("crash2").start(time);
+                if (isLastMeasure && s >= 12 && s % 2 === 0) drums.player("tom" + (s === 12 ? 1 : 3)).start(time);
             }, absoluteTime);
         }
     }
