@@ -1,72 +1,82 @@
-// metalRhythmEngine.js — ver. 003 (NO-GAP CORE)
+// metalRhythmEngine.js — ver. 004 (NO-GAP CORE)
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
 
-console.log("metalRhythmEngine.js ver. 003 loaded");
+console.log("metalRhythmEngine.js ver. 004 loaded");
 
 export function scheduleRhythm(section, progression, instruments, params, rand, measureDur) {
     const { drums, guitarPalm, guitarOpen, bass } = instruments;
-    const isChorus = section.name === "chorus";
-    const grooveType = isChorus ? "double_kick" : (rand() > 0.5 ? "gallop" : "straight");
-
-    // Definiamo la durata di un 16esimo
+    const isChorus = section.name.includes("chorus");
+    const isIntro = section.name === "intro";
     const stepTime = measureDur / 16;
 
     for (let m = 0; m < section.measures; m++) {
-        // Tempo di inizio della misura corrente
         const measureStartTime = section.startTime + (m * measureDur);
-        
-        // Scegliamo la nota dalla progressione (loop se la sezione è più lunga della progressione)
         const root = progression[m % progression.length];
+        
+        // Identifichiamo se siamo nella prima o seconda metà della sezione
+        const isSecondHalf = m >= (section.measures / 2);
+        // Misura di transizione: l'ultima della prima metà o l'ultima della sezione
+        const isTransitionMeasure = (m === Math.floor(section.measures / 2) - 1) || (m === section.measures - 1);
 
         for (let s = 0; s < 16; s++) {
-            const timeOffset = s * stepTime;
-            const absoluteTime = measureStartTime + timeOffset;
-
+            const absoluteTime = measureStartTime + (s * stepTime);
             const isEighth = s % 2 === 0;
 
-            // Logica Ritmica (immutata per mantenere il "Muro")
-            let playGuitar = false;
-            let inst = guitarPalm;
-            
-            if (isChorus) {
-                if (isEighth) { playGuitar = true; inst = guitarOpen; }
+            // 1. CHITARRA E BASSO
+            if (isIntro && !isSecondHalf) {
+                // Intro 1a metà: Solo un colpo d'impatto all'inizio di ogni cambio accordo
+                if (m % 2 === 0 && s === 0) {
+                    Tone.Transport.schedule(t => {
+                        const note = normalizeNote(root, "guitarOpen");
+                        guitarOpen.triggerAttackRelease(note + "2", "1n", t);
+                        bass.triggerAttackRelease(normalizeNote(root, "bass") + "1", "1n", t);
+                    }, absoluteTime);
+                }
             } else {
-                if (grooveType === "gallop") {
-                    if (s % 4 === 0 || s % 4 === 2 || s % 4 === 3) playGuitar = true;
-                } else if (isEighth) {
-                    playGuitar = true;
+                // Ritmo Standard
+                let playGuitar = false;
+                let inst = isChorus ? guitarOpen : guitarPalm;
+                
+                if (isChorus) {
+                    if (isEighth) playGuitar = true;
+                } else if (s % 4 === 0 || s % 4 === 2 || s % 4 === 3) {
+                    playGuitar = true; // Gallop
+                }
+
+                if (playGuitar) {
+                    const note = normalizeNote(root, isChorus ? "guitarOpen" : "guitarPalm");
+                    Tone.Transport.schedule(t => {
+                        inst.triggerAttackRelease(note + "2", "16n", t);
+                        bass.triggerAttackRelease(normalizeNote(root, "bass") + "1", "16n", t);
+                    }, absoluteTime);
                 }
             }
 
-            // SCHEDULING REALE (Stile Piano)
-            if (playGuitar) {
-                const note = normalizeNote(root, inst === guitarPalm ? "guitarPalm" : "guitarOpen");
-                Tone.Transport.schedule((time) => {
-                    inst.triggerAttackRelease(note + "2", "16n", time);
-                }, absoluteTime);
-            }
+            // 2. BATTERIA (Virtuosismi e Fill)
+            Tone.Transport.schedule((time) => {
+                // INTRO 1a METÀ: Solo rullante e piatti (Virtuosismo)
+                if (isIntro && !isSecondHalf) {
+                    if (s % 6 === 0) drums.player("snare").start(time);
+                    if (s === 0) drums.player(m % 2 === 0 ? "crash1" : "crash2").start(time);
+                    if (s % 2 === 0) drums.player("hihat").start(time);
+                    return;
+                }
 
-            if (isChorus || playGuitar) {
-                Tone.Transport.schedule((time) => {
+                // FILL DI TRANSIZIONE: Giro di Tom negli ultimi 4 sedicesimi della misura
+                if (isTransitionMeasure && s >= 12) {
+                    const tomIndex = (s - 12) + 1; // Tom1, Tom2, Tom3, Tom4
+                    drums.player("tom" + tomIndex).start(time);
+                    return;
+                }
+
+                // RITMO STANDARD
+                if (isChorus || (s % 4 === 0 || s % 4 === 2 || s % 4 === 3)) {
                     drums.player("kick").start(time);
-                    const bNote = normalizeNote(root, "bass");
-                    bass.triggerAttackRelease(bNote + "1", "16n", time);
-                }, absoluteTime);
-            }
-
-            if (s === 4 || s === 12) {
-                Tone.Transport.schedule((time) => {
-                    drums.player("snare").start(time);
-                }, absoluteTime);
-            }
-
-            if (isEighth) {
-                const cymbal = isChorus ? "ride" : "hihat";
-                Tone.Transport.schedule((time) => {
-                    drums.player(cymbal).start(time);
-                }, absoluteTime);
-            }
+                }
+                if (s === 4 || s === 12) drums.player("snare").start(time);
+                if (isEighth) drums.player(isChorus ? "ride" : "hihat").start(time);
+            }, absoluteTime);
         }
     }
 }
