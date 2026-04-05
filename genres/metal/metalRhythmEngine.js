@@ -1,8 +1,8 @@
-// metalRhythmEngine.js — ver. 008.1 (SUSTAINED & FULL LOGIC)
+// metalRhythmEngine.js — ver. 008.2 (SUSTAINED & FULL LOGIC)
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
 
-console.log("metalRhythmEngine.js ver. 008.1 loaded");
+console.log("metalRhythmEngine.js ver. 008.2 loaded");
 
 export function scheduleRhythm(section, progression, instruments, params, rand, measureDur, nextSectionRoot) {
     const { drums, guitarPalm, guitarOpen, bass } = instruments;
@@ -10,24 +10,18 @@ export function scheduleRhythm(section, progression, instruments, params, rand, 
     const isIntro = section.name.toLowerCase().includes("intro");
     const stepTime = measureDur / 16;
     
-    // Groove unico per i versi
     const sectionGroove = (rand() > 0.5) ? "gallop" : "straight";
-    
-    // DECISIONE CHORUS: Usiamo il DNA per decidere se questo specifico chorus è "Sustain" o "Ribattuto"
-    // In alternativa, potresti forzare il secondo chorus a essere sempre ribattuto.
     const chorusStyle = rand() > 0.5 ? "sustainOnly" : "doublePick";
 
     for (let m = 0; m < section.measures; m++) {
         const measureStartTime = section.startTime + (m * measureDur);
         const root = progression[m % progression.length];
-        
         const isLastMeasure = (m === section.measures - 1);
         const isHalfway = (m === Math.floor(section.measures / 2) - 1);
 
         for (let s = 0; s < 16; s++) {
             const absoluteTime = measureStartTime + (s * stepTime);
             const isEighth = s % 2 === 0;
-            const isDownbeat = s === 0;
 
             let currentRoot = root;
             let isLeadIn = isLastMeasure && s >= 12;
@@ -45,43 +39,46 @@ export function scheduleRhythm(section, progression, instruments, params, rand, 
                 }
             }
 
-            // --- 2. CHITARRA LOGIC (Chorus Variabili) ---
+            // --- 2. CHITARRA LOGIC (FIX SUSTAIN) ---
             let playGuitar = false;
             let inst = isChorus ? guitarOpen : guitarPalm;
-            let dur = "16n";
+            
+            // Determiniamo se la nota deve essere "aperta" (sustain) o "palm" (stoppata)
+            let isSustainNote = false;
 
             if (isChorus) {
-                inst = guitarOpen;
-                // COLPO PRINCIPALE (Sempre presente)
-                if (s === 0) {
-                    playGuitar = true;
-                    dur = "2n";
-                } 
-                // COLPO DI RINFORZO (Solo se lo stile è doublePick)
-                else if (chorusStyle === "doublePick" && s === 10) {
-                    playGuitar = true;
-                    dur = "8n";
-                }
+                isSustainNote = true;
+                if (s === 0) playGuitar = true;
+                else if (chorusStyle === "doublePick" && s === 10) playGuitar = true;
             } else if (isIntro && m < section.measures / 2) {
-                if (s % 8 === 0) { playGuitar = true; inst = guitarOpen; dur = "1n"; }
+                isSustainNote = true;
+                if (s % 8 === 0) playGuitar = true;
             } else {
                 // VERSE / SOLO
-                if (isLeadIn) { playGuitar = true; inst = guitarPalm; dur = "16n"; }
+                if (isLeadIn) playGuitar = true;
                 else {
                     playGuitar = sectionGroove === "gallop" ? (s % 4 === 0 || s % 4 === 2 || s % 4 === 3) : isEighth;
                 }
             }
 
             if (playGuitar) {
-                const gNote = normalizeNote(currentRoot, inst === guitarOpen ? "guitarOpen" : "guitarPalm");
+                const gNote = normalizeNote(currentRoot, isSustainNote ? "guitarOpen" : "guitarPalm");
                 const bNote = normalizeNote(currentRoot, "bass");
+                
                 Tone.Transport.schedule(t => {
-                    inst.triggerAttackRelease(gNote + "2", dur, t);
+                    // FIX CRUCIALE: Se è una nota di sustain (Chorus/Intro), 
+                    // NON usiamo triggerAttackRelease con una durata breve.
+                    // Usiamo una durata molto lunga ("1n" = una misura intera) 
+                    // per assicurarci che il campione non venga mai tagliato 
+                    // prima del colpo successivo.
+                    const duration = isSustainNote ? "1n" : "16n";
+                    
+                    inst.triggerAttackRelease(gNote + "2", duration, t);
                     bass.triggerAttackRelease(bNote + "1", "16n", t);
                 }, absoluteTime);
             }
 
-            // --- 3. BATTERIA (Pulita e con transizioni umane) ---
+            // --- 3. BATTERIA ---
             Tone.Transport.schedule((time) => {
                 if (isIntro && m < section.measures / 2) {
                     if (s === 0) drums.player("crash1").start(time);
@@ -89,18 +86,12 @@ export function scheduleRhythm(section, progression, instruments, params, rand, 
                     if (isEighth) drums.player("hihat").start(time);
                     return;
                 }
-
                 if (s === 0 && (m === 0 || isHalfway)) drums.player("crash2").start(time);
-
                 const kickHit = (isChorus || isLeadIn) ? isEighth : (sectionGroove === "gallop" ? (s % 4 === 0 || s % 4 === 2 || s % 4 === 3) : isEighth);
                 if (kickHit) drums.player("kick").start(time);
-                
                 if (s === 4 || s === 12) drums.player("snare").start(time);
                 if (isLastMeasure && s > 13) drums.player("snare").start(time);
-
                 if (isEighth) drums.player(isChorus ? "ride" : "hihat").start(time);
-                
-                // Tom solo su accenti (ottavi) nelle transizioni
                 if ((isLastMeasure || isHalfway) && s >= 12 && s % 2 === 0) {
                     drums.player("tom" + (s === 12 ? 1 : 3)).start(time);
                 }
