@@ -10,6 +10,10 @@ import { waitForInstruments } from "../../common.js";
 
 console.log("metalEngine.js ver. 005 loaded");
 
+export async function waitMetalInstruments() {
+    await waitForInstruments(4);
+}
+
 export function createMetalEngine(params) {
     // Il seed 'params.dna' ora guida TUTTO
     const rand = createSeededRandom(params.dna);
