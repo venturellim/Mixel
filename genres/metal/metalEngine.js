@@ -1,4 +1,4 @@
-// metalEngine.js — ver. 009 (THE BEST OF BOTH WORLDS)
+// metalEngine.js — ver. 010 (STABLE PARAMETERS)
 import * as Tone from "https://esm.sh/tone";
 import { buildPowerMetalParams } from "./powerMetalParams.js";
 import { buildSongStructure } from "../../utils/structureUtils.js";
@@ -8,7 +8,7 @@ import { metalInstruments, metalVolumeMap } from "./metalInstruments.js";
 import { scheduleRhythm } from "./metalRhythmEngine.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalRhythmEngine.js ver. 009 loaded");
+console.log("metalRhythmEngine.js ver. 010 loaded");
 
 export async function waitMetalInstruments() {
     await waitForInstruments(4);
@@ -16,16 +16,17 @@ export async function waitMetalInstruments() {
 
 export function createMetalEngine(params) {
     const rand = createSeededRandom(params.dna);
+    // Creiamo i parametri musicali
     const metalParams = buildPowerMetalParams(rand);
     
     Tone.Transport.stop();
     Tone.Transport.cancel(); 
     Tone.Transport.bpm.value = metalParams.bpm;
 
-    // 1. STRUTTURA CON QUADRATURA (Multipli di 4 o 2)
+    // 1. STRUTTURA CON QUADRATURA
     const rawStructure = [
-        { name: "intro",     weight: 4 + (rand() * 4) }, // Sarà 4 o 8
-        { name: "verse",     weight: 8 + (rand() * 8) }, // Sarà 8, 12 o 16
+        { name: "intro",     weight: 4 + (rand() * 4) },
+        { name: "verse",     weight: 8 + (rand() * 8) },
         { name: "prechorus", weight: params.imageParams.energy > 0.6 ? 4 : 0 },
         { name: "chorus",    weight: 8 + (rand() * 8) },
         { name: "solo",      weight: params.imageParams.complexity > 0.7 ? 8 : 0 },
@@ -35,12 +36,9 @@ export function createMetalEngine(params) {
 
     const finalStructure = rawStructure.map(s => {
         let m = Math.floor(s.weight);
-        // FORZATURA QUADRATURA: 
-        // Intro, Verse, Chorus e Solo devono essere multipli di 4 per non sembrare tagliati
         if (["intro", "verse", "chorus", "solo"].includes(s.name) && m > 0) {
             m = Math.ceil(m / 4) * 4; 
         } else if (m > 0) {
-            // Pre-chorus o Outro possono essere multipli di 2
             m = Math.ceil(m / 2) * 2;
         }
         return { name: s.name, measures: m };
@@ -50,16 +48,18 @@ export function createMetalEngine(params) {
     const progressions = generateSongProgressions(structure, params.imageParams, metalParams.tonalCenter, rand);
     const measureDur = (60 / metalParams.bpm) * 4;
 
-    console.log(`%c 🤘 ENGINE 009: Squared Structure Generated `, "color: #f0f; font-weight: bold;");
+    // PREPARAZIONE PARAMETRI PER IL RHYTHM ENGINE
+    // Uniamo i dati dell'immagine con i parametri musicali per non avere undefined
+    const combinedParams = {
+        ...metalParams,
+        imageParams: params.imageParams 
+    };
 
     structure.sections.forEach((sec, index) => {
         const info = progressions[sec.name];
         const sectionRoot = info?.root || metalParams.tonalCenter[0] || "E";
         const degrees = info?.progression || ["i"];
 
-        // ADATTAMENTO PROGRESSIONE: 
-        // Se abbiamo 4 note ma la sezione è da 8, le ripetiamo. 
-        // Se la sezione è da 6 (pre-chorus), ne usiamo 6 coerenti.
         let fullProgression = [];
         while (fullProgression.length < sec.measures) {
             fullProgression = fullProgression.concat(degrees);
@@ -72,10 +72,11 @@ export function createMetalEngine(params) {
         const nextSectionRoot = nextSec ? (progressions[nextSec.name]?.root || sectionRoot) : sectionRoot;
 
         Tone.Transport.schedule(() => {
-            console.log(`%c ▶ ${sec.name.toUpperCase()} (${sec.measures} measures) | Root: ${sectionRoot} `, "color: #0ff;");
+            console.log(`%c ▶ ${sec.name.toUpperCase()} (${sec.measures} measures) | Root: ${sectionRoot} `, "color: #0ff; font-weight: bold;");
         }, sec.startTime);
 
-        scheduleRhythm(sec, realNotes, metalInstruments, metalParams, rand, measureDur, nextSectionRoot);
+        // PASSIAMO combinedParams INVECE DI metalParams
+        scheduleRhythm(sec, realNotes, metalInstruments, combinedParams, rand, measureDur, nextSectionRoot);
     });
 
     return {
