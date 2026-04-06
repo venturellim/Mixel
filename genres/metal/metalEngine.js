@@ -8,7 +8,7 @@ import { metalInstruments, metalVolumeMap } from "./metalInstruments.js";
 import { scheduleRhythm } from "./metalRhythmEngine.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalRhythmEngine.js ver. 010 loaded");
+console.log("metalEngine.js ver. 010 loaded");
 
 export async function waitMetalInstruments() {
     await waitForInstruments(4);
