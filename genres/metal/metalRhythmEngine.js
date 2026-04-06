@@ -1,127 +1,98 @@
-// metalRhythmEngine.js — ver. 011 (SUSTAINED & FULL LOGIC)
+
+// metalRhythmEngine.js — ver. 027
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
+import { chooseRiffPattern } from "./riffPatterns.js";
 
-console.log("metalRhythmEngine.js ver. 011 loaded");
+console.log("metalRhythmEngine.js ver. 020 loaded");
 
 export function scheduleRhythm(section, progression, instruments, params, rand, measureDur, nextSectionRoot) {
     const { drums, guitarPalm, guitarOpen, bass } = instruments;
-    const isChorus = section.name.toLowerCase().includes("chorus");
-    const isIntro = section.name.toLowerCase().includes("intro");
     const stepTime = measureDur / 16;
+    const secondsPerBeat = measureDur / 4;
     
-    // --- 1. SELEZIONE DEL PATTERN (Basata su Energy e DNA) ---
-    const energy = params.imageParams.energy;
-    const dice = rand();
-    let grooveType = "straight";
+    // 1. SCELTA DEL PATTERN (Una volta per sezione per coerenza)
+    const sectionPattern = chooseRiffPattern(section.name.toLowerCase(), params.imageParams, rand);
+    
+    // Definiamo quanto dura ogni pattern (fondamentale per non avere glitch)
+    const patternMeasures = {
+        pm_groove: 2, gallop: 2, pedal: 2, pm_half_time: 2,
+        open_epic: 1, intro_stratovarius: 1, open_sustain: 1, default: 1
+    };
 
-    if (isChorus) {
-        grooveType = energy > 0.7 ? "doubleKick" : "straight";
-    } else if (isIntro) {
-        grooveType = "epicHold"; // Quello che abbiamo fatto per Stratovarius
-    } else {
-        // Verse/Solo: Varietà totale
-        if (dice < 0.25) grooveType = "gallop";
-        else if (dice < 0.50) grooveType = "triplet";  // 12/8 feel (Helloween style)
-        else if (dice < 0.75 && energy > 0.6) grooveType = "doubleKick";
-        else if (energy < 0.4) grooveType = "heavySlow"; // Doom/Epic feel
-    }
+    const pLen = patternMeasures[sectionPattern] || 1;
 
-    for (let m = 0; m < section.measures; m++) {
-        const measureStartTime = section.startTime + (m * measureDur);
-        const root = progression[m % progression.length];
-        const isIntroFirstHalf = isIntro && (m < Math.floor(section.measures / 2));
-        const isLastMeasure = (m === section.measures - 1);
+    // 2. FUNZIONE DI ESECUZIONE (Il "Cuore" del Riff)
+    const playGuitarAndBass = (p, measureOffset, rootNote) => {
+        const startTime = section.startTime + (measureOffset * measureDur);
+        const gP = normalizeNote(rootNote, "guitarPalm") + "2";
+        const gO = normalizeNote(rootNote, "guitarOpen") + "2";
+        const bN = normalizeNote(rootNote, "bass") + "1";
+
+        // Dispatcher dei pattern (Evolviamo la logica dello switch)
+        if (p === "intro_stratovarius") {
+            [0, 0.5, 2, 2.5].forEach(b => {
+                Tone.Transport.schedule(t => {
+                    guitarPalm.triggerAttackRelease(gP, "16n", t);
+                    bass.triggerAttackRelease(bN, "16n", t);
+                }, startTime + (b * secondsPerBeat));
+            });
+            [1, 3].forEach(b => {
+                Tone.Transport.schedule(t => {
+                    guitarOpen.triggerAttackRelease(gO, "2n", t);
+                    bass.triggerAttackRelease(bN, "2n", t);
+                }, startTime + (b * secondsPerBeat));
+            });
+        } 
+        else if (p === "gallop") {
+            for (let s = 0; s < 16 * pLen; s++) {
+                if (s % 4 !== 1) { // Classico 1-&a 2-&a
+                    Tone.Transport.schedule(t => {
+                        guitarPalm.triggerAttackRelease(gP, "16n", t);
+                        bass.triggerAttackRelease(bN, "16n", t);
+                    }, startTime + (s * (stepTime/1))); 
+                }
+            }
+        }
+        else {
+            // Default: PM Groove o note sui quarti se non riconosciuto
+            [0, 1, 2, 3].forEach(b => {
+                Tone.Transport.schedule(t => {
+                    guitarPalm.triggerAttackRelease(gP, "8n", t);
+                    bass.triggerAttackRelease(bN, "8n", t);
+                }, startTime + (b * secondsPerBeat));
+            });
+        }
+    };
+
+    // 3. LOGICA DELLA BATTERIA (Semplice e Robusta)
+    const playDrums = (mIndex) => {
+        const mStart = section.startTime + (mIndex * measureDur);
+        const isChorus = section.name.toLowerCase().includes("chorus");
 
         for (let s = 0; s < 16; s++) {
-            const absoluteTime = measureStartTime + (s * stepTime);
-            let currentRoot = root;
-            
-            // --- 2. DEFINIZIONE DEGLI HIT (Cassa, Rullante, Chitarra) ---
-            let kick = false;
-            let snare = (s === 4 || s === 12);
-            let playGuitar = false;
-            let inst = guitarPalm;
-            let sustain = false;
-
-            switch(grooveType) {
-                case "gallop": // [1 - - 4 1 - - 4]
-                    kick = (s % 4 === 0 || s % 4 === 2 || s % 4 === 3);
-                    playGuitar = kick;
-                    break;
-
-                case "triplet": // Feel terzinato (Maiden/Helloween)
-                    // Usiamo una maschera per simulare le terzine su 16 step
-                    const tripletSteps = [0, 2, 3, 6, 8, 9, 12, 14, 15];
-                    kick = tripletSteps.includes(s);
-                    snare = (s === 6 || s === 12);
-                    playGuitar = kick;
-                    break;
-
-                case "doubleKick": // Tappeto a 16esimi
-                    kick = (s % 2 === 0); 
-                    playGuitar = (s % 4 === 0); // Chitarra più larga per non impastare
-                    break;
-
-                case "heavySlow": // Half-time pesante
-                    kick = (s === 0 || s === 6);
-                    snare = (s === 8); // Rullante spostato sul 3 (molto lento)
-                    playGuitar = (s === 0 || s === 6 || s === 8);
-                    sustain = true;
-                    inst = guitarOpen;
-                    break;
-
-                case "epicHold": // Stratovarius Style
-                    kick = (s % 8 === 0);
-                    snare = (s === 12);
-                    playGuitar = (s % 8 === 0);
-                    sustain = true;
-                    inst = guitarOpen;
-                    break;
-
-                default: // Straight (Standard 4/4)
-                    kick = (s % 4 === 0 || s % 8 === 6);
-                    playGuitar = (s % 2 === 0);
-            }
-
-            // --- 3. SCHEDULING STRUMENTI ---
-            if (playGuitar || (isLastMeasure && s >= 12 && s % 2 === 0)) {
-                // Transizione cromatica (rimane attiva)
-                if (isLastMeasure && s >= 12 && nextSectionRoot && nextSectionRoot !== root) {
-                    const diff = Tone.Frequency(nextSectionRoot + "2").toMidi() > Tone.Frequency(root + "2").toMidi() ? 1 : -1;
-                    currentRoot = Tone.Frequency(Tone.Frequency(root + "2").toMidi() + (s === 12 ? diff : diff * 2), "midi").toNote();
-                    playGuitar = true; // Forza il colpo nella transizione
-                }
-
-                const gNote = normalizeNote(currentRoot, inst === guitarOpen ? "guitarOpen" : "guitarPalm");
-                const bNote = normalizeNote(currentRoot, "bass");
-                Tone.Transport.schedule(t => {
-                    inst.triggerAttackRelease(gNote + "2", sustain ? "1n" : "16n", t);
-                    bass.triggerAttackRelease(bNote + "1", sustain ? "1n" : "16n", t);
-                }, absoluteTime);
-            }
-
-            // --- 4. SCHEDULING BATTERIA (Dinamica) ---
+            const t = mStart + (s * stepTime);
             Tone.Transport.schedule(time => {
-                if (isIntroFirstHalf) {
-                    if (s === 0) {
-                        drums.player("crash1").start(time);
-                        drums.player("kick").start(time);
-                        drums.player("tom1").start(time);
-                    }
-                    return;
+                if (s === 0 || s === 8) drums.player("kick").start(time);
+                if (s === 4 || s === 12) drums.player("snare").start(time);
+                if (s % 2 === 0) {
+                    const cym = isChorus ? "ride" : "hihat";
+                    drums.player(cym).start(time, 0, { volume: -15 });
                 }
-                
-                if (kick) drums.player("kick").start(time);
-                if (snare) drums.player("snare").start(time);
-                
-                // Piatti: Ride nel chorus, HiHat nel resto
-                if (s % 2 === 0) drums.player(isChorus ? "ride" : "hihat").start(time);
-                
-                // Accenti e Fill
-                if (s === 0 && (m === 0 || isLastMeasure)) drums.player("crash2").start(time);
-                if (isLastMeasure && s >= 12 && s % 2 === 0) drums.player("tom" + (s === 12 ? 1 : 3)).start(time);
-            }, absoluteTime);
+            }, t);
+        }
+    };
+
+    // 4. MAIN LOOP DI SCHEDULAZIONE
+    for (let m = 0; m < section.measures; m += pLen) {
+        const currentRoot = progression[m % progression.length];
+        
+        // Suona il pattern scelto
+        playGuitarAndBass(sectionPattern, m, currentRoot);
+        
+        // Suona la batteria per ogni misura del pattern
+        for (let j = 0; j < pLen && (m + j < section.measures); j++) {
+            playDrums(m + j);
         }
     }
 }
