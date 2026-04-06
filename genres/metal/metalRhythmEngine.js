@@ -2,7 +2,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
 
-console.log("metalRhythmEngine.js ver. 015 loaded");
+console.log("metalRhythmEngine.js ver. 015.1 loaded");
 
 export function scheduleRhythm(section, progression, instruments, params, rand, measureDur, nextSectionRoot) {
     const { drums, guitarPalm, guitarOpen, bass } = instruments;
@@ -10,7 +10,7 @@ export function scheduleRhythm(section, progression, instruments, params, rand, 
     const isChorus = section.name.toLowerCase().includes("chorus");
     const stepTime = measureDur / 16;
 
-    // Pattern Library (Spostata fuori o mantenuta per riferimento)
+    // Pattern Library 
     const RHYTHM_LIBRARY = {
         verse: [
             { kick: [0, 2, 3, 4, 6, 7, 8, 10, 11, 12, 14, 15], snare: [4, 12] },
@@ -33,13 +33,11 @@ export function scheduleRhythm(section, progression, instruments, params, rand, 
         for (let s = 0; s < 16; s++) {
             const absoluteTime = measureStartTime + (s * stepTime);
 
-            // 1. Calcolo Hit
             const kickHit = sectionPattern.kick.includes(s);
             const snareHit = sectionPattern.snare.includes(s);
             let useOpen = (isIntro && sectionPattern.type === "open") || (isChorus && rand() > 0.3);
             let playGuitar = kickHit;
 
-            // Transizione finale
             let currentRoot = root;
             if (isLastMeasure && s >= 12 && nextSectionRoot && nextSectionRoot !== root) {
                 const rootMidi = Tone.Frequency(root + "2").toMidi();
@@ -49,42 +47,45 @@ export function scheduleRhythm(section, progression, instruments, params, rand, 
                 playGuitar = true;
             }
 
-            // --- 2. UNICO PUNTO DI SCHEDULING ---
-            // Invece di fare schedule multipli, ne facciamo uno solo per "step"
+            // --- SCHEDULING ROBUSTO ---
             Tone.Transport.schedule(time => {
-                
-                // GESTIONE BATTERIA
-                if (isIntroFirstHalf) {
-                    if (s === 0) {
-                        drums.player("kick").start(time);
-                        drums.player("crash1").start(time);
-                    }
-                } else {
-                    if (kickHit) drums.player("kick").start(time);
-                    if (snareHit) drums.player("snare").start(time);
-                    if (s % 2 === 0) {
-                        const cym = isChorus ? "ride" : "hihat";
-                        drums.player(cym).start(time, 0, { volume: isChorus ? 0 : -10 });
-                    }
-                    if (s === 0 && (m === 0 || isLastMeasure)) drums.player("crash2").start(time);
-                }
-
-                // GESTIONE CHITARRA E BASSO
-                if (playGuitar) {
-                    const gNote = normalizeNote(currentRoot, useOpen ? "guitarOpen" : "guitarPalm");
-                    
-                    // Muting (Uccidiamo le code precedenti)
-                    guitarOpen.releaseAll(time);
-                    guitarPalm.releaseAll(time);
-                    bass.releaseAll(time);
-
-                    if (useOpen) {
-                        guitarOpen.triggerAttack(gNote + "2", time);
-                        bass.triggerAttackRelease(normalizeNote(currentRoot, "bass") + "1", "8n", time);
+                try {
+                    // 1. BATTERIA (Con check di sicurezza)
+                    if (isIntroFirstHalf) {
+                        if (s === 0) {
+                            drums.player("kick").start(time);
+                            drums.player("crash1").start(time);
+                        }
                     } else {
-                        guitarPalm.triggerAttackRelease(gNote + "2", "16n", time);
+                        if (kickHit) drums.player("kick").start(time);
+                        if (snareHit) drums.player("snare").start(time);
+                        if (s % 2 === 0) {
+                            const cym = isChorus ? "ride" : "hihat";
+                            // Solo se il player esiste e il buffer è pronto
+                            if (drums.has(cym)) drums.player(cym).start(time);
+                        }
+                        if (s === 0 && (m === 0 || isLastMeasure)) {
+                            if (drums.has("crash2")) drums.player("crash2").start(time);
+                        }
+                    }
+
+                    // 2. CHITARRA E BASSO
+                    if (playGuitar) {
+                        const gNote = normalizeNote(currentRoot, useOpen ? "guitarOpen" : "guitarPalm");
+                        
+                        guitarOpen.releaseAll(time);
+                        guitarPalm.releaseAll(time);
+                        bass.releaseAll(time);
+
+                        if (useOpen) {
+                            guitarOpen.triggerAttack(gNote + "2", time);
+                        } else {
+                            guitarPalm.triggerAttackRelease(gNote + "2", "16n", time);
+                        }
                         bass.triggerAttackRelease(normalizeNote(currentRoot, "bass") + "1", "16n", time);
                     }
+                } catch (e) {
+                    // Silenzia l'errore per non bloccare il loop audio
                 }
             }, absoluteTime);
         }
