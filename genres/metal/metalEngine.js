@@ -8,7 +8,7 @@ import { metalInstruments, metalVolumeMap } from "./metalInstruments.js";
 import { scheduleRhythm } from "./metalRhythmEngine.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 010 loaded");
+console.log("metalEngine.js ver. 010.1 loaded");
 
 export async function waitMetalInstruments() {
     await waitForInstruments(4);
@@ -24,15 +24,16 @@ export function createMetalEngine(params) {
     Tone.Transport.bpm.value = metalParams.bpm;
 
     // 1. STRUTTURA CON QUADRATURA
-    const rawStructure = [
-        { name: "intro",     weight: 4 + (rand() * 4) },
-        { name: "verse",     weight: 8 + (rand() * 8) },
-        { name: "prechorus", weight: params.imageParams.energy > 0.6 ? 4 : 0 },
-        { name: "chorus",    weight: 8 + (rand() * 8) },
-        { name: "solo",      weight: params.imageParams.complexity > 0.7 ? 8 : 0 },
-        { name: "chorus",    weight: 8 },
-        { name: "outro",     weight: 4 }
-    ];
+const rawStructure = [
+    { name: "intro",     weight: 4 + (rand() * 4) }, 
+    { name: "verse",     weight: 8 + (rand() * 8) },
+    { name: "prechorus", weight: (params.imageParams.energy > 0.4 && rand() > 0.5) ? 4 : 0 },
+    { name: "chorus",    weight: 8 + (rand() * 8) },
+    { name: "solo",      weight: params.imageParams.complexity > 0.7 ? 8 : 0 },
+    { name: "chorus",    weight: 8 },
+    { name: "outro",     weight: 4 }
+];
+
 
     const finalStructure = rawStructure.map(s => {
         let m = Math.floor(s.weight);
