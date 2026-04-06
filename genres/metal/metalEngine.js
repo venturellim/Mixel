@@ -1,4 +1,4 @@
-// metalEngine.js — ver. 010 (STABLE PARAMETERS)
+// metalEngine.js — ver. 011 (STABLE PARAMETERS)
 import * as Tone from "https://esm.sh/tone";
 import { buildPowerMetalParams } from "./powerMetalParams.js";
 import { buildSongStructure } from "../../utils/structureUtils.js";
@@ -6,9 +6,10 @@ import { createSeededRandom } from "../../utils/randomUtils.js";
 import { generateSongProgressions, degreeToRoot } from "../../utils/musicTheory.js";
 import { metalInstruments, metalVolumeMap } from "./metalInstruments.js";
 import { scheduleRhythm } from "./metalRhythmEngine.js";
+import { scheduleLead } from "./metalLeadEngine.js"; 
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 010.1 loaded");
+console.log("metalEngine.js ver. 011 loaded");
 
 export async function waitMetalInstruments() {
     await waitForInstruments(4);
@@ -76,10 +77,12 @@ const rawStructure = [
             console.log(`%c ▶ ${sec.name.toUpperCase()} (${sec.measures} measures) | Root: ${sectionRoot} `, "color: #0ff; font-weight: bold;");
         }, sec.startTime);
 
-        // PASSIAMO combinedParams INVECE DI metalParams
+        // CHIAMATA AL MOTORE RITMICO (Già presente)
         scheduleRhythm(sec, realNotes, metalInstruments, combinedParams, rand, measureDur, nextSectionRoot);
-    });
 
+        // CHIAMATA AL MOTORE LEAD (Da aggiungere ora)
+        scheduleLead(sec, realNotes, metalInstruments, combinedParams, rand, measureDur); 
+});
     return {
         totalDuration: structure.totalDuration,
         play: () => { if (Tone.context.state !== 'running') Tone.context.resume(); Tone.Transport.start("+0.1"); },
