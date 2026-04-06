@@ -4,10 +4,6 @@ import { normalizeNote } from "./metalInstruments.js";
 
 console.log("metalRhythmEngine.js ver. 013 loaded");
 
-// metalRhythmEngine.js — ver. 013 (CLEAN CHANNELS & MUTING)
-import * as Tone from "https://esm.sh/tone";
-import { normalizeNote } from "./metalInstruments.js";
-
 export function scheduleRhythm(section, progression, instruments, params, rand, measureDur, nextSectionRoot) {
     const { drums, guitarPalm, guitarOpen, bass } = instruments;
     const isChorus = section.name.toLowerCase().includes("chorus");
