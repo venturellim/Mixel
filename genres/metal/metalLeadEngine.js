@@ -1,7 +1,9 @@
 // metalLeadEngine.js — ver. 001
-import * as Tone from "https://esm.sh/tone";
 
-console.log("metalLeadEngine.js ver. 001 loaded");
+import * as Tone from "https://esm.sh/tone";
+import { normalizeNote } from "./metalInstruments.js";
+
+console.log("metalLeadEngine.js ver. 001.1 loaded");
 
 export function scheduleLead(section, progression, instruments, params, rand, measureDur) {
     const { guitarLead, keyboardLead, keyboardPad } = instruments;
@@ -9,59 +11,59 @@ export function scheduleLead(section, progression, instruments, params, rand, me
     const isSolo = section.name.toLowerCase().includes("solo") || section.name.toLowerCase().includes("bridge");
     const stepTime = measureDur / 16;
     
-    // Parametri DNA
     const { brightness = 0.5, complexity = 0.5 } = params.imageParams;
+    const scale = ["A", "B", "C", "D", "E", "F", "G#"];
 
-    // Scale Power Metal (Minore Naturale / Minore Armonica)
-    const scale = ["A", "B", "C", "D", "E", "F", "G#"]; // Minore Armonica per il gusto Tolkki/Johansson
+    // Utility interna per costruire note sicure
+    const buildNote = (rawRoot, octave) => {
+        const cleanRoot = rawRoot.replace(/[0-9]/g, ''); // Rimuove numeri (es. C2 -> C)
+        const normalized = normalizeNote(cleanRoot, "guitarLead");
+        return normalized + octave;
+    };
 
     for (let m = 0; m < section.measures; m++) {
         const measureStartTime = section.startTime + (m * measureDur);
         const currentRoot = progression[m % progression.length];
 
-        // --- 1. IL "CANTO" (Verse & Chorus) ---
         if (!isSolo) {
-            // Nel Verse/Chorus la lead fa note lunghe e "respira" (una frase ogni 2 misure)
+            // --- 1. IL CANTO (Verse & Chorus) ---
             if (m % 2 === 0) {
-                // Scegliamo una nota della triade dell'accordo per farla "cantare" bene
-                const melodyNote = currentRoot + (isChorus ? "5" : "4"); // Più alta nel Chorus
+                const melodyNote = buildNote(currentRoot, isChorus ? 5 : 4);
                 
                 Tone.Transport.schedule(time => {
-                    // Chitarra Lead con sustain
-                    guitarLead.triggerAttackRelease(melodyNote, "1n", time);
-                    
-                    // Se la foto è "bright", aggiungiamo il Pad di tastiera per l'effetto orchestrale
-                    if (isChorus || brightness > 0.6) {
-                        keyboardPad.triggerAttackRelease(melodyNote, "1n", time, 0.4);
-                    }
+                    try {
+                        guitarLead.triggerAttackRelease(melodyNote, "1n", time);
+                        if (isChorus || brightness > 0.6) {
+                            keyboardPad.triggerAttackRelease(melodyNote, "1n", time, 0.4);
+                        }
+                    } catch(e) { console.error("Lead Error:", e); }
                 }, measureStartTime);
 
-                // Aggiungiamo una piccola risposta melodica a metà misura
+                // Risposta melodica a metà misura (mantiene il feeling di Kotipelto)
                 Tone.Transport.schedule(time => {
-                    const responseNote = scale[rand() > 0.5 ? 2 : 4] + (isChorus ? "5" : "4");
-                    guitarLead.triggerAttackRelease(responseNote, "2n", time);
+                    try {
+                        const respBase = scale[rand() > 0.5 ? 2 : 4];
+                        const responseNote = buildNote(respBase, isChorus ? 5 : 4);
+                        guitarLead.triggerAttackRelease(responseNote, "2n", time);
+                    } catch(e) {}
                 }, measureStartTime + (measureDur / 2));
             }
         } 
-        
-        // --- 2. L'ASSOLO (The Shredder) ---
         else {
-            // Qui scateniamo la tecnica con scale e unisono Chitarra + Tastiera
+            // --- 2. L'ASSOLO (The Shredder) ---
             for (let s = 0; s < 16; s++) {
-                // Non suoniamo su ogni singolo step per non fare confusione, 
-                // ma creiamo dei "cluster" di velocità
                 if (s % 2 === 0 && rand() < 0.7) {
                     const absoluteTime = measureStartTime + (s * stepTime);
                     const noteIndex = Math.floor(rand() * scale.length);
-                    const soloNote = scale[noteIndex] + (s > 8 ? "5" : "4");
+                    const soloNote = buildNote(scale[noteIndex], s > 8 ? 5 : 4);
 
                     Tone.Transport.schedule(time => {
-                        guitarLead.triggerAttackRelease(soloNote, "16n", time);
-                        
-                        // Il classico "Unisono" Stratovarius: Chitarra + Tastiera Lead
-                        if (complexity > 0.5) {
-                            keyboardLead.triggerAttackRelease(soloNote, "16n", time, 0.3);
-                        }
+                        try {
+                            guitarLead.triggerAttackRelease(soloNote, "16n", time);
+                            if (complexity > 0.5) {
+                                keyboardLead.triggerAttackRelease(soloNote, "16n", time, 0.3);
+                            }
+                        } catch(e) {}
                     }, absoluteTime);
                 }
             }
