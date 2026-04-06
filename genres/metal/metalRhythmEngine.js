@@ -1,100 +1,117 @@
-// metalRhythmEngine.js — ver. 018 (THE GENOME UPDATE)
+// metalRhythmEngine.js — ver. 019 (THE GENOME UPDATE)
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
+import { chooseRiffPattern } from "./riffPatterns.js";
 
-console.log("metalRhythmEngine.js ver. 018.2 loaded");
+console.log("metalRhythmEngine.js ver. 019 loaded");
 
 export function scheduleRhythm(section, progression, instruments, params, rand, measureDur, nextSectionRoot) {
     const { drums, guitarPalm, guitarOpen, bass } = instruments;
-    const isIntro = section.name.toLowerCase().includes("intro");
-    const isChorus = section.name.toLowerCase().includes("chorus");
+    const secondsPerBeat = measureDur / 4;
     const stepTime = measureDur / 16;
-    const { energy = 0.5, brightness = 0.5, complexity = 0.5 } = params.imageParams || {};
+    const { energy = 0.5, complexity = 0.5 } = params.imageParams || {};
 
-    // --- 1. LOGICA DEL TUO VECCHIO riffPatterns.js ---
-    const PATTERN_DATA = {
-        "stratovarius": { k: [0, 8, 10], s: [4, 12], g: [0, 8, 10], inst: "open" },
-        "gallop": { k: [0, 2, 3, 4, 6, 7, 8, 10, 11, 12, 14, 15], s: [4, 12], g: [0, 2, 3, 4, 6, 7, 8, 10, 11, 12, 14, 15], inst: "palm" },
-        "open_epic": { k: [0, 6, 8], s: [4, 12], g: [0, 6, 8], inst: "open" },
-        "pm_groove": { k: [0, 4, 8, 12], s: [4, 12], g: [0, 4, 8, 12], inst: "palm" },
-        "sparse": { k: [0, 8], s: [12], g: [0], inst: "open" }
+    // 1. SCELTA DEL PATTERN (Una sola volta per sezione come nel vecchio engine)
+    const sectionPattern = chooseRiffPattern(section.name.toLowerCase(), params.imageParams, rand);
+    
+    // Mappatura durate (dal vecchio riffEngine)
+    const patternMeasures = {
+        pm_sparse: 2, pm_groove: 2, pm_half_time: 2, pedal: 2, 
+        gallop: 2, gallop_light: 2, pm_support: 2,
+        open_half_time: 1, open_epic: 1, intro_stratovarius: 1, default: 1
     };
 
-    // Scelta pesata
-    const weightedChoice = (options) => {
-        const total = options.reduce((s, o) => s + o.weight, 0);
-        let r = rand() * total;
-        for (const o of options) { if (r < o.weight) return o.value; r -= o.weight; }
-        return options[0].value;
-    };
+    // 2. DISPATCHER DELLE FUNZIONI RITMICHE (Logica evoluta dal vecchio motore)
+    // Invece di switch enormi, usiamo un oggetto per mappare i pattern alle funzioni
+    const playPattern = (pattern, startMeasure, root) => {
+        const offset = startMeasure * measureDur;
+        const gNote = normalizeNote(root, "guitarPalm") + "2";
+        const bNote = normalizeNote(root, "bass") + "1";
+        const gNoteOpen = normalizeNote(root, "guitarOpen") + "2";
 
-    // SCEGLIAMO IL PATTERN UNA VOLTA PER TUTTA LA SEZIONE
-    let selectedKey;
-    if (isIntro) {
-        selectedKey = weightedChoice([
-            { value: "stratovarius", weight: complexity },
-            { value: "sparse", weight: 1 - energy }
-        ]);
-    } else if (isChorus) {
-        selectedKey = weightedChoice([
-            { value: "open_epic", weight: brightness },
-            { value: "gallop", weight: energy }
-        ]);
-    } else {
-        selectedKey = weightedChoice([
-            { value: "pm_groove", weight: 0.5 },
-            { value: "gallop", weight: energy }
-        ]);
-    }
-
-    const pattern = PATTERN_DATA[selectedKey] || PATTERN_DATA["pm_groove"];
-
-    // --- 2. LOOP DI SCHEDULAZIONE ---
-    for (let m = 0; m < section.measures; m++) {
-        const measureStartTime = section.startTime + (m * measureDur);
-        const root = progression[m % progression.length];
+        // Esempio: STRATOVARIUS (1 misura)
+        if (pattern === "intro_stratovarius") {
+            [0, 0.5, 2, 2.5].forEach(b => { // Palm
+                Tone.Transport.schedule(t => {
+                    guitarPalm.triggerAttackRelease(gNote, "8n", t);
+                    bass.triggerAttackRelease(bNote, "8n", t);
+                }, section.startTime + offset + (b * secondsPerBeat));
+            });
+            [1, 3].forEach(b => { // Open
+                Tone.Transport.schedule(t => {
+                    guitarOpen.triggerAttackRelease(gNoteOpen, "2n", t);
+                    bass.triggerAttackRelease(bNote, "2n", t);
+                }, section.startTime + offset + (b * secondsPerBeat));
+            });
+        }
         
-        // Gestione Intro progressiva
-        const muteGuitarInIntro = isIntro && (m < 1) && (complexity < 0.4);
-
-        for (let s = 0; s < 16; s++) {
-            const absoluteTime = measureStartTime + (s * stepTime);
-            
-            const kickHit = pattern.k.includes(s);
-            const snareHit = pattern.s.includes(s);
-            const playGuitar = pattern.g.includes(s) && !muteGuitarInIntro;
-
-            const gNote = normalizeNote(root, pattern.inst === "open" ? "guitarOpen" : "guitarPalm") + "2";
-            const bNote = normalizeNote(root, "bass") + "1";
-
-            Tone.Transport.schedule(time => {
-                // Esecuzione batteria (con controllo esistenza player)
-                if (kickHit && drums.has("kick")) drums.player("kick").start(time);
-                if (snareHit && drums.has("snare")) drums.player("snare").start(time);
-                
-                // Piatti (solo ogni 2 step per stabilità)
-                if (s % 2 === 0 && drums.has("hihat")) {
-                    const cymbal = isChorus ? "ride" : "hihat";
-                    if (drums.has(cymbal)) {
-                        drums.player(cymbal).start(time, 0, { volume: -12 });
-                    }
-                }
-
-                // Chitarra e Basso
-                if (playGuitar) {
-                    guitarOpen.releaseAll(time);
-                    guitarPalm.releaseAll(time);
-                    bass.releaseAll(time);
-
-                    if (pattern.inst === "open") {
-                        guitarOpen.triggerAttack(gNote, time);
-                        bass.triggerAttackRelease(bNote, "4n", time);
-                    } else {
+        // Esempio: GALLOP (2 misure)
+        if (pattern === "gallop") {
+            for (let i = 0; i < 16; i++) {
+                if (i % 4 === 0 || i % 4 === 2 || i % 4 === 3) {
+                    const t = section.startTime + offset + (i * (measureDur / 8));
+                    Tone.Transport.schedule(time => {
                         guitarPalm.triggerAttackRelease(gNote, "16n", time);
                         bass.triggerAttackRelease(bNote, "16n", time);
-                    }
+                    }, t);
                 }
-            }, absoluteTime);
+            }
         }
+
+        // ... qui aggiungeremo gli altri dispatcher man mano ...
+        // Per ora usiamo un FALLBACK PM GROOVE se non riconosce il pattern
+        if (pattern === "pm_groove" || (!["intro_stratovarius", "gallop"].includes(pattern))) {
+            for (let i = 0; i < 16; i++) {
+                if (i % 2 === 0) {
+                    Tone.Transport.schedule(t => {
+                        guitarPalm.triggerAttackRelease(gNote, "8n", t);
+                        bass.triggerAttackRelease(bNote, "8n", t);
+                    }, section.startTime + offset + (i * stepTime));
+                }
+            }
+        }
+    };
+
+    // 3. SCHEDULAZIONE BATTERIA (Più "stupida" e solida, segue la misura)
+    const scheduleDrums = (m, absoluteMeasureStart) => {
+        const isIntro = section.name.toLowerCase().includes("intro");
+        const isChorus = section.name.toLowerCase().includes("chorus");
+
+        for (let s = 0; s < 16; s++) {
+            const t = absoluteMeasureStart + (s * stepTime);
+            
+            Tone.Transport.schedule(time => {
+                // Kick & Snare Standard
+                if (s === 0 || s === 8) drums.player("kick").start(time);
+                if (s === 4 || s === 12) drums.player("snare").start(time);
+                
+                // Piatti (senza fronzoli per ora)
+                if (s % 2 === 0) {
+                    const cym = isChorus ? "ride" : "hihat";
+                    drums.player(cym).start(time, 0, {volume: -12});
+                }
+
+                // Accenti
+                if (s === 0 && (m === 0)) drums.player("crash1").start(time);
+            }, t);
+        }
+    };
+
+    // 4. MAIN LOOP (Avanza di patternLength invece che di 1)
+    for (let m = 0; m < section.measures; ) {
+        const root = progression[m % progression.length];
+        const patternLen = patternMeasures[sectionPattern] || 1;
+        
+        // Suona Chitarra/Basso (Pattern Multi-misura)
+        playPattern(sectionPattern, m, root);
+        
+        // Suona Batteria (Misura per misura)
+        for (let j = 0; j < patternLen; j++) {
+            if (m + j < section.measures) {
+                scheduleDrums(m + j, section.startTime + (m + j) * measureDur);
+            }
+        }
+
+        m += patternLen;
     }
 }
