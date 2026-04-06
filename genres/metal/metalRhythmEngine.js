@@ -1,8 +1,8 @@
-// metalRhythmEngine.js — ver. 016 (THE GENOME UPDATE)
+// metalRhythmEngine.js — ver. 017 (THE GENOME UPDATE)
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
 
-console.log("metalRhythmEngine.js ver. 016 loaded");
+console.log("metalRhythmEngine.js ver. 017 loaded");
 
 export function scheduleRhythm(section, progression, instruments, params, rand, measureDur, nextSectionRoot) {
     const { drums, guitarPalm, guitarOpen, bass } = instruments;
@@ -11,73 +11,88 @@ export function scheduleRhythm(section, progression, instruments, params, rand, 
     const stepTime = measureDur / 16;
     const energy = params.imageParams.energy;
 
+    // Aumentiamo i pattern per evitare la noia
     const RHYTHM_LIBRARY = {
         verse: [
-            { kick: [0, 2, 3, 4, 6, 7, 8, 10, 11, 12, 14, 15], snare: [4, 12] },
-            { kick: [0, 4, 8, 12], snare: [4, 12] }
+            { k: [0, 2, 3, 4, 6, 7, 8, 10, 11, 12, 14, 15], s: [4, 12] }, // Gallop
+            { k: [0, 1, 2, 3, 8, 9, 10, 11], s: [4, 12] },               // Double Blast
+            { k: [0, 4, 8, 12], s: [4, 12] },                            // Straight
+            { k: [0, 3, 6, 8, 11, 14], s: [4, 12] }                      // Syncopated
         ],
-        chorus: [{ kick: [0, 2, 4, 6, 8, 10, 12, 14], snare: [4, 12] }],
-        intro: [{ kick: [0], snare: [12], type: "open" }]
+        chorus: [
+            { k: [0, 2, 4, 6, 8, 10, 12, 14], s: [4, 12] },              // Power
+            { k: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], s: [4, 12] } // Full Double
+        ],
+        intro: [{ k: [0], s: [12], type: "open" }]
     };
-
-    const typePool = isIntro ? "intro" : (isChorus ? "chorus" : "verse");
-    const sectionPattern = RHYTHM_LIBRARY[typePool][Math.floor(rand() * RHYTHM_LIBRARY[typePool].length)];
 
     for (let m = 0; m < section.measures; m++) {
         const measureStartTime = section.startTime + (m * measureDur);
         const root = progression[m % progression.length];
-        const isIntroFirstHalf = isIntro && (m < Math.floor(section.measures / 2));
-        const isLastMeasure = (m === section.measures - 1);
+        
+        // --- DINAMICA DI MISURA ---
+        // Scegliamo il pattern QUI (cambia ogni misura o ogni 2 se vuoi più coerenza)
+        const typePool = isIntro ? "intro" : (isChorus ? "chorus" : "verse");
+        const patterns = RHYTHM_LIBRARY[typePool];
+        const pattern = patterns[Math.floor(rand() * patterns.length)];
+        
+        // Decidiamo lo stile della chitarra per QUESTA misura
+        // Se è chorus, 90% Open. Se è Verse, 10% Open (solo accento sul primo colpo)
+        const measureStyle = isChorus ? (rand() > 0.2 ? "open" : "palm") : (rand() > 0.9 ? "open" : "palm");
 
         for (let s = 0; s < 16; s++) {
             const absoluteTime = measureStartTime + (s * stepTime);
-
-            // --- 1. PRE-CALCOLO FUORI DALLA CALLBACK ---
-            // Decidiamo tutto QUI, non nel thread audio
-            const kickHit = !isIntroFirstHalf && sectionPattern.kick.includes(s);
-            const snareHit = !isIntroFirstHalf && sectionPattern.snare.includes(s);
-            const cymbalType = isChorus ? "ride" : "hihat";
-            const playCymbal = !isIntroFirstHalf && (s % 2 === 0);
-            const playIntroHit = isIntroFirstHalf && (s === 0);
-
-            // Chitarra e Basso
-            let currentRoot = root;
-            let playGuitar = kickHit;
+            const isIntroFirstHalf = isIntro && (m < Math.floor(section.measures / 2));
             
-            // Logica transizione (Spostata fuori)
-            if (isLastMeasure && s >= 12 && nextSectionRoot && nextSectionRoot !== root) {
-                const rootMidi = Tone.Frequency(root + "2").toMidi();
-                const diff = Tone.Frequency(nextSectionRoot + "2").toMidi() > rootMidi ? 1 : -1;
-                currentRoot = Tone.Frequency(rootMidi + (s === 12 ? diff : diff * 2), "midi").toNote();
+            // 1. Logica Colpi
+            const kickHit = !isIntroFirstHalf && pattern.k.includes(s);
+            const snareHit = !isIntroFirstHalf && pattern.s.includes(s);
+            
+            // 2. Logica Chitarra (Risolviamo il conflitto Open/Palm)
+            let playGuitar = kickHit;
+            let currentInst = (measureStyle === "open") ? "guitarOpen" : "guitarPalm";
+
+            // Accento "Open" forzato sul primo colpo della misura se l'energia è alta
+            if (s === 0 && energy > 0.7 && !isIntroFirstHalf) {
                 playGuitar = true;
+                currentInst = "guitarOpen";
             }
 
-            const useOpen = (isIntro && sectionPattern.type === "open") || (isChorus && rand() > 0.3);
-            const gNote = normalizeNote(currentRoot, useOpen ? "guitarOpen" : "guitarPalm") + "2";
-            const bNote = normalizeNote(currentRoot, "bass") + "1";
+            // 3. Transizione finale (Sempre Palm per precisione)
+            let currentRoot = root;
+            if (m === section.measures - 1 && s >= 12 && nextSectionRoot && nextSectionRoot !== root) {
+                const diff = Tone.Frequency(nextSectionRoot + "2").toMidi() > Tone.Frequency(root + "2").toMidi() ? 1 : -1;
+                currentRoot = Tone.Frequency(Tone.Frequency(root + "2").toMidi() + (s === 12 ? diff : diff * 2), "midi").toNote();
+                playGuitar = true;
+                currentInst = "guitarPalm"; 
+            }
 
-            // --- 2. CALLBACK "STUPIDA" (Solo esecuzione) ---
+            // Pre-calcolo note stringhe
+            const gNote = normalizeNote(currentRoot, currentInst) + "2";
+            const bNote = normalizeNote(currentRoot, "bass") + "1";
+            const isOpen = (currentInst === "guitarOpen");
+
+            // --- CALLBACK DI ESECUZIONE ---
             Tone.Transport.schedule(time => {
                 // Batteria
-                if (playIntroHit) {
+                if (isIntroFirstHalf && s === 0) {
                     drums.player("kick").start(time);
                     drums.player("crash1").start(time);
-                } else {
+                } else if (!isIntroFirstHalf) {
                     if (kickHit) drums.player("kick").start(time);
                     if (snareHit) drums.player("snare").start(time);
-                    if (playCymbal) drums.player(cymbalType).start(time);
-                    if (s === 0 && (m === 0 || isLastMeasure)) drums.player("crash2").start(time);
+                    if (s % 2 === 0) drums.player(isChorus ? "ride" : "hihat").start(time);
                 }
 
-                // Chitarra e Basso (Muting + Attack)
+                // Chitarra/Basso con Muting rigoroso
                 if (playGuitar) {
                     guitarOpen.releaseAll(time);
                     guitarPalm.releaseAll(time);
                     bass.releaseAll(time);
 
-                    if (useOpen) {
+                    if (isOpen) {
                         guitarOpen.triggerAttack(gNote, time);
-                        bass.triggerAttackRelease(bNote, "8n", time);
+                        bass.triggerAttackRelease(bNote, "4n", time);
                     } else {
                         guitarPalm.triggerAttackRelease(gNote, "16n", time);
                         bass.triggerAttackRelease(bNote, "16n", time);
