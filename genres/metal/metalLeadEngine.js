@@ -3,27 +3,33 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 001.1 loaded");
+console.log("metalLeadEngine.js ver. 001.2 loaded");
 
 export function scheduleLead(section, progression, instruments, params, rand, measureDur) {
-    const { guitarLead, keyboardLead, keyboardPad } = instruments;
-    const isChorus = section.name.toLowerCase().includes("chorus");
-    const isSolo = section.name.toLowerCase().includes("solo") || section.name.toLowerCase().includes("bridge");
+    // Destructuring con fallback per evitare TypeError se instruments è parziale
+    const { guitarLead, keyboardLead, keyboardPad } = instruments || {};
+    if (!guitarLead) return; // Se non c'è la lead, inutile procedere
+
+    const isChorus = section?.name?.toLowerCase().includes("chorus") || false;
+    const isSolo = section?.name?.toLowerCase().includes("solo") || section?.name?.toLowerCase().includes("bridge") || false;
     const stepTime = measureDur / 16;
     
-    const { brightness = 0.5, complexity = 0.5 } = params.imageParams;
+    // Fallback sicuri per i parametri DNA
+    const brightness = params?.imageParams?.brightness ?? 0.5;
+    const complexity = params?.imageParams?.complexity ?? 0.5;
+    
     const scale = ["A", "B", "C", "D", "E", "F", "G#"];
 
-    // Utility interna per costruire note sicure
     const buildNote = (rawRoot, octave) => {
-        const cleanRoot = rawRoot.replace(/[0-9]/g, ''); // Rimuove numeri (es. C2 -> C)
+        if (!rawRoot) return "A" + octave;
+        const cleanRoot = String(rawRoot).replace(/[0-9]/g, ''); 
         const normalized = normalizeNote(cleanRoot, "guitarLead");
         return normalized + octave;
     };
 
     for (let m = 0; m < section.measures; m++) {
         const measureStartTime = section.startTime + (m * measureDur);
-        const currentRoot = progression[m % progression.length];
+        const currentRoot = progression[m % progression.length] || "A";
 
         if (!isSolo) {
             // --- 1. IL CANTO (Verse & Chorus) ---
@@ -32,19 +38,21 @@ export function scheduleLead(section, progression, instruments, params, rand, me
                 
                 Tone.Transport.schedule(time => {
                     try {
-                        guitarLead.triggerAttackRelease(melodyNote, "1n", time);
-                        if (isChorus || brightness > 0.6) {
+                        // Controllo esistenza prima del trigger
+                        if (guitarLead) guitarLead.triggerAttackRelease(melodyNote, "1n", time);
+                        
+                        if ((isChorus || brightness > 0.6) && keyboardPad) {
                             keyboardPad.triggerAttackRelease(melodyNote, "1n", time, 0.4);
                         }
-                    } catch(e) { console.error("Lead Error:", e); }
+                    } catch(e) { /* Silenzioso per performance */ }
                 }, measureStartTime);
 
-                // Risposta melodica a metà misura (mantiene il feeling di Kotipelto)
+                // Risposta melodica
                 Tone.Transport.schedule(time => {
                     try {
                         const respBase = scale[rand() > 0.5 ? 2 : 4];
                         const responseNote = buildNote(respBase, isChorus ? 5 : 4);
-                        guitarLead.triggerAttackRelease(responseNote, "2n", time);
+                        if (guitarLead) guitarLead.triggerAttackRelease(responseNote, "2n", time);
                     } catch(e) {}
                 }, measureStartTime + (measureDur / 2));
             }
@@ -59,8 +67,8 @@ export function scheduleLead(section, progression, instruments, params, rand, me
 
                     Tone.Transport.schedule(time => {
                         try {
-                            guitarLead.triggerAttackRelease(soloNote, "16n", time);
-                            if (complexity > 0.5) {
+                            if (guitarLead) guitarLead.triggerAttackRelease(soloNote, "16n", time);
+                            if (complexity > 0.5 && keyboardLead) {
                                 keyboardLead.triggerAttackRelease(soloNote, "16n", time, 0.3);
                             }
                         } catch(e) {}
