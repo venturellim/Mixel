@@ -3,73 +3,78 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 001.2 loaded");
+console.log("metalLeadEngine.js ver. 001.3 loaded");
 
 export function scheduleLead(section, progression, instruments, params, rand, measureDur) {
-    // Destructuring con fallback per evitare TypeError se instruments è parziale
     const { guitarLead, keyboardLead, keyboardPad } = instruments || {};
-    if (!guitarLead) return; // Se non c'è la lead, inutile procedere
+    if (!guitarLead) return;
 
     const isChorus = section?.name?.toLowerCase().includes("chorus") || false;
     const isSolo = section?.name?.toLowerCase().includes("solo") || section?.name?.toLowerCase().includes("bridge") || false;
     const stepTime = measureDur / 16;
     
-    // Fallback sicuri per i parametri DNA
     const brightness = params?.imageParams?.brightness ?? 0.5;
-    const complexity = params?.imageParams?.complexity ?? 0.5;
-    
-    const scale = ["A", "B", "C", "D", "E", "F", "G#"];
+    const scale = ["A", "B", "C", "D", "E", "F", "G#"]; // Minore Armonica
 
     const buildNote = (rawRoot, octave) => {
-        if (!rawRoot) return "A" + octave;
-        const cleanRoot = String(rawRoot).replace(/[0-9]/g, ''); 
-        const normalized = normalizeNote(cleanRoot, "guitarLead");
-        return normalized + octave;
+        const cleanRoot = String(rawRoot || "A").replace(/[0-9]/g, ''); 
+        return normalizeNote(cleanRoot, "guitarLead") + octave;
     };
 
     for (let m = 0; m < section.measures; m++) {
         const measureStartTime = section.startTime + (m * measureDur);
         const currentRoot = progression[m % progression.length] || "A";
 
+        // --- VERSE / CHORUS: IL FRASEGGIO "CANTATO" ---
         if (!isSolo) {
-            // --- 1. IL CANTO (Verse & Chorus) ---
-            if (m % 2 === 0) {
-                const melodyNote = buildNote(currentRoot, isChorus ? 5 : 4);
+            // Suoniamo su step chiave per creare una melodia fluida (non solo 2 note!)
+            // Pattern: 0, 4, 8, 12 (ogni quarto) + variazioni
+            [0, 4, 6, 8, 12, 14].forEach((s, i) => {
+                const absoluteTime = measureStartTime + (s * stepTime);
                 
-                Tone.Transport.schedule(time => {
-                    try {
-                        // Controllo esistenza prima del trigger
-                        if (guitarLead) guitarLead.triggerAttackRelease(melodyNote, "1n", time);
-                        
-                        if ((isChorus || brightness > 0.6) && keyboardPad) {
-                            keyboardPad.triggerAttackRelease(melodyNote, "1n", time, 0.4);
-                        }
-                    } catch(e) { /* Silenzioso per performance */ }
-                }, measureStartTime);
+                // Logica Saliscendi: 
+                // La prima nota è la radice, le altre si muovono sulla scala
+                let noteName;
+                if (s === 0) noteName = buildNote(currentRoot, isChorus ? 5 : 4);
+                else {
+                    const stepInScale = (i % 2 === 0) ? 2 : 4; // Salto di terza o quinta
+                    noteName = buildNote(scale[stepInScale], isChorus ? 5 : 4);
+                }
 
-                // Risposta melodica
                 Tone.Transport.schedule(time => {
                     try {
-                        const respBase = scale[rand() > 0.5 ? 2 : 4];
-                        const responseNote = buildNote(respBase, isChorus ? 5 : 4);
-                        if (guitarLead) guitarLead.triggerAttackRelease(responseNote, "2n", time);
+                        // La chitarra "canta" con note più lunghe (4n = un quarto)
+                        guitarLead.triggerAttackRelease(noteName, "4n", time);
+                        
+                        // KEYBOARD SEMPRE PRESENTE NEL CHORUS O SE BRIGHT > 0.4
+                        if ((isChorus || brightness > 0.4) && keyboardPad) {
+                            keyboardPad.triggerAttackRelease(noteName, "2n", time, 0.3);
+                        }
                     } catch(e) {}
-                }, measureStartTime + (measureDur / 2));
-            }
+                }, absoluteTime);
+            });
         } 
+        
+        // --- ASSOLO: LO SHREDDING FLUIDO ---
         else {
-            // --- 2. L'ASSOLO (The Shredder) ---
             for (let s = 0; s < 16; s++) {
-                if (s % 2 === 0 && rand() < 0.7) {
+                // Aumentiamo la densità: suoniamo quasi sempre sugli ottavi (s % 2)
+                // e aggiungiamo sedicesimi per le "accelerazioni"
+                const isAcceleration = (s > 8 && rand() > 0.5);
+                
+                if (s % 2 === 0 || isAcceleration) {
                     const absoluteTime = measureStartTime + (s * stepTime);
                     const noteIndex = Math.floor(rand() * scale.length);
-                    const soloNote = buildNote(scale[noteIndex], s > 8 ? 5 : 4);
+                    const soloNote = buildNote(scale[noteIndex], s > 10 ? 5 : 4);
 
                     Tone.Transport.schedule(time => {
                         try {
-                            if (guitarLead) guitarLead.triggerAttackRelease(soloNote, "16n", time);
-                            if (complexity > 0.5 && keyboardLead) {
-                                keyboardLead.triggerAttackRelease(soloNote, "16n", time, 0.3);
+                            // Note più lunghe (8n) anche se suonate velocemente per il sustain
+                            guitarLead.triggerAttackRelease(soloNote, "8n", time);
+                            
+                            // UNISONO COSTANTE NELL'ASSOLO (Johansson style)
+                            if (keyboardLead) {
+                                keyboardLead.triggerAttackRelease(soloNote, "8n", time, 0.4);
                             }
                         } catch(e) {}
                     }, absoluteTime);
