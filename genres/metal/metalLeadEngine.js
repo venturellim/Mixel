@@ -3,7 +3,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 002.1 loaded");
+console.log("metalLeadEngine.js ver. 002.2 loaded");
 
 export function scheduleLead(section, progression, instruments, params, rand, measureDur) {
     const { guitarLead, keyboardLead, keyboardPad } = instruments || {};
@@ -14,7 +14,6 @@ export function scheduleLead(section, progression, instruments, params, rand, me
     const isIntro = name.includes("intro") || name.includes("outro");
     const isSolo = name.includes("solo") || name.includes("bridge");
     const stepTime = measureDur / 16;
-    
     const scale = ["A", "B", "C", "D", "E", "F", "G#"];
 
     const buildNote = (rawRoot, octave) => {
@@ -26,65 +25,61 @@ export function scheduleLead(section, progression, instruments, params, rand, me
         const measureStartTime = section.startTime + (m * measureDur);
         const currentRoot = progression[m % progression.length] || "A";
 
-        // --- 1. VERSE / CHORUS: IL FRASÉGGIO "CANTATO" ---
-        if (!isSolo && !isIntro) {
-            const steps = isChorus ? [0, 4, 8, 12] : [0, 8];
-            
-            steps.forEach((s) => {
+        // --- 1. INTRO / OUTRO: TEMA MELODICO (4 note per misura) ---
+        if (isIntro) {
+            [0, 4, 8, 12].forEach((s, i) => {
                 const absoluteTime = measureStartTime + (s * stepTime);
-                const targetNote = buildNote(currentRoot, isChorus ? 5 : 4);
-
-                // SIMULAZIONE VOCALE: Micro-frase prima della nota lunga
-                // Suoniamo due note rapide di "approccio" (sedicesimi)
-                [ -2, -1, 0 ].forEach((offset, i) => {
-                    const noteIndex = (scale.indexOf(currentRoot.replace(/[0-9]/g, '')) + offset + 7) % 7;
-                    const vNote = buildNote(scale[noteIndex], isChorus ? 5 : 4);
-                    const vTime = absoluteTime + (i * (stepTime / 2));
-
-                    Tone.Transport.schedule(time => {
-                        try {
-                            // Le prime due sono rapide (sillabe), l'ultima è tenuta (vocale)
-                            const duration = (i === 2) ? "2n" : "16n";
-                            guitarLead.triggerAttackRelease(vNote, duration, time);
-                            if (isChorus && i === 2 && keyboardPad) {
-                                keyboardPad.triggerAttackRelease(vNote, "2n", time, 0.3);
-                            }
-                        } catch(e) {}
-                    }, vTime);
-                });
-            });
-        } 
-
-        // --- 2. INTRO: IDENTICO ALLA 44 (Funzionava bene) ---
-        else if (isIntro) {
-            [0, 8].forEach(s => {
-                const absoluteTime = measureStartTime + (s * stepTime);
-                const noteName = buildNote(currentRoot, 4);
+                const noteName = buildNote(i % 2 === 0 ? currentRoot : scale[(i*2)%7], 4);
                 Tone.Transport.schedule(time => {
-                    guitarLead.triggerAttackRelease(noteName, "1n", time);
-                    if (keyboardPad) keyboardPad.triggerAttackRelease(noteName, "1n", time, 0.4);
+                    guitarLead.triggerAttackRelease(noteName, "2n", time);
+                    if (keyboardPad) keyboardPad.triggerAttackRelease(noteName, "2n", time, 0.3);
                 }, absoluteTime);
             });
         }
 
-        // --- 3. SOLO: LOGICA NEOCLASSICA (Scale Direzionali) ---
-        else if (isSolo) {
-            // Decidiamo una direzione per l'intera misura per non fare "Metropolis"
-            const direction = rand() > 0.5 ? 1 : -1;
-            let currentScaleIndex = Math.floor(rand() * 7);
+        // --- 2. VERSE / CHORUS: MELODIA DOLCE E LEGATA ---
+        else if (!isSolo) {
+            // Note principali lunghe (come v0.44)
+            const mainSteps = [0, 8]; 
+            mainSteps.forEach((s) => {
+                const absoluteTime = measureStartTime + (s * stepTime);
+                const noteName = buildNote(currentRoot, isChorus ? 5 : 4);
 
+                Tone.Transport.schedule(time => {
+                    guitarLead.triggerAttackRelease(noteName, "2n", time);
+                    if (isChorus && keyboardPad) keyboardPad.triggerAttackRelease(noteName, "2n", time, 0.4);
+                }, absoluteTime);
+
+                // UNIONE DOLCE: Scala lenta di collegamento tra le note principali
+                // Inseriamo due note di passaggio tra un quarto e l'altro
+                [4, 6, 12, 14].forEach(step => {
+                    const linkTime = measureStartTime + (step * stepTime);
+                    const linkNote = buildNote(scale[Math.floor(rand()*7)], isChorus ? 5 : 4);
+                    Tone.Transport.schedule(time => {
+                        guitarLead.triggerAttackRelease(linkNote, "4n", time, 0.2); // Velocity più bassa per dolcezza
+                    }, linkTime);
+                });
+            });
+        }
+
+        // --- 3. SOLO: VELOCITÀ VARIABILE (Ritmica Dinamica) ---
+        else if (isSolo) {
+            let currentScaleIndex = Math.floor(rand() * 7);
             for (let s = 0; s < 16; s++) {
-                if (s % 2 === 0) { // Ottavi costanti
+                // Alternanza di velocità: alcuni momenti lenti (8n), altri veloci (16n)
+                const isFastZone = (s > 4 && s < 12);
+                const shouldPlay = isFastZone ? true : (s % 2 === 0);
+
+                if (shouldPlay) {
                     const absoluteTime = measureStartTime + (s * stepTime);
-                    
-                    // Muoviti nella scala di un passo alla volta (lineare)
-                    currentScaleIndex = (currentScaleIndex + direction + 7) % 7;
+                    currentScaleIndex = (currentScaleIndex + (rand() > 0.5 ? 1 : -1) + 7) % 7;
                     const soloNote = buildNote(scale[currentScaleIndex], s > 8 ? 5 : 4);
 
                     Tone.Transport.schedule(time => {
                         try {
-                            guitarLead.triggerAttackRelease(soloNote, "8n", time);
-                            if (keyboardLead) keyboardLead.triggerAttackRelease(soloNote, "8n", time, 0.3);
+                            const dur = isFastZone ? "16n" : "8n";
+                            guitarLead.triggerAttackRelease(soloNote, dur, time);
+                            if (keyboardLead && s % 2 === 0) keyboardLead.triggerAttackRelease(soloNote, "8n", time, 0.3);
                         } catch(e) {}
                     }, absoluteTime);
                 }
