@@ -1,8 +1,8 @@
-// metalInstruments.js
+// metalInstruments.js — ver. 004
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("metalInstruments.js ver. 003.1 loaded");
+console.log("metalInstruments.js ver. 004 loaded");
 
 // ============================================================
 // 🎚 BUS SPECIFICI DEL METAL
@@ -11,7 +11,6 @@ export const guitarBus = new Tone.Gain(1);
 export const bassBus = new Tone.Gain(1);
 export const drumBus = new Tone.Gain(1);
 export const leadBus = new Tone.Gain(1);
-export const keyboardBus = new Tone.Gain(1);
 
 const guitarEQ = new Tone.EQ3({ low: -4, mid: 2, high: 3 });
 const bassEQ   = new Tone.EQ3({ low: 4, mid: -2, high: -4 });
@@ -30,7 +29,6 @@ guitarBus.connect(guitarEQ).connect(masterEQ);
 bassBus.connect(bassEQ).connect(masterEQ);
 drumBus.connect(drumEQ).connect(drumComp).connect(masterEQ);
 leadBus.connect(leadEQ).connect(masterEQ);
-keyboardBus.connect(masterEQ);
 
 // ============================================================
 // 🎸 FIX CHITARRE RITMICHE: CABINET & STEREO HAAS
@@ -55,7 +53,7 @@ guitarCabinet.connect(stereoDelay).connect(panR).connect(guitarBus);
 // ============================================================
 const leadCabinet = new Tone.Filter({
     type: "lowpass",
-    frequency: 5200, // Più alta della ritmica per dare brillantezza
+    frequency: 5200, 
     rolloff: -24
 }).connect(leadBus);
 
@@ -150,11 +148,6 @@ export const drums = new Tone.Players({
     ridebell: "Samples/Drums/ride_bell.mp3", china: "Samples/Drums/china.mp3"
 }).connect(drumBus);
 
-export const keyboardLead = new Tone.PolySynth(Tone.Synth, {
-    oscillator: { type: "sawtooth" },
-    envelope: { attack: 0.01, decay: 0.2, sustain: 0.7, release: 0.3 }
-}).connect(keyboardBus);
-
 // ============================================================
 // 🎵 LOGGING & WRAPPING
 // ============================================================
@@ -170,7 +163,6 @@ wrapSampler("guitarPalm", guitarPalm);
 wrapSampler("guitarOpen", guitarOpen);
 wrapSampler("guitarLead", guitarLead);
 wrapSampler("bass", bass);
-wrapSampler("keyboardLead", keyboardLead);
 
 function wrapPlayer(name, player) {
     const orig = player.start.bind(player);
@@ -193,7 +185,7 @@ function wrapPlayer(name, player) {
 // ⚙️ FUNZIONI DI UTILITY
 // ============================================================
 export function setVolume(busName, dbValue) {
-    const mixer = { guitar: guitarBus, bass: bassBus, drums: drumBus, lead: leadBus, keyboard: keyboardBus };
+    const mixer = { guitar: guitarBus, bass: bassBus, drums: drumBus, lead: leadBus };
     const bus = mixer[busName];
     if (bus) bus.gain.value = Tone.dbToGain(dbValue);
 }
@@ -202,8 +194,6 @@ setVolume("guitar", -2);
 setVolume("bass", 0);
 setVolume("drums", -8);
 setVolume("lead", 0);
-setVolume("keyboard", -28);
-
 
 export function normalizeNote(note, instrument) {
     if (!note || typeof note !== "string") return "A";
@@ -221,14 +211,13 @@ export function normalizeNote(note, instrument) {
 }
 
 export const metalInstruments = {
-    guitarPalm, guitarOpen, guitarLead, bass, drums, keyboardLead,
-    guitarBus, bassBus, drumBus, leadBus, keyboardBus, setVolume
+    guitarPalm, guitarOpen, guitarLead, bass, drums,
+    guitarBus, bassBus, drumBus, leadBus, setVolume
 };
 
 export const metalVolumeMap = {
     guitar: "Chitarre",
     bass: "Basso",
     drums: "Batteria",
-    lead: "Lead",
-    keyboard: "keyboard"
+    lead: "Lead Solo"
 };
