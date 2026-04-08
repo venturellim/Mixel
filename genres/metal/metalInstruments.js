@@ -1,8 +1,8 @@
-// metalInstruments.js - Versione Completa & Ottimizzata
+// metalInstruments.js
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("metalInstruments.js ver. 002 loaded");
+console.log("metalInstruments.js ver. 002 loaded
 
 // ============================================================
 // 🎚 BUS SPECIFICI DEL METAL
@@ -33,25 +33,20 @@ leadBus.connect(leadEQ).connect(masterEQ);
 keyboardBus.connect(masterEQ);
 
 // ============================================================
-// 🎸 CHITARRE: LOGICA CABINET E STEREO (FIX AUDIO)
+// 🎸 FIX CHITARRE: CABINET & STEREO HAAS
 // ============================================================
-
-// Filtro per togliere l'effetto "zanzara" digitale
 const guitarCabinet = new Tone.Filter({
     type: "lowpass",
     frequency: 4200, 
     rolloff: -24
 });
 
-// Effetto Haas per lo stereo (sostituisce il PitchShift che creava artefatti)
 const stereoDelay = new Tone.Delay(0.012); 
 const panL = new Tone.Panner(-0.3);
 const panR = new Tone.Panner(0.3);
 
-const guitarFXBus = new Tone.Gain();
-guitarFXBus.connect(guitarCabinet);
-
-// Creazione immagine stereo
+const guitarFX = new Tone.Gain();
+guitarFX.connect(guitarCabinet);
 guitarCabinet.connect(panL).connect(guitarBus);
 guitarCabinet.connect(stereoDelay).connect(panR).connect(guitarBus);
 
@@ -69,10 +64,10 @@ export const guitarPalm = new Tone.Sampler({
         A2: "Samples/GuitarPalm/A.mp3",
         B2: "Samples/GuitarPalm/B.mp3"
     },
-    attack: 0.015,
-    release: 0.6,
+    attack: 0.015,  // Fix: attacco meno brusco
+    release: 0.6,   // Fix: coda naturale
     onload: () => registerInstrumentLoaded()
-}).connect(guitarFXBus);
+}).connect(guitarFX);
 
 export const guitarOpen = new Tone.Sampler({
     urls: {
@@ -85,9 +80,9 @@ export const guitarOpen = new Tone.Sampler({
         B2: "Samples/GuitarOpen/B.mp3"
     },
     attack: 0.02,
-    release: 1.0,
+    release: 1.2,
     onload: () => registerInstrumentLoaded()
-}).connect(guitarFXBus);
+}).connect(guitarFX);
 
 export const guitarLead = new Tone.Sampler({
     urls: {
@@ -109,7 +104,6 @@ export const guitarLead = new Tone.Sampler({
         A5: "Samples/Guitar/A5.mp3", Bb5: "Samples/Guitar/Bb5.mp3", B5: "Samples/Guitar/B5.mp3",
         C6: "Samples/Guitar/C6.mp3"
     },
-    release: 0.5,
     onload: () => registerInstrumentLoaded()
 }).connect(leadBus);
 
@@ -140,9 +134,8 @@ export const keyboardLead = new Tone.PolySynth(Tone.Synth, {
 }).connect(keyboardBus);
 
 // ============================================================
-// 🎵 LOGGING & WRAPPING (Logica originale ripristinata)
+// 🎵 LOGGING & WRAPPING (Fixato errore Object.keys)
 // ============================================================
-
 function wrapSampler(name, sampler) {
     const orig = sampler.triggerAttackRelease.bind(sampler);
     sampler.triggerAttackRelease = (note, dur, time) => {
@@ -165,19 +158,29 @@ function wrapPlayer(name, player) {
     };
 }
 
-Object.keys(drums.urls).forEach(key => {
-    wrapPlayer("drums." + key, drums.player(key));
+// FIX: Usiamo un array esplicito per evitare undefined su drums.urls
+[
+    "kick","snare","ghost","hihat","openhat",
+    "crash1","crash2","tom1","tom2","tom3","tom4",
+    "ride","ridebell","china"
+].forEach(key => {
+    const p = drums.player(key);
+    if (p) wrapPlayer("drums."+key, p);
 });
 
 // ============================================================
-// ⚙️ FUNZIONI DI UTILITY
+// ⚙️ FUNZIONI DI UTILITY (Ripristinate originali)
 // ============================================================
-
 export function setVolume(busName, dbValue) {
     const mixer = { guitar: guitarBus, bass: bassBus, drums: drumBus, lead: leadBus, keyboard: keyboardBus };
     const bus = mixer[busName];
     if (bus) bus.gain.value = Tone.dbToGain(dbValue);
 }
+
+setVolume("guitar", -4);
+setVolume("bass", -2);
+setVolume("drums", -10);
+setVolume("lead", +3);
 
 export function normalizeNote(note, instrument) {
     if (!note || typeof note !== "string") return "A";
@@ -193,12 +196,6 @@ export function normalizeNote(note, instrument) {
     }
     return first;
 }
-
-// Volumi di default
-setVolume("guitar", -4);
-setVolume("bass", -2);
-setVolume("drums", -10);
-setVolume("lead", +3);
 
 export const metalInstruments = {
     guitarPalm, guitarOpen, guitarLead, bass, drums, keyboardLead,
