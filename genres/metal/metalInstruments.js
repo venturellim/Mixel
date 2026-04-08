@@ -2,7 +2,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("metalInstruments.js ver. 002.1 - Syntax Fix");
+console.log("metalInstruments.js ver. 003 - Lead Guitar Optimization");
 
 // ============================================================
 // 🎚 BUS SPECIFICI DEL METAL
@@ -33,7 +33,7 @@ leadBus.connect(leadEQ).connect(masterEQ);
 keyboardBus.connect(masterEQ);
 
 // ============================================================
-// 🎸 FIX CHITARRE: CABINET & STEREO HAAS
+// 🎸 FIX CHITARRE RITMICHE: CABINET & STEREO HAAS
 // ============================================================
 const guitarCabinet = new Tone.Filter({
     type: "lowpass",
@@ -49,6 +49,26 @@ const guitarFX = new Tone.Gain();
 guitarFX.connect(guitarCabinet);
 guitarCabinet.connect(panL).connect(guitarBus);
 guitarCabinet.connect(stereoDelay).connect(panR).connect(guitarBus);
+
+// ============================================================
+// 🎸 FIX CHITARRA LEAD: CABINET, DELAY & VIBRATO
+// ============================================================
+const leadCabinet = new Tone.Filter({
+    type: "lowpass",
+    frequency: 5200, // Più alta della ritmica per dare brillantezza
+    rolloff: -24
+}).connect(leadBus);
+
+const leadDelay = new Tone.FeedbackDelay({
+    delayTime: "8n",
+    feedback: 0.2,
+    wet: 0.12
+}).connect(leadCabinet);
+
+const leadVibrato = new Tone.Vibrato({
+    frequency: 5,
+    depth: 0.1
+}).connect(leadDelay);
 
 // ============================================================
 // 🎸 STRUMENTI (SAMPLERS)
@@ -104,8 +124,10 @@ export const guitarLead = new Tone.Sampler({
         A5: "Samples/Guitar/A5.mp3", Bb5: "Samples/Guitar/Bb5.mp3", B5: "Samples/Guitar/B5.mp3",
         C6: "Samples/Guitar/C6.mp3"
     },
+    attack: 0.02,
+    release: 0.8,
     onload: () => registerInstrumentLoaded()
-}).connect(leadBus);
+}).connect(leadVibrato);
 
 export const bass = new Tone.Sampler({
     urls: {
