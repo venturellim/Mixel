@@ -202,6 +202,8 @@ setVolume("guitar", -2);
 setVolume("bass", 0);
 setVolume("drums", -8);
 setVolume("lead", 0);
+setVolume("keyboard", -18);
+
 
 export function normalizeNote(note, instrument) {
     if (!note || typeof note !== "string") return "A";
