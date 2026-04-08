@@ -2,7 +2,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("metalInstruments.js ver. 002 - Full logic + Audio Fixes");
+console.log("metalInstruments.js ver. 002 loaded");
 
 // ============================================================
 // 🎚 BUS SPECIFICI DEL METAL
@@ -203,4 +203,12 @@ setVolume("lead", +3);
 export const metalInstruments = {
     guitarPalm, guitarOpen, guitarLead, bass, drums, keyboardLead,
     guitarBus, bassBus, drumBus, leadBus, keyboardBus, setVolume
+};
+
+export const metalVolumeMap = {
+    guitar: "Chitarre",
+    bass: "Basso",
+    drums: "Batteria",
+    lead: "Lead",
+    keyboard: "keyboard"
 };
