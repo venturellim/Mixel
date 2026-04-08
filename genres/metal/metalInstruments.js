@@ -2,7 +2,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("metalInstruments.js ver. 002 loaded
+console.log("metalInstruments.js ver. 002.1 - Syntax Fix");
 
 // ============================================================
 // 🎚 BUS SPECIFICI DEL METAL
@@ -64,8 +64,8 @@ export const guitarPalm = new Tone.Sampler({
         A2: "Samples/GuitarPalm/A.mp3",
         B2: "Samples/GuitarPalm/B.mp3"
     },
-    attack: 0.015,  // Fix: attacco meno brusco
-    release: 0.6,   // Fix: coda naturale
+    attack: 0.015,
+    release: 0.6,
     onload: () => registerInstrumentLoaded()
 }).connect(guitarFX);
 
@@ -134,7 +134,7 @@ export const keyboardLead = new Tone.PolySynth(Tone.Synth, {
 }).connect(keyboardBus);
 
 // ============================================================
-// 🎵 LOGGING & WRAPPING (Fixato errore Object.keys)
+// 🎵 LOGGING & WRAPPING
 // ============================================================
 function wrapSampler(name, sampler) {
     const orig = sampler.triggerAttackRelease.bind(sampler);
@@ -158,7 +158,6 @@ function wrapPlayer(name, player) {
     };
 }
 
-// FIX: Usiamo un array esplicito per evitare undefined su drums.urls
 [
     "kick","snare","ghost","hihat","openhat",
     "crash1","crash2","tom1","tom2","tom3","tom4",
@@ -169,7 +168,7 @@ function wrapPlayer(name, player) {
 });
 
 // ============================================================
-// ⚙️ FUNZIONI DI UTILITY (Ripristinate originali)
+// ⚙️ FUNZIONI DI UTILITY
 // ============================================================
 export function setVolume(busName, dbValue) {
     const mixer = { guitar: guitarBus, bass: bassBus, drums: drumBus, lead: leadBus, keyboard: keyboardBus };
