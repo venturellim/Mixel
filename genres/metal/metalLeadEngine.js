@@ -3,10 +3,10 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 003 loaded");
+console.log("metalLeadEngine.js ver. 003.1 loaded");
 
 export function scheduleLead(section, progression, instruments, params, rand, measureDur) {
-    const { guitarLead, keyboardLead, keyboardPad } = instruments || {};
+    const { guitarLead } = instruments || {}; // Solo chitarra, tastiere rimosse
     if (!guitarLead) return;
 
     const name = section?.name?.toLowerCase() || "";
@@ -15,36 +15,18 @@ export function scheduleLead(section, progression, instruments, params, rand, me
     const isSolo = name.includes("solo") || name.includes("bridge");
     const stepTime = measureDur / 16;
 
-    // --- 🧬 DNA DATABASE: Maschere Ritmiche Multiple ---
+    // --- 🧬 DNA DATABASE ---
     const library = {
-        intro: [
-            [0, 4, 8, 12],          // Standard Eroico
-            [0, 2, 4, 8, 10, 12],   // Incalzante
-            [0, 6, 8, 14],          // Sincopato Power
-            [0, 8]                  // Solenne (note lunghe)
-        ],
-        verse: [
-            [0, 8],                 // Minimalista (lascia spazio alla voce)
-            [0, 4, 8, 12],          // Battuto
-            [0, 6, 10],             // Irregolare
-            [2, 6, 10, 14]          // Off-beat (in levare)
-        ],
-        chorus: [
-            [0, 2, 4, 6, 8, 10, 12, 14], // Cavalcata di ottavi
-            [0, 3, 6, 8, 11, 14],        // Terzinato / Poliritmico
-            [0, 4, 8, 12],               // Quarti granitici
-            [0, 7, 8, 15]                // Sincopato epico
-        ]
+        intro: [[0, 4, 8, 12], [0, 2, 4, 8, 10, 12], [0, 6, 8, 14]],
+        verse: [[0, 8], [0, 4, 8, 12], [0, 6, 10]],
+        chorus: [[0, 2, 4, 6, 8, 10, 12, 14], [0, 4, 8, 12], [0, 7, 8, 15]]
     };
 
-    // --- 🧠 LOGICA DI SELEZIONE BASATA SULLA FOTO ---
-    // Usiamo parametri diversi per mescolare le carte
     const brightness = params?.imageParams?.brightness ?? 0.5;
     const saturation = params?.imageParams?.saturation ?? 0.5;
     
     const getPattern = (type) => {
         const family = library[type];
-        // La luminosità sceglie il pattern, la saturazione può influenzare altro
         const idx = Math.floor(brightness * family.length) % family.length;
         return family[idx];
     };
@@ -69,51 +51,48 @@ export function scheduleLead(section, progression, instruments, params, rand, me
         const currentRoot = progression[m % progression.length] || "A";
         const currentScale = getStrictScale(currentRoot);
 
-        // --- APPLICAZIONE MASCHERA DINAMICA ---
         if (!isSolo) {
             const type = isIntro ? "intro" : (isChorus ? "chorus" : "verse");
             const pattern = getPattern(type);
 
             pattern.forEach((s, i) => {
                 const absoluteTime = measureStartTime + (s * stepTime);
-                
-                // Variazione Melodica: la saturazione decide se fare salti di ottava o note fisse
-                const octave = (isChorus && saturation > 0.7 && i % 2 === 0) ? 6 : (isChorus ? 5 : 4);
-                
-                // Scelta della nota basata sull'indice del pattern per coerenza
+                const octave = (isChorus && i % 4 === 0) ? 6 : (isChorus ? 5 : 4);
                 const noteIdx = [0, 2, 4, 0, 5, 4, 2, 0][i % 8];
                 const noteName = buildNote(currentScale[noteIdx], octave);
 
                 Tone.Transport.schedule(time => {
-                    const dur = isChorus ? "4n" : "2n";
-                    guitarLead.triggerAttackRelease(noteName, dur, time);
-                    if ((isChorus || isIntro) && keyboardPad) {
-                        keyboardPad.triggerAttackRelease(noteName, dur, time, 0.3);
-                    }
+                    guitarLead.triggerAttackRelease(noteName, isChorus ? "4n" : "2n", time);
                 }, absoluteTime);
             });
         }
 
-        // --- SOLO: VARIABILE PER NATURA ---
+        // --- 🎸 NUOVO SOLO: FRASEGGI "ATTACCO E RILASCIO" ---
         else {
-            let scaleIdx = Math.floor(rand() * 7);
-            // La densità del solo dipende dalla saturazione della foto
-            const density = 0.3 + (saturation * 0.4); 
+            let scaleIdx = 0;
+            // Un solo metal è fatto di "momenti" (blocchi di 4 step)
+            for (let block = 0; block < 4; block++) {
+                const blockStartTime = measureStartTime + (block * 4 * stepTime);
+                
+                // Decidiamo se questo blocco è "veloce" o "melodico"
+                const isFastBlock = rand() > 0.4; 
 
-            for (let s = 0; s < 16; s++) {
-                const isDownbeat = s % 4 === 0;
-                if (isDownbeat || rand() < density) {
-                    const absoluteTime = measureStartTime + (s * stepTime);
-                    scaleIdx = (scaleIdx + (rand() > 0.5 ? 1 : -1) + 7) % 7;
-                    const soloNote = buildNote(currentScale[scaleIdx], s > 8 ? 5 : 4);
-
+                if (isFastBlock) {
+                    // Raffica di sedicesimi (Shredding)
+                    for (let s = 0; s < 4; s++) {
+                        const noteTime = blockStartTime + (s * stepTime);
+                        scaleIdx = (scaleIdx + (rand() > 0.5 ? 1 : -1) + 7) % 7;
+                        const noteName = buildNote(currentScale[scaleIdx], 5);
+                        Tone.Transport.schedule(time => {
+                            guitarLead.triggerAttackRelease(noteName, "16n", time);
+                        }, noteTime);
+                    }
+                } else {
+                    // Nota lunga e vibrata (Melodico)
+                    const noteName = buildNote(currentScale[0], 5);
                     Tone.Transport.schedule(time => {
-                        try {
-                            const dur = isDownbeat ? "8n" : "16n";
-                            guitarLead.triggerAttackRelease(soloNote, dur, time);
-                            if (keyboardLead && s % 2 === 0) keyboardLead.triggerAttackRelease(soloNote, "8n", time, 0.2);
-                        } catch(e) {}
-                    }, absoluteTime);
+                        guitarLead.triggerAttackRelease(noteName, "2n", time);
+                    }, blockStartTime);
                 }
             }
         }
