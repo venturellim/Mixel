@@ -2,7 +2,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("metalInstruments.js ver. 003 - Lead Guitar Optimization");
+console.log("metalInstruments.js ver. 003.1 loaded");
 
 // ============================================================
 // 🎚 BUS SPECIFICI DEL METAL
@@ -198,10 +198,10 @@ export function setVolume(busName, dbValue) {
     if (bus) bus.gain.value = Tone.dbToGain(dbValue);
 }
 
-setVolume("guitar", -4);
-setVolume("bass", -2);
-setVolume("drums", -10);
-setVolume("lead", +3);
+setVolume("guitar", -2);
+setVolume("bass", 0);
+setVolume("drums", -8);
+setVolume("lead", 0);
 
 export function normalizeNote(note, instrument) {
     if (!note || typeof note !== "string") return "A";
