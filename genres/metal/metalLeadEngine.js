@@ -33,7 +33,7 @@ export function scheduleLead(section, progression, instruments, params, rand, me
     };
 
     // --- 🧬 IL TUO MOTORE DI PESATURA DNA ---
-    const get = (type) => {
+    const getPattern = (type) => {
         const family = library[type] || library.verse;
         const { contrast, brightness, saturation, sharpness } = params.imageParams;
 
