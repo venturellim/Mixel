@@ -3,33 +3,64 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 003.3 loaded");
+console.log("metalLeadEngine.js ver. 003.4 loaded");
 
 export function scheduleLead(section, progression, instruments, params, rand, measureDur) {
     const { guitarLead } = instruments || {};
     if (!guitarLead) return;
 
-    const name = section?.name?.toLowerCase() || "";
-    const isChorus = name.includes("chorus");
-    const isIntro = name.includes("intro") || name.includes("outro");
-    const isSolo = name.includes("solo") || name.includes("bridge");
     const stepTime = measureDur / 16;
+    const name = section?.name?.toLowerCase() || "";
+    const isSolo = name.includes("solo") || name.includes("bridge");
 
-    // --- 🧬 LIBRERIA MASCHERE (Struttura ritmica stabile) ---
-    const library = {
-        intro: [[0, 4, 8, 12], [0, 2, 4, 8, 10, 12], [0, 6, 8, 14], [0, 8]],
-        verse: [[0, 8], [0, 4, 8, 12], [0, 6, 10]],
-        chorus: [[0, 2, 4, 6, 8, 10, 12, 14], [0, 4, 8, 12], [0, 7, 8, 15]]
-    };
+    // --- 🧬 LIBRERIA MASCHERE PROFESSIONALE ---
+const library = {
+    // 🎸 INTRO/SOLO: Alta densità, shredding, passaggi stretti (anche 1 step di distanza)
+    intro: [
+        [0, 1, 2, 3, 4, 8, 12],          // Raffica iniziale poi dritto
+        [0, 4, 8, 10, 11, 12, 13, 14],   // Scalata cromatica finale
+        [0, 2, 3, 4, 8, 10, 11, 12],     // Gallop accelerato
+        [0, 1, 2, 3, 8, 9, 10, 11],      // Blocchi di sedicesimi alternati
+        [0, 4, 5, 6, 7, 8, 12],          // "The Machine Gun"
+        [0, 3, 4, 7, 8, 11, 12, 15],     // Terzinato tecnico
+        [0, 1, 2, 3, 4, 5, 6, 7, 8],     // Scala ultra-veloce (metà battuta)
+        [0, 2, 4, 5, 6, 8, 10, 12, 13, 14] // Articolazione complessa
+    ],
 
-    const brightness = params?.imageParams?.brightness ?? 0.5;
-    const contrast = params?.imageParams?.contrast ?? 0.5;
+    // 🎤 VERSE/CHORUS: Cantabili, almeno 2 step di distanza (tranne rari casi armonici)
+    verse: [
+        [0, 8],                          // Super aperto (Inno)
+        [0, 4, 8, 12],                   // Il classico quarto
+        [0, 6, 8, 14],                   // Sincopato largo
+        [0, 4, 10],                      // Sospeso
+        [2, 6, 10, 14],                  // Tutto in levare
+        [0, 8, 10, 12],                  // Chiusura di misura veloce
+        [0, 4, 6, 12],                   // Salto ritmico
+        [0, 2, 4, 8, 10, 12]             // Ottavi costanti (cantabile)
+    ],
 
-    const getPattern = (type) => {
-        const family = library[type];
-        const idx = Math.floor(contrast * family.length) % family.length;
-        return family[idx];
-    };
+    // 🏛️ CHORUS: Epico, note lunghe, grandi distanze per far risaltare il riverbero
+    chorus: [
+        [0, 2, 4, 6, 8, 10, 12, 14],    // Power ottavi (Classic Helloween)
+        [0, 8, 12],                      // Molto solenne
+        [0, 4, 8, 12],                   // Anthem dritto
+        [0, 6, 12],                      // Sincopato epico
+        [0, 3, 8, 11],                   // Feeling terzinato largo
+        [0, 10, 14],                     // Rilascio lento
+        [0, 4, 6, 8, 14],                // Melodia saltellante
+        [0, 2, 8, 10, 14]                // Doppia risposta
+    ]
+};
+
+// --- 🧠 LOGICA DI SELEZIONE AUTOMATICA ---
+const getPattern = (type) => {
+    const family = library[type];
+    // Usiamo il contrasto della foto per scorrere la lista
+    // Una foto molto contrastata sceglierà i pattern alla fine della lista (più complessi)
+    const selector = params?.imageParams?.contrast ?? 0.5;
+    const idx = Math.floor(selector * family.length) % family.length;
+    return family[idx];
+};
 
     const getStrictScale = (root) => {
         const allNotes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
@@ -44,40 +75,40 @@ export function scheduleLead(section, progression, instruments, params, rand, me
         return intervals.map(interval => allNotes[(rootIdx + interval) % 12]);
     };
 
-    const buildNote = (noteName, octave) => normalizeNote(noteName, "guitarLead") + octave;
-
     for (let m = 0; m < section.measures; m++) {
         const measureStartTime = section.startTime + (m * measureDur);
         const currentRoot = progression[m % progression.length] || "A";
         const currentScale = getStrictScale(currentRoot);
 
         if (!isSolo) {
-            const type = isIntro ? "intro" : (isChorus ? "chorus" : "verse");
+            const type = name.includes("intro") ? "intro" : (name.includes("chorus") ? "chorus" : "verse");
             const pattern = getPattern(type);
 
             pattern.forEach((s, i) => {
                 const absoluteTime = measureStartTime + (s * stepTime);
                 
-                // Ottava fissa per stabilità, con variazione solo in Chorus
-                let octave = isChorus ? 5 : 4;
-                if (brightness > 0.8 && i === 0) octave++; 
+                // --- 🚀 CALCOLO AUTOMATICO DEL SUSTAIN ---
+                let durationSteps;
+                if (i < pattern.length - 1) {
+                    // La durata è la distanza dalla nota successiva
+                    durationSteps = pattern[i + 1] - s;
+                } else {
+                    // L'ultima nota dura fino alla fine della battuta (step 16)
+                    durationSteps = 16 - s;
+                }
+                const autoDuration = durationSteps * stepTime;
 
-                // --- 🛡️ FIX ARMONICO: Mappa melodica basata sui gradi della scala ---
-                // 0 = Tonica, 2 = Terza, 4 = Quinta (le note "sicure")
+                // Melodia sicura
                 const safeMelody = [0, 4, 2, 0, 4, 5, 2, 0];
-                const noteIdx = safeMelody[i % safeMelody.length];
-                const noteName = buildNote(currentScale[noteIdx], octave);
+                const noteName = normalizeNote(currentScale[safeMelody[i % 8]], "guitarLead") + (name.includes("chorus") ? 5 : 4);
 
                 Tone.Transport.schedule(time => {
-                    // Se la nota cade sul battere (0 o 8), è più lunga
-                    const isStrongBeat = (s % 8 === 0);
-                    const dur = isStrongBeat ? "2n" : "4n";
-                    guitarLead.triggerAttackRelease(noteName, dur, time);
+                    // Applichiamo la durata calcolata (in secondi)
+                    guitarLead.triggerAttackRelease(noteName, autoDuration, time);
                 }, absoluteTime);
             });
-        }
-
-        else {
+        } 
+       else {
             // --- SOLO: CORRETTO CON ANCORAGGIO ALL'ACCORDO ---
             let scaleIdx = 0;
             for (let block = 0; block < 4; block++) {
