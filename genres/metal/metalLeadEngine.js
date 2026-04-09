@@ -3,7 +3,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 003.7 loaded");
+console.log("metalLeadEngine.js ver. 003.8 loaded");
 
 export function scheduleLead(section, progression, instruments, params, rand, measureDur) {
     const { guitarLead } = instruments || {};
@@ -33,20 +33,21 @@ export function scheduleLead(section, progression, instruments, params, rand, me
     };
 
     // --- 🧬 IL TUO MOTORE DI PESATURA DNA ---
-    const getPattern = (type) => {
+        const getPattern = (type) => {
         const family = library[type] || library.verse;
-        const { contrast, brightness, saturation, sharpness } = params.imageParams;
-
-        // Applichiamo i pesi gerarchici come hai suggerito
-        // Contrasto (x400), Luce (x30), Colore (x2), Nitidezza (x0.1)
-        let dnaScore = (contrast * 400) + (brightness * 30) + (saturation * 2) + (sharpness * 0.1);
         
-        // Moltiplicatore unico per sezione: impedisce che Intro e Chorus abbiano lo stesso indice
+        const energy = params?.imageParams?.energy ?? 0.5;
+        const brightness = params?.imageParams?.brightness ?? 0.5;
+        const complexity = params?.imageParams?.complexity ?? 0.5;
+        const texture = params?.imageParams?.texture ?? 0.5;
+        
+        let dnaScore = (energy * 400) + (brightness * 30) + (complexity * 2) + (texture * 0.1);
+        
         const sectionMultipliers = { intro: 1.33, verse: 0.77, chorus: 2.15 };
         const finalScore = dnaScore * (sectionMultipliers[type] || 1.0);
         
-        const idx = Math.floor(finalScore) % family.length;
-        return family[idx];
+        const idx = Math.floor(Math.abs(finalScore)) % family.length;
+        return family[idx] || family[0];
     };
 
     const getStrictScale = (root) => {
