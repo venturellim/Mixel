@@ -1,9 +1,9 @@
-// metalLeadEngine.js — ver. 002
+// metalLeadEngine.js — ver. 066 (The Melodic Evolution)
 
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 003.8 loaded");
+console.log("metalLeadEngine.js ver. 004 loaded");
 
 export function scheduleLead(section, progression, instruments, params, rand, measureDur) {
     const { guitarLead } = instruments || {};
@@ -15,7 +15,7 @@ export function scheduleLead(section, progression, instruments, params, rand, me
     const isSolo = name.includes("solo") || name.includes("bridge");
     const stepTime = measureDur / 16;
 
-    // --- 🧬 LIBRERIA MASCHERE (La tua selezione filtrata) ---
+    // --- 🧬 1. LIBRERIA MASCHERE RITMICHE ---
     const library = {
         intro: [
             [0, 1, 2, 3, 4, 8, 12], [0, 4, 8, 10, 11, 12, 13, 14], 
@@ -32,21 +32,60 @@ export function scheduleLead(section, progression, instruments, params, rand, me
         ]
     };
 
-    // --- 🧬 IL TUO MOTORE DI PESATURA DNA ---
-        const getPattern = (type) => {
+    // --- 🧬 2. LIBRERIA MELODIE (Gradi della Scala) ---
+    const melodicLibrary = {
+        epic: [
+            [0, 4, 7, 4, 5, 4, 2, 0], [0, 0, 4, 4, 7, 7, 4, 4], [0, 4, 5, 7, 0, 4, 5, 7], 
+            [7, 4, 0, 4, 7, 4, 0, 0], [0, 2, 4, 7, 5, 4, 2, 0], [0, 7, 4, 2, 0, 4, 2, 0],
+            [4, 0, 4, 5, 7, 5, 4, 0], [0, 3, 5, 0, 3, 5, 7, 0]
+        ],
+        evil: [
+            [0, 1, 0, 1, 4, 3, 1, 0], [0, 6, 5, 0, 6, 5, 1, 0], [0, 1, 4, 1, 0, 1, 4, 1],
+            [0, 3, 4, 0, 3, 4, 6, 0], [1, 0, 1, 0, 3, 1, 0, 0], [0, 1, 3, 4, 6, 4, 3, 1],
+            [0, 4, 3, 1, 0, 1, 3, 4], [6, 5, 4, 3, 2, 1, 0, 0]
+        ],
+        active: [
+            [0, 1, 2, 3, 4, 5, 6, 7], [0, 2, 4, 2, 3, 5, 7, 5], [0, 2, 0, 4, 0, 5, 0, 7],
+            [4, 0, 5, 0, 7, 0, 5, 0], [0, 2, 4, 5, 7, 5, 4, 2], [0, 3, 2, 5, 4, 7, 6, 0],
+            [7, 5, 4, 2, 7, 5, 4, 2], [0, 7, 6, 7, 0, 5, 4, 5]
+        ],
+        emotional: [
+            [0, 6, 5, 4, 2, 3, 2, 0], [2, 3, 2, 0, 4, 5, 4, 2], [4, 2, 0, 6, 5, 4, 2, 2],
+            [0, 4, 6, 7, 6, 4, 2, 0], [5, 4, 2, 0, 5, 4, 2, 0], [0, 2, 4, 6, 0, 2, 4, 6],
+            [4, 5, 7, 4, 2, 3, 2, 0], [0, 0, 6, 6, 5, 5, 4, 4]
+        ]
+    };
+
+    // --- 🧠 3. MOTORE DI PESATURA DNA ---
+    const getPattern = (type) => {
         const family = library[type] || library.verse;
-        
-        const energy = params?.imageParams?.energy ?? 0.5;
-        const brightness = params?.imageParams?.brightness ?? 0.5;
-        const complexity = params?.imageParams?.complexity ?? 0.5;
-        const texture = params?.imageParams?.texture ?? 0.5;
+        const { energy = 0.5, brightness = 0.5, complexity = 0.5, texture = 0.5 } = params?.imageParams || {};
         
         let dnaScore = (energy * 400) + (brightness * 30) + (complexity * 2) + (texture * 0.1);
-        
         const sectionMultipliers = { intro: 1.33, verse: 0.77, chorus: 2.15 };
         const finalScore = dnaScore * (sectionMultipliers[type] || 1.0);
         
         const idx = Math.floor(Math.abs(finalScore)) % family.length;
+        return family[idx] || family[0];
+    };
+
+    // --- 🧠 4. SELETTORE MELODIA DINAMICO ---
+    const getMelody = (type, sectionName) => {
+        const { energy = 0.5, brightness = 0.5, texture = 0.5, complexity = 0.5 } = params?.imageParams || {};
+        let family;
+
+        // Scelta della "famiglia" di note basata sul mood della foto
+        if (sectionName.includes("chorus")) {
+            family = brightness > 0.5 ? melodicLibrary.epic : melodicLibrary.emotional;
+        } else {
+            if (energy > 0.7 && texture > 0.6) family = melodicLibrary.evil;
+            else if (complexity > 0.7) family = melodicLibrary.active;
+            else if (brightness < 0.4) family = melodicLibrary.emotional;
+            else family = melodicLibrary.epic;
+        }
+
+        // Usiamo l'energia per scegliere l'indice specifico
+        const idx = Math.floor(energy * family.length) % family.length;
         return family[idx] || family[0];
     };
 
@@ -71,21 +110,24 @@ export function scheduleLead(section, progression, instruments, params, rand, me
         if (!isSolo) {
             const type = isIntro ? "intro" : (isChorus ? "chorus" : "verse");
             const pattern = getPattern(type);
+            const currentMelody = getMelody(type, name);
             
-            pattern.forEach((s, i) => {
-                const absoluteTime = measureStartTime + (s * stepTime);
-                const nextStep = (i < pattern.length - 1) ? pattern[i + 1] : 16;
-                const duration = (nextStep - s) * stepTime;
+            if (pattern && Array.isArray(pattern)) {
+                pattern.forEach((s, i) => {
+                    const absoluteTime = measureStartTime + (s * stepTime);
+                    const nextStep = (i < pattern.length - 1) ? pattern[i + 1] : 16;
+                    const duration = (nextStep - s) * stepTime;
 
-                // Melodia sicura: Fondamentale, Quinta, Terza
-                const safeMelody = [0, 4, 2, 0, 4, 5, 2, 0];
-                const octave = name.includes("chorus") ? 5 : 4;
-                const noteName = normalizeNote(currentScale[safeMelody[i % 8]], "guitarLead") + octave;
+                    // Melodia dinamica basata sul DNA
+                    const noteIdx = currentMelody[i % currentMelody.length];
+                    const octave = isChorus ? 5 : 4;
+                    const noteName = normalizeNote(currentScale[noteIdx % 7], "guitarLead") + octave;
 
-                Tone.Transport.schedule(time => {
-                    guitarLead.triggerAttackRelease(noteName, duration, time);
-                }, absoluteTime);
-            });
+                    Tone.Transport.schedule(time => {
+                        guitarLead.triggerAttackRelease(noteName, duration, time);
+                    }, absoluteTime);
+                });
+            }
         } else {
             // Logica Solo (Blocchi domanda/risposta)
             for (let block = 0; block < 4; block++) {
