@@ -3,13 +3,15 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 003.6 loaded");
+console.log("metalLeadEngine.js ver. 003.7 loaded");
 
 export function scheduleLead(section, progression, instruments, params, rand, measureDur) {
     const { guitarLead } = instruments || {};
     if (!guitarLead) return;
 
     const name = section?.name?.toLowerCase() || "";
+    const isChorus = name.includes("chorus");
+    const isIntro = name.includes("intro") || name.includes("outro");
     const isSolo = name.includes("solo") || name.includes("bridge");
     const stepTime = measureDur / 16;
 
@@ -31,7 +33,7 @@ export function scheduleLead(section, progression, instruments, params, rand, me
     };
 
     // --- 🧬 IL TUO MOTORE DI PESATURA DNA ---
-    const getPattern = (type) => {
+    const get = (type) => {
         const family = library[type] || library.verse;
         const { contrast, brightness, saturation, sharpness } = params.imageParams;
 
