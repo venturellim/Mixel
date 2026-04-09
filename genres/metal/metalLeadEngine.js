@@ -3,7 +3,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 003.5 loaded");
+console.log("metalLeadEngine.js ver. 003.6 loaded");
 
 export function scheduleLead(section, progression, instruments, params, rand, measureDur) {
     const { guitarLead } = instruments || {};
@@ -66,9 +66,9 @@ export function scheduleLead(section, progression, instruments, params, rand, me
         const currentScale = getStrictScale(currentRoot);
 
         if (!isSolo) {
-            const type = name.includes("intro") ? "intro" : (name.includes("chorus") ? "chorus" : "verse");
+            const type = isIntro ? "intro" : (isChorus ? "chorus" : "verse");
             const pattern = getPattern(type);
-
+            
             pattern.forEach((s, i) => {
                 const absoluteTime = measureStartTime + (s * stepTime);
                 const nextStep = (i < pattern.length - 1) ? pattern[i + 1] : 16;
