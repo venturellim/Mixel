@@ -9,7 +9,7 @@ import { scheduleRhythm } from "./metalRhythmEngine.js";
 import { scheduleLead } from "./metalLeadEngine.js"; 
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 012 loaded");
+console.log("metalEngine.js ver. 012.1 loaded");
 
 export async function waitMetalInstruments() {
     await waitForInstruments(4);
@@ -83,7 +83,7 @@ export function createMetalEngine(params) {
 
         // Visual feedback in console
         Tone.Transport.schedule(() => {
-            console.log(`%c ▶ ${sec.name.toUpperCase()} (${sec.measures} meas) | DNA Mood: ${currentDnaMood(params.imageParams)}`, "color: #ff00ff; font-weight: bold;");
+            console.log(`%c ▶ ${sec.name.toUpperCase()} (${sec.measures} meas) | DNA Mood: ${currentDnaMood(params.imageParams)}`, "color: #191970; font-weight: bold;");
         }, sec.startTime);
 
         // SCHEDULAZIONE MOTORI (Lead + Rhythm)

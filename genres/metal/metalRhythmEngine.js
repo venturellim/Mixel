@@ -2,7 +2,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
 
-console.log("metalRhythmEngine.js ver. 014 loaded");
+console.log("metalRhythmEngine.js ver. 014.1 loaded");
 
 export function scheduleRhythm(section, progression, instruments, params, rand, measureDur, nextSectionRoot) {
     const { drums, guitarPalm, guitarOpen, bass } = instruments;
@@ -43,6 +43,9 @@ export function scheduleRhythm(section, progression, instruments, params, rand, 
     };
 
     let currentGroove = getGroove(isIntro ? "intro" : (isPreChorus ? "prechorus" : (isChorus ? "chorus" : "verse")));
+
+    // LOG RITMICO
+    console.log(`%c 🥁 RHYTHM: ${currentGroove.toUpperCase()} | Energy: ${energy.toFixed(2)}`, "color: #191970; font-weight: bold;");
 
     for (let m = 0; m < section.measures; m++) {
         const measureStartTime = section.startTime + (m * measureDur);
