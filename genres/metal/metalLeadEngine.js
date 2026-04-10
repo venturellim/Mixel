@@ -3,19 +3,21 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 004 loaded");
+console.log("metalLeadEngine.js ver. 005 loaded");
 
 export function scheduleLead(section, progression, instruments, params, rand, measureDur) {
     const { guitarLead } = instruments || {};
     if (!guitarLead) return;
 
     const name = section?.name?.toLowerCase() || "";
-    const isChorus = name.includes("chorus");
+    const isChorus = name.includes("chorus") && !name.includes("pre");
+    const isPreChorus = name.includes("pre");
     const isIntro = name.includes("intro") || name.includes("outro");
     const isSolo = name.includes("solo") || name.includes("bridge");
     const stepTime = measureDur / 16;
+    const { energy = 0.5, brightness = 0.5, texture = 0.5, complexity = 0.5 } = params?.imageParams || {};
 
-    // --- 🧬 1. LIBRERIA MASCHERE RITMICHE ---
+    // --- 🧬 LIBRERIA MASCHERE INTEGRALE ---
     const library = {
         intro: [
             [0, 1, 2, 3, 4, 8, 12], [0, 4, 8, 10, 11, 12, 13, 14], 
@@ -26,13 +28,17 @@ export function scheduleLead(section, progression, instruments, params, rand, me
             [0, 8], [0, 4, 8, 12], [0, 6, 8, 14], 
             [0, 4, 10], [2, 6, 10, 14], [0, 2, 4, 8, 10, 12]
         ],
+        prechorus: [
+            [0, 4, 8, 12], [0, 2, 4, 6, 8, 10, 12, 14], 
+            [0, 4, 7, 11, 12], [0, 8, 12, 14], [0, 2, 4, 8, 10, 12]
+        ],
         chorus: [
             [0, 2, 4, 6, 8, 10, 12, 14], [0, 8, 12], 
             [0, 4, 8, 12], [0, 3, 8, 11], [0, 6, 7, 8, 14]
         ]
     };
 
-    // --- 🧬 2. LIBRERIA MELODIE (Gradi della Scala) ---
+    // --- 🧬 LIBRERIA MELODICA INTEGRALE (32 Combinazioni) ---
     const melodicLibrary = {
         epic: [
             [0, 4, 7, 4, 5, 4, 2, 0], [0, 0, 4, 4, 7, 7, 4, 4], [0, 4, 5, 7, 0, 4, 5, 7], 
@@ -53,29 +59,25 @@ export function scheduleLead(section, progression, instruments, params, rand, me
             [0, 6, 5, 4, 2, 3, 2, 0], [2, 3, 2, 0, 4, 5, 4, 2], [4, 2, 0, 6, 5, 4, 2, 2],
             [0, 4, 6, 7, 6, 4, 2, 0], [5, 4, 2, 0, 5, 4, 2, 0], [0, 2, 4, 6, 0, 2, 4, 6],
             [4, 5, 7, 4, 2, 3, 2, 0], [0, 0, 6, 6, 5, 5, 4, 4]
+        ],
+        prechorus: [
+            [0, 2, 3, 4, 5, 6, 7, 7], [0, 0, 2, 2, 4, 4, 6, 6], 
+            [0, 4, 0, 5, 0, 6, 0, 7], [4, 5, 4, 5, 6, 7, 7, 7]
         ]
     };
 
-    // --- 🧠 3. MOTORE DI PESATURA DNA ---
     const getPattern = (type) => {
         const family = library[type] || library.verse;
-        const { energy = 0.5, brightness = 0.5, complexity = 0.5, texture = 0.5 } = params?.imageParams || {};
-        
         let dnaScore = (energy * 400) + (brightness * 30) + (complexity * 2) + (texture * 0.1);
-        const sectionMultipliers = { intro: 1.33, verse: 0.77, chorus: 2.15 };
-        const finalScore = dnaScore * (sectionMultipliers[type] || 1.0);
-        
-        const idx = Math.floor(Math.abs(finalScore)) % family.length;
-        return family[idx] || family[0];
+        const finalScore = Math.floor(Math.abs(dnaScore) * (type === "chorus" ? 2.15 : 1.0));
+        return family[finalScore % family.length] || family[0];
     };
 
-    // --- 🧠 4. SELETTORE MELODIA DINAMICO ---
-    const getMelody = (type, sectionName) => {
-        const { energy = 0.5, brightness = 0.5, texture = 0.5, complexity = 0.5 } = params?.imageParams || {};
+    const getMelody = (type, secName) => {
+        if (secName.includes("pre")) return melodicLibrary.prechorus[Math.floor(energy * melodicLibrary.prechorus.length) % melodicLibrary.prechorus.length];
+        
         let family;
-
-        // Scelta della "famiglia" di note basata sul mood della foto
-        if (sectionName.includes("chorus")) {
+        if (secName.includes("chorus")) {
             family = brightness > 0.5 ? melodicLibrary.epic : melodicLibrary.emotional;
         } else {
             if (energy > 0.7 && texture > 0.6) family = melodicLibrary.evil;
@@ -83,19 +85,16 @@ export function scheduleLead(section, progression, instruments, params, rand, me
             else if (brightness < 0.4) family = melodicLibrary.emotional;
             else family = melodicLibrary.epic;
         }
-
-        // Usiamo l'energia per scegliere l'indice specifico
-        const idx = Math.floor(energy * family.length) % family.length;
-        return family[idx] || family[0];
+        return family[Math.floor(energy * family.length) % family.length] || family[0];
     };
 
     const getStrictScale = (root) => {
         const allNotes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
         let cleanRoot = root.split('/')[0].replace(/[0-9]/g, '').trim();
-        let isMinor = cleanRoot.includes('m') || (cleanRoot === cleanRoot.toLowerCase() && cleanRoot.length === 1);
+        let isMinor = root.includes('m') || (cleanRoot === cleanRoot.toLowerCase() && cleanRoot.length === 1);
         cleanRoot = cleanRoot.replace('m', '').toUpperCase();
         const altNames = { "DB": "C#", "EB": "D#", "GB": "F#", "AB": "G#", "BB": "A#" };
-        if (altNames[cleanRoot]) cleanRoot = altNames[cleanRoot];
+        cleanRoot = altNames[cleanRoot] || cleanRoot;
         let rootIdx = allNotes.indexOf(cleanRoot);
         if (rootIdx === -1) rootIdx = 9;
         const intervals = isMinor ? [0, 2, 3, 5, 7, 8, 10] : [0, 2, 4, 5, 7, 9, 11];
@@ -104,47 +103,39 @@ export function scheduleLead(section, progression, instruments, params, rand, me
 
     for (let m = 0; m < section.measures; m++) {
         const measureStartTime = section.startTime + (m * measureDur);
-        const currentRoot = progression[m % progression.length] || "A";
-        const currentScale = getStrictScale(currentRoot);
+        const currentScale = getStrictScale(progression[m % progression.length] || "A");
+        const isTransitionMeasure = (m === section.measures - 1);
 
         if (!isSolo) {
-            const type = isIntro ? "intro" : (isChorus ? "chorus" : "verse");
+            const type = isIntro ? "intro" : (isPreChorus ? "prechorus" : (isChorus ? "chorus" : "verse"));
             const pattern = getPattern(type);
             const currentMelody = getMelody(type, name);
             
-            if (pattern && Array.isArray(pattern)) {
-                pattern.forEach((s, i) => {
-                    const absoluteTime = measureStartTime + (s * stepTime);
-                    const nextStep = (i < pattern.length - 1) ? pattern[i + 1] : 16;
-                    const duration = (nextStep - s) * stepTime;
+            pattern.forEach((s, i) => {
+                if (isTransitionMeasure && s > 13 && energy > 0.6) return; // Stop per fill rullante
 
-                    // Melodia dinamica basata sul DNA
-                    const noteIdx = currentMelody[i % currentMelody.length];
-                    const octave = isChorus ? 5 : 4;
-                    const noteName = normalizeNote(currentScale[noteIdx % 7], "guitarLead") + octave;
+                const absoluteTime = measureStartTime + (s * stepTime);
+                const nextStep = (i < pattern.length - 1) ? pattern[i + 1] : 16;
+                const noteIdx = currentMelody[i % currentMelody.length];
+                const octave = isChorus ? 5 : 4;
+                const noteName = normalizeNote(currentScale[noteIdx % 7], "guitarLead") + octave;
 
-                    Tone.Transport.schedule(time => {
-                        guitarLead.triggerAttackRelease(noteName, duration, time);
-                    }, absoluteTime);
-                });
-            }
+                Tone.Transport.schedule(time => {
+                    guitarLead.triggerAttackRelease(noteName, (nextStep - s) * stepTime, time);
+                }, absoluteTime);
+            });
         } else {
-            // Logica Solo (Blocchi domanda/risposta)
+            // Solo logic v0.58
             for (let block = 0; block < 4; block++) {
-                const blockStartTime = measureStartTime + (block * 4 * stepTime);
-                const isFast = rand() > 0.4;
-                if (isFast) {
+                const blockTime = measureStartTime + (block * 4 * stepTime);
+                if (rand() > 0.4) {
                     for (let s = 0; s < 4; s++) {
-                        const noteName = normalizeNote(currentScale[rand() > 0.5 ? 0 : 4], "guitarLead") + 5;
-                        Tone.Transport.schedule(time => {
-                            guitarLead.triggerAttackRelease(noteName, "16n", time);
-                        }, blockStartTime + (s * stepTime));
+                        const note = normalizeNote(currentScale[rand() > 0.5 ? 0 : 4], "guitarLead") + 5;
+                        Tone.Transport.schedule(t => guitarLead.triggerAttackRelease(note, "16n", t), blockTime + (s * stepTime));
                     }
                 } else {
-                    const noteName = normalizeNote(currentScale[0], "guitarLead") + 5;
-                    Tone.Transport.schedule(time => {
-                        guitarLead.triggerAttackRelease(noteName, "2n", time);
-                    }, blockStartTime);
+                    const note = normalizeNote(currentScale[0], "guitarLead") + 5;
+                    Tone.Transport.schedule(t => guitarLead.triggerAttackRelease(note, "2n", t), blockTime);
                 }
             }
         }

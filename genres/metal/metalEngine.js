@@ -1,4 +1,4 @@
-// metalEngine.js — ver. 011 (STABLE PARAMETERS)
+// metalEngine.js — ver. 012
 import * as Tone from "https://esm.sh/tone";
 import { buildPowerMetalParams } from "./powerMetalParams.js";
 import { buildSongStructure } from "../../utils/structureUtils.js";
@@ -9,7 +9,7 @@ import { scheduleRhythm } from "./metalRhythmEngine.js";
 import { scheduleLead } from "./metalLeadEngine.js"; 
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 011 loaded");
+console.log("metalEngine.js ver. 012 loaded");
 
 export async function waitMetalInstruments() {
     await waitForInstruments(4);
@@ -17,31 +17,41 @@ export async function waitMetalInstruments() {
 
 export function createMetalEngine(params) {
     const rand = createSeededRandom(params.dna);
-    // Creiamo i parametri musicali
     const metalParams = buildPowerMetalParams(rand);
     
     Tone.Transport.stop();
     Tone.Transport.cancel(); 
     Tone.Transport.bpm.value = metalParams.bpm;
 
-    // 1. STRUTTURA CON QUADRATURA
-const rawStructure = [
-    { name: "intro",     weight: 4 + (rand() * 4) }, 
-    { name: "verse",     weight: 8 + (rand() * 8) },
-    { name: "prechorus", weight: (params.imageParams.energy > 0.4 && rand() > 0.5) ? 4 : 0 },
-    { name: "chorus",    weight: 8 + (rand() * 8) },
-    { name: "solo",      weight: params.imageParams.complexity > 0.7 ? 8 : 0 },
-    { name: "chorus",    weight: 8 },
-    { name: "outro",     weight: 4 }
-];
+    // 1. 🧬 STRUTTURA INTELLIGENTE (DNA DRIVEN)
+    // Determiniamo se il brano merita un pre-chorus basandoci sull'energia dell'immagine
+    const hasPreChorus = params.imageParams.energy > 0.3; 
+    const preChorusWeight = hasPreChorus ? 4 : 0;
 
+    const rawStructure = [
+        { name: "intro",     weight: 4 + (rand() * 4) }, 
+        { name: "verse",     weight: 8 },
+        { name: "prechorus", weight: preChorusWeight },
+        { name: "chorus",    weight: 8 },
+        { name: "verse",     weight: 8 },
+        { name: "prechorus", weight: preChorusWeight },
+        { name: "chorus",    weight: 8 },
+        { name: "solo",      weight: params.imageParams.complexity > 0.6 ? 8 : 0 },
+        { name: "chorus",    weight: 8 },
+        { name: "outro",     weight: 4 }
+    ];
 
+    // 2. QUADRATURA MUSICALE (Assicura blocchi da 4 o 2 misure)
     const finalStructure = rawStructure.map(s => {
         let m = Math.floor(s.weight);
-        if (["intro", "verse", "chorus", "solo"].includes(s.name) && m > 0) {
-            m = Math.ceil(m / 4) * 4; 
-        } else if (m > 0) {
-            m = Math.ceil(m / 2) * 2;
+        if (m > 0) {
+            // Verse, Chorus, Solo e Intro sempre multipli di 4 per la "quadratura" metal
+            if (["intro", "verse", "chorus", "solo"].includes(s.name)) {
+                m = Math.ceil(m / 4) * 4; 
+            } else {
+                // Pre-chorus e Outro possono essere da 2 o 4
+                m = Math.ceil(m / 2) * 2;
+            }
         }
         return { name: s.name, measures: m };
     }).filter(s => s.measures > 0);
@@ -50,8 +60,6 @@ const rawStructure = [
     const progressions = generateSongProgressions(structure, params.imageParams, metalParams.tonalCenter, rand);
     const measureDur = (60 / metalParams.bpm) * 4;
 
-    // PREPARAZIONE PARAMETRI PER IL RHYTHM ENGINE
-    // Uniamo i dati dell'immagine con i parametri musicali per non avere undefined
     const combinedParams = {
         ...metalParams,
         imageParams: params.imageParams 
@@ -73,16 +81,16 @@ const rawStructure = [
         const nextSec = structure.sections[index + 1];
         const nextSectionRoot = nextSec ? (progressions[nextSec.name]?.root || sectionRoot) : sectionRoot;
 
+        // Visual feedback in console
         Tone.Transport.schedule(() => {
-            console.log(`%c ▶ ${sec.name.toUpperCase()} (${sec.measures} measures) | Root: ${sectionRoot} `, "color: #0ff; font-weight: bold;");
+            console.log(`%c ▶ ${sec.name.toUpperCase()} (${sec.measures} meas) | DNA Mood: ${currentDnaMood(params.imageParams)}`, "color: #ff00ff; font-weight: bold;");
         }, sec.startTime);
 
-        // CHIAMATA AL MOTORE RITMICO (Già presente)
+        // SCHEDULAZIONE MOTORI (Lead + Rhythm)
         scheduleRhythm(sec, realNotes, metalInstruments, combinedParams, rand, measureDur, nextSectionRoot);
-
-        // CHIAMATA AL MOTORE LEAD (Da aggiungere ora)
         scheduleLead(sec, realNotes, metalInstruments, combinedParams, rand, measureDur); 
-});
+    });
+
     return {
         totalDuration: structure.totalDuration,
         play: () => { if (Tone.context.state !== 'running') Tone.context.resume(); Tone.Transport.start("+0.1"); },
@@ -91,4 +99,12 @@ const rawStructure = [
         seek: (s) => Tone.Transport.seconds = s,
         mixerData: { instruments: metalInstruments, volumeMap: metalVolumeMap }
     };
+}
+
+// Utility per debug in console
+function currentDnaMood(p) {
+    if (p.energy > 0.7) return "AGGRESSIVE";
+    if (p.brightness > 0.7) return "EPIC";
+    if (p.complexity > 0.7) return "TECHNICAL";
+    return "ATMOSPHERIC";
 }
