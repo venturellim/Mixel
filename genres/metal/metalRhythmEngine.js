@@ -4,10 +4,6 @@ import { normalizeNote } from "./metalInstruments.js";
 
 console.log("metalRhythmEngine.js ver. 014 loaded");
 
-// metalRhythmEngine.js — ver. 071
-import * as Tone from "https://esm.sh/tone";
-import { normalizeNote } from "./metalInstruments.js";
-
 export function scheduleRhythm(section, progression, instruments, params, rand, measureDur, nextSectionRoot) {
     const { drums, guitarPalm, guitarOpen, bass } = instruments;
     if (!drums || !guitarPalm || !bass) return;
