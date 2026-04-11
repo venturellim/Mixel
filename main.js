@@ -13,7 +13,7 @@ import { analyzeImage } from "./imageAnalysis.js";
 import { photoToMusicParams } from "./photoToMusicParams.js";
 import { createPianoEngine, waitPianoInstruments } from "./genres/piano/pianoEngine.js";
 import { createMetalEngine, waitMetalInstruments } from "./genres/metal/metalEngine.js";
-import { scoreVisualizer } from "./scorrUI.js";
+import { scoreVisualizer } from "./scoreUI.js";
 
 console.log("main.js ver. 006 loaded");
 
