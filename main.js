@@ -8,24 +8,20 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-import { createPianoEngine, waitPianoInstruments } 
-from "./genres/piano/pianoEngine.js";
 import { masterEQ, } from "./common.js";
-
-console.log("main.js ver. 005 loaded");
-
-// -------------------------------------------------------------
-// Import fondamentali
-// -------------------------------------------------------------
 import { analyzeImage } from "./imageAnalysis.js";
 import { photoToMusicParams } from "./photoToMusicParams.js";
-
-// Import dei generi (solo entry point, non logica interna)
+import { createPianoEngine, waitPianoInstruments } from "./genres/piano/pianoEngine.js";
 import { createMetalEngine, waitMetalInstruments } from "./genres/metal/metalEngine.js";
+import { scoreVisualizer } from "./scorrUI.js";
+
+console.log("main.js ver. 006 loaded");
+
 
 let currentEngine = null;
 let currentGenre = null;
 let firstStart = 1;
+let scoreUI = null;
 const miniVideo = document.querySelector('.video-mini-wrapper video'); 
 
 
@@ -45,6 +41,9 @@ window.addEventListener("DOMContentLoaded", () => {
     initOrientation();
     initFileLoader();
     initGenrePanel();
+    if (!scoreUI) {
+        scoreUI = new scoreVisualizer();
+        }
 });
 
 // -------------------------------------------------------------
@@ -177,12 +176,12 @@ async function selectGenre(genre) {
     // 3) Creazione engine del genere
     if (genre === "metal") {
    await waitMetalInstruments();   // <-- strumenti pronti
-        currentEngine = await createMetalEngine(params);
+        currentEngine = await createMetalEngine(params, scoreUI);
  
     }
 if (genre === "piano") {
     await waitPianoInstruments(); // Carica i campioni se non presenti
-    currentEngine = await createPianoEngine(params, analysis); // Passa entrambi
+    currentEngine = await createPianoEngine(params, analysis, scoreUI); // Passa entrambi
 }
 
     if (!currentEngine) {
@@ -208,6 +207,7 @@ function initPlayerUI() {
     const pauseBtn = document.getElementById("btnPause");
     const stopBtn = document.getElementById("btnStop");
     const seekBar = document.getElementById("seekBar");
+    const btnSpartito = document.getElementById("btnSpartito");
 
     function formatTime(sec) {
         const m = Math.floor(sec / 60);
@@ -225,11 +225,21 @@ function initPlayerUI() {
         overlay.style.display = "none";
         
         currentEngine.play();
+        btnSpartito.classList.remove("hidden");
+            btnSpartito.classList.add("show-flex");
     };
 
     pauseBtn.onclick = () => currentEngine?.pause();
     stopBtn.onclick = () => {
     currentEngine?.stop();
+    btnSpartito.classList.add("hidden");
+    btnSpartito.classList.remove("show-flex");
+        // Chiudi lo spartito se è rimasto aperto
+        if (scoreUI && scoreUI.isVisible) 
+            scoreUI.toggle();
+        };
+    btnSpartito.onclick = () => {
+        if (scoreUI) scoreUI.toggle();
 };
 
 
