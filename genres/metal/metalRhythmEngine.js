@@ -4,7 +4,7 @@ import { normalizeNote } from "./metalInstruments.js";
 
 console.log("metalRhythmEngine.js ver. 014.1 loaded");
 
-export function scheduleRhythm(section, progression, instruments, params, rand, measureDur, nextSectionRoot) {
+export function scheduleRhythm(section, progression, instruments, params, rand, measureDur, nextSectionRoot, score) {
     const { drums, guitarPalm, guitarOpen, bass } = instruments;
     if (!drums || !guitarPalm || !bass) return;
 
@@ -38,8 +38,8 @@ export function scheduleRhythm(section, progression, instruments, params, rand, 
     const getGroove = (type) => {
         const family = grooves[type] || grooves.verse;
         let dnaScore = (energy * 400) + (brightness * 30) + (complexity * 2) + (texture * 0.1);
-        const score = Math.floor(Math.abs(dnaScore) * (type === "chorus" ? 2.15 : 1.0));
-        return family[score % family.length];
+        const scoreIdx = Math.floor(Math.abs(dnaScore) * (type === "chorus" ? 2.15 : 1.0));
+        return family[scoreIdx % family.length];
     };
 
     let currentGroove = getGroove(isIntro ? "intro" : (isPreChorus ? "prechorus" : (isChorus ? "chorus" : "verse")));
@@ -92,14 +92,23 @@ export function scheduleRhythm(section, progression, instruments, params, rand, 
                 customNote = Tone.Frequency(currMidi + stepScale, "midi").toNote();
             }
 
+            // --- ESECUZIONE AUDIO E SCORE ---
             if (playGuitar) {
                 const rootToUse = customNote || currentRoot;
                 const gNote = normalizeNote(rootToUse, inst === guitarOpen ? "guitarOpen" : "guitarPalm") + "2";
                 const bNote = normalizeNote(rootToUse, "bass") + "1";
                 const palmLen = texture < 0.3 ? "8n" : "16n";
+
                 Tone.Transport.schedule(t => {
                     inst.triggerAttackRelease(gNote, sustain ? "1n" : palmLen, t);
                     bass.triggerAttackRelease(bNote, sustain ? "1n" : "16n", t);
+
+                    // AGGIORNAMENTO SCORE (Sincronizzato col frame video)
+                    Tone.Draw.schedule(() => {
+                        if (score) {
+                            score.addNote("Rhythm", gNote, section.name);
+                        }
+                    }, t);
                 }, absoluteTime);
             }
 

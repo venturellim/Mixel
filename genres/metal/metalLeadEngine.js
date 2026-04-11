@@ -3,9 +3,9 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 005.1 loaded");
+console.log("metalLeadEngine.js ver. 006 loaded");
 
-export function scheduleLead(section, progression, instruments, params, rand, measureDur) {
+export function scheduleLead(section, progression, instruments, params, rand, measureDur, score) {
     const { guitarLead } = instruments || {};
     if (!guitarLead) return;
 
@@ -157,14 +157,27 @@ export function scheduleLead(section, progression, instruments, params, rand, me
 
                 Tone.Transport.schedule(time => {
                     guitarLead.triggerAttackRelease(noteName, (nextStep - s) * stepTime, time);
+                    
+                // Visivo (Score)
+                    Tone.Draw.schedule(() => {
+                        if (score) score.addNote("Lead", noteName, section.name);
+                    }, time);
                 }, absoluteTime);
             });
         } else {
-            // Logica Assolo (v0.58)
+            // Logica Assolo (Simplified per lo spartito)
             for (let block = 0; block < 4; block++) {
-                const blockTime = measureStartTime + (block * 4 * stepTime);
+                const s = block * 4;
+                const absoluteTime = measureStartTime + (s * stepTime);
                 const note = normalizeNote(currentScale[0], "guitarLead") + 5;
-                Tone.Transport.schedule(t => guitarLead.triggerAttackRelease(note, "16n", t), blockTime);
+                
+                Tone.Transport.schedule(time => {
+                    guitarLead.triggerAttackRelease(note, "16n", time);
+                    
+                    Tone.Draw.schedule(() => {
+                        if (score) score.addNote("Lead", note, section.name + " SOLO");
+                    }, time);
+                }, absoluteTime);
             }
         }
     }

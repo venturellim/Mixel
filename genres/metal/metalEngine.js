@@ -1,4 +1,4 @@
-// metalEngine.js — ver. 012
+// metalEngine.js — ver. 013 (Score Integrated)
 import * as Tone from "https://esm.sh/tone";
 import { buildPowerMetalParams } from "./powerMetalParams.js";
 import { buildSongStructure } from "../../utils/structureUtils.js";
@@ -9,13 +9,17 @@ import { scheduleRhythm } from "./metalRhythmEngine.js";
 import { scheduleLead } from "./metalLeadEngine.js"; 
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 012.1 loaded");
+console.log("metalEngine.js ver. 013 loaded");
 
 export async function waitMetalInstruments() {
     await waitForInstruments(4);
 }
 
-export function createMetalEngine(params) {
+/**
+ * @param {Object} params - Parametri estratti dall'immagine
+ * @param {Object} score - Istanza della classe score (scorrUI.js)
+ */
+export function createMetalEngine(params, score) {
     const rand = createSeededRandom(params.dna);
     const metalParams = buildPowerMetalParams(rand);
     
@@ -24,7 +28,6 @@ export function createMetalEngine(params) {
     Tone.Transport.bpm.value = metalParams.bpm;
 
     // 1. 🧬 STRUTTURA INTELLIGENTE (DNA DRIVEN)
-    // Determiniamo se il brano merita un pre-chorus basandoci sull'energia dell'immagine
     const hasPreChorus = params.imageParams.energy > 0.3; 
     const preChorusWeight = hasPreChorus ? 4 : 0;
 
@@ -41,15 +44,13 @@ export function createMetalEngine(params) {
         { name: "outro",     weight: 4 }
     ];
 
-    // 2. QUADRATURA MUSICALE (Assicura blocchi da 4 o 2 misure)
+    // 2. QUADRATURA MUSICALE
     const finalStructure = rawStructure.map(s => {
         let m = Math.floor(s.weight);
         if (m > 0) {
-            // Verse, Chorus, Solo e Intro sempre multipli di 4 per la "quadratura" metal
             if (["intro", "verse", "chorus", "solo"].includes(s.name)) {
                 m = Math.ceil(m / 4) * 4; 
             } else {
-                // Pre-chorus e Outro possono essere da 2 o 4
                 m = Math.ceil(m / 2) * 2;
             }
         }
@@ -81,27 +82,34 @@ export function createMetalEngine(params) {
         const nextSec = structure.sections[index + 1];
         const nextSectionRoot = nextSec ? (progressions[nextSec.name]?.root || sectionRoot) : sectionRoot;
 
-        // Visual feedback in console
+        // Visual feedback e aggiornamento Sezione nello spartito
         Tone.Transport.schedule(() => {
-            console.log(`%c ▶ ${sec.name.toUpperCase()} (${sec.measures} meas) | DNA Mood: ${currentDnaMood(params.imageParams)}`, "color: #191970; font-weight: bold;");
+            console.log(`%c ▶ ${sec.name.toUpperCase()} | Mood: ${currentDnaMood(params.imageParams)}`, "color: #191970; font-weight: bold;");
         }, sec.startTime);
 
-        // SCHEDULAZIONE MOTORI (Lead + Rhythm)
-        scheduleRhythm(sec, realNotes, metalInstruments, combinedParams, rand, measureDur, nextSectionRoot);
-        scheduleLead(sec, realNotes, metalInstruments, combinedParams, rand, measureDur); 
+        // SCHEDULAZIONE MOTORI (Passiamo 'score' come ultimo parametro)
+        // Nota: Assicurati di aggiornare anche le firme di queste funzioni nei file lead/rhythm engine
+        scheduleRhythm(sec, realNotes, metalInstruments, combinedParams, rand, measureDur, nextSectionRoot, score);
+        scheduleLead(sec, realNotes, metalInstruments, combinedParams, rand, measureDur, score); 
     });
 
     return {
         totalDuration: structure.totalDuration,
-        play: () => { if (Tone.context.state !== 'running') Tone.context.resume(); Tone.Transport.start("+0.1"); },
+        play: () => { 
+            if (Tone.context.state !== 'running') Tone.context.resume(); 
+            Tone.Transport.start("+0.1"); 
+        },
         pause: () => Tone.Transport.pause(),
-        stop: () => { Tone.Transport.stop(); Tone.Transport.cancel(); Tone.Transport.seconds = 0; },
+        stop: () => { 
+            Tone.Transport.stop(); 
+            Tone.Transport.cancel(); 
+            Tone.Transport.seconds = 0; 
+        },
         seek: (s) => Tone.Transport.seconds = s,
         mixerData: { instruments: metalInstruments, volumeMap: metalVolumeMap }
     };
 }
 
-// Utility per debug in console
 function currentDnaMood(p) {
     if (p.energy > 0.7) return "AGGRESSIVE";
     if (p.brightness > 0.7) return "EPIC";
