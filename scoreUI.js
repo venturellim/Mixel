@@ -1,6 +1,7 @@
-// scoreUI.js — ver. 003
+// scoreUI.js — ver. 005
+// Full Responsive: percentuali per corsie, etichette e limiti di scorrimento.
 
-console.log("scoreUI.js ver. 003.2 loaded");
+console.log("scoreUI.js ver. 005 loaded");
 
 export class scoreVisualizer {
     constructor() {
@@ -9,8 +10,7 @@ export class scoreVisualizer {
         
         // --- 1. CARICAMENTO IMMAGINE SFONDO ---
         this.bgImage = new Image();
-        // Assicurati che l'immagine sia nella stessa cartella o metti il percorso corretto
-        this.bgImage.src = "Pentagramma.jpg"; // Metti il nome esatto del tuo file
+        this.bgImage.src = "Pentagramma.jpg"; 
         
         this.imageLoaded = false;
         this.bgImage.onload = () => {
@@ -18,7 +18,7 @@ export class scoreVisualizer {
             console.log("✅ Immagine pentagramma caricata.");
         };
 
-        // Tasto di chiusura
+        // Tasto di chiusura "X"
         this.closeBtn = document.createElement("button");
         this.closeBtn.innerHTML = "✕";
         this.closeBtn.className = "close-score-btn";
@@ -40,8 +40,12 @@ export class scoreVisualizer {
         if (!this.canvas.parentElement) document.body.appendChild(this.canvas);
         if (!this.closeBtn.parentElement) document.body.appendChild(this.closeBtn);
         
-        // Punto di "nascita" delle note: a DESTRA (85%)
+        // --- PARAMETRI RESPONSIVE ---
+        // Punto di "nascita" delle note: a DESTRA (85% della larghezza)
         this.playheadX = this.canvas.width * 0.85;
+        
+        // Limite a SINISTRA: le note spariscono al 12% per non coprire le chiavi
+        this.leftLimit = this.canvas.width * 0.12; 
     }
 
     show() {
@@ -60,7 +64,7 @@ export class scoreVisualizer {
 
     addNote(track, note, section) {
         this.currentSection = section;
-        if (this.notes.length > 400) this.notes.shift(); // Aumentiamo un po' il buffer
+        if (this.notes.length > 400) this.notes.shift();
 
         this.notes.push({
             x: this.playheadX,
@@ -73,62 +77,55 @@ export class scoreVisualizer {
     render() {
         if (!this.isVisible) return;
 
-        const { ctx, canvas, playheadX, bgImage, imageLoaded } = this;
+        const { ctx, canvas, playheadX, leftLimit, bgImage, imageLoaded } = this;
         
-        // --- 2. POSIZIONAMENTO ADATTIVO CORSIE ---
-        // Dobbiamo allineare le nostre corsie ai 4 righi musicali dell'immagine.
-        // L'immagine ha una sua "griglia" interna. Queste percentuali sono stime
-        // basate sull'immagine vuota, vanno adattate per far cadere le note
-        // esattamente "tra le righe" dei 4 pentagrammi.
+        // --- 2. POSIZIONAMENTO CORSIE (Percentuali Altezza) ---
         const tracks = {
-            "Lead":   { y: 0.22, label: "GT LEAD" },    // Primo pentagramma (alto)
-            "Rhythm": { y: 0.42, label: "GT RHYTHM" },  // Secondo
-            "Bass":   { y: 0.62, label: "BASS" },       // Terzo
-            "Drums":  { y: 0.82, label: "DRUMS" }       // Quarto (basso)
+            "Lead":   { y: 0.24, label: "GT LEAD" },    
+            "Rhythm": { y: 0.44, label: "GT RHYTHM" },  
+            "Bass":   { y: 0.64, label: "BASS" },       
+            "Drums":  { y: 0.84, label: "DRUMS" }       
         };
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         // --- 3. DISEGNO SFONDO ---
-        // Disegna l'immagine di sfondo vuota su tutto il canvas
         if (imageLoaded) {
             ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
         } else {
-            // Fallback se l'immagine non si carica (carta avorio)
             ctx.fillStyle = "#fffaf0";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
 
-        // Titolo Sezione (Cambiato font e posizionamento per non coprire il pentagramma)
+        // Titolo Sezione (Intro, Verse, ecc.)
         if (this.currentSection) {
-            ctx.fillStyle = "#000";
-            ctx.font = "bold 28px 'Times New Roman', serif"; // Font più classico
-            ctx.textAlign = "center";
-            // Lo alziamo un po' di più per non toccare il primo rigo
-            ctx.fillText(this.currentSection.toUpperCase(), canvas.width / 2, canvas.height * 0.08); 
+            ctx.fillStyle = "#ff0000"; 
+            ctx.font = "bold 22px serif"; 
+            ctx.textAlign = "left";
+            // Posizionato appena dopo il limite delle chiavi
+            ctx.fillText(this.currentSection.toUpperCase(), leftLimit + 20, canvas.height * 0.12); 
         }
 
-        // Disegna nomi strumenti (A SINISTRA, sopra le corsie)
-        // Usiamo un font più pulito per l'etichetta dello strumento
+        // --- 4. DISEGNO NOMI STRUMENTI (Responsive a sinistra) ---
         Object.keys(tracks).forEach(key => {
             const trackY = canvas.height * tracks[key].y;
-            
-            ctx.fillStyle = "#666";
-            ctx.font = "bold 13px sans-serif";
+            ctx.fillStyle = "#444";
+            ctx.font = "bold 11px sans-serif";
             ctx.textAlign = "left";
-            // Scriviamo il nome dello strumento leggermente a sinistra e in alto
+            // Posizionati al 2% della larghezza, sopra la linea
             ctx.fillText(tracks[key].label, canvas.width * 0.02, trackY - 15);
         });
 
-        // --- 4. LINEA DI ESECUZIONE NERA (A DESTRA) ---
+        // --- 5. LINEA DI ESECUZIONE (PLAYHEAD) ---
         ctx.strokeStyle = "#000";
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.moveTo(playheadX, 0); ctx.lineTo(playheadX, canvas.height); ctx.stroke();
+        ctx.moveTo(playheadX, 0); 
+        ctx.lineTo(playheadX, canvas.height); 
+        ctx.stroke();
 
-        // Disegna Note
-        // Usiamo un carattere monospace pulito per le note
-        ctx.font = "bold 11px 'Courier New', monospace"; 
+        // --- 6. DISEGNO NOTE CON LIMITE DINAMICO ---
+        ctx.font = "bold 10px 'Courier New', monospace"; 
         ctx.textAlign = "center";
 
         for (let i = this.notes.length - 1; i >= 0; i--) {
@@ -137,20 +134,24 @@ export class scoreVisualizer {
             if(!trackCfg) continue;
             
             const y = canvas.height * trackCfg.y;
-            // Velocità adattata: 3.5 per farlo scorrere fluido
+            
+            // Velocità: 3.5 pixel per frame (puoi aumentarla se vuoi più rapidità)
             n.x -= 3.5; 
 
-            // quadratino tecnico
-            ctx.fillStyle = "#000";
-            ctx.fillRect(n.x - 3, y - 3, 6, 6); 
+            // Disegna solo se la nota è "dentro" lo spartito leggibile
+            if (n.x > leftLimit) {
+                ctx.fillStyle = "#000";
+                ctx.fillRect(n.x - 3, y - 3, 6, 6); 
 
-            // Se non è batteria, scrivi la nota (es. E2)
-            if (n.track !== "Drums") {
-                // Posizioniamo il testo sopra il quadratino
-                ctx.fillText(n.label, n.x, y - 12);
+                if (n.track !== "Drums") {
+                    ctx.fillText(n.label, n.x, y - 12);
+                }
             }
 
-            if (n.x < -100) this.notes.splice(i, 1);
+            // Elimina la nota quando supera il limite sinistro
+            if (n.x < leftLimit) {
+                this.notes.splice(i, 1);
+            }
         }
 
         requestAnimationFrame(() => this.render());
