@@ -15,7 +15,7 @@ import { createPianoEngine, waitPianoInstruments } from "./genres/piano/pianoEng
 import { createMetalEngine, waitMetalInstruments } from "./genres/metal/metalEngine.js";
 import { scoreVisualizer } from "./scoreUI.js";
 
-console.log("main.js ver. 006 loaded");
+console.log("main.js ver. 006.1 loaded");
 
 
 let currentEngine = null;
@@ -165,6 +165,9 @@ genrePanel.classList.remove("hidden");
 // -------------------------------------------------------------
 async function selectGenre(genre) {
     currentGenre = genre;
+    // Comunica il genere allo spartito
+    if (scoreUI) scoreUI.setTheme(genre);
+
     const previewImage = document.getElementById("previewImage");
 
     // 1) Analisi immagine
