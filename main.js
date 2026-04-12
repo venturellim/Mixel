@@ -15,7 +15,7 @@ import { createPianoEngine, waitPianoInstruments } from "./genres/piano/pianoEng
 import { createMetalEngine, waitMetalInstruments } from "./genres/metal/metalEngine.js";
 import { scoreVisualizer } from "./scoreUI.js";
 
-console.log("main.js ver. 006.1 loaded");
+console.log("main.js ver. 006.2 loaded");
 
 
 let currentEngine = null;
@@ -184,7 +184,7 @@ async function selectGenre(genre) {
     }
 if (genre === "piano") {
     await waitPianoInstruments(); // Carica i campioni se non presenti
-    currentEngine = await createPianoEngine(params, analysis, scoreUI); // Passa entrambi
+    currentEngine = await createPianoEngine(params, scoreUI); // Passa entrambi
 }
 
     if (!currentEngine) {
