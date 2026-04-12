@@ -406,7 +406,7 @@ body {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background-color: #fdfdf5; /* Carta avorio */
+    /*background-color: #fdfdf5; /* Carta avorio */
     z-index: 1100; /* Sopra al player, sotto Eruda */
     display: none;
     cursor: pointer; /* Clicca ovunque per chiudere */
