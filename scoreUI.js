@@ -1,7 +1,7 @@
 // scoreUI.js — ver. 007
 // Universale: Supporto Temi (Metal/Piano) e Drum Map avanzata.
 
-console.log("scoreUI.js ver. 007 loaded");
+console.log("scoreUI.js ver. 007.1 loaded");
 
 export class scoreVisualizer {
     constructor() {
@@ -152,7 +152,7 @@ export class scoreVisualizer {
             
             // --- MAPPATURA SPECIFICA BATTERIA (Solo se Metal) ---
             if (this.currentGenre === "metal" && n.track === "Drums") {
-                if (n.label.includes("Kick"))  y += 10;
+                if (n.label.includes("Kick"))  y += 6;
                 if (n.label.includes("Snare")) y -= 2;
                 if (n.label.includes("HiHat")) y -= 12;
                 if (n.label.includes("Crash")) y -= 22;
