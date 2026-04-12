@@ -1,45 +1,41 @@
-// scoreUI.js — ver. 007
-// Universale: Supporto Temi (Metal/Piano) e Drum Map avanzata.
+// scoreUI.js — ver. 007.3
+// Fix: visibilità pulsante di chiusura durante il resize
 
-console.log("scoreUI.js ver. 007.2 loaded");
+console.log("scoreUI.js ver. 007.3 loaded");
 
 export class scoreVisualizer {
     constructor() {
         this.canvas = document.createElement("canvas");
         this.ctx = this.canvas.getContext("2d");
         
+        // --- INIZIALIZZAZIONE STATI ---
+        this.canvas.style.display = "none";
+        this.isVisible = false;
+        this.currentGenre = "metal";
+        this.notes = [];
+        this.currentSection = "";
+
         this.bgImage = new Image();
         this.bgImage.src = "Pentagramma.jpg"; 
-        
         this.imageLoaded = false;
         this.bgImage.onload = () => {
             this.imageLoaded = true;
             console.log("✅ Immagine pentagramma caricata.");
         };
 
+        // --- CREAZIONE TASTO ---
         this.closeBtn = document.createElement("button");
         this.closeBtn.innerHTML = "✕";
         this.closeBtn.className = "close-score-btn";
+        this.closeBtn.style.display = "none"; // Nascosto di default
         this.closeBtn.onclick = () => this.hide();
 
-        this.notes = [];
-        this.currentSection = "";
-        this.isVisible = false;
-        this.currentGenre = "metal"; // Default
-
-        // --- GESTIONE ETICHETTE STRUMENTI ---
         this.themes = {
             metal: {
-                "Lead": "GT LEAD",
-                "Rhythm": "GT RHYTHM",
-                "Bass": "BASS",
-                "Drums": "DRUMS"
+                "Lead": "GT LEAD", "Rhythm": "GT RHYTHM", "Bass": "BASS", "Drums": "DRUMS"
             },
             piano: {
-                "Lead": "PIANO RIGHT",
-                "Rhythm": "PIANO LEFT",
-                "Bass": "AMBIENCE",
-                "Drums": "PERCUSSION"
+                "Lead": "PIANO RIGHT", "Rhythm": "PIANO LEFT", "Bass": "AMBIENCE", "Drums": "PERCUSSION"
             }
         };
 
@@ -47,7 +43,6 @@ export class scoreVisualizer {
         window.addEventListener("resize", () => this.initCanvas());
     }
 
-    // Metodo per cambiare il tema (chiamalo nel main.js)
     setTheme(genre) {
         if (this.themes[genre]) {
             this.currentGenre = genre;
@@ -62,8 +57,8 @@ export class scoreVisualizer {
         
         if (!this.canvas.parentElement) document.body.appendChild(this.canvas);
         if (!this.closeBtn.parentElement) document.body.appendChild(this.closeBtn);
-      this.closeBtn.style.display = "none";
         
+        // Calcoliamo solo le posizioni, senza toccare il .style.display
         this.playheadX = this.canvas.width * 0.85;
         this.leftLimit = this.canvas.width * 0.12; 
     }
@@ -71,21 +66,20 @@ export class scoreVisualizer {
     show() {
         this.isVisible = true;
         this.canvas.style.display = "block";
-        this.closeBtn.style.display = "flex";
+        this.closeBtn.style.display = "flex"; // Appare qui
         this.render(); 
     }
 
     hide() {
         this.isVisible = false;
         this.canvas.style.display = "none";
-        this.closeBtn.style.display = "none";
+        this.closeBtn.style.display = "none"; // Sparisce qui
         this.notes = []; 
     }
 
     addNote(track, note, section) {
         this.currentSection = section;
         if (this.notes.length > 400) this.notes.shift();
-
         this.notes.push({
             x: this.playheadX,
             track: track,
@@ -100,7 +94,6 @@ export class scoreVisualizer {
         const { ctx, canvas, playheadX, leftLimit, bgImage, imageLoaded } = this;
         const currentLabels = this.themes[this.currentGenre] || this.themes.metal;
         
-        // --- 2. POSIZIONAMENTO CORSIE ---
         const tracks = {
             "Lead":   { y: 0.24, label: currentLabels["Lead"] },    
             "Rhythm": { y: 0.42, label: currentLabels["Rhythm"] },  
@@ -117,7 +110,6 @@ export class scoreVisualizer {
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
 
-        // Titolo Sezione
         if (this.currentSection) {
             ctx.fillStyle = "#ff0000"; 
             ctx.font = "bold 22px serif"; 
@@ -125,7 +117,6 @@ export class scoreVisualizer {
             ctx.fillText(this.currentSection.toUpperCase(), leftLimit + 20, canvas.height * 0.12); 
         }
 
-        // --- 4. DISEGNO NOMI STRUMENTI (Dinamici) ---
         Object.keys(tracks).forEach(key => {
             const trackY = canvas.height * tracks[key].y;
             ctx.fillStyle = "#444";
@@ -134,13 +125,11 @@ export class scoreVisualizer {
             ctx.fillText(tracks[key].label, canvas.width * 0.02, trackY - 15);
         });
 
-        // --- 5. LINEA DI ESECUZIONE ---
         ctx.strokeStyle = "#000";
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(playheadX, 0); ctx.lineTo(playheadX, canvas.height); ctx.stroke();
 
-        // --- 6. DISEGNO NOTE ---
         ctx.font = "bold 8px 'Courier New', monospace"; 
         ctx.textAlign = "center";
 
@@ -151,7 +140,6 @@ export class scoreVisualizer {
             
             let y = canvas.height * trackCfg.y;
             
-            // --- MAPPATURA SPECIFICA BATTERIA (Solo se Metal) ---
             if (this.currentGenre === "metal" && n.track === "Drums") {
                 if (n.label.includes("Kick"))  y += 6;
                 if (n.label.includes("Snare")) y -= 2;
@@ -163,8 +151,6 @@ export class scoreVisualizer {
 
             if (n.x > leftLimit) {
                 ctx.fillStyle = "#000";
-                
-                // Disegno differenziato: X per piatti, Quadrati per il resto
                 if (this.currentGenre === "metal" && n.track === "Drums") {
                     if (n.label.includes("Kick") || n.label.includes("Snare")) {
                         ctx.fillRect(n.x - 3, y - 3, 6, 6);
@@ -178,10 +164,8 @@ export class scoreVisualizer {
                     ctx.fillText(n.label, n.x, y - 12);
                 }
             }
-
             if (n.x < leftLimit) this.notes.splice(i, 1);
         }
-
         requestAnimationFrame(() => this.render());
     }
 }
