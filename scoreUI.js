@@ -1,7 +1,7 @@
-// scoreUI.js — ver. 005
-// Full Responsive: percentuali per corsie, etichette e limiti di scorrimento.
+// scoreUI.js — ver. 006
+// Aggiornamento: Mappatura multi-rigo per la batteria (Drum Map)
 
-console.log("scoreUI.js ver. 005.2 loaded");
+console.log("scoreUI.js ver. 006 loaded");
 
 export class scoreVisualizer {
     constructor() {
@@ -40,11 +40,9 @@ export class scoreVisualizer {
         if (!this.canvas.parentElement) document.body.appendChild(this.canvas);
         if (!this.closeBtn.parentElement) document.body.appendChild(this.closeBtn);
         
-        // --- PARAMETRI RESPONSIVE ---
-        // Punto di "nascita" delle note: a DESTRA (85% della larghezza)
+        // Punto di "nascita" delle note: a DESTRA (85%)
         this.playheadX = this.canvas.width * 0.85;
-        
-        // Limite a SINISTRA: le note spariscono al 12% per non coprire le chiavi
+        // Limite a SINISTRA dove le note devono sparire (12% per le chiavi)
         this.leftLimit = this.canvas.width * 0.12; 
     }
 
@@ -97,22 +95,20 @@ export class scoreVisualizer {
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
 
-        // Titolo Sezione (Intro, Verse, ecc.)
+        // Titolo Sezione
         if (this.currentSection) {
             ctx.fillStyle = "#ff0000"; 
             ctx.font = "bold 22px serif"; 
             ctx.textAlign = "left";
-            // Posizionato appena dopo il limite delle chiavi
             ctx.fillText(this.currentSection.toUpperCase(), leftLimit + 20, canvas.height * 0.12); 
         }
 
-        // --- 4. DISEGNO NOMI STRUMENTI (Responsive a sinistra) ---
+        // --- 4. DISEGNO NOMI STRUMENTI ---
         Object.keys(tracks).forEach(key => {
             const trackY = canvas.height * tracks[key].y;
             ctx.fillStyle = "#444";
             ctx.font = "bold 11px sans-serif";
             ctx.textAlign = "left";
-            // Posizionati al 2% della larghezza, sopra la linea
             ctx.fillText(tracks[key].label, canvas.width * 0.02, trackY - 15);
         });
 
@@ -124,7 +120,7 @@ export class scoreVisualizer {
         ctx.lineTo(playheadX, canvas.height); 
         ctx.stroke();
 
-        // --- 6. DISEGNO NOTE CON LIMITE DINAMICO ---
+        // --- 6. DISEGNO NOTE ---
         ctx.font = "bold 10px 'Courier New', monospace"; 
         ctx.textAlign = "center";
 
@@ -133,22 +129,39 @@ export class scoreVisualizer {
             const trackCfg = tracks[n.track];
             if(!trackCfg) continue;
             
-            const y = canvas.height * trackCfg.y;
+            let y = canvas.height * trackCfg.y; // Base della corsia
             
-            // Velocità: 3.5 pixel per frame (puoi aumentarla se vuoi più rapidità)
+            // --- MAPPATURA SPECIFICA BATTERIA ---
+            if (n.track === "Drums") {
+                // Distribuzione sui righi del pentagramma
+                if (n.label.includes("Kick"))  y += 10; // Spazio basso
+                if (n.label.includes("Snare")) y -= 2;  // Spazio centrale
+                if (n.label.includes("HiHat")) y -= 12; // Linea alta
+                if (n.label.includes("Crash")) y -= 22; // Sopra il rigo
+            }
+
             n.x -= 3.5; 
 
-            // Disegna solo se la nota è "dentro" lo spartito leggibile
             if (n.x > leftLimit) {
                 ctx.fillStyle = "#000";
-                ctx.fillRect(n.x - 3, y - 3, 6, 6); 
-
-                if (n.track !== "Drums") {
+                
+                if (n.track === "Drums") {
+                    // Simboli diversi per batteria
+                    if (n.label.includes("Kick") || n.label.includes("Snare")) {
+                        ctx.fillRect(n.x - 3, y - 3, 6, 6); // Tamburi = Quadrato
+                    } else {
+                        // Piatti = Croce (X)
+                        ctx.font = "bold 12px sans-serif";
+                        ctx.fillText("✕", n.x, y + 4);
+                        ctx.font = "bold 10px 'Courier New', monospace"; // Ripristina font
+                    }
+                } else {
+                    // Note standard per chitarra e basso
+                    ctx.fillRect(n.x - 3, y - 3, 6, 6); 
                     ctx.fillText(n.label, n.x, y - 12);
                 }
             }
 
-            // Elimina la nota quando supera il limite sinistro
             if (n.x < leftLimit) {
                 this.notes.splice(i, 1);
             }
