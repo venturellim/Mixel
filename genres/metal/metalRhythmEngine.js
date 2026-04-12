@@ -90,28 +90,46 @@ export function scheduleRhythm(section, progression, instruments, params, rand, 
 
             // --- 2. SCHEDULAZIONE BATTERIA (DRUMS) ---
             Tone.Transport.schedule(time => {
+                let playedHiHat = false;
+                let playedRide = false;
+                let playedCrash = false;
+
                 if (kick) drums.player("kick").start(time);
                 if (snare) drums.player("snare").start(time);
                 
                 // Piatti (Hihat / Ride)
                 if (s % 2 === 0 && !isLastMeasure) {
-                    try { drums.player((isChorus || energy > 0.7) ? "ride" : "hihat").start(time); } catch(e) {}
+                    try { 
+                        const cymbal = (isChorus || energy > 0.7) ? "ride" : "hihat";
+                        drums.player(cymbal).start(time); 
+                        if (cymbal === "ride") playedRide = true; else playedHiHat = true;
+                    } catch(e) {}
                 }
+                
+                // Crash iniziale di sezione
+                if (s === 0 && m === 0) { 
+                    try { drums.player("crash1").start(time); playedCrash = true; } catch(e) {} 
+                }
+
                 // Tom del Fill
                 if (isFillZone) { 
                     try { drums.player("tom" + (s - 11)).start(time); } catch(e) {} 
                 }
-                // Crash iniziale
-                if (s === 0 && m === 0) { 
-                    try { drums.player("crash1").start(time); } catch(e) {} 
-                }
 
-                // --- AGGIORNAMENTO VISIVO BATTERIA ---
+                // --- AGGIORNAMENTO VISIVO BATTERIA (MAPPATURA CORRETTA) ---
                 Tone.Draw.schedule(() => {
                     if (score) {
-                        if (kick) score.addNote("Drums", "KICK", section.name);
-                        if (snare) score.addNote("Drums", "SNARE", section.name);
-                        if (isFillZone) score.addNote("Drums", "TOM", section.name);
+                        // Usiamo i nomi esatti che scoreUI ver. 006 riconosce
+                        if (kick) score.addNote("Drums", "Kick", section.name);
+                        if (snare) score.addNote("Drums", "Snare", section.name);
+                        
+                        // Aggiungiamo i piatti per vedere le "X" in alto
+                        if (playedHiHat) score.addNote("Drums", "HiHat", section.name);
+                        if (playedRide)  score.addNote("Drums", "HiHat", section.name); // Ride usa stessa altezza HH o simile
+                        if (playedCrash) score.addNote("Drums", "Crash", section.name);
+                        
+                        // I Tom li mappiamo come Snare o una via di mezzo per ora
+                        if (isFillZone) score.addNote("Drums", "Snare", section.name);
                     }
                 }, time);
 
