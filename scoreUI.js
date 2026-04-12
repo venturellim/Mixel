@@ -1,7 +1,7 @@
 // scoreUI.js — ver. 007
 // Universale: Supporto Temi (Metal/Piano) e Drum Map avanzata.
 
-console.log("scoreUI.js ver. 007.1 loaded");
+console.log("scoreUI.js ver. 007.2 loaded");
 
 export class scoreVisualizer {
     constructor() {
@@ -62,6 +62,7 @@ export class scoreVisualizer {
         
         if (!this.canvas.parentElement) document.body.appendChild(this.canvas);
         if (!this.closeBtn.parentElement) document.body.appendChild(this.closeBtn);
+      this.closeBtn.style.display = "none";
         
         this.playheadX = this.canvas.width * 0.85;
         this.leftLimit = this.canvas.width * 0.12; 
