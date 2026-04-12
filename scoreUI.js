@@ -1,7 +1,7 @@
 // scoreUI.js — ver. 005
 // Full Responsive: percentuali per corsie, etichette e limiti di scorrimento.
 
-console.log("scoreUI.js ver. 005.1 loaded");
+console.log("scoreUI.js ver. 005.2 loaded");
 
 export class scoreVisualizer {
     constructor() {
@@ -82,9 +82,9 @@ export class scoreVisualizer {
         // --- 2. POSIZIONAMENTO CORSIE (Percentuali Altezza) ---
         const tracks = {
             "Lead":   { y: 0.24, label: "GT LEAD" },    
-            "Rhythm": { y: 0.40, label: "GT RHYTHM" },  
-            "Bass":   { y: 0.58, label: "BASS" },       
-            "Drums":  { y: 0.72, label: "DRUMS" }       
+            "Rhythm": { y: 0.42, label: "GT RHYTHM" },  
+            "Bass":   { y: 0.60, label: "BASS" },       
+            "Drums":  { y: 0.76, label: "DRUMS" }       
         };
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
