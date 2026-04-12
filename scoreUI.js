@@ -1,6 +1,6 @@
-// scoreUI.js — ver. 072
+// scoreUI.js — ver. 003
 
-console.log("scoreUI.js ver. 003 loaded");
+console.log("scoreUI.js ver. 003.1 loaded");
 
 export class scoreVisualizer {
     constructor() {
@@ -21,28 +21,28 @@ export class scoreVisualizer {
         window.addEventListener("resize", () => this.initCanvas());
     }
 
-    initCanvas() {
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
-        this.canvas.style.position = "fixed";
-        this.canvas.style.top = "0";
-        this.canvas.style.left = "0";
-        this.canvas.style.zIndex = "10000"; // Sopra l'interfaccia standard
-        this.canvas.style.background = "#fffaf0"; // Bianco "carta" leggermente avorio
-        this.canvas.style.display = "none";
-        this.closeBtn.style.display = "none";
-        
-        document.body.appendChild(this.canvas);
-        document.body.appendChild(this.closeBtn);
-        this.playheadX = this.canvas.width * 0.85;
-    }
+    // scorrUI.js — Versione corretta per il tuo CSS
+initCanvas() {
+    this.canvas.width = window.innerWidth;
+    this.canvas.height = window.innerHeight;
+    
+    // ASSEGNA L'ID PER IL CSS
+    this.canvas.id = "scoreCanvas"; 
+    
+    // Rimuoviamo le assegnazioni manuali di stile qui, 
+    // perché ora le prende dal tuo CSS #scoreCanvas
+    document.body.appendChild(this.canvas);
+    document.body.appendChild(this.closeBtn);
+    
+    this.playheadX = this.canvas.width * 0.85;
+}
 
-    show() {
-        this.isVisible = true;
-        this.canvas.style.display = "block";
-        this.closeBtn.style.display = "flex";
-        this.render(); // Avvia il loop di rendering
-    }
+show() {
+    this.isVisible = true;
+    this.canvas.style.display = "block"; // Questo attiva il CSS #scoreCanvas
+    this.closeBtn.style.display = "flex";
+    this.render(); 
+}
 
     hide() {
         this.isVisible = false;

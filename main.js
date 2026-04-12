@@ -231,33 +231,27 @@ function initPlayerUI() {
 
     pauseBtn.onclick = () => currentEngine?.pause();
     // --- PULSANTE STOP ---
+// --- All'interno di initPlayerUI ---
+
+// Gestione STOP
 stopBtn.onclick = () => {
     currentEngine?.stop();
+    // Usiamo scoreUI globale per sicurezza
+    if (scoreUI) scoreUI.hide();
     
-    // 1. Nascondiamo il foglio bianco (se è aperto)
-    if (currentEngine?.score) currentEngine.score.hide();
-    
-    // 2. Nascondiamo il tasto dalla barra laterale
     btnSpartito.classList.add("hidden");
     btnSpartito.classList.remove("show-flex");
 };
 
-// --- PULSANTE SPARTITO ---
+// Gestione SPARTITO (Indipendente e pulito)
 btnSpartito.onclick = () => {
-    // 3. Mostriamo il foglio bianco solo se c'è musica
-    if (currentEngine && currentEngine.score) {
-        currentEngine.score.show();
+    console.log("Pulsante spartito cliccato"); // Debug per vedere se risponde
+    if (scoreUI) {
+        scoreUI.show();
+    } else {
+        console.error("scoreUI non inizializzato!");
     }
 };
-
-        // Chiudi lo spartito se è rimasto aperto
-        //if (scoreUI && scoreUI.isVisible) 
-            //scoreUI.toggle();
-        //};
-
-    //btnSpartito.onclick = () => {
-        //if (scoreUI) scoreUI.toggle();
-//};
 
 
     const currentTimeEl = document.getElementById("currentTime");
