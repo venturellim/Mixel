@@ -235,12 +235,18 @@ function initPlayerUI() {
     btnSpartito.classList.add("hidden");
     btnSpartito.classList.remove("show-flex");
         // Chiudi lo spartito se è rimasto aperto
-        if (scoreUI && scoreUI.isVisible) 
-            scoreUI.toggle();
-        };
-    btnSpartito.onclick = () => {
-        if (scoreUI) scoreUI.toggle();
+        //if (scoreUI && scoreUI.isVisible) 
+            //scoreUI.toggle();
+        //};
+btnSpartito.onclick = () => {
+    if (currentEngine && currentEngine.score) {
+        currentEngine.score.show();
+    }
 };
+
+    //btnSpartito.onclick = () => {
+        //if (scoreUI) scoreUI.toggle();
+//};
 
 
     const currentTimeEl = document.getElementById("currentTime");
@@ -468,6 +474,7 @@ async function resetAudio() {
 // -------------------------------------------------------------
 function resetAppState() {
     currentEngine?.stop();
+    if (currentEngine?.score) currentEngine.score.hide(); 
     currentEngine = null;
     closeMixelUI();
     if (miniVideo) {
