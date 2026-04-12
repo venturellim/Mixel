@@ -104,7 +104,7 @@ export class scoreVisualizer {
             "Lead":   { y: 0.24, label: currentLabels["Lead"] },    
             "Rhythm": { y: 0.42, label: currentLabels["Rhythm"] },  
             "Bass":   { y: 0.60, label: currentLabels["Bass"] },       
-            "Drums":  { y: 0.76, label: currentLabels["Drums"] }       
+            "Drums":  { y: 0.80, label: currentLabels["Drums"] }       
         };
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -140,7 +140,7 @@ export class scoreVisualizer {
         ctx.moveTo(playheadX, 0); ctx.lineTo(playheadX, canvas.height); ctx.stroke();
 
         // --- 6. DISEGNO NOTE ---
-        ctx.font = "bold 10px 'Courier New', monospace"; 
+        ctx.font = "bold 8px 'Courier New', monospace"; 
         ctx.textAlign = "center";
 
         for (let i = this.notes.length - 1; i >= 0; i--) {
@@ -168,9 +168,9 @@ export class scoreVisualizer {
                     if (n.label.includes("Kick") || n.label.includes("Snare")) {
                         ctx.fillRect(n.x - 3, y - 3, 6, 6);
                     } else {
-                        ctx.font = "bold 12px sans-serif";
+                        ctx.font = "bold 8px sans-serif";
                         ctx.fillText("✕", n.x, y + 4);
-                        ctx.font = "bold 10px 'Courier New', monospace";
+                        ctx.font = "bold 8px 'Courier New', monospace";
                     }
                 } else {
                     ctx.fillRect(n.x - 3, y - 3, 6, 6); 
