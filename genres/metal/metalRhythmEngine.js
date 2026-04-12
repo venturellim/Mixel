@@ -1,8 +1,8 @@
-// metalRhythmEngine.js — ver. 068
+// metalRhythmEngine.js — ver. 071 (Full Score Integration)
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
 
-console.log("metalRhythmEngine.js ver. 014.1 loaded");
+console.log("metalRhythmEngine.js ver. 015 loaded");
 
 export function scheduleRhythm(section, progression, instruments, params, rand, measureDur, nextSectionRoot, score) {
     const { drums, guitarPalm, guitarOpen, bass } = instruments;
@@ -16,23 +16,10 @@ export function scheduleRhythm(section, progression, instruments, params, rand, 
     const { energy = 0.5, brightness = 0.5, complexity = 0.5, texture = 0.5 } = params?.imageParams || {};
 
     const grooves = {
-        intro: [
-            "intro_ambient", "intro_heavy_strikes", "stratovarius_intro", 
-            "doom_slow", "cinematic_buildup", "industrial_static"
-        ],
-        verse: [
-            "gallop_classic", "gallop_triplet", "thrash_diamond", "palm_mute_chug", 
-            "motorhead_drive", "technical_sync", "meshuggah_ish", "breakdown_heavy",
-            "jump_groove", "double_time_punk"
-        ],
-        prechorus: [
-            "pre_build_up", "driving_eights", "march_to_war", "suspended_tension"
-        ],
-        chorus: [
-            "helloween_speed", "chorus_pure_sustain", "chorus_sustain_hit", 
-            "anthem_half_time", "power_ride_groove", "double_kick_wall",
-            "blast_beat_light", "epic_waltz_feel"
-        ]
+        intro: ["intro_ambient", "intro_heavy_strikes", "stratovarius_intro", "doom_slow", "cinematic_buildup", "industrial_static"],
+        verse: ["gallop_classic", "gallop_triplet", "thrash_diamond", "palm_mute_chug", "motorhead_drive", "technical_sync", "meshuggah_ish", "breakdown_heavy", "jump_groove", "double_time_punk"],
+        prechorus: ["pre_build_up", "driving_eights", "march_to_war", "suspended_tension"],
+        chorus: ["helloween_speed", "chorus_pure_sustain", "chorus_sustain_hit", "anthem_half_time", "power_ride_groove", "double_kick_wall", "blast_beat_light", "epic_waltz_feel"]
     };
 
     const getGroove = (type) => {
@@ -44,9 +31,6 @@ export function scheduleRhythm(section, progression, instruments, params, rand, 
 
     let currentGroove = getGroove(isIntro ? "intro" : (isPreChorus ? "prechorus" : (isChorus ? "chorus" : "verse")));
 
-    // LOG RITMICO
-    console.log(`%c 🥁 RHYTHM: ${currentGroove.toUpperCase()} | Energy: ${energy.toFixed(2)}`, "color: #191970; font-weight: bold;");
-
     for (let m = 0; m < section.measures; m++) {
         const measureStartTime = section.startTime + (m * measureDur);
         const currentRoot = progression[m % progression.length];
@@ -57,32 +41,24 @@ export function scheduleRhythm(section, progression, instruments, params, rand, 
             const absoluteTime = measureStartTime + (s * stepTime);
             let kick = false, snare = false, playGuitar = false, inst = guitarPalm, sustain = false, customNote = null;
 
+            // --- LOGICA GROOVE (Rimane invariata) ---
             switch (currentGroove) {
-                // --- INTRO & SPECIAL ---
                 case "intro_ambient": if (s === 0) { playGuitar = true; inst = guitarOpen; sustain = true; kick = true; } break;
                 case "intro_heavy_strikes": if ([0, 4, 8, 12].includes(s)) { playGuitar = true; inst = guitarOpen; kick = true; snare = (s === 4 || s === 12); } break;
                 case "doom_slow": if (s === 0 || s === 8) { playGuitar = true; inst = guitarOpen; sustain = true; kick = true; snare = (s === 8); } break;
-                
-                // --- VERSE / RIFFING ---
                 case "gallop_classic": if (s % 4 !== 1) { playGuitar = true; kick = (s % 4 === 0); } if (s === 4 || s === 12) snare = true; break;
                 case "meshuggah_ish": if ([0, 3, 6, 8, 11, 14].includes(s)) { playGuitar = true; kick = true; } if (s === 4 || s === 12) snare = true; break;
                 case "thrash_diamond": if ([0, 3, 6, 8, 11, 14].includes(s)) { playGuitar = true; kick = true; } if (s === 4 || s === 12) snare = true; break;
                 case "breakdown_heavy": if ([0, 8, 14].includes(s)) { playGuitar = true; inst = guitarOpen; kick = true; sustain = true; } if (s === 4 || s === 12) snare = true; break;
-                
-                // --- PRECHORUS ---
                 case "pre_build_up": kick = (s % 4 === 0); snare = (s === 12); playGuitar = (s % 2 === 0); break;
                 case "driving_eights": kick = (s % 2 === 0); snare = (s === 4 || s === 12); playGuitar = true; break;
-                
-                // --- CHORUS ---
                 case "helloween_speed": kick = true; if (s % 4 === 0) { playGuitar = true; inst = guitarOpen; sustain = true; } if (s === 4 || s === 12) snare = true; break;
                 case "anthem_half_time": if (s === 0 || s === 8) { playGuitar = true; inst = guitarOpen; sustain = true; kick = true; if (s === 8) snare = true; } break;
                 case "double_kick_wall": kick = true; playGuitar = true; if (s === 4 || s === 12) snare = true; break;
                 case "blast_beat_light": kick = true; snare = (s % 2 !== 0); playGuitar = true; break;
-
                 default: if (s % 2 === 0) { playGuitar = true; kick = (s % 4 === 0); } if (s === 4 || s === 12) snare = true; break;
             }
 
-            // --- FILL LOGIC (Complexity based) ---
             const isFillZone = isLastMeasure && s >= 12;
             if (isFillZone && complexity > 0.4) {
                 playGuitar = true; inst = guitarPalm; sustain = false; kick = true; snare = (s % 2 === 0 || s > 14);
@@ -92,7 +68,7 @@ export function scheduleRhythm(section, progression, instruments, params, rand, 
                 customNote = Tone.Frequency(currMidi + stepScale, "midi").toNote();
             }
 
-            // --- ESECUZIONE AUDIO E SCORE ---
+            // --- 1. SCHEDULAZIONE CHITARRA E BASSO ---
             if (playGuitar) {
                 const rootToUse = customNote || currentRoot;
                 const gNote = normalizeNote(rootToUse, inst === guitarOpen ? "guitarOpen" : "guitarPalm") + "2";
@@ -103,23 +79,42 @@ export function scheduleRhythm(section, progression, instruments, params, rand, 
                     inst.triggerAttackRelease(gNote, sustain ? "1n" : palmLen, t);
                     bass.triggerAttackRelease(bNote, sustain ? "1n" : "16n", t);
 
-                    // AGGIORNAMENTO SCORE (Sincronizzato col frame video)
                     Tone.Draw.schedule(() => {
                         if (score) {
                             score.addNote("Rhythm", gNote, section.name);
+                            score.addNote("Bass", bNote, section.name);
                         }
                     }, t);
                 }, absoluteTime);
             }
 
+            // --- 2. SCHEDULAZIONE BATTERIA (DRUMS) ---
             Tone.Transport.schedule(time => {
                 if (kick) drums.player("kick").start(time);
                 if (snare) drums.player("snare").start(time);
+                
+                // Piatti (Hihat / Ride)
                 if (s % 2 === 0 && !isLastMeasure) {
                     try { drums.player((isChorus || energy > 0.7) ? "ride" : "hihat").start(time); } catch(e) {}
                 }
-                if (isFillZone) { try { drums.player("tom" + (s - 11)).start(time); } catch(e) {} }
-                if (s === 0 && m === 0) { try { drums.player("crash1").start(time); } catch(e) {} }
+                // Tom del Fill
+                if (isFillZone) { 
+                    try { drums.player("tom" + (s - 11)).start(time); } catch(e) {} 
+                }
+                // Crash iniziale
+                if (s === 0 && m === 0) { 
+                    try { drums.player("crash1").start(time); } catch(e) {} 
+                }
+
+                // --- AGGIORNAMENTO VISIVO BATTERIA ---
+                Tone.Draw.schedule(() => {
+                    if (score) {
+                        if (kick) score.addNote("Drums", "KICK", section.name);
+                        if (snare) score.addNote("Drums", "SNARE", section.name);
+                        if (isFillZone) score.addNote("Drums", "TOM", section.name);
+                    }
+                }, time);
+
             }, absoluteTime);
         }
     }
