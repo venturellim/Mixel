@@ -1,6 +1,6 @@
 // orchestraInstruments.js — ver. 002 (Bus & Mixer Integrated)
 import * as Tone from "https://esm.sh/tone";
-import { masterEQ, registerInstrumentLoaded } from "./common.js";
+import { masterEQ, registerInstrumentLoaded } from "../../common.js";
 
 console.log("orchestraInstruments.js ver. 002 loaded");
 
