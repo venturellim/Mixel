@@ -7,8 +7,9 @@ import { createSeededRandom } from "../../utils/randomUtils.js";
 import { buildSongStructure } from "../../utils/structureUtils.js";
 import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { progressions } from "../../utils/musicTheory.js";
+import { waitForInstruments } from "../../common.js";
 
-console.log("orchestraEngine.js ver. 004 loaded");
+console.log("orchestraEngine.js ver. 004.1 loaded");
 
 export async function waitOrchestraInstruments() {
     await waitForInstruments(5);
