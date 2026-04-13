@@ -143,12 +143,14 @@ export async function createOrchestraEngine(params, score) {
         pause: () => Tone.Transport.pause(),
         seek: (s) => Tone.Transport.seconds = s,
         mixerData: { 
-            instruments: [
-                { id: "violin", name: "Violin Solo" },
-                { id: "cello", name: "Strings Section" },
-                { id: "harpsichord", name: "Harpsichord" },
-                { id: "timpani", name: "Orchestral Perc." }
-            ]
+            instruments: orchestraInstruments, // Passiamo l'oggetto con i Sampler
+            volumeMap: {
+                violin: "Violin Solo",
+                cello: "Cello",
+                doubleBass: "Double Bass",
+                harpsichord: "Harpsichord",
+                timpani: "Timpani"
+            }
         }
     };
 }
