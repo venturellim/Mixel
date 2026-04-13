@@ -13,6 +13,7 @@ import { analyzeImage } from "./imageAnalysis.js";
 import { photoToMusicParams } from "./photoToMusicParams.js";
 import { createPianoEngine, waitPianoInstruments } from "./genres/piano/pianoEngine.js";
 import { createMetalEngine, waitMetalInstruments } from "./genres/metal/metalEngine.js";
+import { createOrchestraEngine, waitMetalInstruments } from "./genres/orchestra/orchestraEngine.js";
 import { scoreVisualizer } from "./scoreUI.js";
 
 console.log("main.js ver. 006.2 loaded");
@@ -180,6 +181,11 @@ async function selectGenre(genre) {
     if (genre === "metal") {
    await waitMetalInstruments();   // <-- strumenti pronti
         currentEngine = await createMetalEngine(params, scoreUI);
+ 
+    }
+    if (genre === "orchestra") {
+   await waitOrchestraInstruments();   // <-- strumenti pronti
+        currentEngine = await createOrchestraEngine(params, scoreUI);
  
     }
 if (genre === "piano") {
