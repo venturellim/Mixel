@@ -1,88 +1,170 @@
-// orchestraInstruments.js — ver. 002 (Bus & Mixer Integrated)
+// orchestraInstruments.js — ver. 002 (Full Baroque Orchestra + Timpani)
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded } from "../../common.js";
 
-console.log("orchestraInstruments.js ver. 003.1 loaded");
+console.log("orchestraInstruments.js ver. 002 loaded");
 
-//Repository ufficiale strumenti Tone.js
-const BASE_URL = "https://tonejs.github.io/audio/salamander/";
-const ALT_URL = "https://gleitz.github.io/midi-js-soundfonts/FatBoy/"; // Backup alternativo
+// --- RIVERBERO ---
+const hallReverb = new Tone.Reverb({
+    decay: 2.8,
+    preDelay: 0.01,
+    wet: 0.35
+}).toDestination();
 
-// ============================================================
-// 🎚 BUS ORCHESTRALI
-// ============================================================
 export const violinBus = new Tone.Gain(1);
 export const celloBus = new Tone.Gain(1);
+export const doubleBassBus = new Tone.Gain(1);
 export const harpsichordBus = new Tone.Gain(1);
 export const timpaniBus = new Tone.Gain(1);
 
-const violinEQ = new Tone.EQ3({ low: -6, mid: 0, high: 2 }).connect(masterEQ);
-const celloEQ = new Tone.EQ3({ low: 2, mid: -2, high: -2 }).connect(masterEQ);
-const harpsiEQ = new Tone.EQ3({ low: -10, mid: 1, high: 4 }).connect(masterEQ);
-const timpaniEQ = new Tone.EQ3({ low: 4, mid: 0, high: -6 }).connect(masterEQ);
+const violinEQ = new Tone.EQ3({ low: -4, mid: 2, high: 3 });
+const doubleBassEQ   = new Tone.EQ3({ low: 4, mid: -2, high: -4 });
+const timpaniEQ   = new Tone.EQ3({ low: 2, mid: 1, high: 3 });
+const celloEQ   = new Tone.EQ3({ low: -3, mid: 2, high: 6 });
+const harpsichordEQ   = new Tone.EQ3({ low: -3, mid: 2, high: 6 });
 
-violinBus.connect(violinEQ);
-celloBus.connect(celloEQ);
-harpsichordBus.connect(harpsiEQ);
-timpaniBus.connect(timpaniEQ);
+// Routing bus → EQ → master
+violinBus.connect(violinEQ).connect(hallReverb).connect(masterEQ);
+doubleBassBus.connect(doubleBassEQ).connect(hallReverb).connect(masterEQ);
+timpaniBus.connect(timpaniEQ).connect(hallReverb).connect(masterEQ);
+celloBus.connect(celloEQ).connect(hallReverb).connect(masterEQ);
+harpsichordBus.connect(harpsichordEQ).connect(hallReverb).connect(masterEQ);
 
-const hallReverb = new Tone.Reverb({ decay: 3.5, preDelay: 0.02, wet: 0.4 }).toDestination();
-
-// ============================================================
-// 🎻 STRUMENTI (LINK VERIFICATI)
-// ============================================================
-
-// Nota: Molti repository "FatBoy" sono stati rimossi. 
-// Usiamo i link diretti dalla libreria "FluidR3_GM" che è lo standard globale.
-const CDN_URL = "https://raw.githubusercontent.com/gleitz/midi-js-soundfonts/master/FluidR3_GM/";
-
+// --- VIOLIN ---
 export const violin = new Tone.Sampler({
-    urls: { "A3": "violin-mp3.js", "A4": "violin-mp3.js", "A5": "violin-mp3.js" },
-    baseUrl: CDN_URL,
+    urls: { 
+    A2: "Samples/Violin/A2.mp3", 
+    A3: "Samples/Violin/A3.mp3",
+    B2: "Samples/Violin/B2.mp3", 
+    B4: "Samples/Violin/B4.mp3",
+    C4: "Samples/Violin/C4.mp3", 
+    D3: "Samples/Violin/D3.mp3",
+    D5: "Samples/Violin/D5.mp3", 
+    E4: "Samples/Violin/E4.mp3",
+    "F#3": "Samples/Violin/F#3.mp3",
+    G2: "Samples/Violin/G2.mp3", 
+    G4: "Samples/Violin/G4.mp3"
+    },
+    release: 1.2,
     onload: () => registerInstrumentLoaded()
-}).connect(violinBus).connect(hallReverb);
+}).connect(violinBus);
 
+// --- CELLO ---
 export const cello = new Tone.Sampler({
-    urls: { "C2": "cello-mp3.js", "G2": "cello-mp3.js", "C3": "cello-mp3.js" },
-    baseUrl: CDN_URL,
-    onload: () => registerInstrumentLoaded()
-}).connect(celloBus).connect(hallReverb);
+    urls: { 
+   A2: "Samples/Cello/A2.mp3",
+   B1: "Samples/Cello/B1.mp3",
+   B3: "Samples/Cello/B3.mp3",
+   C1: "Samples/Cello/C1.mp3",
+   C3: "Samples/Cello/C3.mp3",
+   D2: "Samples/Cello/D2.mp3",
+   D4: "Samples/Cello/D4.mp3",
+   E1: "Samples/Cello/E1.mp3",
+   E3: "Samples/Cello/E3.mp3",
+   F2: "Samples/Cello/F2.mp3",
+   F4: "Samples/Cello/F4.mp3",
+   G1: "Samples/Cello/G1.mp3",
+   G3: "Samples/Cello/G3.mp3"
+    },
+    release: 1.5,
+onload: () => registerInstrumentLoaded()
+}).connect(celloBus);
 
+// --- DOUBLE BASS ---
 export const doubleBass = new Tone.Sampler({
-    urls: { "E1": "contrabass-mp3.js", "G1": "contrabass-mp3.js" },
-    baseUrl: CDN_URL,
-    onload: () => registerInstrumentLoaded()
-}).connect(celloBus).connect(hallReverb);
+    urls: { 
+    "A#0": "Samples/DoubleBass/A#0.mp3",
+    A1: "Samples/DoubleBass/A1.mp3",
+    B2: "Samples/DoubleBass/B2.mp3",
+    "C#2": "Samples/DoubleBass/C#2.mp3",
+    C1: "Samples/DoubleBass/C1.mp3",
+    D1: "Samples/DoubleBass/D1.mp3",
+    E1: "Samples/DoubleBass/E1.mp3",
+    E2: "Samples/DoubleBass/E2.mp3",
+    "F#0": "Samples/DoubleBass/F#0.mp3",
+    "F#1": "Samples/DoubleBass/F#1.mp3",
+    "G#1": "Samples/DoubleBass/G#1.mp3",
+    "G#2": "Samples/DoubleBass/G#2.mp3",
+    G0: "Samples/DoubleBass/G0.mp3"
+    },
+    release: 2,
+onload: () => registerInstrumentLoaded()
+}).connect(doubleBassBus);
 
+// --- HARPSICHORD ---
 export const harpsichord = new Tone.Sampler({
-    urls: { "A2": "harpsichord-mp3.js", "A3": "harpsichord-mp3.js", "A4": "harpsichord-mp3.js" },
-    baseUrl: CDN_URL,
-    onload: () => registerInstrumentLoaded()
-}).connect(harpsichordBus).connect(hallReverb);
+    urls: { 
+   A2: "Samples/Harpsichord/A2.mp3",
+   A4: "Samples/Harpsichord/A4.mp3",
+   A6: "Samples/Harpsichord/A6.mp3",
+   B1: "Samples/Harpsichord/B1.mp3",
+   B3: "Samples/Harpsichord/B3.mp3",
+   B5: "Samples/Harpsichord/B5.mp3",
+   B6: "Samples/Harpsichord/B6.mp3",
+   C3: "Samples/Harpsichord/C3.mp3",
+   C5: "Samples/Harpsichord/C5.mp3",
+   D2: "Samples/Harpsichord/D2.mp3",
+   D4: "Samples/Harpsichord/D4.mp3",
+   D6: "Samples/Harpsichord/D6.mp3",
+   E1: "Samples/Harpsichord/E1.mp3",
+   E3: "Samples/Harpsichord/E3.mp3",
+   E5: "Samples/Harpsichord/E5.mp3",
+   F2: "Samples/Harpsichord/F2.mp3",
+   F4: "Samples/Harpsichord/F4.mp3",
+   F6: "Samples/Harpsichord/F6.mp3",
+   F7: "Samples/Harpsichord/F7.mp3",
+   G1: "Samples/Harpsichord/G1.mp3",
+   G3: "Samples/Harpsichord/G3.mp3",
+   G5: "Samples/Harpsichord/G5.mp3",
+    },
+onload: () => registerInstrumentLoaded()
+}).connect(harpsichordBus);
 
-export const timpani = new Tone.Sampler({
-    urls: { "C2": "timpani-mp3.js", "G2": "timpani-mp3.js" },
-    baseUrl: CDN_URL,
+// --- TIMPANI (The Thunder) ---
+export const timpani = new Tone.Players({
+    urls: { 
+        timpano1: "Samples/Timpani/Timpani1.mp3", 
+         timpano2: "Samples/Timpani/Timpani2.mp3",
+         timpano3: "Samples/Timpani/Timpani3.mp3",
+         timpano4: "Samples/Timpani/Timpanio4.mp3",
+         timpano5: "Samples/Timpani/Timpani5.mp3"
+    },
+    release: 3,
     onload: () => registerInstrumentLoaded()
-}).connect(timpaniBus).connect(hallReverb);
+}).connect(timpaniBus);
 
-// ============================================================
-// ⚙️ UTILITY & EXPORTS
-// ============================================================
 export function setVolume(busName, dbValue) {
-    const mixer = { violin: violinBus, cello: celloBus, harpsichord: harpsichordBus, timpani: timpaniBus };
+    const mixer = { violin: violinBus, doubleBass: doubleBassBus, timpani: timpaniBus, cello: celloBus, harpsichord: harpsichordBus };
     const bus = mixer[busName];
     if (bus) bus.gain.value = Tone.dbToGain(dbValue);
 }
 
+setVolume("violin", -2);
+setVolume("cello", -2);
+setVolume("doubleBass", +2);
+setVolume("harpsichord", -6);
+setVolume("timpani", +4);
+
 export const orchestraInstruments = {
-    violin, cello, doubleBass, harpsichord, timpani,
-    violinBus, celloBus, harpsichordBus, timpaniBus, setVolume
+    violin,
+    cello,
+    doubleBass,
+    harpsichord,
+    timpani,
+    violinBus,
+    celloBus,
+    doubleBassBus,
+    harpsichordBus,
+    timpaniBus,
+    setVolume
 };
 
 export const orchestraVolumeMap = {
-    violin: "Violino Solo",
-    cello: "Cello & Bassi",
-    harpsichord: "Cembalo",
-    timpani: "Timpani"
+    violin: "Violini",
+    doubleBass: "Contrabbasso",
+    timpani: "Timpani",
+    cello: "Violoncello",
+    harpsichord: "Clavicembalo"
 };
+
+export { hallReverb };

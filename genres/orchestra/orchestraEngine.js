@@ -1,5 +1,5 @@
 // ==========================================
-// orchestraEngine.js — ver. 004 (FULL COHESION)
+// orchestraEngine.js — ver. 005 (TIMPANI & MIXER FIX)
 // ==========================================
 import * as Tone from "https://esm.sh/tone";
 import { orchestraInstruments } from "./orchestraInstruments.js";
@@ -9,9 +9,10 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { progressions } from "../../utils/musicTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("orchestraEngine.js ver. 004.1 loaded");
+console.log("orchestraEngine.js ver. 005 loaded");
 
 export async function waitOrchestraInstruments() {
+    // Attendiamo il caricamento dei 5 strumenti principali
     await waitForInstruments(5);
 }
 
@@ -22,13 +23,13 @@ export async function createOrchestraEngine(params, score) {
     // 1. Parametri e Setup Tempo
     const energy = params.imageParams?.energy ?? 0.5;
     const complexity = params.imageParams?.complexity ?? 0.5;
-    const bpm = 110 + (energy * 60); // Range 110 - 170 BPM
+    const bpm = 110 + (energy * 60); 
 
     Tone.Transport.stop();
     Tone.Transport.cancel();
     Tone.Transport.bpm.value = bpm;
 
-    // 2. Costruzione Struttura (Fix per evitare TypeError)
+    // 2. Costruzione Struttura
     const defaultStructure = [
         { name: "Intro", measures: 4 },
         { name: "Verse", measures: 8 },
@@ -61,64 +62,64 @@ export async function createOrchestraEngine(params, score) {
             for (let s = 0; s < 16; s++) {
                 const absoluteTime = measureStartTime + (s * step16n);
                 
-                // Variabili di decisione per lo step corrente
-                let vNote = null, cNote = null, hHit = false, tHit = false;
+                let vNote = null, cNote = null, dbNote = null, hHit = false, tHit = false;
                 let vVel = 0.4 + (energy * 0.4);
 
-                // --- LOGICA VIOLINO (Lead) ---
-                // Se energia alta o Chorus, sedicesimi con arpeggio rotante (Stile Vivaldi)
+                // --- VIOLINO ---
                 if (energy > 0.75 || (isChorus && s % 1 === 0)) {
                     const pattern = [0, 2, 4, 7, 9, 7, 4, 2]; 
-                    const degree = pattern[s % pattern.length];
-                    vNote = getScaleDegree(scale, degreeToIndex(currentRoot) + degree + 14);
-                } 
-                // Altrimenti, fraseggio più arioso (Stile Canon)
-                else if (s % 4 === 0 || (complexity > 0.4 && s % 2 === 0)) {
+                    vNote = getScaleDegree(scale, degreeToIndex(currentRoot) + pattern[s % 8] + 14);
+                } else if (s % 4 === 0) {
                     vNote = getScaleDegree(scale, degreeToIndex(currentRoot) + 14);
                 }
 
-                // --- LOGICA BASSO (Cello + DBass) ---
-                // Ottavi martellati o sedicesimi serrati
+                // --- BASSO (Cello + DoubleBass) ---
                 const bassRythm = (energy > 0.7) ? (s % 2 === 0) : (s % 4 === 0);
                 if (bassRythm) {
                     cNote = getScaleDegree(scale, degreeToIndex(currentRoot));
+                    dbNote = currentRoot; // Nota base per il contrabbasso
                 }
 
-                // --- LOGICA CEMBALO ---
-                // Il rintocco costante del tempo
+                // --- CEMBALO ---
                 if (bassRythm || (isChorus && s % 2 !== 0)) hHit = true;
 
-                // --- LOGICA TIMPANI ---
-                // Enfasi sui cambi e sui quarti del Chorus
+                // --- TIMPANI ---
                 if (s === 0 && m === 0) tHit = true; 
                 if (isChorus && s % 8 === 0 && energy > 0.6) tHit = true;
 
-                // --- SCHEDULAZIONE FINALE ---
+                // --- SCHEDULAZIONE ---
                 Tone.Transport.schedule(time => {
-                    // Violino Solo
+                    // Violino
                     if (vNote) {
                         violin.triggerAttackRelease(vNote, "16n", time, vVel);
                         Tone.Draw.schedule(() => { if (score) score.addNote("Lead", vNote, section.name); }, time);
                     }
 
-                    // Sezione Bassa (Unisono Cello + Contrabbasso)
+                    // Violoncello
                     if (cNote) {
                         const low = Tone.Frequency(cNote).transpose(-12).toNote();
-                        const sub = Tone.Frequency(cNote).transpose(-24).toNote();
                         cello.triggerAttackRelease(low, "8n", time, vVel);
-                        doubleBass.triggerAttackRelease(sub, "8n", time, vVel + 0.1);
                         Tone.Draw.schedule(() => { if (score) score.addNote("Bass", low, section.name); }, time);
                     }
 
-                    // Cembalo (Harpsichord)
+                    // Contrabbasso
+                    if (dbNote) {
+                        const sub = Tone.Frequency(dbNote + "1").toNote();
+                        doubleBass.triggerAttackRelease(sub, "4n", time, vVel + 0.1);
+                    }
+
+                    // Clavicembalo
                     if (hHit) {
-                        harpsichord.triggerAttackRelease(currentRoot + "3", "16n", time, 0.35);
+                        harpsichord.triggerAttackRelease(currentRoot + "3", "16n", time, 0.3);
                         Tone.Draw.schedule(() => { if (score) score.addNote("Rhythm", currentRoot, section.name); }, time);
                     }
 
-                    // Timpani
+                    // Timpani (Fix per Tone.Players)
                     if (tHit) {
-                        timpani.triggerAttackRelease(currentRoot + "2", "2n", time, 0.85);
+                        const tName = `timpano${Math.floor(rand() * 5) + 1}`;
+                        if (timpani.has(tName)) {
+                            timpani.player(tName).start(time).stop(time + 2);
+                        }
                         Tone.Draw.schedule(() => { if (score) score.addNote("Drums", "Kick", section.name); }, time);
                     }
                 }, absoluteTime);
@@ -135,20 +136,20 @@ export async function createOrchestraEngine(params, score) {
         stop: () => { 
             Tone.Transport.stop(); 
             Tone.Transport.cancel(); 
-            // Pulizia code sonore degli archi
-            [violin, cello, doubleBass, harpsichord, timpani].forEach(instr => {
+            [violin, cello, doubleBass, harpsichord].forEach(instr => {
                 if (instr && instr.releaseAll) instr.releaseAll();
             });
+            if (timpani) timpani.stopAll();
         },
         pause: () => Tone.Transport.pause(),
         seek: (s) => Tone.Transport.seconds = s,
         mixerData: { 
-            instruments: orchestraInstruments, // Passiamo l'oggetto con i Sampler
+            instruments: orchestraInstruments, 
             volumeMap: {
-                violin: "Violin Solo",
-                cello: "Cello",
-                doubleBass: "Double Bass",
-                harpsichord: "Harpsichord",
+                violin: "Violini",
+                cello: "Violoncello",
+                doubleBass: "Contrabbasso",
+                harpsichord: "Clavicembalo",
                 timpani: "Timpani"
             }
         }
