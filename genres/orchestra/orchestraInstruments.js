@@ -123,7 +123,7 @@ onload: () => registerInstrumentLoaded()
 // --- TIMPANI (The Thunder) ---
 export const timpani = new Tone.Players({
     urls: { 
-        timpano1: "Samples/Timpani/Timpani1.mp3", 
+         timpano1: "Samples/Timpani/Timpani1.mp3", 
          timpano2: "Samples/Timpani/Timpani2.mp3",
          timpano3: "Samples/Timpani/Timpani3.mp3",
          timpano4: "Samples/Timpani/Timpanio4.mp3",
@@ -160,7 +160,7 @@ export const orchestraInstruments = {
 };
 
 export const orchestraVolumeMap = {
-    violin: "Violini",
+    violin: "Violino",
     doubleBass: "Contrabbasso",
     timpani: "Timpani",
     cello: "Violoncello",

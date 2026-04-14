@@ -146,7 +146,7 @@ export async function createOrchestraEngine(params, score) {
         mixerData: { 
             instruments: orchestraInstruments, 
             volumeMap: {
-                violin: "Violini",
+                violin: "Violino",
                 cello: "Violoncello",
                 doubleBass: "Contrabbasso",
                 harpsichord: "Clavicembalo",
