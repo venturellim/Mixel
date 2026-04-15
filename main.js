@@ -16,7 +16,7 @@ import { createMetalEngine, waitMetalInstruments } from "./genres/metal/metalEng
 import { createOrchestraEngine, waitOrchestraInstruments } from "./genres/orchestra/orchestraEngine.js";
 import { scoreVisualizer } from "./scoreUI.js";
 
-console.log("main.js ver. 006.2 loaded");
+console.log("main.js ver. 006.3 loaded");
 
 
 let currentEngine = null;
@@ -179,17 +179,24 @@ async function selectGenre(genre) {
 
     // 3) Creazione engine del genere
     if (genre === "metal") {
+    
+   if ( firstStart === 1 ) {
    await waitMetalInstruments();   // <-- strumenti pronti
+   }
         currentEngine = await createMetalEngine(params, scoreUI);
  
     }
     if (genre === "orchestra") {
+    if ( firstStart === 1 ) {
    await waitOrchestraInstruments();   // <-- strumenti pronti
+   }
         currentEngine = await createOrchestraEngine(params, scoreUI);
  
     }
 if (genre === "piano") {
+if ( firstStart === 1 ) {
     await waitPianoInstruments(); // Carica i campioni se non presenti
+    }
     currentEngine = await createPianoEngine(params, scoreUI); // Passa entrambi
 }
 
