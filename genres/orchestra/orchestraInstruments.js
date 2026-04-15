@@ -146,7 +146,7 @@ function wrapSampler(name, sampler) {
 
 wrapSampler("violin", violin);
 wrapSampler("cello", cello);
-wrapSampler("doublebass", doublebass);
+wrapSampler("doubleBass", doubleBass);
 wrapSampler("harpsichord", harpsichord);
 
 function wrapPlayer(name, player) {
