@@ -1,5 +1,5 @@
 // ==========================================
-// orchestraEngine.js — ver. 011 (SCORE FIX)
+// orchestraEngine.js — ver. 012 (VIOLA UPDATE)
 // ==========================================
 import * as Tone from "https://esm.sh/tone";
 import { orchestraInstruments, orchestraVolumeMap } from "./orchestraInstruments.js";
@@ -9,9 +9,8 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { progressions } from "../../utils/musicTheory.js"; 
 import { waitForInstruments } from "../../common.js";
 
-console.log("orchestraEngine.js ver. 011 loaded");
+console.log("orchestraEngine.js ver. 012 loaded");
 
-// Utility per garantire che la nota sia valida (A -> A4) e non NaN
 function safeNote(note, defaultOctave = "4") {
     if (!note || typeof note !== "string") return null;
     const validated = /\d/.test(note) ? note : `${note}${defaultOctave}`;
@@ -19,12 +18,14 @@ function safeNote(note, defaultOctave = "4") {
 }
 
 export async function waitOrchestraInstruments() {
-    await waitForInstruments(5);
+    // Ora attendiamo 6 elementi (Violino, Viola, Cello, Basso, Cembalo, Timpani)
+    await waitForInstruments(6);
 }
 
 export async function createOrchestraEngine(params, score) {
     const rand = createSeededRandom(params.dna);
-    const { violin, cello, doubleBass, harpsichord, timpani } = orchestraInstruments;
+    // Estraiamo anche la viola dagli strumenti
+    const { violin, viola, cello, doubleBass, harpsichord, timpani } = orchestraInstruments;
 
     const energy = params.imageParams?.energy ?? 0.5;
     const bpm = 100 + (energy * 60);
@@ -33,7 +34,6 @@ export async function createOrchestraEngine(params, score) {
     Tone.Transport.cancel();
     Tone.Transport.bpm.value = bpm;
 
-    // Gestione struttura robusta
     const defaultStructure = [
         { name: "intro", measures: 4 },
         { name: "verse", measures: 8 },
@@ -43,7 +43,6 @@ export async function createOrchestraEngine(params, score) {
     const structurePreset = (params && Array.isArray(params.structure)) ? params.structure : defaultStructure;
     const structure = buildSongStructure(structurePreset, bpm);
     
-    // Tonalità e Scala
     const tCenter = params.tonalCenter || "A";
     const scaleBase = /\d/.test(tCenter) ? tCenter : tCenter + "3";
     const scale = buildScaleFromTonic(scaleBase, "harmonicMinor");
@@ -51,7 +50,6 @@ export async function createOrchestraEngine(params, score) {
     const measureDur = (60 / bpm) * 4;
     const step8n = measureDur / 8;
 
-    // Forza il tema dello spartito su orchestra
     if (score && score.setTheme) score.setTheme("orchestra");
 
     structure.sections.forEach(section => {
@@ -71,30 +69,34 @@ export async function createOrchestraEngine(params, score) {
                     try {
                         const baseNote = getScaleDegree(scale, rootIdx) || scale[0] || "A3";
 
-                        // --- 1. VIOLINO (Canale: Lead) ---
-                        if (rand() > 0.3) {
-                            const vRaw = getScaleDegree(scale, rootIdx + 14) || scale[0];
-                            const vNote = safeNote(vRaw, "5");
-                            if (vNote) {
-                                violin.triggerAttackRelease(vNote, "8n", time, 0.6);
-                                Tone.Draw.schedule(() => { 
-                                    if (score) score.addNote("Lead", vNote, section.name); 
-                                }, time);
-                            }
+                        // --- 1. VIOLINO (Lead) ---
+                        const vNote = safeNote(getScaleDegree(scale, rootIdx + 14), "5");
+                        if (vNote && rand() > 0.3) {
+                            violin.triggerAttackRelease(vNote, "8n", time, 0.6);
+                            Tone.Draw.schedule(() => { 
+                                if (score) score.addNote("Lead", vNote, section.name); 
+                            }, time);
                         }
 
-                        // --- 2. CLAVICEMBALO (Canale: Rhythm) ---
-                        if (energy > 0.4 && s % 2 === 1) {
+                        // --- 2. VIOLA (Controcanto - Canale Lead) ---
+                        // La viola suona una terza o quinta sopra la base, nel registro medio
+                        const violaRaw = getScaleDegree(scale, rootIdx + 7) || baseNote;
+                        const violaNote = safeNote(violaRaw, "4");
+                        if (violaNote && rand() > 0.4) {
+                            viola.triggerAttackRelease(violaNote, "4n", time, 0.5);
+                            Tone.Draw.schedule(() => { 
+                                // Visualizzata insieme al violino nello score
+                                if (score) score.addNote("Lead", violaNote, section.name); 
+                            }, time);
+                        }
+
+                        // --- 3. CLAVICEMBALO (Rhythm) ---
+                        if (energy > 0.5 && s % 2 === 1) {
                             const hNote = safeNote(baseNote, "4");
-                            if (hNote) {
-                                harpsichord.triggerAttackRelease(hNote, "16n", time, 0.3);
-                                Tone.Draw.schedule(() => { 
-                                    if (score) score.addNote("Rhythm", hNote, section.name); 
-                                }, time);
-                            }
+                            if (hNote) harpsichord.triggerAttackRelease(hNote, "16n", time, 0.3);
                         }
 
-                        // --- 3. CELLO/BASSO (Canale: Bass) ---
+                        // --- 4. CELLO/BASSO (Bass) ---
                         if (s % 2 === 0) {
                             const bNote = safeNote(baseNote, "2");
                             if (bNote) {
@@ -105,20 +107,17 @@ export async function createOrchestraEngine(params, score) {
                             }
                         }
 
-                        // --- 4. TIMPANI (Canale: Drums) ---
+                        // --- 5. TIMPANI (Drums) ---
                         if (s === 0 && (sectionName === "chorus" || energy > 0.7)) {
                             const tName = `timpano${Math.floor(rand() * 5) + 1}`;
                             if (timpani && timpani.has(tName)) {
                                 timpani.player(tName).start(time);
                                 Tone.Draw.schedule(() => { 
-                                    // Inviamo un'etichetta fissa per i pallini ritmici
                                     if (score) score.addNote("Drums", "Kick", section.name); 
                                 }, time);
                             }
                         }
-                    } catch (e) {
-                        console.warn("Schedule Guard:", e.message);
-                    }
+                    } catch (e) { console.warn("Engine Error:", e.message); }
                 }, stepTime);
             }
         }
@@ -134,7 +133,7 @@ export async function createOrchestraEngine(params, score) {
         stop: () => { 
             Tone.Transport.stop(); 
             Tone.Transport.cancel(); 
-            [violin, cello, doubleBass, harpsichord].forEach(i => i.releaseAll?.());
+            [violin, viola, cello, doubleBass, harpsichord].forEach(i => i && i.releaseAll?.());
             if (timpani) timpani.stopAll();
         },
         seek: (s) => Tone.Transport.seconds = s,

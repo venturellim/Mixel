@@ -2,7 +2,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("orchestraInstruments.js ver. 002.4 loaded");
+console.log("orchestraInstruments.js ver. 003 loaded");
 
 // --- RIVERBERO ---
 const hallReverb = new Tone.Reverb({
@@ -12,12 +12,14 @@ const hallReverb = new Tone.Reverb({
 }).toDestination();
 
 export const violinBus = new Tone.Gain(1);
+export const violaBus = new Tone.Gain(1);
 export const celloBus = new Tone.Gain(1);
 export const doubleBassBus = new Tone.Gain(1);
 export const harpsichordBus = new Tone.Gain(1);
 export const timpaniBus = new Tone.Gain(1);
 
 const violinEQ = new Tone.EQ3({ low: -4, mid: 2, high: 3 });
+const violaEQ = new Tone.EQ3({ low: -4, mid: 2, high: 3 });
 const doubleBassEQ   = new Tone.EQ3({ low: 4, mid: -2, high: -4 });
 const timpaniEQ   = new Tone.EQ3({ low: 2, mid: 1, high: 3 });
 const celloEQ   = new Tone.EQ3({ low: -3, mid: 2, high: 6 });
@@ -25,6 +27,7 @@ const harpsichordEQ   = new Tone.EQ3({ low: -3, mid: 2, high: 6 });
 
 // Routing bus → EQ → master
 violinBus.connect(violinEQ).connect(hallReverb).connect(masterEQ);
+violaBus.connect(violaEQ).connect(hallReverb).connect(masterEQ);
 doubleBassBus.connect(doubleBassEQ).connect(hallReverb).connect(masterEQ);
 timpaniBus.connect(timpaniEQ).connect(hallReverb).connect(masterEQ);
 celloBus.connect(celloEQ).connect(hallReverb).connect(masterEQ);
@@ -48,6 +51,25 @@ export const violin = new Tone.Sampler({
     release: 1.2,
     onload: () => registerInstrumentLoaded()
 }).connect(violinBus);
+
+// --- VIOLA ---
+export const viola = new Tone.Sampler({
+    urls: {  
+    A3: "Samples/viola/A3.mp3",
+    B2: "Samples/viola/B2.mp3", 
+    C2: "Samples/viola/C2.mp3",
+    C4: "Samples/viola/C4.mp3", 
+    D2: "Samples/viola/D2.mp3",
+    D3: "Samples/viola/D3.mp3",
+    D5: "Samples/viola/D5.mp3",
+    E2: "Samples/viola/E2.mp3",
+    E4: "Samples/viola/E4.mp3",
+    G2: "Samples/viola/G2.mp3", 
+    G4: "Samples/viola/G4.mp3"
+    },
+    release: 1.2,
+    onload: () => registerInstrumentLoaded()
+}).connect(violaBus);
 
 // --- CELLO ---
 export const cello = new Tone.Sampler({
@@ -134,12 +156,13 @@ export const timpani = new Tone.Players({
 }).connect(timpaniBus);
 
 export function setVolume(busName, dbValue) {
-    const mixer = { violin: violinBus, doubleBass: doubleBassBus, timpani: timpaniBus, cello: celloBus, harpsichord: harpsichordBus };
+    const mixer = { violin: violinBus, viola: violaBus, doubleBass: doubleBassBus, timpani: timpaniBus, cello: celloBus, harpsichord: harpsichordBus };
     const bus = mixer[busName];
     if (bus) bus.gain.value = Tone.dbToGain(dbValue);
 }
 
-setVolume("violin", -2);
+setVolumee("violin", -2);
+setVolumee("viola", -2);
 setVolume("cello", -2);
 setVolume("doubleBass", +2);
 setVolume("harpsichord", -6);
@@ -147,11 +170,13 @@ setVolume("timpani", +4);
 
 export const orchestraInstruments = {
     violin,
+    viola,
     cello,
     doubleBass,
     harpsichord,
     timpani,
     violinBus,
+    violaBus,
     celloBus,
     doubleBassBus,
     harpsichordBus,
@@ -161,6 +186,7 @@ export const orchestraInstruments = {
 
 export const orchestraVolumeMap = {
     violin: "Violino",
+    viola: "Viola",
     doubleBass: "Contrabbasso",
     timpani: "Timpani",
     cello: "Violoncello",
