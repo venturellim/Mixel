@@ -1,7 +1,7 @@
 // scoreUI.js — ver. 008
 // Fix: visibilità pulsante di chiusura durante il resize
 
-console.log("scoreUI.js ver. 008 loaded");
+console.log("scoreUI.js ver. 008.1 loaded");
 
 export class scoreVisualizer {
     constructor() {
@@ -35,13 +35,14 @@ export class scoreVisualizer {
                 "Lead": "GT LEAD", "Rhythm": "GT RHYTHM", "Bass": "BASS", "Drums": "DRUMS"
             },
             orchestra: {
-    "Lead": "VIOLIN I",
+    "Lead": "VIOLIN / VIOLA",
     "Rhythm": "HARPSICHORD",
     "Bass": "CELLO / BASS",
     "Drums": "TIMPANI"
 },
             piano: {
-                "Lead": "PIANO RIGHT", "Rhythm": "PIANO LEFT", "Bass": "AMBIENCE", "Drums": "PERCUSSION"
+                "Lead": "PIANO RIGHT", "Rhythm": "PIANO LEFT"
+ //, "Bass": "AMBIENCE", "Drums": "PERCUSSION"
             }
         };
 
