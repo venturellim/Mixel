@@ -2,7 +2,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded } from "../../common.js";
 
-console.log("pianoInstruments.js ver. 014 loaded");
+console.log("pianoInstruments.js ver. 014.1 loaded");
 
 // 1. Bus Principale e Effetti
 export const pianoBus = new Tone.Gain(1).connect(masterEQ);
@@ -28,7 +28,8 @@ export const piano = new Tone.Sampler({
         "A7": "A7.mp3", "C8": "C8.mp3"
     },
     release: 1.2,
-    baseUrl: "https://tonejs.github.io/audio/salamander/",
+    baseUrl: "Samples/Piano/"
+    //baseUrl: "https://tonejs.github.io/audio/salamander/",
     onload: () => {
         registerInstrumentLoaded();
         console.log("🎹 Salamander C5 caricato");
