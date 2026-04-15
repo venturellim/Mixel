@@ -1,5 +1,5 @@
 // ==========================================
-// orchestraEngine.js — ver. 010 (ULTIMATE)
+// orchestraEngine.js — ver. 011 (SCORE FIX)
 // ==========================================
 import * as Tone from "https://esm.sh/tone";
 import { orchestraInstruments, orchestraVolumeMap } from "./orchestraInstruments.js";
@@ -9,14 +9,12 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { progressions } from "../../utils/musicTheory.js"; 
 import { waitForInstruments } from "../../common.js";
 
-console.log("orchestraEngine.js ver. 010 loaded");
+console.log("orchestraEngine.js ver. 011 loaded");
 
-
-// Forza l'aggiunta dell'ottava se manca e valida la nota
+// Utility per garantire che la nota sia valida (A -> A4) e non NaN
 function safeNote(note, defaultOctave = "4") {
     if (!note || typeof note !== "string") return null;
     const validated = /\d/.test(note) ? note : `${note}${defaultOctave}`;
-    // Verifica se Tone.js la riconosce come nota valida
     return isNaN(Tone.Frequency(validated).toMidi()) ? null : validated;
 }
 
@@ -35,23 +33,26 @@ export async function createOrchestraEngine(params, score) {
     Tone.Transport.cancel();
     Tone.Transport.bpm.value = bpm;
 
+    // Gestione struttura robusta
     const defaultStructure = [
         { name: "intro", measures: 4 },
         { name: "verse", measures: 8 },
         { name: "chorus", measures: 8 },
         { name: "outro", measures: 4 }
     ];
-
     const structurePreset = (params && Array.isArray(params.structure)) ? params.structure : defaultStructure;
     const structure = buildSongStructure(structurePreset, bpm);
     
-    // Garantiamo che il centro tonale abbia un'ottava di base per la scala
+    // Tonalità e Scala
     const tCenter = params.tonalCenter || "A";
     const scaleBase = /\d/.test(tCenter) ? tCenter : tCenter + "3";
     const scale = buildScaleFromTonic(scaleBase, "harmonicMinor");
 
     const measureDur = (60 / bpm) * 4;
     const step8n = measureDur / 8;
+
+    // Forza il tema dello spartito su orchestra
+    if (score && score.setTheme) score.setTheme("orchestra");
 
     structure.sections.forEach(section => {
         const sectionName = section.name.toLowerCase();
@@ -68,39 +69,51 @@ export async function createOrchestraEngine(params, score) {
 
                 Tone.Transport.schedule((time) => {
                     try {
-                        // Estrazione nota base dalla scala con paracadute (scale[0])
                         const baseNote = getScaleDegree(scale, rootIdx) || scale[0] || "A3";
 
-                        // --- 1. CONTRABBASSO (Sempre sul battere) ---
-                        if (s === 0) {
-                            const dbNote = safeNote(baseNote, "2");
-                            if (dbNote) {
-                                const finalDb = Tone.Frequency(dbNote).transpose(-12).toNote();
-                                doubleBass.triggerAttackRelease(finalDb, "2n", time, 0.8);
-                            }
-                        }
-
-                        // --- 2. VIOLONCELLO (Ottavi pari) ---
-                        if (s % 2 === 0) {
-                            const cNote = safeNote(baseNote, "3");
-                            if (cNote) cello.triggerAttackRelease(cNote, "4n", time, 0.7);
-                        }
-
-                        // --- 3. VIOLINO (Lead Melodico) ---
-                        if (rand() > 0.4) {
+                        // --- 1. VIOLINO (Canale: Lead) ---
+                        if (rand() > 0.3) {
                             const vRaw = getScaleDegree(scale, rootIdx + 14) || scale[0];
                             const vNote = safeNote(vRaw, "5");
                             if (vNote) {
                                 violin.triggerAttackRelease(vNote, "8n", time, 0.6);
-                                Tone.Draw.schedule(() => { if (score) score.addNote("Lead", vNote, section.name); }, time);
+                                Tone.Draw.schedule(() => { 
+                                    if (score) score.addNote("Lead", vNote, section.name); 
+                                }, time);
                             }
                         }
 
-                        // --- 4. TIMPANI (Solo nel Chorus o accenti) ---
+                        // --- 2. CLAVICEMBALO (Canale: Rhythm) ---
+                        if (energy > 0.4 && s % 2 === 1) {
+                            const hNote = safeNote(baseNote, "4");
+                            if (hNote) {
+                                harpsichord.triggerAttackRelease(hNote, "16n", time, 0.3);
+                                Tone.Draw.schedule(() => { 
+                                    if (score) score.addNote("Rhythm", hNote, section.name); 
+                                }, time);
+                            }
+                        }
+
+                        // --- 3. CELLO/BASSO (Canale: Bass) ---
+                        if (s % 2 === 0) {
+                            const bNote = safeNote(baseNote, "2");
+                            if (bNote) {
+                                cello.triggerAttackRelease(bNote, "4n", time, 0.7);
+                                Tone.Draw.schedule(() => { 
+                                    if (score) score.addNote("Bass", bNote, section.name); 
+                                }, time);
+                            }
+                        }
+
+                        // --- 4. TIMPANI (Canale: Drums) ---
                         if (s === 0 && (sectionName === "chorus" || energy > 0.7)) {
                             const tName = `timpano${Math.floor(rand() * 5) + 1}`;
                             if (timpani && timpani.has(tName)) {
                                 timpani.player(tName).start(time);
+                                Tone.Draw.schedule(() => { 
+                                    // Inviamo un'etichetta fissa per i pallini ritmici
+                                    if (score) score.addNote("Drums", "Kick", section.name); 
+                                }, time);
                             }
                         }
                     } catch (e) {
