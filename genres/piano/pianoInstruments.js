@@ -28,7 +28,7 @@ export const piano = new Tone.Sampler({
         "A7": "A7.mp3", "C8": "C8.mp3"
     },
     release: 1.2,
-    baseUrl: "Samples/Piano/"
+    baseUrl: "Samples/Piano/",
     //baseUrl: "https://tonejs.github.io/audio/salamander/",
     onload: () => {
         registerInstrumentLoaded();
