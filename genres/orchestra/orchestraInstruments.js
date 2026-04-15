@@ -158,7 +158,7 @@ function wrapPlayer(name, player) {
 }
 
 [
-    "Timpano1","Timpano2","Timpano3","Timpano4","Timpano5"
+    "timpano1","timpano2","timpano3","timpano4","timpano5"
 ].forEach(key => {
     const p = timpani.player(key);
     if (p) wrapPlayer("timpani."+key, p);
