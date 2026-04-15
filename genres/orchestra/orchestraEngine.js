@@ -1,5 +1,5 @@
 // ==========================================
-// orchestraEngine.js — ver. 008.2 (SUPER SAFE)
+// orchestraEngine.js — ver. 010 (ULTIMATE)
 // ==========================================
 import * as Tone from "https://esm.sh/tone";
 import { orchestraInstruments, orchestraVolumeMap } from "./orchestraInstruments.js";
@@ -9,14 +9,15 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { progressions } from "../../utils/musicTheory.js"; 
 import { waitForInstruments } from "../../common.js";
 
-console.log("orchestraEngine.js ver. 008.2 loaded");
+console.log("orchestraEngine.js ver. 010 loaded");
 
 
-// Utility interna per validare le note prima di suonarle
+// Forza l'aggiunta dell'ottava se manca e valida la nota
 function safeNote(note, defaultOctave = "4") {
     if (!note || typeof note !== "string") return null;
-    // Se la nota non ha un numero (ottava), gliela aggiungiamo
-    return /\d/.test(note) ? note : `${note}${defaultOctave}`;
+    const validated = /\d/.test(note) ? note : `${note}${defaultOctave}`;
+    // Verifica se Tone.js la riconosce come nota valida
+    return isNaN(Tone.Frequency(validated).toMidi()) ? null : validated;
 }
 
 export async function waitOrchestraInstruments() {
@@ -41,71 +42,69 @@ export async function createOrchestraEngine(params, score) {
         { name: "outro", measures: 4 }
     ];
 
-    const structurePreset = (params && Array.isArray(params.structure)) 
-        ? params.structure 
-        : defaultStructure;
-
+    const structurePreset = (params && Array.isArray(params.structure)) ? params.structure : defaultStructure;
     const structure = buildSongStructure(structurePreset, bpm);
-    const scale = buildScaleFromTonic(params.tonalCenter || "A", "harmonicMinor");
+    
+    // Garantiamo che il centro tonale abbia un'ottava di base per la scala
+    const tCenter = params.tonalCenter || "A";
+    const scaleBase = /\d/.test(tCenter) ? tCenter : tCenter + "3";
+    const scale = buildScaleFromTonic(scaleBase, "harmonicMinor");
+
     const measureDur = (60 / bpm) * 4;
     const step8n = measureDur / 8;
 
     structure.sections.forEach(section => {
         const sectionName = section.name.toLowerCase();
-        const possibleProgs = progressions[sectionName] || progressions.verse;
-        const sectionProg = possibleProgs[Math.floor(rand() * possibleProgs.length)];
+        const pool = progressions[sectionName] || progressions.verse;
+        const sectionProg = pool[Math.floor(rand() * pool.length)];
 
         for (let m = 0; m < section.measures; m++) {
             const measureStartTime = section.startTime + (m * measureDur);
             
             for (let s = 0; s < 8; s++) {
                 const stepTime = measureStartTime + (s * step8n);
-                // Protezione contro progressioni vuote o malformate
                 const currentDegree = sectionProg[s % sectionProg.length] || "i";
                 const rootIdx = degreeToIndex(currentDegree);
 
                 Tone.Transport.schedule((time) => {
                     try {
-                        // --- 1. CONTRABBASSO (Ottava 1-2) ---
+                        // Estrazione nota base dalla scala con paracadute (scale[0])
+                        const baseNote = getScaleDegree(scale, rootIdx) || scale[0] || "A3";
+
+                        // --- 1. CONTRABBASSO (Sempre sul battere) ---
                         if (s === 0) {
-                            const rawDb = getScaleDegree(scale, rootIdx);
-                            const dbNote = safeNote(rawDb, "2");
+                            const dbNote = safeNote(baseNote, "2");
                             if (dbNote) {
-                                doubleBass.triggerAttackRelease(Tone.Frequency(dbNote).transpose(-24).toNote(), "2n", time, 0.8);
+                                const finalDb = Tone.Frequency(dbNote).transpose(-12).toNote();
+                                doubleBass.triggerAttackRelease(finalDb, "2n", time, 0.8);
                             }
                         }
 
-                        // --- 2. CELLO (Ottava 2-3) ---
+                        // --- 2. VIOLONCELLO (Ottavi pari) ---
                         if (s % 2 === 0) {
-                            const rawC = getScaleDegree(scale, rootIdx);
-                            const cNote = safeNote(rawC, "3");
-                            if (cNote) {
-                                cello.triggerAttackRelease(Tone.Frequency(cNote).transpose(-12).toNote(), "4n", time, 0.7);
-                            }
+                            const cNote = safeNote(baseNote, "3");
+                            if (cNote) cello.triggerAttackRelease(cNote, "4n", time, 0.7);
                         }
 
-                        // --- 3. VIOLINO (Ottava 4-5) ---
+                        // --- 3. VIOLINO (Lead Melodico) ---
                         if (rand() > 0.4) {
-                            const rawV = getScaleDegree(scale, rootIdx + 14);
-                            const vNote = safeNote(rawV, "4");
+                            const vRaw = getScaleDegree(scale, rootIdx + 14) || scale[0];
+                            const vNote = safeNote(vRaw, "5");
                             if (vNote) {
                                 violin.triggerAttackRelease(vNote, "8n", time, 0.6);
-                                Tone.Draw.schedule(() => {
-                                    if (score) score.addNote("Lead", vNote, section.name);
-                                }, time);
+                                Tone.Draw.schedule(() => { if (score) score.addNote("Lead", vNote, section.name); }, time);
                             }
                         }
-                        
-                        // --- 4. TIMPANI (Safe Check) ---
-                        if (s === 0 && sectionName === "chorus" && timpani) {
+
+                        // --- 4. TIMPANI (Solo nel Chorus o accenti) ---
+                        if (s === 0 && (sectionName === "chorus" || energy > 0.7)) {
                             const tName = `timpano${Math.floor(rand() * 5) + 1}`;
-                            // Usiamo l'interfaccia corretta per i Players
-                            if (timpani.has && timpani.has(tName)) {
+                            if (timpani && timpani.has(tName)) {
                                 timpani.player(tName).start(time);
                             }
                         }
                     } catch (e) {
-                        console.warn("Silent recovery from schedule error:", e);
+                        console.warn("Schedule Guard:", e.message);
                     }
                 }, stepTime);
             }
@@ -123,7 +122,7 @@ export async function createOrchestraEngine(params, score) {
             Tone.Transport.stop(); 
             Tone.Transport.cancel(); 
             [violin, cello, doubleBass, harpsichord].forEach(i => i.releaseAll?.());
-            if (timpani && timpani.stopAll) timpani.stopAll();
+            if (timpani) timpani.stopAll();
         },
         seek: (s) => Tone.Transport.seconds = s,
         mixerData: { instruments: orchestraInstruments, volumeMap: orchestraVolumeMap }
@@ -133,7 +132,6 @@ export async function createOrchestraEngine(params, score) {
 function degreeToIndex(degree) {
     if (!degree) return 0;
     const map = { "i":0, "I":0, "ii":1, "iii":2, "III":2, "iv":3, "IV":3, "v":4, "V":4, "vi":5, "VI":5, "vii":6, "VII":6 };
-    // Rimuoviamo alterazioni per il mapping
-    const cleanDegree = degree.replace('b', '').replace('#', '');
-    return map[cleanDegree] || 0;
+    const clean = degree.replace('b', '').replace('#', '');
+    return map[clean] || 0;
 }
