@@ -133,44 +133,6 @@ export const timpani = new Tone.Players({
     onload: () => registerInstrumentLoaded()
 }).connect(timpaniBus);
 
-// ============================================================
-// 🎵 LOGGING & WRAPPING
-// ============================================================
-
-function wrapSampler(name, sampler) {
-    const orig = sampler.triggerAttackRelease.bind(sampler);
-    sampler.triggerAttackRelease = (note, dur, time, velocity) => {
-        // Se la nota o il tempo sono corrotti, evitiamo il crash del log
-        const safeNote = note || "??";
-        const safeTime = typeof time === "number" ? time.toFixed(3) : "now";
-        
-        console.log(`🎵 ${name} → ${safeNote} @ ${safeTime}`);
-        
-        // Passiamo tutti i parametri originali correttamente
-        return orig(note, dur, time, velocity);
-    };
-}
-
-function wrapPlayer(name, player) {
-    const orig = player.start.bind(player);
-    player.start = (time, offset, duration, velocity) => {
-        console.log(`🥁 ${name} → (sample) @ ${time}`);
-        return orig(time, offset, duration, velocity);
-    };
-}
-
-wrapSampler("violin", violin);
-wrapSampler("cello", cello);
-wrapSampler("doubleBass", doubleBass);
-wrapSampler("harpsichord", harpsichord);
-
-[
-    "timpano1","timpano2","timpano3","timpano4","timpano5"
-].forEach(key => {
-    const p = timpani.player(key);
-    if (p) wrapPlayer("timpani."+key, p);
-});
-
 export function setVolume(busName, dbValue) {
     const mixer = { violin: violinBus, doubleBass: doubleBassBus, timpani: timpaniBus, cello: celloBus, harpsichord: harpsichordBus };
     const bus = mixer[busName];
