@@ -2,7 +2,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("orchestraInstruments.js ver. 002.2 loaded");
+console.log("orchestraInstruments.js ver. 002.3 loaded");
 
 // --- RIVERBERO ---
 const hallReverb = new Tone.Reverb({
@@ -160,8 +160,8 @@ function wrapPlayer(name, player) {
 [
     "Timpano1","Timpano2","Timpano3","Timpano4","Timpano5"
 ].forEach(key => {
-    const p = drums.player(key);
-    if (p) wrapPlayer("drums."+key, p);
+    const p = timpani.player(key);
+    if (p) wrapPlayer("timpani."+key, p);
 });
 
 export function setVolume(busName, dbValue) {
