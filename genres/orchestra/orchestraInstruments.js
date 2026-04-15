@@ -2,7 +2,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("orchestraInstruments.js ver. 002.3 loaded");
+console.log("orchestraInstruments.js ver. 002.4 loaded");
 
 // --- RIVERBERO ---
 const hallReverb = new Tone.Reverb({
@@ -136,11 +136,26 @@ export const timpani = new Tone.Players({
 // ============================================================
 // 🎵 LOGGING & WRAPPING
 // ============================================================
+
 function wrapSampler(name, sampler) {
     const orig = sampler.triggerAttackRelease.bind(sampler);
-    sampler.triggerAttackRelease = (note, dur, time) => {
-        logNote(name, note, time);
-        return orig(note, dur, time);
+    sampler.triggerAttackRelease = (note, dur, time, velocity) => {
+        // Se la nota o il tempo sono corrotti, evitiamo il crash del log
+        const safeNote = note || "??";
+        const safeTime = typeof time === "number" ? time.toFixed(3) : "now";
+        
+        console.log(`🎵 ${name} → ${safeNote} @ ${safeTime}`);
+        
+        // Passiamo tutti i parametri originali correttamente
+        return orig(note, dur, time, velocity);
+    };
+}
+
+function wrapPlayer(name, player) {
+    const orig = player.start.bind(player);
+    player.start = (time, offset, duration, velocity) => {
+        console.log(`🥁 ${name} → (sample) @ ${time}`);
+        return orig(time, offset, duration, velocity);
     };
 }
 
@@ -148,14 +163,6 @@ wrapSampler("violin", violin);
 wrapSampler("cello", cello);
 wrapSampler("doubleBass", doubleBass);
 wrapSampler("harpsichord", harpsichord);
-
-function wrapPlayer(name, player) {
-    const orig = player.start.bind(player);
-    player.start = (time, offset, dur) => {
-        logNote(name, "(sample)", time);
-        return orig(time, offset, dur);
-    };
-}
 
 [
     "timpano1","timpano2","timpano3","timpano4","timpano5"

@@ -9,7 +9,7 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { progressions } from "../../utils/musicTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("orchestraEngine.js ver. 006.1 loaded");
+console.log("orchestraEngine.js ver. 006.2 loaded");
 
 /**
  * Attende il caricamento dei sample definiti in orchestraInstruments
@@ -123,13 +123,16 @@ export async function createOrchestraEngine(params, score) {
                     }
 
                     // Timpani (Uso dei Players)
-                    if (tHit && timpani) {
-                        const tName = `timpano${Math.floor(rand() * 5) + 1}`;
-                        if (timpani.has(tName)) {
-                            timpani.player(tName).start(time).stop(time + 2);
-                        }
-                        Tone.Draw.schedule(() => { if (score) score.addNote("Drums", "Kick", section.name); }, time);
-                    }
+                    // Dentro orchestraEngine.js -> schedule
+if (tHit && timpani) {
+    // Scegliamo uno dei 5 campioni caricati
+    const tName = `timpano${Math.floor(rand() * 5) + 1}`;
+    const player = timpani.player(tName);
+    if (player) {
+        player.start(time);
+    }
+    Tone.Draw.schedule(() => { if (score) score.addNote("Drums", "Kick", section.name); }, time);
+}
                 }, absoluteTime);
             }
         }
