@@ -9,7 +9,7 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { progressions } from "../../utils/musicTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("orchestraEngine.js ver. 006 loaded");
+console.log("orchestraEngine.js ver. 006.1 loaded");
 
 /**
  * Attende il caricamento dei sample definiti in orchestraInstruments
@@ -136,36 +136,31 @@ export async function createOrchestraEngine(params, score) {
     });
 
     // 4. Interfaccia di controllo per main.js
+        // Ritorno sincronizzato con la logica del main.js e del metalEngine
     return {
         totalDuration: structure.totalDuration,
-        
         play: () => { 
             if (Tone.context.state !== 'running') Tone.context.resume();
             Tone.Transport.start("+0.1"); 
         },
-
         stop: () => { 
             Tone.Transport.stop(); 
             Tone.Transport.cancel(); 
-            // Rilascio di tutti i sampler per evitare note appese
+            // Pulizia specifica per Samplers
             [violin, cello, doubleBass, harpsichord].forEach(instr => {
                 if (instr && instr.releaseAll) instr.releaseAll();
             });
             if (timpani) timpani.stopAll();
         },
-
         pause: () => Tone.Transport.pause(),
-        
-        seek: (seconds) => {
-            Tone.Transport.seconds = seconds;
-        },
-
-        // Dati cruciali per initFxPanel(mixerData) in main.js
+        seek: (s) => Tone.Transport.seconds = s,
+        // Fondamentale: deve contenere l'oggetto con setVolume e la mappa etichette
         mixerData: { 
-            instruments: orchestraInstruments, // Passiamo l'oggetto con la funzione setVolume
-            volumeMap: orchestraVolumeMap      // Passiamo le etichette per gli slider
+            instruments: orchestraInstruments, 
+            volumeMap: orchestraVolumeMap 
         }
     };
+
 }
 
 /**
