@@ -1,8 +1,8 @@
 // orchestraInstruments.js — ver. 002 (Full Baroque Orchestra + Timpani)
 import * as Tone from "https://esm.sh/tone";
-import { masterEQ, registerInstrumentLoaded } from "../../common.js";
+import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("orchestraInstruments.js ver. 002.1 loaded");
+console.log("orchestraInstruments.js ver. 002.2 loaded");
 
 // --- RIVERBERO ---
 const hallReverb = new Tone.Reverb({
@@ -132,6 +132,37 @@ export const timpani = new Tone.Players({
     release: 3,
     onload: () => registerInstrumentLoaded()
 }).connect(timpaniBus);
+
+// ============================================================
+// 🎵 LOGGING & WRAPPING
+// ============================================================
+function wrapSampler(name, sampler) {
+    const orig = sampler.triggerAttackRelease.bind(sampler);
+    sampler.triggerAttackRelease = (note, dur, time) => {
+        logNote(name, note, time);
+        return orig(note, dur, time);
+    };
+}
+
+wrapSampler("violin", violin);
+wrapSampler("cello", cello);
+wrapSampler("doublebass", doublebass);
+wrapSampler("harpsichord", harpsichord);
+
+function wrapPlayer(name, player) {
+    const orig = player.start.bind(player);
+    player.start = (time, offset, dur) => {
+        logNote(name, "(sample)", time);
+        return orig(time, offset, dur);
+    };
+}
+
+[
+    "Timpano1","Timpano2","Timpano3","Timpano4","Timpano5"
+].forEach(key => {
+    const p = drums.player(key);
+    if (p) wrapPlayer("drums."+key, p);
+});
 
 export function setVolume(busName, dbValue) {
     const mixer = { violin: violinBus, doubleBass: doubleBassBus, timpani: timpaniBus, cello: celloBus, harpsichord: harpsichordBus };
