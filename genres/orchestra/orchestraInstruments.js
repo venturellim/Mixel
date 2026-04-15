@@ -2,7 +2,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("orchestraInstruments.js ver. 003 loaded");
+console.log("orchestraInstruments.js ver. 003.1 loaded");
 
 // --- RIVERBERO ---
 const hallReverb = new Tone.Reverb({
@@ -161,8 +161,8 @@ export function setVolume(busName, dbValue) {
     if (bus) bus.gain.value = Tone.dbToGain(dbValue);
 }
 
-setVolumee("violin", -2);
-setVolumee("viola", -2);
+setVolume("violin", -2);
+setVolume("viola", -2);
 setVolume("cello", -2);
 setVolume("doubleBass", +2);
 setVolume("harpsichord", -6);
