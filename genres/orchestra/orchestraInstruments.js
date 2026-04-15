@@ -2,7 +2,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded } from "../../common.js";
 
-console.log("orchestraInstruments.js ver. 002 loaded");
+console.log("orchestraInstruments.js ver. 002.1 loaded");
 
 // --- RIVERBERO ---
 const hallReverb = new Tone.Reverb({
@@ -41,7 +41,7 @@ export const violin = new Tone.Sampler({
     D3: "Samples/Violin/D3.mp3",
     D5: "Samples/Violin/D5.mp3", 
     E4: "Samples/Violin/E4.mp3",
-    "F#3": "Samples/Violin/F#3.mp3",
+    "F#3": "Samples/Violin/Fs3.mp3",
     G2: "Samples/Violin/G2.mp3", 
     G4: "Samples/Violin/G4.mp3"
     },
@@ -73,18 +73,18 @@ onload: () => registerInstrumentLoaded()
 // --- DOUBLE BASS ---
 export const doubleBass = new Tone.Sampler({
     urls: { 
-    "A#0": "Samples/DoubleBass/A#0.mp3",
+    "A#0": "Samples/DoubleBass/As0.mp3",
     A1: "Samples/DoubleBass/A1.mp3",
     B2: "Samples/DoubleBass/B2.mp3",
-    "C#2": "Samples/DoubleBass/C#2.mp3",
+    "C#2": "Samples/DoubleBass/Cs2.mp3",
     C1: "Samples/DoubleBass/C1.mp3",
     D1: "Samples/DoubleBass/D1.mp3",
     E1: "Samples/DoubleBass/E1.mp3",
     E2: "Samples/DoubleBass/E2.mp3",
-    "F#0": "Samples/DoubleBass/F#0.mp3",
-    "F#1": "Samples/DoubleBass/F#1.mp3",
-    "G#1": "Samples/DoubleBass/G#1.mp3",
-    "G#2": "Samples/DoubleBass/G#2.mp3",
+    "F#0": "Samples/DoubleBass/Fs0.mp3",
+    "F#1": "Samples/DoubleBass/Fs1.mp3",
+    "G#1": "Samples/DoubleBass/Gs1.mp3",
+    "G#2": "Samples/DoubleBass/Gs2.mp3",
     G0: "Samples/DoubleBass/G0.mp3"
     },
     release: 2,
