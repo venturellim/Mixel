@@ -1,7 +1,9 @@
-// scoreUI.js — ver. 011
-// Fix: Aggiunto setTheme, Label zigzag, Dual-color Orchestra, No Ottave
+// scoreUI.js — ver. 012
+// Fix: Allineamento strumenti su stessa riga con dual-color (Violino/Viola)
+// Fix: Rimossa doppia sottrazione playhead
+// Fix: Y base separata per ogni strumento
 
-console.log("scoreUI.js ver. 011.1 loaded");
+console.log("scoreUI.js ver. 012 loaded");
 
 export class scoreVisualizer {
     constructor() {
@@ -13,6 +15,7 @@ export class scoreVisualizer {
         this.currentGenre = "metal";
         this.notes = [];
         this.currentSection = "";
+        this.totalDuration = 0; // Verrà impostato dall'engine
 
         this.bgImage = new Image();
         this.bgImage.src = "Pentagramma.jpg"; 
@@ -35,7 +38,6 @@ export class scoreVisualizer {
         window.addEventListener("resize", () => this.initCanvas());
     }
 
-    // --- NUOVA FUNZIONE SETTHEME ---
     setTheme(genre) {
         if (this.themes[genre]) {
             this.currentGenre = genre;
@@ -73,21 +75,34 @@ export class scoreVisualizer {
         this.notes = []; 
     }
 
-    addNote(track, note, section, isSecondary = false) {
+    addNote(track, note, section, isSecondary = false, musicalTime = null) {
         this.currentSection = section;
         if (this.notes.length > 500) this.notes.shift();
+        
+        // Calcola posizione X basata sul tempo musicale o usa playheadX corrente
+        let x = this.playheadX;
+        if (musicalTime !== null && this.totalDuration > 0) {
+            // Mappa il tempo (0..totalDuration) alla posizione X (playheadX iniziale..leftLimit)
+            const startX = this.canvas.width * 0.85;
+            const endX = this.leftLimit;
+            const progress = musicalTime / this.totalDuration;
+            x = startX - (startX - endX) * progress;
+        }
+        
         this.notes.push({
-            x: this.playheadX,
+            x: x,
             track: track,
             label: this.cleanNoteLabel(note),
             isSecondary: isSecondary,
-            index: Date.now() + Math.random() // Indice univoco per lo zigzag
+            index: Date.now() + Math.random(),
+            musicalTime: musicalTime
         });
     }
 
     render() {
         if (!this.isVisible) return;
-        const { ctx, canvas, playheadX, leftLimit, bgImage, imageLoaded } = this;
+        
+        const { ctx, canvas, playheadX, leftLimit, bgImage, imageLoaded, currentGenre } = this;
         const currentLabels = this.themes[this.currentGenre] || this.themes.metal;
         
         const tracks = {
@@ -100,6 +115,7 @@ export class scoreVisualizer {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         if (imageLoaded) ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
         
+        // Titolo sezione corrente
         if (this.currentSection) {
             ctx.fillStyle = "#ff0000"; 
             ctx.font = "bold 22px serif"; 
@@ -107,6 +123,7 @@ export class scoreVisualizer {
             ctx.fillText(this.currentSection.toUpperCase(), leftLimit + 20, canvas.height * 0.12); 
         }
         
+        // Etichette strumenti
         Object.keys(tracks).forEach(key => {
             const trackY = canvas.height * tracks[key].y;
             ctx.fillStyle = "#444";
@@ -115,65 +132,102 @@ export class scoreVisualizer {
             ctx.fillText(tracks[key].label, canvas.width * 0.02, trackY - 15);
         });
 
+        // Linea del playhead
         ctx.strokeStyle = "#ff000022";
         ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.moveTo(playheadX, 0); ctx.lineTo(playheadX, canvas.height); ctx.stroke();
+        ctx.beginPath(); 
+        ctx.moveTo(playheadX, 0); 
+        ctx.lineTo(playheadX, canvas.height); 
+        ctx.stroke();
 
+        // Disegna tutte le note
         for (let i = this.notes.length - 1; i >= 0; i--) {
             const n = this.notes[i];
             const trackCfg = tracks[n.track];
             if(!trackCfg) continue;
             
-            let y = canvas.height * trackCfg.y;
-            n.x -= 3.5; 
-            if (this.currentGenre === "metal" && n.track === "Drums") {
-                if (n.label.includes("Kick"))  y += 6;
-                if (n.label.includes("Snare")) y -= 2;
-                if (n.label.includes("HiHat")) y -= 12;
-                if (n.label.includes("Crash")) y -= 22;
-            }
-
-            n.x -= 3.5; 
-
+            // Y BASE dello strumento (NON modificabile)
+            const baseY = canvas.height * trackCfg.y;
+            
+            // Sposta la nota verso sinistra (scroll effect)
+            n.x -= 3.5;
+            
             if (n.x > leftLimit) {
-                ctx.fillStyle = "#000";
-                if (this.currentGenre === "metal" && n.track === "Drums") {
+                
+                // === METAL: DRUMS (simboli speciali) ===
+                if (currentGenre === "metal" && n.track === "Drums") {
+                    let drumY = baseY;
+                    if (n.label.includes("Kick")) drumY = baseY + 6;
+                    else if (n.label.includes("Snare")) drumY = baseY - 2;
+                    else if (n.label.includes("HiHat")) drumY = baseY - 12;
+                    else if (n.label.includes("Crash")) drumY = baseY - 22;
+                    
                     if (n.label.includes("Kick") || n.label.includes("Snare")) {
-                        ctx.fillRect(n.x - 3, y - 3, 6, 6);
+                        ctx.fillStyle = "#000";
+                        ctx.fillRect(n.x - 3, drumY - 3, 6, 6);
                     } else {
+                        ctx.fillStyle = "#000";
                         ctx.font = "bold 8px sans-serif";
-                        ctx.fillText("✕", n.x, y + 4);
-                        ctx.font = "bold 8px 'Courier New', monospace";
+                        ctx.fillText("✕", n.x, drumY + 4);
                     }
-                } else {
-                    ctx.fillRect(n.x - 3, y - 3, 6, 6); 
-                    ctx.fillText(n.label, n.x, y - 12);
+                }
+                
+                // === ORCHESTRA: Violino/Viola su stesso rigo (Lead) ===
+                else if (currentGenre === "orchestra" && n.track === "Lead") {
+                    
+                    // Colore: nero per primario (Violino), blu notte per secondario (Viola)
+                    ctx.fillStyle = n.isSecondary ? "#191970" : "#000000";
+                    
+                    // Rettangolo: primario più in alto (-3), secondario più in basso (+5)
+                    const rectY = n.isSecondary ? baseY + 5 : baseY - 3;
+                    ctx.fillRect(n.x - 3, rectY, 6, 6);
+                    
+                    // Etichetta della nota
+                    ctx.font = "bold 10px 'Courier New', monospace";
+                    ctx.textAlign = "center";
+                    
+                    // Zigzag alternato per evitare sovrapposizioni
+                    const isEven = Math.floor(n.index / 100) % 2 === 0;
+                    let textY = isEven ? baseY - 12 : baseY - 22;
+                    
+                    // Viola (secondario) alza ancora di più l'etichetta
+                    if (n.isSecondary) textY -= 15;
+                    
+                    ctx.fillStyle = n.isSecondary ? "#191970" : "#000000";
+                    ctx.fillText(n.label, n.x, textY);
+                }
+                
+                // === METAL: Chitarre e Basso (normali) ===
+                else if (currentGenre === "metal") {
+                    ctx.fillStyle = "#000";
+                    const rectY = baseY - 3;
+                    ctx.fillRect(n.x - 3, rectY, 6, 6);
+                    
+                    ctx.font = "bold 10px 'Courier New', monospace";
+                    ctx.textAlign = "center";
+                    ctx.fillText(n.label, n.x, baseY - 12);
+                }
+                
+                // === PIANO o altri generi (normale) ===
+                else {
+                    ctx.fillStyle = "#000";
+                    const rectY = n.isSecondary ? baseY + 5 : baseY - 3;
+                    ctx.fillRect(n.x - 3, rectY, 6, 6);
+                    
+                    ctx.font = "bold 10px 'Courier New', monospace";
+                    ctx.textAlign = "center";
+                    ctx.fillText(n.label, n.x, baseY - 12);
                 }
             }
-
-            if (n.x > leftLimit) {
-                // Gestione Colore (Orchestra: Blu Notte per Viola/Bass)
-                ctx.fillStyle = (n.isSecondary && this.currentGenre === "orchestra") ? "#191970" : "#000000";
-
-                // QUADRATI: Allineati (ma sfalsati leggermente se secondari per non sovrapporsi)
-                const rectY = n.isSecondary ? y + 5 : y - 3;
-                ctx.fillRect(n.x - 3, rectY, 6, 6);
-
-                // ETICHETTE: ZigZag (una sopra e una sotto l'altra)
-                ctx.font = "bold 9px 'Courier New', monospace";
-                ctx.textAlign = "center";
-                
-                // Determina altezza testo (alternata ogni 2 note)
-                const isEven = Math.floor(n.index / 100) % 2 === 0;
-                let textY = isEven ? y - 12 : y - 22;
-
-                // Se è un secondario (Viola), alza ancora di più per non coprire il Violino
-                if (n.isSecondary) textY -= 15;
-
-                ctx.fillText(n.label, n.x, textY);
-            }
-
+            
+            // Rimuovi le note uscite dal limite sinistro
             if (n.x < leftLimit) this.notes.splice(i, 1);
+        }
+        
+        // Aggiorna playheadX per lo scroll continuo (si muove lentamente)
+        // Questo simula lo scorrimento dello spartito
+        if (this.playheadX > this.leftLimit) {
+            this.playheadX -= 1.5;
         }
         
         requestAnimationFrame(() => this.render());
