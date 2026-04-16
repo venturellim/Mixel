@@ -1,7 +1,7 @@
-// scoreUI.js — ver. 010
-// Fix: Label alternate (zigzag) per Piano/Metal, Dual-color per Orchestra, No Ottave
+// scoreUI.js — ver. 011
+// Fix: Aggiunto setTheme, Label zigzag, Dual-color Orchestra, No Ottave
 
-console.log("scoreUI.js ver. 010 loaded");
+console.log("scoreUI.js ver. 011 loaded");
 
 export class scoreVisualizer {
     constructor() {
@@ -35,11 +35,17 @@ export class scoreVisualizer {
         window.addEventListener("resize", () => this.initCanvas());
     }
 
-    // 1️⃣ PARSING NOTA: Rimuove l'ottava (es. C4 -> C, F#3 -> F#)
+    // --- NUOVA FUNZIONE SETTHEME ---
+    setTheme(genre) {
+        if (this.themes[genre]) {
+            this.currentGenre = genre;
+            console.log(`🎨 Score Theme set to: ${genre}`);
+        }
+    }
+
     cleanNoteLabel(note) {
         if (!note || typeof note !== 'string') return "";
-        // Se il secondo carattere è un numero, prendiamo solo il primo
-        // Se è un simbolo (es. #), verifichiamo il terzo
+        // Prende solo la nota senza il numero dell'ottava (es: C#4 -> C#)
         return isNaN(parseInt(note[1])) ? note.substring(0, 2) : note.substring(0, 1);
     }
 
@@ -75,8 +81,7 @@ export class scoreVisualizer {
             track: track,
             label: this.cleanNoteLabel(note),
             isSecondary: isSecondary,
-            // Usiamo il timestamp o un contatore per l'alternanza zigzag
-            index: this.notes.length 
+            index: Date.now() + Math.random() // Indice univoco per lo zigzag
         });
     }
 
@@ -95,7 +100,6 @@ export class scoreVisualizer {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         if (imageLoaded) ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
 
-        // Disegno Playhead
         ctx.strokeStyle = "#ff000022";
         ctx.lineWidth = 2;
         ctx.beginPath(); ctx.moveTo(playheadX, 0); ctx.lineTo(playheadX, canvas.height); ctx.stroke();
@@ -109,36 +113,28 @@ export class scoreVisualizer {
             n.x -= 3.5; 
 
             if (n.x > leftLimit) {
-                // --- LOGICA COLORE (Orchestra) ---
-                if (this.currentGenre === "orchestra" && n.isSecondary) {
-                    ctx.fillStyle = "#191970"; // Blu Notte per Viola/Contrabbasso
-                } else {
-                    ctx.fillStyle = "#000000"; // Nero standard
-                }
+                // Gestione Colore (Orchestra: Blu Notte per Viola/Bass)
+                ctx.fillStyle = (n.isSecondary && this.currentGenre === "orchestra") ? "#191970" : "#000000";
 
-                // 2️⃣ I QUADRATI RESTANO ALLINEATI
-                // Per il secondario (Viola/Bass) li abbassiamo solo di 8px per non sovrapporli
+                // QUADRATI: Allineati (ma sfalsati leggermente se secondari per non sovrapporsi)
                 const rectY = n.isSecondary ? y + 5 : y - 3;
                 ctx.fillRect(n.x - 3, rectY, 6, 6);
 
-                // 3️⃣ LE ETICHETTE ALTERNANO (ZIGZAG)
-                // Usiamo l'indice della nota per decidere se stare su riga 1 o riga 2
+                // ETICHETTE: ZigZag (una sopra e una sotto l'altra)
                 ctx.font = "bold 9px 'Courier New', monospace";
                 ctx.textAlign = "center";
                 
-                let textY;
-                if (this.currentGenre === "orchestra" && n.isSecondary) {
-                    // La Viola/Bass ha le etichette ancora più in alto per non scontrarsi col Violino
-                    textY = (n.index % 2 === 0) ? y - 28 : y - 38;
-                } else {
-                    // Violino, Piano Lead, Metal Lead usano zigzag standard
-                    textY = (n.index % 2 === 0) ? y - 12 : y - 22;
-                }
+                // Determina altezza testo (alternata ogni 2 note)
+                const isEven = Math.floor(n.index / 100) % 2 === 0;
+                let textY = isEven ? y - 12 : y - 22;
+
+                // Se è un secondario (Viola), alza ancora di più per non coprire il Violino
+                if (n.isSecondary) textY -= 15;
 
                 if (n.track !== "Drums") {
                     ctx.fillText(n.label, n.x, textY);
                 } else {
-                    // Logica Drums (Metal)
+                    // Batteria Metal
                     if (n.label.includes("Kick")) {
                          ctx.fillRect(n.x - 3, y + 5, 6, 6);
                     } else {
