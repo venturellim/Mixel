@@ -101,18 +101,40 @@ export async function createOrchestraEngine(params, score) {
                             const violaNote = safeNote(getScaleDegree(scale, rootIdx + 2), "4");
                             if (violaNote) viola.triggerAttackRelease(violaNote, "4n", time, 0.4);
 
-                            Tone.Draw.schedule(() => { if (score) score.addNote("Lead", vNote, section.name); }, time);
+                            // --- VIOLINO ---
+Tone.Draw.schedule(() => { 
+    if (score) score.addNote("Lead", vNote, section.name, false); // false = primario (nero)
+}, time);
+
+// --- VIOLA ---
+Tone.Draw.schedule(() => { 
+    if (score) score.addNote("Lead", violaNote, section.name, true); // true = secondario (blu)
+}, time);
+
                         }
 
                         // --- BASS (Cello + DoubleBass) ---
-                        if (s === 0 || (s === 4 && energy > 0.7)) {
-                            const bNote = safeNote(baseNote, "2");
-                            if (bNote) {
-                                cello.triggerAttackRelease(bNote, "2n", time, 0.7);
-                                doubleBass.triggerAttackRelease(Tone.Frequency(bNote).transpose(-12).toNote(), "2n", time, 0.8);
-                                Tone.Draw.schedule(() => { if (score) score.addNote("Bass", bNote, section.name); }, time);
-                            }
-                        }
+                        // --- CELLO & BASS (Canale: Bass) ---
+if (s % 4 === 0) {
+    const bNote = safeNote(baseNote, "2");
+    if (bNote) {
+        // Esecuzione audio
+        cello.triggerAttackRelease(bNote, "2n", time, 0.7);
+        const dbNote = Tone.Frequency(bNote).transpose(-12).toNote();
+        doubleBass.triggerAttackRelease(dbNote, "2n", time, 0.5);
+
+        // Visualizzazione sdoppiata
+        Tone.Draw.schedule(() => { 
+            if (score) {
+                // 1. Il Cello (nero, posizione standard)
+                score.addNote("Bass", bNote, section.name, false); 
+                // 2. Il Contrabbasso (blu notte, posizione sfasata)
+                score.addNote("Bass", dbNote, section.name, true); 
+            }
+        }, time);
+    }
+}
+
 
                         // --- PERCUSSION (Timpani) ---
                         if (s === 0 && (energy > 0.5 || section.name === "chorus")) {
