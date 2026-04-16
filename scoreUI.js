@@ -1,7 +1,7 @@
 // scoreUI.js — ver. 011
 // Fix: Aggiunto setTheme, Label zigzag, Dual-color Orchestra, No Ottave
 
-console.log("scoreUI.js ver. 011 loaded");
+console.log("scoreUI.js ver. 011.1 loaded");
 
 export class scoreVisualizer {
     constructor() {
@@ -92,13 +92,28 @@ export class scoreVisualizer {
         
         const tracks = {
             "Lead":   { y: 0.22, label: currentLabels["Lead"] },    
-            "Rhythm": { y: 0.45, label: currentLabels["Rhythm"] },  
-            "Bass":   { y: 0.70, label: currentLabels["Bass"] },       
-            "Drums":  { y: 0.88, label: currentLabels["Drums"] }       
+            "Rhythm": { y: 0.42, label: currentLabels["Rhythm"] },  
+            "Bass":   { y: 0.60, label: currentLabels["Bass"] },       
+            "Drums":  { y: 0.80, label: currentLabels["Drums"] }       
         };
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         if (imageLoaded) ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
+        
+        if (this.currentSection) {
+            ctx.fillStyle = "#ff0000"; 
+            ctx.font = "bold 22px serif"; 
+            ctx.textAlign = "left";
+            ctx.fillText(this.currentSection.toUpperCase(), leftLimit + 20, canvas.height * 0.12); 
+        }
+        
+Object.keys(tracks).forEach(key => {
+            const trackY = canvas.height * tracks[key].y;
+            ctx.fillStyle = "#444";
+            ctx.font = "bold 11px sans-serif";
+            ctx.textAlign = "left";
+            ctx.fillText(tracks[key].label, canvas.width * 0.02, trackY - 15);
+        });
 
         ctx.strokeStyle = "#ff000022";
         ctx.lineWidth = 2;
@@ -111,6 +126,30 @@ export class scoreVisualizer {
             
             let y = canvas.height * trackCfg.y;
             n.x -= 3.5; 
+            if (this.currentGenre === "metal" && n.track === "Drums") {
+                if (n.label.includes("Kick"))  y += 6;
+                if (n.label.includes("Snare")) y -= 2;
+                if (n.label.includes("HiHat")) y -= 12;
+                if (n.label.includes("Crash")) y -= 22;
+            }
+
+            n.x -= 3.5; 
+
+            if (n.x > leftLimit) {
+                ctx.fillStyle = "#000";
+                if (this.currentGenre === "metal" && n.track === "Drums") {
+                    if (n.label.includes("Kick") || n.label.includes("Snare")) {
+                        ctx.fillRect(n.x - 3, y - 3, 6, 6);
+                    } else {
+                        ctx.font = "bold 8px sans-serif";
+                        ctx.fillText("✕", n.x, y + 4);
+                        ctx.font = "bold 8px 'Courier New', monospace";
+                    }
+                } else {
+                    ctx.fillRect(n.x - 3, y - 3, 6, 6); 
+                    ctx.fillText(n.label, n.x, y - 12);
+                }
+            }
 
             if (n.x > leftLimit) {
                 // Gestione Colore (Orchestra: Blu Notte per Viola/Bass)
@@ -131,17 +170,6 @@ export class scoreVisualizer {
                 // Se è un secondario (Viola), alza ancora di più per non coprire il Violino
                 if (n.isSecondary) textY -= 15;
 
-                if (n.track !== "Drums") {
-                    ctx.fillText(n.label, n.x, textY);
-                } else {
-                    // Batteria Metal
-                    if (n.label.includes("Kick")) {
-                         ctx.fillRect(n.x - 3, y + 5, 6, 6);
-                    } else {
-                         ctx.fillText("✕", n.x, y);
-                    }
-                }
-            }
             if (n.x < leftLimit) this.notes.splice(i, 1);
         }
         requestAnimationFrame(() => this.render());
