@@ -9,7 +9,8 @@ export function scheduleRhythm(section, progression, instruments, params, rand, 
     if (!drums || !guitarPalm || !bass) return;
 
     const name = section?.name?.toLowerCase() || "";
-    const isChorus = name.includes("chorus") && !name.includes("pre");
+    const isChorus = name.includes("chorus") ||
+name.includes("solo") && !name.includes("pre"); 
     const isPreChorus = name.includes("pre");
     const isIntro = name.includes("intro") || name.includes("outro");
     const stepTime = measureDur / 16;
@@ -39,7 +40,15 @@ export function scheduleRhythm(section, progression, instruments, params, rand, 
 
         for (let s = 0; s < 16; s++) {
             const absoluteTime = measureStartTime + (s * stepTime);
-            let kick = false, snare = false, playGuitar = false, inst = guitarPalm, sustain = false, customNote = null;
+            let kick = false, snare = false, playGuitar = false, sustain = false, customNote = null;
+
+// Regola di default
+let inst = guitarPalm;
+
+// Chorus: 85% guitarOpen, 15% guitarPalm
+if (isChorus) {
+    inst = (rand() < 0.85) ? guitarOpen : guitarPalm;
+}
 
             // --- LOGICA GROOVE (Rimane invariata) ---
             switch (currentGroove) {
