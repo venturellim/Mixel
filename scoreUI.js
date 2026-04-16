@@ -1,7 +1,6 @@
 // scoreUI.js — ver. 012
 // Fix: Allineamento strumenti su stessa riga con dual-color (Violino/Viola)
-// Fix: Rimossa doppia sottrazione playhead
-// Fix: Y base separata per ogni strumento
+// Fix: Playhead FERMA a destra, solo le note si muovono
 
 console.log("scoreUI.js ver. 012 loaded");
 
@@ -15,7 +14,7 @@ export class scoreVisualizer {
         this.currentGenre = "metal";
         this.notes = [];
         this.currentSection = "";
-        this.totalDuration = 0; // Verrà impostato dall'engine
+        this.totalDuration = 0;
 
         this.bgImage = new Image();
         this.bgImage.src = "Pentagramma.jpg"; 
@@ -47,7 +46,6 @@ export class scoreVisualizer {
 
     cleanNoteLabel(note) {
         if (!note || typeof note !== 'string') return "";
-        // Prende solo la nota senza il numero dell'ottava (es: C#4 -> C#)
         return isNaN(parseInt(note[1])) ? note.substring(0, 2) : note.substring(0, 1);
     }
 
@@ -57,7 +55,7 @@ export class scoreVisualizer {
         this.canvas.id = "scoreCanvas"; 
         if (!this.canvas.parentElement) document.body.appendChild(this.canvas);
         if (!this.closeBtn.parentElement) document.body.appendChild(this.closeBtn);
-        this.playheadX = this.canvas.width * 0.85;
+        this.playheadX = this.canvas.width * 0.85;  // FISSA, NON SI MUOVE
         this.leftLimit = this.canvas.width * 0.12; 
     }
 
@@ -79,18 +77,9 @@ export class scoreVisualizer {
         this.currentSection = section;
         if (this.notes.length > 500) this.notes.shift();
         
-        // Calcola posizione X basata sul tempo musicale o usa playheadX corrente
-        let x = this.playheadX;
-        if (musicalTime !== null && this.totalDuration > 0) {
-            // Mappa il tempo (0..totalDuration) alla posizione X (playheadX iniziale..leftLimit)
-            const startX = this.canvas.width * 0.85;
-            const endX = this.leftLimit;
-            const progress = musicalTime / this.totalDuration;
-            x = startX - (startX - endX) * progress;
-        }
-        
+        // Tutte le note nascono alla playheadX (destra)
         this.notes.push({
-            x: x,
+            x: this.playheadX,
             track: track,
             label: this.cleanNoteLabel(note),
             isSecondary: isSecondary,
@@ -132,15 +121,15 @@ export class scoreVisualizer {
             ctx.fillText(tracks[key].label, canvas.width * 0.02, trackY - 15);
         });
 
-        // Linea del playhead
-        ctx.strokeStyle = "#ff000022";
+        // Linea del playhead (FERMA a destra)
+        ctx.strokeStyle = "#ff0000";
         ctx.lineWidth = 2;
         ctx.beginPath(); 
         ctx.moveTo(playheadX, 0); 
         ctx.lineTo(playheadX, canvas.height); 
         ctx.stroke();
 
-        // Disegna tutte le note
+        // Disegna tutte le note (scorrono verso sinistra)
         for (let i = this.notes.length - 1; i >= 0; i--) {
             const n = this.notes[i];
             const trackCfg = tracks[n.track];
@@ -149,7 +138,7 @@ export class scoreVisualizer {
             // Y BASE dello strumento (NON modificabile)
             const baseY = canvas.height * trackCfg.y;
             
-            // Sposta la nota verso sinistra (scroll effect)
+            // Sposta la nota verso sinistra (questo crea lo scrolling)
             n.x -= 3.5;
             
             if (n.x > leftLimit) {
@@ -224,11 +213,8 @@ export class scoreVisualizer {
             if (n.x < leftLimit) this.notes.splice(i, 1);
         }
         
-        // Aggiorna playheadX per lo scroll continuo (si muove lentamente)
-        // Questo simula lo scorrimento dello spartito
-        if (this.playheadX > this.leftLimit) {
-            this.playheadX -= 1.5;
-        }
+        // playhead NON SI MUOVE - rimane fissa a destra
+        // le note si muovono da sole con n.x -= 3.5
         
         requestAnimationFrame(() => this.render());
     }
