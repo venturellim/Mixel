@@ -3,7 +3,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 006 loaded");
+console.log("metalLeadEngine.js ver. 006.1 loaded");
 
 export function scheduleLead(section, progression, instruments, params, rand, measureDur, score) {
     const { guitarLead } = instruments || {};
@@ -165,20 +165,37 @@ export function scheduleLead(section, progression, instruments, params, rand, me
                 }, absoluteTime);
             });
         } else {
-            // Logica Assolo (Simplified per lo spartito)
-            for (let block = 0; block < 4; block++) {
-                const s = block * 4;
-                const absoluteTime = measureStartTime + (s * stepTime);
-                const note = normalizeNote(currentScale[0], "guitarLead") + 5;
-                
-                Tone.Transport.schedule(time => {
-                    guitarLead.triggerAttackRelease(note, "16n", time);
-                    
-                    Tone.Draw.schedule(() => {
-                        if (score) score.addNote("Lead", note, section.name + " SOLO");
-                    }, time);
-                }, absoluteTime);
-            }
-        }
+    // --- 🎸 ASSOLO VERO (melodico + tecnico) ---
+    const soloPatterns = [
+        // Scala ascendente
+        [0, 2, 3, 5, 7, 8, 10, 12],
+        // Scala discendente
+        [12, 10, 8, 7, 5, 3, 2, 0],
+        // Arpeggio triadico
+        [0, 4, 7, 12, 7, 4, 0, 12],
+        // Pattern "power metal"
+        [0, 7, 4, 9, 7, 12, 9, 14],
+        // Frase melodica
+        [0, 2, 4, 7, 5, 4, 2, 0]
+    ];
+
+    const solo = soloPatterns[Math.floor(rand() * soloPatterns.length)];
+
+    for (let i = 0; i < solo.length; i++) {
+        const s = i * 2; // 8th notes
+        const absoluteTime = measureStartTime + (s * stepTime);
+        const idx = solo[i] % currentScale.length;
+        const note = normalizeNote(currentScale[idx], "guitarLead") + 5;
+
+        Tone.Transport.schedule(time => {
+            guitarLead.triggerAttackRelease(note, "8n", time);
+
+            Tone.Draw.schedule(() => {
+                if (score) score.addNote("Lead", note, section.name + " SOLO");
+            }, time);
+        }, absoluteTime);
+    }
+}
+
     }
 }
