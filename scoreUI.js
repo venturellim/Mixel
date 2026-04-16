@@ -107,7 +107,7 @@ export class scoreVisualizer {
             ctx.fillText(this.currentSection.toUpperCase(), leftLimit + 20, canvas.height * 0.12); 
         }
         
-Object.keys(tracks).forEach(key => {
+        Object.keys(tracks).forEach(key => {
             const trackY = canvas.height * tracks[key].y;
             ctx.fillStyle = "#444";
             ctx.font = "bold 11px sans-serif";
@@ -170,8 +170,12 @@ Object.keys(tracks).forEach(key => {
                 // Se è un secondario (Viola), alza ancora di più per non coprire il Violino
                 if (n.isSecondary) textY -= 15;
 
+                ctx.fillText(n.label, n.x, textY);
+            }
+
             if (n.x < leftLimit) this.notes.splice(i, 1);
         }
+        
         requestAnimationFrame(() => this.render());
     }
 }
