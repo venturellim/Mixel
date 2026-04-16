@@ -2,7 +2,7 @@
 // Fix: Allineamento strumenti su stessa riga con dual-color (Violino/Viola)
 // Fix: Playhead FERMA a destra, solo le note si muovono
 
-console.log("scoreUI.js ver. 012.1 loaded");
+console.log("scoreUI.js ver. 012.2 loaded");
 
 export class scoreVisualizer {
     constructor() {
@@ -151,13 +151,13 @@ export class scoreVisualizer {
                 if (n.label.includes("HiHat")) y -= 12;
                 if (n.label.includes("Crash")) y -= 22;
                     
+                    if (this.currentGenre === "metal" && n.track === "Drums") {
                     if (n.label.includes("Kick") || n.label.includes("Snare")) {
-                        ctx.fillStyle = "#000";
-                        ctx.fillRect(n.x - 3, drumY - 3, 6, 6);
+                        ctx.fillRect(n.x - 3, y - 3, 6, 6);
                     } else {
-                        ctx.fillStyle = "#000";
                         ctx.font = "bold 8px sans-serif";
-                        ctx.fillText("✕", n.x, drumY + 4);
+                        ctx.fillText("✕", n.x, y + 4);
+                        ctx.font = "bold 8px 'Courier New', monospace";
                     }
                 }
                 
