@@ -39,7 +39,7 @@ export function createMetalEngine(params, score) {
         { name: "verse",     weight: 8 },
         { name: "prechorus", weight: preChorusWeight },
         { name: "chorus",    weight: 8 },
-        { name: "solo",      weight: params.imageParams.complexity > 0.6 ? 8 : 0 },
+        { name: "solo",      weight: params.imageParams.complexity > 0.6 ? 16 : 0 },
         { name: "chorus",    weight: 8 },
         { name: "outro",     weight: 4 }
     ];
