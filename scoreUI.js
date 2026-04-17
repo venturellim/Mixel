@@ -1,7 +1,7 @@
 // scoreUI.js — ver. 013
 // Logica: Batteria 8.1 (precisa), Canali Xtra, ZigZag e No Ottave
 
-console.log("scoreUI.js ver. 013.1 loaded");
+console.log("scoreUI.js ver. 013 loaded");
 
 export class scoreVisualizer {
     constructor() {
