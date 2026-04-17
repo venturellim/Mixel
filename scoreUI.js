@@ -1,7 +1,7 @@
-// scoreUI.js — ver. 013.2
-// Proporzioni stabili (come v13), ma con elementi ingranditi (Large Mode)
+// scoreUI.js — ver. 013
+// Logica: Batteria 8.1 (precisa), Canali Xtra, ZigZag e No Ottave
 
-console.log("scoreUI.js ver. 013.2 loaded");
+console.log("scoreUI.js ver. 013.1 loaded");
 
 export class scoreVisualizer {
     constructor() {
@@ -26,9 +26,22 @@ export class scoreVisualizer {
         this.closeBtn.onclick = () => this.hide();
 
         this.themes = {
-            metal: { "Lead": "GT LEAD", "LeadXtra": "", "Rhythm": "GT RHYTHM", "RhythmXtra": "", "Bass": "BASS", "BassXtra": "", "Drums": "DRUMS" },
-            orchestra: { "Lead": "VIOLIN", "LeadXtra": "VIOLA", "Rhythm": "HARPSICHORD", "RhythmXtra": "", "Bass": "DOUBLE BASS", "BassXtra": "CELLO", "Drums": "TIMPANI" },
-            piano: { "Lead": "PIANO R", "LeadXtra": "", "Rhythm": "PIANO L", "RhythmXtra": "" }
+            metal: { 
+                "Lead": "GT LEAD", "LeadXtra": "", 
+                "Rhythm": "GT RHYTHM", "RhythmXtra": "",
+                "Bass": "BASS", "BassXtra": "",
+                "Drums": "DRUMS" 
+            },
+            orchestra: { 
+                "Lead": "VIOLIN", "LeadXtra": "VIOLA", 
+                "Rhythm": "HARPSICHORD", "RhythmXtra": "",
+                "Bass": "DOUBLE BASS", "BassXtra": "CELLO",
+                "Drums": "TIMPANI" 
+            },
+            piano: { 
+                "Lead": "PIANO R", "LeadXtra": "", 
+                "Rhythm": "PIANO L", "RhythmXtra": "" 
+            }
         };
 
         this.initCanvas();
@@ -36,11 +49,14 @@ export class scoreVisualizer {
     }
 
     setTheme(genre) {
-        if (this.themes[genre]) this.currentGenre = genre;
+        if (this.themes[genre]) {
+            this.currentGenre = genre;
+        }
     }
 
     cleanNoteLabel(note) {
         if (!note || typeof note !== 'string') return "";
+        // Se è batteria, non puliamo l'etichetta (serve "Kick", "Snare", etc.)
         if (["Kick", "Snare", "HiHat", "Crash", "Timpano"].some(t => note.includes(t))) return note;
         return isNaN(parseInt(note[1])) ? note.substring(0, 2) : note.substring(0, 1);
     }
@@ -85,23 +101,20 @@ export class scoreVisualizer {
         const { ctx, canvas, playheadX, leftLimit, bgImage, imageLoaded } = this;
         const currentLabels = this.themes[this.currentGenre] || this.themes.metal;
         
-        const tracksY = { "Lead": 0.22, "LeadXtra": 0.22, "Rhythm": 0.45, "RhythmXtra": 0.45, "Bass": 0.70, "BassXtra": 0.70, "Drums": 0.88 };
+        const tracksY = {
+            "Lead": 0.22, "LeadXtra": 0.22,
+            "Rhythm": 0.45, "RhythmXtra": 0.45,
+            "Bass": 0.70, "BassXtra": 0.70,
+            "Drums": 0.88
+        };
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        // Disegno immagine di fondo (Proporzioni 1:1 con il canvas per stabilità)
-        if (imageLoaded) {
-            ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
-        }
+        if (imageLoaded) ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
 
         // Playhead
         ctx.strokeStyle = "#ff000022";
         ctx.lineWidth = 2;
         ctx.beginPath(); ctx.moveTo(playheadX, 0); ctx.lineTo(playheadX, canvas.height); ctx.stroke();
-
-        // DIMENSIONI MAGGIORATE
-        const rectSize = 10; 
-        const halfSize = rectSize / 2;
 
         for (let i = this.notes.length - 1; i >= 0; i--) {
             const n = this.notes[i];
@@ -113,38 +126,39 @@ export class scoreVisualizer {
             n.x -= 3.5; 
 
             if (n.x > leftLimit) {
-                // --- BATTERIA ---
+                // --- SEZIONE BATTERIA (LOGICA 8.1) ---
                 if (n.track === "Drums") {
                     ctx.fillStyle = "#000";
-                    if (n.label.includes("Kick"))  y += 8;
+                    // Offset verticali per i pezzi della batteria
+                    if (n.label.includes("Kick"))  y += 6;
                     if (n.label.includes("Snare")) y -= 2;
-                    if (n.label.includes("HiHat")) y -= 15;
-                    if (n.label.includes("Crash")) y -= 28;
+                    if (n.label.includes("HiHat")) y -= 12;
+                    if (n.label.includes("Crash")) y -= 22;
 
                     if (n.label.includes("Kick") || n.label.includes("Snare") || n.label.includes("Timpano")) {
-                        ctx.fillRect(n.x - halfSize, y - halfSize, rectSize, rectSize);
+                        ctx.fillRect(n.x - 3, y - 3, 6, 6); // Quadratino per tamburi
                     } else {
-                        ctx.font = "bold 15px sans-serif";
-                        ctx.fillText("✕", n.x, y + 6);
+                        ctx.font = "bold 12px sans-serif";
+                        ctx.fillText("✕", n.x, y + 4); // X per piatti
                     }
                 } 
-                // --- MELODICI ---
+                // --- SEZIONE STRUMENTI (ORCHESTRA XTRA / ZIGZAG) ---
                 else {
                     const isXtra = n.track.includes("Xtra");
                     const hasPartner = currentLabels[baseT + "Xtra"] !== "";
 
                     if (hasPartner) {
                         ctx.fillStyle = isXtra ? "#191970" : "#000000";
-                        const rectY = isXtra ? y + 8 : y - 4;
-                        ctx.fillRect(n.x - halfSize, rectY - halfSize, rectSize, rectSize);
-                        ctx.font = "bold 13px 'Courier New', monospace";
-                        ctx.fillText(n.label, n.x, isXtra ? y - 32 : y - 16);
+                        const rectY = isXtra ? y + 5 : y - 3;
+                        ctx.fillRect(n.x - 3, rectY, 6, 6);
+                        ctx.font = "bold 11px 'Courier New', monospace";
+                        ctx.fillText(n.label, n.x, isXtra ? y - 25 : y - 12);
                     } else {
                         ctx.fillStyle = "#000000";
-                        ctx.fillRect(n.x - halfSize, y - halfSize, rectSize, rectSize);
+                        ctx.fillRect(n.x - 3, y - 3, 6, 6);
                         const isEven = Math.floor(n.index / 100) % 2 === 0;
-                        ctx.font = "bold 13px 'Courier New', monospace";
-                        ctx.fillText(n.label, n.x, isEven ? y - 16 : y - 30);
+                        ctx.font = "bold 11px 'Courier New', monospace";
+                        ctx.fillText(n.label, n.x, isEven ? y - 12 : y - 22);
                     }
                 }
             }
