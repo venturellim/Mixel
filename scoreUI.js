@@ -2,7 +2,7 @@
 // Logica: Batteria 8.1 (precisa), Canali Xtra, ZigZag e No Ottave
 // CORRETTO: note scorrono, etichette visibili
 
-console.log("scoreUI.js ver. 013.13 loaded");
+console.log("scoreUI.js ver. 013.14 loaded");
 
 export class scoreVisualizer {
     constructor() {
@@ -112,7 +112,7 @@ export class scoreVisualizer {
         // Etichette per la visualizzazione a sinistra
         const tracksDisplay = {
             "Lead": { y: 0.22, label: currentLabels["Lead"] },
-            "LeadXtra": { y: 0.19, elabel: currentLabels["LeadXtra"] },
+            "LeadXtra": { y: 0.19, label: currentLabels["LeadXtra"] },
             "Rhythm": { y: 0.40, label: currentLabels["Rhythm"] },
             "RhythmXtra": { y: 0.37, label: currentLabels["RhythmXtra"] },
             "Bass": { y: 0.58, label: currentLabels["Bass"] },
@@ -148,11 +148,11 @@ export class scoreVisualizer {
 
         // Disegna tutte le note (scorrono verso sinistra)
         
-        Object.keys(tracksDisplay).forEach(trackName => {
+        Object.keys(tracksY).forEach(trackName => {
             if (trackName === "Drums") {
                 const label = currentLabels["Drums"];
                 if (label && label !== "") {
-                    const y = canvas.height * tracksDisplay[trackName];
+                    const y = canvas.height * tracksY[trackName];
                     ctx.fillStyle = "#444";
                     ctx.fillText(label, labelOffsetX, y - 8);
                 }
@@ -160,7 +160,7 @@ export class scoreVisualizer {
                 const baseTrack = trackName.replace("Xtra", "");
                 const label = currentLabels[trackName];
                 if (label && label !== "") {
-                    const y = canvas.height * tracksDisplay[trackName];
+                    const y = canvas.height * tracksY[trackName] - 3;
                     // Colore diverso per Xtra
                     ctx.fillStyle = trackName.includes("Xtra") ? "#000080" : "#444";
                     ctx.fillText(label, labelOffsetX, y - 8);
@@ -180,10 +180,10 @@ export class scoreVisualizer {
                 // --- BATTERIA ---
                 if (n.track === "Drums") {
                     ctx.fillStyle = "#000";
-                    if (n.label.includes("Kick"))  y += 14;
-                    if (n.label.includes("Snare")) y += 6;
-                    if (n.label.includes("HiHat")) y -= 4;
-                    if (n.label.includes("Crash")) y -= 14;
+                    if (n.label.includes("Kick"))  y += 18;
+                    if (n.label.includes("Snare")) y += 10;
+                     if (n.label.includes("HiHat")) y -= 0;
+                    if (n.label.includes("Crash")) y -= 10;
 
                     if (n.label.includes("Kick") || n.label.includes("Snare") || n.label.includes("Timpano")) {
                         ctx.fillRect(n.x - 3, y - 3, 6, 6);
