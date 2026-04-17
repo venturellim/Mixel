@@ -101,6 +101,19 @@ export class scoreVisualizer {
         const { ctx, canvas, playheadX, leftLimit, bgImage, imageLoaded } = this;
         const currentLabels = this.themes[this.currentGenre] || this.themes.metal;
         
+        const tracks = {
+            "Lead":   { y: 0.24, label: currentLabels["Lead"] },    
+            "Rhythm": { y: 0.42, label: currentLabels["Rhythm"] },  
+            "Bass":   { y: 0.60, label: currentLabels["Bass"] },       
+            "Drums":  { y: 0.80, label: currentLabels["Drums"] }       
+        };
+        
+        const tracksXtra = {
+            "LeadXtra":   { y: 0.14, label: currentLabels["LeadXtra"] },    
+            "RhythmXtra": { y: 0.32, label: currentLabels["RhythmXtra"] },  
+            "BassXtra":   { y: 0.50, label: currentLabels["BassXtra"] }       
+        };
+        
         const tracksY = {
             "Lead": 0.22, "LeadXtra": 0.22,
             "Rhythm": 0.45, "RhythmXtra": 0.45,
@@ -110,6 +123,30 @@ export class scoreVisualizer {
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         if (imageLoaded) ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
+
+// scritte sezione e strumenti 
+if (this.currentSection) {
+            ctx.fillStyle = "#ff0000"; 
+            ctx.font = "bold 22px serif"; 
+            ctx.textAlign = "left";
+            ctx.fillText(this.currentSection.toUpperCase(), leftLimit + 20, canvas.height * 0.12); 
+        }
+
+        Object.keys(tracks).forEach(key => {
+            const trackY = canvas.height * tracks[key].y;
+            ctx.fillStyle = "#444";
+            ctx.font = "bold 11px sans-serif";
+            ctx.textAlign = "left";
+            ctx.fillText(tracks[key].label, canvas.width * 0.02, trackY - 15);
+        });
+        
+        Object.keys(tracksXtra).forEach(key => {
+            const trackY = canvas.height * tracks[key].y;
+            ctx.fillStyle = "#191970";
+            ctx.font = "bold 11px sans-serif";
+            ctx.textAlign = "left";
+            ctx.fillText(tracks[key].label, canvas.width * 0.02, trackY - 15);
+        });
 
         // Playhead
         ctx.strokeStyle = "#ff000022";
@@ -138,7 +175,7 @@ export class scoreVisualizer {
                     if (n.label.includes("Kick") || n.label.includes("Snare") || n.label.includes("Timpano")) {
                         ctx.fillRect(n.x - 3, y - 3, 6, 6); // Quadratino per tamburi
                     } else {
-                        ctx.font = "bold 12px sans-serif";
+                        ctx.font = "bold 10px sans-serif";
                         ctx.fillText("✕", n.x, y + 4); // X per piatti
                     }
                 } 
@@ -157,7 +194,7 @@ export class scoreVisualizer {
                         ctx.fillStyle = "#000000";
                         ctx.fillRect(n.x - 3, y - 3, 6, 6);
                         const isEven = Math.floor(n.index / 100) % 2 === 0;
-                        ctx.font = "bold 9px 'Courier New', monospace";
+                        ctx.font = "bold 11px 'Courier New', monospace";
                         ctx.fillText(n.label, n.x, isEven ? y - 12 : y - 22);
                     }
                 }
