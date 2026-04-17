@@ -2,7 +2,7 @@
 // Unione: struttura e orchestra dalla 012, gestione drums IDENTICA alla 008.1
 // Fix: Kick/Snare = quadrati, HiHat/Crash = X, con offset Y corretti
 
-console.log("scoreUI.js ver. 013.1 loaded");
+console.log("scoreUI.js ver. 013.2 loaded");
 
 export class scoreVisualizer {
     constructor() {
