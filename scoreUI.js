@@ -1,7 +1,7 @@
 // scoreUI.js — ver. 013
 // Logica: Batteria 8.1 (precisa), Canali Xtra, ZigZag e No Ottave
 
-console.log("scoreUI.js ver. 013.2 loaded");
+console.log("scoreUI.js ver. 013.3 loaded");
 
 export class scoreVisualizer {
     constructor() {
@@ -133,19 +133,19 @@ if (this.currentSection) {
         }
 
         Object.keys(tracks).forEach(key => {
-            const trackY = canvas.height * tracks[key].y;
+            const trackdYmo = canvas.height * tracks[key].y;
             ctx.fillStyle = "#444";
             ctx.font = "bold 11px sans-serif";
             ctx.textAlign = "right";
-            ctx.fillText(tracks[key].label, canvas.width * 0.02, trackY - 15);
+            ctx.fillText(tracks[key].label, canvas.width * 0.02, trackdYmo - 15);
         });
         
         Object.keys(tracksXtra).forEach(key => {
-            const trackY = canvas.height * tracks[key].y;
+            const trackdYmoXtra = canvas.height * tracks[key].y;
             ctx.fillStyle = "#191970";
             ctx.font = "bold 11px sans-serif";
             ctx.textAlign = "left";
-            ctx.fillText(tracks[key].label, canvas.width * 0.02, trackY - 15);
+            ctx.fillText(tracks[key].label, canvas.width * 0.02, trackdYmoXtra - 15);
         });
 
         // Playhead
