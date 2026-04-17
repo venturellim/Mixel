@@ -2,7 +2,7 @@
 // Logica: Batteria 8.1 (precisa), Canali Xtra, ZigZag e No Ottave
 // CORRETTO: note scorrono, etichette visibili
 
-console.log("scoreUI.js ver. 013.8 loaded");
+console.log("scoreUI.js ver. 013.9 loaded");
 
 export class scoreVisualizer {
     constructor() {
@@ -103,8 +103,8 @@ export class scoreVisualizer {
         
         // Posizioni Y per ogni track (LE STESSE usate per disegnare le note)
         const tracksY = {
-            "Lead": 0.22, "LeadXtra": 0.14,
-            "Rhythm": 0.38, "RhythmXtra": 0.30,
+            "Lead": 0.22, "LeadXtra": 0.19,
+            "Rhythm": 0.42, "RhythmXtra": 0.39,
             "Bass": 0.54, "BassXtra": 0.46,
             "Drums": 0.70
         };
@@ -112,9 +112,9 @@ export class scoreVisualizer {
         // Etichette per la visualizzazione a sinistra
         const tracksDisplay = {
             "Lead": { y: 0.22, label: currentLabels["Lead"] },
-            "LeadXtra": { y: 0.14, elabel: currentLabels["LeadXtra"] },
-            "Rhythm": { y: 0.38, label: currentLabels["Rhythm"] },
-            "RhythmXtra": { y: 0.30, label: currentLabels["RhythmXtra"] },
+            "LeadXtra": { y: 0.19, elabel: currentLabels["LeadXtra"] },
+            "Rhythm": { y: 0.42, label: currentLabels["Rhythm"] },
+            "RhythmXtra": { y: 0.39, label: currentLabels["RhythmXtra"] },
             "Bass": { y: 0.54, label: currentLabels["Bass"] },
             "BassXtra": { y: 0.46, label: currentLabels["BassXtra"] },
             "Drums": { y: 0.70, label: currentLabels["Drums"] }
