@@ -1,8 +1,8 @@
-// scoreUI.js — ver. 013
-// Unione: struttura e orchestra dalla 012, gestione drums dalla 008.1 (perfetta)
-// Fix: Playhead ferma, scroll note, dual-color Violino/Viola, Drums metal funzionanti
+// scoreUI.js — ver. 013.1
+// Unione: struttura e orchestra dalla 012, gestione drums IDENTICA alla 008.1
+// Fix: Kick/Snare = quadrati, HiHat/Crash = X, con offset Y corretti
 
-console.log("scoreUI.js ver. 013 loaded");
+console.log("scoreUI.js ver. 013.1 loaded");
 
 export class scoreVisualizer {
     constructor() {
@@ -30,7 +30,7 @@ export class scoreVisualizer {
         this.themes = {
             metal: { "Lead": "GT LEAD", "Rhythm": "GT RHYTHM", "Bass": "BASS", "Drums": "DRUMS" },
             orchestra: { "Lead": "VIOLIN / VIOLA", "Rhythm": "HARPSICHORD", "Bass": "CELLO / BASS", "Drums": "TIMPANI" },
-            piano: { "Lead": "PIANO RIGHT", "Rhythm": "PIANO LEFT" , "Bass": " ", "Drums": " "}
+            piano: { "Lead": "PIANO RIGHT", "Rhythm": "PIANO LEFT" }
         };
 
         this.initCanvas();
@@ -125,7 +125,7 @@ export class scoreVisualizer {
         ctx.lineTo(playheadX, canvas.height); 
         ctx.stroke();
 
-        // Font di default per le note (poi modificato nei vari casi)
+        // Font di default (poi modificato nei drums)
         ctx.font = "bold 8px 'Courier New', monospace";
         ctx.textAlign = "center";
 
@@ -134,28 +134,29 @@ export class scoreVisualizer {
             const trackCfg = tracks[n.track];
             if(!trackCfg) continue;
             
-            // Y BASE dello strumento
             let y = canvas.height * trackCfg.y;
+            
+            // LOGICA DRUMS (IDENTICA alla 008.1 - applicata PRIMA dello spostamento)
+            if (currentGenre === "metal" && n.track === "Drums") {
+                if (n.label.includes("Kick"))  y += 6;
+                if (n.label.includes("Snare")) y -= 2;
+                if (n.label.includes("HiHat")) y -= 12;
+                if (n.label.includes("Crash")) y -= 22;
+            }
             
             // Sposta la nota verso sinistra
             n.x -= 3.5;
             
             if (n.x > leftLimit) {
+                ctx.fillStyle = "#000";
                 
-                // === DRUMS (versione 008.1 - PERFETTA) ===
+                // DRUMS: disegno (IDENTICO alla 008.1)
                 if (currentGenre === "metal" && n.track === "Drums") {
-                    let drumY = y;
-                    if (n.label.includes("Kick")) drumY = y + 6;
-                    if (n.label.includes("Snare")) drumY = y - 2;
-                    if (n.label.includes("HiHat")) drumY = y - 12;
-                    if (n.label.includes("Crash")) drumY = y - 22;
-                    
-                    ctx.fillStyle = "#000";
                     if (n.label.includes("Kick") || n.label.includes("Snare")) {
-                        ctx.fillRect(n.x - 3, drumY - 3, 6, 6);
+                        ctx.fillRect(n.x - 3, y - 3, 6, 6);
                     } else {
                         ctx.font = "bold 8px sans-serif";
-                        ctx.fillText("✕", n.x, drumY + 4);
+                        ctx.fillText("✕", n.x, y + 4);
                         ctx.font = "bold 8px 'Courier New', monospace";
                     }
                 }
@@ -185,14 +186,12 @@ export class scoreVisualizer {
                 
                 // === METAL: Chitarre e Basso (normali) ===
                 else if (currentGenre === "metal") {
-                    ctx.fillStyle = "#000";
                     ctx.fillRect(n.x - 3, y - 3, 6, 6);
                     ctx.fillText(n.label, n.x, y - 12);
                 }
                 
-                // === PIANO o altri generi (normale) ===
+                // === PIANO o altri generi ===
                 else {
-                    ctx.fillStyle = "#000";
                     const rectY = n.isSecondary ? y + 5 : y - 3;
                     ctx.fillRect(n.x - 3, rectY, 6, 6);
                     ctx.fillText(n.label, n.x, y - 12);
