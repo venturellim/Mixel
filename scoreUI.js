@@ -2,7 +2,7 @@
 // Logica: Batteria 8.1 (precisa), Canali Xtra, ZigZag e No Ottave
 // CORRETTO: note scorrono, etichette visibili
 
-console.log("scoreUI.js ver. 013.6 loaded");
+console.log("scoreUI.js ver. 013.7 loaded");
 
 export class scoreVisualizer {
     constructor() {
@@ -67,7 +67,7 @@ export class scoreVisualizer {
         this.canvas.id = "scoreCanvas"; 
         if (!this.canvas.parentElement) document.body.appendChild(this.canvas);
         if (!this.closeBtn.parentElement) document.body.appendChild(this.closeBtn);
-        this.playheadX = this.canvas.width * 0.65;
+        this.playheadX = this.canvas.width * 0.75;
         this.leftLimit = this.canvas.width * 0.12; 
     }
 
@@ -147,6 +147,27 @@ export class scoreVisualizer {
         const labelOffsetX = playheadX + 15; // 15px dopo la playhead
 
         // Disegna tutte le note (scorrono verso sinistra)
+        
+        Object.keys(tracksY).forEach(trackName => {
+            if (trackName === "Drums") {
+                const label = currentLabels["Drums"];
+                if (label && label !== "") {
+                    const y = canvas.height * tracksY[trackName];
+                    ctx.fillStyle = "#444";
+                    ctx.fillText(label, labelOffsetX, y - 8);
+                }
+            } else {
+                const baseTrack = trackName.replace("Xtra", "");
+                const label = currentLabels[trackName];
+                if (label && label !== "") {
+                    const y = canvas.height * tracksY[trackName];
+                    // Colore diverso per Xtra
+                    ctx.fillStyle = trackName.includes("Xtra") ? "#000080" : "#444";
+                    ctx.fillText(label, labelOffsetX, y - 8);
+                }
+            }
+        });
+        
         for (let i = this.notes.length - 1; i >= 0; i--) {
             const n = this.notes[i];
             const trackY_ratio = tracksY[n.track];
