@@ -6,7 +6,7 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { generateSongProgressions } from "../../utils/musicTheory.js"; 
 import { waitForInstruments } from "../../common.js";
 
-console.log("orchestraEngine.js ver. 019 loaded");
+console.log("orchestraEngine.js ver. 019.1 loaded");
 
 function safeNote(note, defaultOctave = "4") {
     if (!note || typeof note !== "string") return null;
@@ -94,7 +94,7 @@ export async function createOrchestraEngine(params, score) {
                             
                             // Visualizzazione VIOLINO (NERO)
                             Tone.Draw.schedule(() => { 
-                                if (score) score.addNote("Lead", vNote, section.name, false);
+                                if (score) score.addNote("Lead", vNote, section.name);
                             }, time);
                         }
 
@@ -106,7 +106,7 @@ export async function createOrchestraEngine(params, score) {
                             
                             // Visualizzazione VIOLA (BLU NOTTE)
                             Tone.Draw.schedule(() => { 
-                                if (score) score.addNote("Lead", violaNote, section.name, true);
+                                if (score) score.addNote("LeadXtra", violaNote, section.name);
                             }, time);
                         }
 
@@ -129,8 +129,8 @@ export async function createOrchestraEngine(params, score) {
 
                                 Tone.Draw.schedule(() => { 
                                     if (score) {
-                                        score.addNote("Bass", bNote, section.name, false);
-                                        score.addNote("Bass", dbNote, section.name, true);
+                                        score.addNote("Bass", dbNote, section.name);
+                                        score.addNote("BassXtra", bNote, section.name);
                                     }
                                 }, time);
                             }
