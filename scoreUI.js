@@ -1,7 +1,8 @@
-// scoreUI.js — ver. 013
+// scoreUI.js — ver. 013.4
 // Logica: Batteria 8.1 (precisa), Canali Xtra, ZigZag e No Ottave
+// CORRETTO: note scorrono, etichette visibili
 
-console.log("scoreUI.js ver. 013.3 loaded");
+console.log("scoreUI.js ver. 013.4 loaded");
 
 export class scoreVisualizer {
     constructor() {
@@ -56,7 +57,6 @@ export class scoreVisualizer {
 
     cleanNoteLabel(note) {
         if (!note || typeof note !== 'string') return "";
-        // Se è batteria, non puliamo l'etichetta (serve "Kick", "Snare", etc.)
         if (["Kick", "Snare", "HiHat", "Crash", "Timpano"].some(t => note.includes(t))) return note;
         return isNaN(parseInt(note[1])) ? note.substring(0, 2) : note.substring(0, 1);
     }
@@ -101,106 +101,113 @@ export class scoreVisualizer {
         const { ctx, canvas, playheadX, leftLimit, bgImage, imageLoaded } = this;
         const currentLabels = this.themes[this.currentGenre] || this.themes.metal;
         
-        const tracks = {
-            "Lead":   { y: 0.24, label: currentLabels["Lead"] },    
-            "Rhythm": { y: 0.42, label: currentLabels["Rhythm"] },  
-            "Bass":   { y: 0.60, label: currentLabels["Bass"] },       
-            "Drums":  { y: 0.80, label: currentLabels["Drums"] }       
-        };
-        
-        const tracksXtra = {
-            "LeadXtra":   { y: 0.14, label: currentLabels["LeadXtra"] },    
-            "RhythmXtra": { y: 0.32, label: currentLabels["RhythmXtra"] },  
-            "BassXtra":   { y: 0.50, label: currentLabels["BassXtra"] }       
-        };
-        
+        // Posizioni Y per ogni track (LE STESSE usate per disegnare le note)
         const tracksY = {
             "Lead": 0.22, "LeadXtra": 0.22,
             "Rhythm": 0.45, "RhythmXtra": 0.45,
             "Bass": 0.70, "BassXtra": 0.70,
             "Drums": 0.88
         };
+        
+        // Etichette per la visualizzazione a sinistra
+        const tracksDisplay = {
+            "Lead": { y: 0.22, label: currentLabels["Lead"] },
+            "LeadXtra": { y: 0.22, label: currentLabels["LeadXtra"] },
+            "Rhythm": { y: 0.45, label: currentLabels["Rhythm"] },
+            "RhythmXtra": { y: 0.45, label: currentLabels["RhythmXtra"] },
+            "Bass": { y: 0.70, label: currentLabels["Bass"] },
+            "BassXtra": { y: 0.70, label: currentLabels["BassXtra"] },
+            "Drums": { y: 0.88, label: currentLabels["Drums"] }
+        };
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         if (imageLoaded) ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
 
-// scritte sezione e strumenti 
-if (this.currentSection) {
+        // Scrive la sezione corrente
+        if (this.currentSection) {
             ctx.fillStyle = "#ff0000"; 
             ctx.font = "bold 22px serif"; 
-            ctx.textAlign = "right";
+            ctx.textAlign = "left";
             ctx.fillText(this.currentSection.toUpperCase(), leftLimit + 20, canvas.height * 0.12); 
         }
 
-        Object.keys(tracks).forEach(key => {
-            const trackdYmo = canvas.height * tracks[key].y;
-            ctx.fillStyle = "#444";
-            ctx.font = "bold 11px sans-serif";
-            ctx.textAlign = "right";
-            ctx.fillText(tracks[key].label, canvas.width * 0.02, trackdYmo - 15);
-        });
-        
-        Object.keys(tracksXtra).forEach(key => {
-            const trackdYmoXtra = canvas.height * tracks[key].y;
-            ctx.fillStyle = "#191970";
-            ctx.font = "bold 11px sans-serif";
-            ctx.textAlign = "left";
-            ctx.fillText(tracks[key].label, canvas.width * 0.02, trackdYmoXtra - 15);
+        // Scrive le etichette degli strumenti a sinistra
+        Object.keys(tracksDisplay).forEach(key => {
+            if (tracksDisplay[key].label && tracksDisplay[key].label !== "") {
+                const trackY = canvas.height * tracksDisplay[key].y;
+                // Colore diverso per Xtra
+                ctx.fillStyle = key.includes("Xtra") ? "#000080" : "#444";
+                ctx.font = "bold 11px sans-serif";
+                ctx.textAlign = "left";
+                ctx.fillText(tracksDisplay[key].label, canvas.width * 0.02, trackY - 15);
+            }
         });
 
-        // Playhead
+        // Playhead (linea rossa)
         ctx.strokeStyle = "#ff000022";
         ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.moveTo(playheadX, 0); ctx.lineTo(playheadX, canvas.height); ctx.stroke();
+        ctx.beginPath(); 
+        ctx.moveTo(playheadX, 0); 
+        ctx.lineTo(playheadX, canvas.height); 
+        ctx.stroke();
 
+        // Disegna tutte le note (scorrono verso sinistra)
         for (let i = this.notes.length - 1; i >= 0; i--) {
             const n = this.notes[i];
-            const baseT = n.track.replace("Xtra", "");
             const trackY_ratio = tracksY[n.track];
             if(!trackY_ratio) continue;
             
             let y = canvas.height * trackY_ratio;
-            n.x -= 3.5; 
+            n.x -= 3.5; // SPOSTA LA NOTA A SINISTRA (scorrimento)
 
             if (n.x > leftLimit) {
-                // --- SEZIONE BATTERIA (LOGICA 8.1) ---
+                // --- BATTERIA ---
                 if (n.track === "Drums") {
                     ctx.fillStyle = "#000";
-                    // Offset verticali per i pezzi della batteria
                     if (n.label.includes("Kick"))  y += 6;
                     if (n.label.includes("Snare")) y -= 2;
                     if (n.label.includes("HiHat")) y -= 12;
                     if (n.label.includes("Crash")) y -= 22;
 
                     if (n.label.includes("Kick") || n.label.includes("Snare") || n.label.includes("Timpano")) {
-                        ctx.fillRect(n.x - 3, y - 3, 6, 6); // Quadratino per tamburi
+                        ctx.fillRect(n.x - 3, y - 3, 6, 6);
                     } else {
                         ctx.font = "bold 10px sans-serif";
-                        ctx.fillText("✕", n.x, y + 4); // X per piatti
+                        ctx.fillText("✕", n.x, y + 4);
                     }
                 } 
-                // --- SEZIONE STRUMENTI (ORCHESTRA XTRA / ZIGZAG) ---
+                // --- STRUMENTI ---
                 else {
                     const isXtra = n.track.includes("Xtra");
-                    const hasPartner = currentLabels[baseT + "Xtra"] !== "";
+                    const hasPartner = currentLabels[n.track.replace("Xtra", "") + "Xtra"] !== "";
+                    
+                    // Verifica se currentLabels esiste per il base track
+                    const baseTrack = n.track.replace("Xtra", "");
+                    const hasValidPartner = currentLabels[baseTrack + "Xtra"] !== undefined && currentLabels[baseTrack + "Xtra"] !== "";
 
-                    if (hasPartner) {
-                        ctx.fillStyle = isXtra ? "#191970" : "#000000";
+                    if (hasValidPartner) {
+                        ctx.fillStyle = isXtra ? "#000080" : "#000000";
                         const rectY = isXtra ? y + 5 : y - 3;
                         ctx.fillRect(n.x - 3, rectY, 6, 6);
                         ctx.font = "bold 11px 'Courier New', monospace";
+                        ctx.fillStyle = isXtra ? "#000080" : "#000000";
                         ctx.fillText(n.label, n.x, isXtra ? y - 25 : y - 12);
                     } else {
                         ctx.fillStyle = "#000000";
                         ctx.fillRect(n.x - 3, y - 3, 6, 6);
                         const isEven = Math.floor(n.index / 100) % 2 === 0;
                         ctx.font = "bold 11px 'Courier New', monospace";
+                        ctx.fillStyle = "#000000";
                         ctx.fillText(n.label, n.x, isEven ? y - 12 : y - 22);
                     }
                 }
             }
-            if (n.x < leftLimit) this.notes.splice(i, 1);
+            // Rimuove le note uscite dal limite sinistro
+            if (n.x < leftLimit) {
+                this.notes.splice(i, 1);
+            }
         }
+        
         requestAnimationFrame(() => this.render());
     }
 }
