@@ -1,7 +1,8 @@
-// scoreUI.js — ver. 013.5
-// Etichette a destra della playhead, playhead spostata a sinistra
+// scoreUI.js — ver. 013.4
+// Logica: Batteria 8.1 (precisa), Canali Xtra, ZigZag e No Ottave
+// CORRETTO: note scorrono, etichette visibili
 
-console.log("scoreUI.js ver. 013.5 loaded");
+console.log("scoreUI.js ver. 013.6 loaded");
 
 export class scoreVisualizer {
     constructor() {
@@ -66,10 +67,8 @@ export class scoreVisualizer {
         this.canvas.id = "scoreCanvas"; 
         if (!this.canvas.parentElement) document.body.appendChild(this.canvas);
         if (!this.closeBtn.parentElement) document.body.appendChild(this.closeBtn);
-        
-        // Playhead spostata più a sinistra (era 0.85, ora 0.35)
-        this.playheadX = this.canvas.width * 0.35;
-        this.leftLimit = this.canvas.width * 0.10; // Limite di cancellazione più a sinistra
+        this.playheadX = this.canvas.width * 0.65;
+        this.leftLimit = this.canvas.width * 0.12; 
     }
 
     show() {
@@ -102,18 +101,29 @@ export class scoreVisualizer {
         const { ctx, canvas, playheadX, leftLimit, bgImage, imageLoaded } = this;
         const currentLabels = this.themes[this.currentGenre] || this.themes.metal;
         
-        // Posizioni Y per ogni track
+        // Posizioni Y per ogni track (LE STESSE usate per disegnare le note)
         const tracksY = {
             "Lead": 0.22, "LeadXtra": 0.22,
             "Rhythm": 0.45, "RhythmXtra": 0.45,
             "Bass": 0.70, "BassXtra": 0.70,
             "Drums": 0.88
         };
+        
+        // Etichette per la visualizzazione a sinistra
+        const tracksDisplay = {
+            "Lead": { y: 0.22, label: currentLabels["Lead"] },
+            "LeadXtra": { y: 0.22, label: currentLabels["LeadXtra"] },
+            "Rhythm": { y: 0.45, label: currentLabels["Rhythm"] },
+            "RhythmXtra": { y: 0.45, label: currentLabels["RhythmXtra"] },
+            "Bass": { y: 0.70, label: currentLabels["Bass"] },
+            "BassXtra": { y: 0.70, label: currentLabels["BassXtra"] },
+            "Drums": { y: 0.88, label: currentLabels["Drums"] }
+        };
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         if (imageLoaded) ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
 
-        // Scrive la sezione corrente (a sinistra)
+        // Scrive la sezione corrente
         if (this.currentSection) {
             ctx.fillStyle = "#ff0000"; 
             ctx.font = "bold 22px serif"; 
@@ -121,40 +131,20 @@ export class scoreVisualizer {
             ctx.fillText(this.currentSection.toUpperCase(), leftLimit + 20, canvas.height * 0.12); 
         }
 
-        // Playhead (linea rossa) - ora più a sinistra
-        ctx.strokeStyle = "#ff0000";
-        ctx.lineWidth = 3;
+        // Playhead (linea rossa)
+        ctx.strokeStyle = "#ff000022";
+        ctx.lineWidth = 2;
         ctx.beginPath(); 
         ctx.moveTo(playheadX, 0); 
         ctx.lineTo(playheadX, canvas.height); 
         ctx.stroke();
-
+        
         // Scrive le etichette degli strumenti a DESTRA della playhead
         ctx.font = "bold 12px sans-serif";
         ctx.textAlign = "left";
         
         // Etichette per ogni track, allineate a destra della playhead
         const labelOffsetX = playheadX + 15; // 15px dopo la playhead
-        
-        Object.keys(tracksY).forEach(trackName => {
-            if (trackName === "Drums") {
-                const label = currentLabels["Drums"];
-                if (label && label !== "") {
-                    const y = canvas.height * tracksY[trackName];
-                    ctx.fillStyle = "#444";
-                    ctx.fillText(label, labelOffsetX, y - 8);
-                }
-            } else {
-                const baseTrack = trackName.replace("Xtra", "");
-                const label = currentLabels[trackName];
-                if (label && label !== "") {
-                    const y = canvas.height * tracksY[trackName];
-                    // Colore diverso per Xtra
-                    ctx.fillStyle = trackName.includes("Xtra") ? "#000080" : "#444";
-                    ctx.fillText(label, labelOffsetX, y - 8);
-                }
-            }
-        });
 
         // Disegna tutte le note (scorrono verso sinistra)
         for (let i = this.notes.length - 1; i >= 0; i--) {
@@ -184,6 +174,9 @@ export class scoreVisualizer {
                 // --- STRUMENTI ---
                 else {
                     const isXtra = n.track.includes("Xtra");
+                    const hasPartner = currentLabels[n.track.replace("Xtra", "") + "Xtra"] !== "";
+                    
+                    // Verifica se currentLabels esiste per il base track
                     const baseTrack = n.track.replace("Xtra", "");
                     const hasValidPartner = currentLabels[baseTrack + "Xtra"] !== undefined && currentLabels[baseTrack + "Xtra"] !== "";
 
