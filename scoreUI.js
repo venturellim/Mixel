@@ -1,7 +1,7 @@
 // scoreUI.js — ver. 013
 // Logica: Batteria 8.1 (precisa), Canali Xtra, ZigZag e No Ottave
 
-console.log("scoreUI.js ver. 013.1 loaded");
+console.log("scoreUI.js ver. 013.2 loaded");
 
 export class scoreVisualizer {
     constructor() {
@@ -111,6 +111,22 @@ export class scoreVisualizer {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         if (imageLoaded) ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
 
+// scritte sezione e strumenti 
+if (this.currentSection) {
+            ctx.fillStyle = "#ff0000"; 
+            ctx.font = "bold 22px serif"; 
+            ctx.textAlign = "left";
+            ctx.fillText(this.currentSection.toUpperCase(), leftLimit + 20, canvas.height * 0.12); 
+        }
+
+        Object.keys(tracks).forEach(key => {
+            const trackY = canvas.height * tracks[key].y;
+            ctx.fillStyle = "#444";
+            ctx.font = "bold 11px sans-serif";
+            ctx.textAlign = "left";
+            ctx.fillText(tracks[key].label, canvas.width * 0.02, trackY - 15);
+        });
+
         // Playhead
         ctx.strokeStyle = "#ff000022";
         ctx.lineWidth = 2;
@@ -138,7 +154,7 @@ export class scoreVisualizer {
                     if (n.label.includes("Kick") || n.label.includes("Snare") || n.label.includes("Timpano")) {
                         ctx.fillRect(n.x - 3, y - 3, 6, 6); // Quadratino per tamburi
                     } else {
-                        ctx.font = "bold 12px sans-serif";
+                        ctx.font = "bold 10px sans-serif";
                         ctx.fillText("✕", n.x, y + 4); // X per piatti
                     }
                 } 
