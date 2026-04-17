@@ -28,15 +28,15 @@ export class scoreVisualizer {
 
         this.themes = {
             metal: { 
-                "Lead": "GT LEAD", "LeadXtra": "", 
-                "Rhythm": "GT RHYTHM", "RhythmXtra": "",
-                "Bass": "BASS", "BassXtra": "",
-                "Drums": "DRUMS" 
+                "Lead": "CHITARRA SOLISTA", "LeadXtra": "", 
+                "Rhythm": "CHITARRA RITMICA", "RhythmXtra": "",
+                "Bass": "BASSO", "BassXtra": "",
+                "Drums": "BATTERIA" 
             },
             orchestra: { 
-                "Lead": "VIOLIN", "LeadXtra": "VIOLA", 
-                "Rhythm": "HARPSICHORD", "RhythmXtra": "",
-                "Bass": "DOUBLE BASS", "BassXtra": "CELLO",
+                "Lead": "VIOLINO", "LeadXtra": "VIOLA", 
+                "Rhythm": "CLAVICEMBALO", "RhythmXtra": "",
+                "Bass": "CONTRABBASSO", "BassXtra": "VIOLONCELLO",
                 "Drums": "TIMPANI" 
             },
             piano: { 
