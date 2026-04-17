@@ -1,9 +1,9 @@
-// metalLeadEngine.js — ver. 066 (The Melodic Evolution)
+// metalLeadEngine.js — ver. 067 (Advanced Solo Integration)
 
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 006.1 loaded");
+console.log("metalLeadEngine.js ver. 006.2 loaded");
 
 export function scheduleLead(section, progression, instruments, params, rand, measureDur, score) {
     const { guitarLead } = instruments || {};
@@ -17,7 +17,7 @@ export function scheduleLead(section, progression, instruments, params, rand, me
     const stepTime = measureDur / 16;
     const { energy = 0.5, brightness = 0.5, texture = 0.5, complexity = 0.5 } = params?.imageParams || {};
 
-    // --- 🧬 LIBRERIA MASCHERE RITMICHE (Quando suonare) ---
+    // --- 🧬 LIBRERIA MASCHERE RITMICHE ---
     const library = {
         intro: [
             [0, 1, 2, 3, 4, 8, 12],
@@ -50,7 +50,7 @@ export function scheduleLead(section, progression, instruments, params, rand, me
         ]
     };
 
-    // --- 🧬 LIBRERIA MELODICA (Cosa suonare - 32 combinazioni) ---
+    // --- 🧬 LIBRERIA MELODICA ---
     const melodicLibrary = {
         epic: [
             [0, 4, 7, 4, 5, 4, 2, 0], [0, 0, 4, 4, 7, 7, 4, 4], 
@@ -82,7 +82,7 @@ export function scheduleLead(section, progression, instruments, params, rand, me
         ]
     };
 
-    // --- ⚙️ SELEZIONE LOGICA BASATA SUI PARAMETRI ---
+    // --- ⚙️ SELEZIONE LOGICA ---
     const getPattern = (type) => {
         const family = library[type] || library.verse;
         const dnaScore = (energy * 400) + (brightness * 30) + (complexity * 2);
@@ -108,23 +108,7 @@ export function scheduleLead(section, progression, instruments, params, rand, me
     const mood = getMelodyFamily();
     const currentMelody = mood.data[Math.floor(energy * mood.data.length) % mood.data.length];
 
-    // --- 📊 DEBUG LOG ---
-    if (!isSolo) {
-        console.log(
-            `%c 🎸 LEAD DNA EXECUTION \n` +
-            `%c > Section: ${name.toUpperCase()} \n` +
-            `%c > Mood: ${mood.name} \n` +
-            `%c > Rhythm Mask: [${currentPattern.join(" - ")}] \n` +
-            `%c > Melody Steps: [${currentMelody.join(", ")}]`,
-            "color: #191970; font-weight: bold; font-size: 12px;",
-            "color: #191970;",
-            "color: #eee; font-weight: bold;",
-            "color: #191970;",
-            "color: #191970;"
-        );
-    }
-
-    // --- 🎼 SCALA MUSICALE ---
+    // --- 🎼 SCALA ---
     const getStrictScale = (root) => {
         const allNotes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
         let cleanRoot = root.split('/')[0].replace(/[0-9]/g, '').trim();
@@ -133,12 +117,12 @@ export function scheduleLead(section, progression, instruments, params, rand, me
         const altNames = { "DB": "C#", "EB": "D#", "GB": "F#", "AB": "G#", "BB": "A#" };
         cleanRoot = altNames[cleanRoot] || cleanRoot;
         let rootIdx = allNotes.indexOf(cleanRoot);
-        if (rootIdx === -1) rootIdx = 9; // Default A
+        if (rootIdx === -1) rootIdx = 9;
         const intervals = isMinor ? [0, 2, 3, 5, 7, 8, 10] : [0, 2, 4, 5, 7, 9, 11];
         return intervals.map(interval => allNotes[(rootIdx + interval) % 12]);
     };
 
-    // --- 🚀 SCHEDULAZIONE NOTE ---
+    // --- 🚀 SCHEDULAZIONE ---
     for (let m = 0; m < section.measures; m++) {
         const measureStartTime = section.startTime + (m * measureDur);
         const currentScale = getStrictScale(progression[m % progression.length] || "A");
@@ -146,7 +130,6 @@ export function scheduleLead(section, progression, instruments, params, rand, me
 
         if (!isSolo) {
             currentPattern.forEach((s, i) => {
-                // Transizione intelligente: stop della chitarra per fill di rullante
                 if (isTransitionMeasure && s > 13 && energy > 0.6) return;
 
                 const absoluteTime = measureStartTime + (s * stepTime);
@@ -157,45 +140,69 @@ export function scheduleLead(section, progression, instruments, params, rand, me
 
                 Tone.Transport.schedule(time => {
                     guitarLead.triggerAttackRelease(noteName, (nextStep - s) * stepTime, time);
-                    
-                // Visivo (Score)
+
                     Tone.Draw.schedule(() => {
                         if (score) score.addNote("Lead", noteName, section.name);
                     }, time);
                 }, absoluteTime);
             });
+
         } else {
-    // --- 🎸 ASSOLO VERO (melodico + tecnico) ---
-    const soloPatterns = [
-        // Scala ascendente
-        [0, 2, 3, 5, 7, 8, 10, 12],
-        // Scala discendente
-        [12, 10, 8, 7, 5, 3, 2, 0],
-        // Arpeggio triadico
-        [0, 4, 7, 12, 7, 4, 0, 12],
-        // Pattern "power metal"
-        [0, 7, 4, 9, 7, 12, 9, 14],
-        // Frase melodica
-        [0, 2, 4, 7, 5, 4, 2, 0]
-    ];
+            // --- 🧬 LIBRERIA ASSOLI AVANZATI ---
+            const soloLibrary = {
+                dragonforce: [
+                    [0, 2, 3, 5, 7, 8, 10, 12, 10, 8, 7, 5, 3, 2, 0],
+                    [0, 1, 2, 3, 5, 7, 8, 10, 12, 11, 10, 8, 7, 5, 3]
+                ],
+                stratovarius: [
+                    [0, 4, 7, 12, 7, 4, 0, 12],
+                    [0, 2, 4, 7, 9, 7, 4, 2]
+                ],
+                sonata: [
+                    [0, 6, 5, 4, 2, 3, 2, 0],
+                    [0, 2, 4, 6, 7, 6, 4, 2]
+                ],
+                tapping: [
+                    [0, 7, 12, 7, 0, 7, 12, 7],
+                    [2, 9, 14, 9, 2, 9, 14, 9]
+                ],
+                triplets: [
+                    [0, 2, 3, 5, 7, 8, 10, 12],
+                    [12, 10, 8, 7, 5, 3, 2, 0]
+                ]
+            };
 
-    const solo = soloPatterns[Math.floor(rand() * soloPatterns.length)];
+            const pickSoloStyle = (energy, brightness, complexity, texture) => {
+                if (complexity > 0.75) return "dragonforce";
+                if (energy > 0.7) return "stratovarius";
+                if (brightness > 0.6) return "sonata";
+                if (complexity > 0.5) return "tapping";
+                return "triplets";
+            };
 
-    for (let i = 0; i < solo.length; i++) {
-        const s = i * 2; // 8th notes
-        const absoluteTime = measureStartTime + (s * stepTime);
-        const idx = solo[i] % currentScale.length;
-        const note = normalizeNote(currentScale[idx], "guitarLead") + 5;
+            const style = pickSoloStyle(energy, brightness, complexity, texture);
+            const patterns = soloLibrary[style];
+            const chosen = patterns[Math.floor(rand() * patterns.length)];
 
-        Tone.Transport.schedule(time => {
-            guitarLead.triggerAttackRelease(note, "8n", time);
+            for (let i = 0; i < chosen.length; i++) {
+                const s = i * 1.5;
+                const absoluteTime = measureStartTime + (s * stepTime);
 
-            Tone.Draw.schedule(() => {
-                if (score) score.addNote("Lead", note, section.name + " SOLO");
-            }, time);
-        }, absoluteTime);
-    }
-}
+                const idx = chosen[i] % currentScale.length;
+                const note = normalizeNote(currentScale[idx], "guitarLead") + 5;
 
+                Tone.Transport.schedule(time => {
+                    guitarLead.triggerAttackRelease(note, "16n", time);
+
+                    if (style === "sonata" && i % 4 === 2) {
+                        guitarLead.triggerAttackRelease(note + "+50", "32n", time + 0.05);
+                    }
+
+                    Tone.Draw.schedule(() => {
+                        if (score) score.addNote("Lead", note, section.name + " SOLO");
+                    }, time);
+                }, absoluteTime);
+            }
+        }
     }
 }
