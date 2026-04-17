@@ -165,7 +165,7 @@ export class scoreVisualizer {
                     ctx.fillStyle = trackName.includes("Xtra") ? "#000080" : "#444";
        
        // Offset diverso per Xtra: 3px più in alto (y - 11 invece di y - 8)
-            const yOffset = trackName.includes("Xtra") ? y - 11 : y - 8;
+            const yOffset = trackName.includes("Xtra") ? y - 21 : y - 8;
                     ctx.fillText(label, labelOffsetX, yOffset);
                 }
             }
@@ -184,8 +184,8 @@ export class scoreVisualizer {
                 if (n.track === "Drums") {
                     ctx.fillStyle = "#000";
                     if (n.label.includes("Kick"))  y += 20;
-                    if (n.label.includes("Snare")) y += 12;
-                     if (n.label.includes("HiHat")) y += 8;
+                    if (n.label.includes("Snare")) y += 14;
+                     if (n.label.includes("HiHat")) y += 6;
                      if (n.label.includes("Crash")) y -= 0;
 
                     if (n.label.includes("Kick") || n.label.includes("Snare") || n.label.includes("Timpano")) {
