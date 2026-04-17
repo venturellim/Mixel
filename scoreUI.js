@@ -2,7 +2,7 @@
 // Unione: struttura e orchestra dalla 012, gestione drums dalla 008.1 (perfetta)
 // Fix: Playhead ferma, scroll note, dual-color Violino/Viola, Drums metal funzionanti
 
-console.log("scoreUI.js ver. 013.1 loaded");
+console.log("scoreUI.js ver. 013 loaded");
 
 export class scoreVisualizer {
     constructor() {
@@ -133,26 +133,29 @@ export class scoreVisualizer {
             const n = this.notes[i];
             const trackCfg = tracks[n.track];
             if(!trackCfg) continue;
-                        
+            
+            // Y BASE dello strumento
             let y = canvas.height * trackCfg.y;
             
-            if (this.currentGenre === "metal" && n.track === "Drums") {
-                if (n.label.includes("Kick"))  y += 6;
-                if (n.label.includes("Snare")) y -= 2;
-                if (n.label.includes("HiHat")) y -= 12;
-                if (n.label.includes("Crash")) y -= 22;
-            }
-
-            n.x -= 3.5; 
+            // Sposta la nota verso sinistra
+            n.x -= 3.5;
+            
+            if (n.x > leftLimit) {
+                
+                // === DRUMS (versione 008.1 - PERFETTA) ===
+                if (currentGenre === "metal" && n.track === "Drums") {
+                    let drumY = y;
+                    if (n.label.includes("Kick")) drumY = y + 6;
+                    if (n.label.includes("Snare")) drumY = y - 2;
+                    if (n.label.includes("HiHat")) drumY = y - 12;
+                    if (n.label.includes("Crash")) drumY = y - 22;
                     
-                    if (n.x > leftLimit) {
-                ctx.fillStyle = "#000";
-                if (this.currentGenre === "metal" && n.track === "Drums") {
+                    ctx.fillStyle = "#000";
                     if (n.label.includes("Kick") || n.label.includes("Snare")) {
-                        ctx.fillRect(n.x - 3, y - 3, 6, 6);
+                        ctx.fillRect(n.x - 3, drumY - 3, 6, 6);
                     } else {
                         ctx.font = "bold 8px sans-serif";
-                        ctx.fillText("✕", n.x, y + 4);
+                        ctx.fillText("✕", n.x, drumY + 4);
                         ctx.font = "bold 8px 'Courier New', monospace";
                     }
                 }
