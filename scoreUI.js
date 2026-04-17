@@ -2,7 +2,7 @@
 // Logica: Batteria 8.1 (precisa), Canali Xtra, ZigZag e No Ottave
 // CORRETTO: note scorrono, etichette visibili
 
-console.log("scoreUI.js ver. 013.14 loaded");
+console.log("scoreUI.js ver. 013.15 loaded");
 
 export class scoreVisualizer {
     constructor() {
@@ -160,10 +160,13 @@ export class scoreVisualizer {
                 const baseTrack = trackName.replace("Xtra", "");
                 const label = currentLabels[trackName];
                 if (label && label !== "") {
-                    const y = canvas.height * tracksY[trackName] - 3;
+                    const y = canvas.height * tracksY[trackName];
                     // Colore diverso per Xtra
                     ctx.fillStyle = trackName.includes("Xtra") ? "#000080" : "#444";
-                    ctx.fillText(label, labelOffsetX, y - 8);
+       
+       // Offset diverso per Xtra: 3px più in alto (y - 11 invece di y - 8)
+            const yOffset = trackName.includes("Xtra") ? y - 11 : y - 8;
+                    ctx.fillText(label, labelOffsetX, yOffset);
                 }
             }
         });
@@ -180,10 +183,10 @@ export class scoreVisualizer {
                 // --- BATTERIA ---
                 if (n.track === "Drums") {
                     ctx.fillStyle = "#000";
-                    if (n.label.includes("Kick"))  y += 18;
-                    if (n.label.includes("Snare")) y += 10;
-                     if (n.label.includes("HiHat")) y -= 0;
-                    if (n.label.includes("Crash")) y -= 10;
+                    if (n.label.includes("Kick"))  y += 20;
+                    if (n.label.includes("Snare")) y += 12;
+                     if (n.label.includes("HiHat")) y += 8;
+                     if (n.label.includes("Crash")) y -= 0;
 
                     if (n.label.includes("Kick") || n.label.includes("Snare") || n.label.includes("Timpano")) {
                         ctx.fillRect(n.x - 3, y - 3, 6, 6);
