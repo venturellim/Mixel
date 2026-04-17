@@ -2,7 +2,7 @@
 // Logica: Batteria 8.1 (precisa), Canali Xtra, ZigZag e No Ottave
 // CORRETTO: note scorrono, etichette visibili
 
-console.log("scoreUI.js ver. 013.10 loaded");
+console.log("scoreUI.js ver. 013.11 loaded");
 
 export class scoreVisualizer {
     constructor() {
@@ -103,9 +103,9 @@ export class scoreVisualizer {
         
         // Posizioni Y per ogni track (LE STESSE usate per disegnare le note)
         const tracksY = {
-            "Lead": 0.22, "LeadXtra": 0.19,
-            "Rhythm": 0.40, "RhythmXtra": 0.37,
-            "Bass": 0.58, "BassXtra": 0.55,
+            "Lead": 0.22, "LeadXtra": 0.22,
+            "Rhythm": 0.40, "RhythmXtra": 0.40,
+            "Bass": 0.58, "BassXtra": 0.58,
             "Drums": 0.76
         };
         
@@ -180,10 +180,10 @@ export class scoreVisualizer {
                 // --- BATTERIA ---
                 if (n.track === "Drums") {
                     ctx.fillStyle = "#000";
-                    if (n.label.includes("Kick"))  y += 6;
-                    if (n.label.includes("Snare")) y -= 2;
-                    if (n.label.includes("HiHat")) y -= 12;
-                    if (n.label.includes("Crash")) y -= 22;
+                    if (n.label.includes("Kick"))  y += 10;
+                    if (n.label.includes("Snare")) y += 2;
+                    if (n.label.includes("HiHat")) y -= 8;
+                    if (n.label.includes("Crash")) y -= 18;
 
                     if (n.label.includes("Kick") || n.label.includes("Snare") || n.label.includes("Timpano")) {
                         ctx.fillRect(n.x - 3, y - 3, 6, 6);
