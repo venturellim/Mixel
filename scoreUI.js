@@ -1,8 +1,8 @@
-// scoreUI.js — ver. 012
-// Fix: Allineamento strumenti su stessa riga con dual-color (Violino/Viola)
-// Fix: Playhead FERMA a destra, solo le note si muovono
+// scoreUI.js — ver. 013
+// Unione: struttura e orchestra dalla 012, gestione drums dalla 008.1 (perfetta)
+// Fix: Playhead ferma, scroll note, dual-color Violino/Viola, Drums metal funzionanti
 
-console.log("scoreUI.js ver. 012.2 loaded");
+console.log("scoreUI.js ver. 013 loaded");
 
 export class scoreVisualizer {
     constructor() {
@@ -30,7 +30,7 @@ export class scoreVisualizer {
         this.themes = {
             metal: { "Lead": "GT LEAD", "Rhythm": "GT RHYTHM", "Bass": "BASS", "Drums": "DRUMS" },
             orchestra: { "Lead": "VIOLIN / VIOLA", "Rhythm": "HARPSICHORD", "Bass": "CELLO / BASS", "Drums": "TIMPANI" },
-            piano: { "Lead": "PIANO RIGHT", "Rhythm": "PIANO LEFT" }
+            piano: { "Lead": "PIANO RIGHT", "Rhythm": "PIANO LEFT" , "Bass": " ", "Drums": " "}
         };
 
         this.initCanvas();
@@ -55,7 +55,7 @@ export class scoreVisualizer {
         this.canvas.id = "scoreCanvas"; 
         if (!this.canvas.parentElement) document.body.appendChild(this.canvas);
         if (!this.closeBtn.parentElement) document.body.appendChild(this.closeBtn);
-        this.playheadX = this.canvas.width * 0.85;  // FISSA, NON SI MUOVE
+        this.playheadX = this.canvas.width * 0.85;
         this.leftLimit = this.canvas.width * 0.12; 
     }
 
@@ -77,7 +77,6 @@ export class scoreVisualizer {
         this.currentSection = section;
         if (this.notes.length > 500) this.notes.shift();
         
-        // Tutte le note nascono alla playheadX (destra)
         this.notes.push({
             x: this.playheadX,
             track: track,
@@ -104,7 +103,6 @@ export class scoreVisualizer {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         if (imageLoaded) ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
         
-        // Titolo sezione corrente
         if (this.currentSection) {
             ctx.fillStyle = "#ff0000"; 
             ctx.font = "bold 22px serif"; 
@@ -112,7 +110,6 @@ export class scoreVisualizer {
             ctx.fillText(this.currentSection.toUpperCase(), leftLimit + 20, canvas.height * 0.12); 
         }
         
-        // Etichette strumenti
         Object.keys(tracks).forEach(key => {
             const trackY = canvas.height * tracks[key].y;
             ctx.fillStyle = "#444";
@@ -121,7 +118,6 @@ export class scoreVisualizer {
             ctx.fillText(tracks[key].label, canvas.width * 0.02, trackY - 15);
         });
 
-        // Linea del playhead (FERMA a destra)
         ctx.strokeStyle = "#ff0000";
         ctx.lineWidth = 2;
         ctx.beginPath(); 
@@ -129,34 +125,37 @@ export class scoreVisualizer {
         ctx.lineTo(playheadX, canvas.height); 
         ctx.stroke();
 
-        // Disegna tutte le note (scorrono verso sinistra)
+        // Font di default per le note (poi modificato nei vari casi)
+        ctx.font = "bold 8px 'Courier New', monospace";
+        ctx.textAlign = "center";
+
         for (let i = this.notes.length - 1; i >= 0; i--) {
             const n = this.notes[i];
             const trackCfg = tracks[n.track];
             if(!trackCfg) continue;
             
-            // Y BASE dello strumento (NON modificabile)
-            const baseY = canvas.height * trackCfg.y;
+            // Y BASE dello strumento
+            let y = canvas.height * trackCfg.y;
             
-            // Sposta la nota verso sinistra (questo crea lo scrolling)
+            // Sposta la nota verso sinistra
             n.x -= 3.5;
             
             if (n.x > leftLimit) {
                 
-                // === METAL: DRUMS (simboli speciali) ===
+                // === DRUMS (versione 008.1 - PERFETTA) ===
                 if (currentGenre === "metal" && n.track === "Drums") {
-                    let drumY = baseY;
-                    if (n.label.includes("Kick"))  y += 6;
-                if (n.label.includes("Snare")) y -= 2;
-                if (n.label.includes("HiHat")) y -= 12;
-                if (n.label.includes("Crash")) y -= 22;
+                    let drumY = y;
+                    if (n.label.includes("Kick")) drumY = y + 6;
+                    if (n.label.includes("Snare")) drumY = y - 2;
+                    if (n.label.includes("HiHat")) drumY = y - 12;
+                    if (n.label.includes("Crash")) drumY = y - 22;
                     
-                    if (this.currentGenre === "metal" && n.track === "Drums") {
+                    ctx.fillStyle = "#000";
                     if (n.label.includes("Kick") || n.label.includes("Snare")) {
-                        ctx.fillRect(n.x - 3, y - 3, 6, 6);
+                        ctx.fillRect(n.x - 3, drumY - 3, 6, 6);
                     } else {
                         ctx.font = "bold 8px sans-serif";
-                        ctx.fillText("✕", n.x, y + 4);
+                        ctx.fillText("✕", n.x, drumY + 4);
                         ctx.font = "bold 8px 'Courier New', monospace";
                     }
                 }
@@ -164,57 +163,44 @@ export class scoreVisualizer {
                 // === ORCHESTRA: Violino/Viola su stesso rigo (Lead) ===
                 else if (currentGenre === "orchestra" && n.track === "Lead") {
                     
-                    // Colore: nero per primario (Violino), blu notte per secondario (Viola)
                     ctx.fillStyle = n.isSecondary ? "#191970" : "#000000";
                     
-                    // Rettangolo: primario più in alto (-3), secondario più in basso (+5)
-                    const rectY = n.isSecondary ? baseY + 5 : baseY - 3;
+                    const rectY = n.isSecondary ? y + 5 : y - 3;
                     ctx.fillRect(n.x - 3, rectY, 6, 6);
                     
-                    // Etichetta della nota
                     ctx.font = "bold 10px 'Courier New', monospace";
                     ctx.textAlign = "center";
                     
-                    // Zigzag alternato per evitare sovrapposizioni
                     const isEven = Math.floor(n.index / 100) % 2 === 0;
-                    let textY = isEven ? baseY - 12 : baseY - 22;
+                    let textY = isEven ? y - 12 : y - 22;
                     
-                    // Viola (secondario) alza ancora di più l'etichetta
                     if (n.isSecondary) textY -= 15;
                     
                     ctx.fillStyle = n.isSecondary ? "#191970" : "#000000";
                     ctx.fillText(n.label, n.x, textY);
+                    
+                    // Reset font
+                    ctx.font = "bold 8px 'Courier New', monospace";
                 }
                 
                 // === METAL: Chitarre e Basso (normali) ===
                 else if (currentGenre === "metal") {
                     ctx.fillStyle = "#000";
-                    const rectY = baseY - 3;
-                    ctx.fillRect(n.x - 3, rectY, 6, 6);
-                    
-                    ctx.font = "bold 10px 'Courier New', monospace";
-                    ctx.textAlign = "center";
-                    ctx.fillText(n.label, n.x, baseY - 12);
+                    ctx.fillRect(n.x - 3, y - 3, 6, 6);
+                    ctx.fillText(n.label, n.x, y - 12);
                 }
                 
                 // === PIANO o altri generi (normale) ===
                 else {
                     ctx.fillStyle = "#000";
-                    const rectY = n.isSecondary ? baseY + 5 : baseY - 3;
+                    const rectY = n.isSecondary ? y + 5 : y - 3;
                     ctx.fillRect(n.x - 3, rectY, 6, 6);
-                    
-                    ctx.font = "bold 10px 'Courier New', monospace";
-                    ctx.textAlign = "center";
-                    ctx.fillText(n.label, n.x, baseY - 12);
+                    ctx.fillText(n.label, n.x, y - 12);
                 }
             }
             
-            // Rimuovi le note uscite dal limite sinistro
             if (n.x < leftLimit) this.notes.splice(i, 1);
         }
-        
-        // playhead NON SI MUOVE - rimane fissa a destra
-        // le note si muovono da sole con n.x -= 3.5
         
         requestAnimationFrame(() => this.render());
     }
