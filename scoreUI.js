@@ -2,7 +2,7 @@
 // Logica: Batteria 8.1 (precisa), Canali Xtra, ZigZag e No Ottave
 // CORRETTO: note scorrono, etichette visibili
 
-console.log("scoreUI.js ver. 013.11 loaded");
+console.log("scoreUI.js ver. 013.13 loaded");
 
 export class scoreVisualizer {
     constructor() {
@@ -148,11 +148,11 @@ export class scoreVisualizer {
 
         // Disegna tutte le note (scorrono verso sinistra)
         
-        Object.keys(tracksY).forEach(trackName => {
+        Object.keys(tracksDisplay).forEach(trackName => {
             if (trackName === "Drums") {
                 const label = currentLabels["Drums"];
                 if (label && label !== "") {
-                    const y = canvas.height * tracksY[trackName];
+                    const y = canvas.height * tracksDisplay[trackName];
                     ctx.fillStyle = "#444";
                     ctx.fillText(label, labelOffsetX, y - 8);
                 }
@@ -160,7 +160,7 @@ export class scoreVisualizer {
                 const baseTrack = trackName.replace("Xtra", "");
                 const label = currentLabels[trackName];
                 if (label && label !== "") {
-                    const y = canvas.height * tracksY[trackName];
+                    const y = canvas.height * tracksDisplay[trackName];
                     // Colore diverso per Xtra
                     ctx.fillStyle = trackName.includes("Xtra") ? "#000080" : "#444";
                     ctx.fillText(label, labelOffsetX, y - 8);
@@ -180,10 +180,10 @@ export class scoreVisualizer {
                 // --- BATTERIA ---
                 if (n.track === "Drums") {
                     ctx.fillStyle = "#000";
-                    if (n.label.includes("Kick"))  y += 10;
-                    if (n.label.includes("Snare")) y += 2;
-                    if (n.label.includes("HiHat")) y -= 8;
-                    if (n.label.includes("Crash")) y -= 18;
+                    if (n.label.includes("Kick"))  y += 14;
+                    if (n.label.includes("Snare")) y += 6;
+                    if (n.label.includes("HiHat")) y -= 4;
+                    if (n.label.includes("Crash")) y -= 14;
 
                     if (n.label.includes("Kick") || n.label.includes("Snare") || n.label.includes("Timpano")) {
                         ctx.fillRect(n.x - 3, y - 3, 6, 6);
