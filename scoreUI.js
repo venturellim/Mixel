@@ -1,7 +1,7 @@
-// scoreUI.js — ver. 012
-// Logica: Canali Xtra per Orchestra, ZigZag per Solo, No Ottave
+// scoreUI.js — ver. 013
+// Logica: Batteria 8.1 (precisa), Canali Xtra, ZigZag e No Ottave
 
-console.log("scoreUI.js ver. 012.1 loaded");
+console.log("scoreUI.js ver. 013 loaded");
 
 export class scoreVisualizer {
     constructor() {
@@ -25,7 +25,6 @@ export class scoreVisualizer {
         this.closeBtn.style.display = "none";
         this.closeBtn.onclick = () => this.hide();
 
-        // Configurazione Temi con canali Xtra
         this.themes = {
             metal: { 
                 "Lead": "GT LEAD", "LeadXtra": "", 
@@ -55,9 +54,10 @@ export class scoreVisualizer {
         }
     }
 
-    // 1️⃣ RIMOZIONE OTTAVA
     cleanNoteLabel(note) {
         if (!note || typeof note !== 'string') return "";
+        // Se è batteria, non puliamo l'etichetta (serve "Kick", "Snare", etc.)
+        if (["Kick", "Snare", "HiHat", "Crash", "Timpano"].some(t => note.includes(t))) return note;
         return isNaN(parseInt(note[1])) ? note.substring(0, 2) : note.substring(0, 1);
     }
 
@@ -101,7 +101,6 @@ export class scoreVisualizer {
         const { ctx, canvas, playheadX, leftLimit, bgImage, imageLoaded } = this;
         const currentLabels = this.themes[this.currentGenre] || this.themes.metal;
         
-        // Mappatura coordinate Y per i canali principali
         const tracksY = {
             "Lead": 0.22, "LeadXtra": 0.22,
             "Rhythm": 0.45, "RhythmXtra": 0.45,
@@ -112,14 +111,14 @@ export class scoreVisualizer {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         if (imageLoaded) ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
 
-        // Disegno Playhead
+        // Playhead
         ctx.strokeStyle = "#ff000022";
         ctx.lineWidth = 2;
         ctx.beginPath(); ctx.moveTo(playheadX, 0); ctx.lineTo(playheadX, canvas.height); ctx.stroke();
 
         for (let i = this.notes.length - 1; i >= 0; i--) {
             const n = this.notes[i];
-            const baseT = n.track.replace("Xtra", ""); // Es: LeadXtra -> Lead
+            const baseT = n.track.replace("Xtra", "");
             const trackY_ratio = tracksY[n.track];
             if(!trackY_ratio) continue;
             
@@ -127,28 +126,36 @@ export class scoreVisualizer {
             n.x -= 3.5; 
 
             if (n.x > leftLimit) {
-                const isXtra = n.track.includes("Xtra");
-                const hasPartner = currentLabels[baseT + "Xtra"] !== "";
+                // --- SEZIONE BATTERIA (LOGICA 8.1) ---
+                if (n.track === "Drums") {
+                    ctx.fillStyle = "#000";
+                    // Offset verticali per i pezzi della batteria
+                    if (n.label.includes("Kick"))  y += 6;
+                    if (n.label.includes("Snare")) y -= 2;
+                    if (n.label.includes("HiHat")) y -= 12;
+                    if (n.label.includes("Crash")) y -= 22;
 
-                // 2️⃣ LOGICA DUAL-CHANNEL (ORCHESTRA)
-                if (hasPartner) {
-                    if (isXtra) {
-                        ctx.fillStyle = "#191970"; // Blu Notte
-                        ctx.fillRect(n.x - 3, y + 5, 6, 6); // Quadratino sotto
-                        ctx.font = "bold 9px 'Courier New', monospace";
-                        ctx.fillText(n.label, n.x, y - 25); // Testo molto sopra
+                    if (n.label.includes("Kick") || n.label.includes("Snare") || n.label.includes("Timpano")) {
+                        ctx.fillRect(n.x - 3, y - 3, 6, 6); // Quadratino per tamburi
                     } else {
-                        ctx.fillStyle = "#000000"; // Nero
-                        ctx.fillRect(n.x - 3, y - 3, 6, 6); // Quadratino standard
-                        ctx.font = "bold 9px 'Courier New', monospace";
-                        ctx.fillText(n.label, n.x, y - 12); // Testo sopra
+                        ctx.font = "bold 10px sans-serif";
+                        ctx.fillText("✕", n.x, y + 4); // X per piatti
                     }
                 } 
-                // 3️⃣ LOGICA ZIGZAG (METAL / PIANO)
+                // --- SEZIONE STRUMENTI (ORCHESTRA XTRA / ZIGZAG) ---
                 else {
-                    ctx.fillStyle = "#000000";
-                    ctx.fillRect(n.x - 3, y - 3, 6, 6);
-                    if (n.track !== "Drums") {
+                    const isXtra = n.track.includes("Xtra");
+                    const hasPartner = currentLabels[baseT + "Xtra"] !== "";
+
+                    if (hasPartner) {
+                        ctx.fillStyle = isXtra ? "#191970" : "#000000";
+                        const rectY = isXtra ? y + 5 : y - 3;
+                        ctx.fillRect(n.x - 3, rectY, 6, 6);
+                        ctx.font = "bold 9px 'Courier New', monospace";
+                        ctx.fillText(n.label, n.x, isXtra ? y - 25 : y - 12);
+                    } else {
+                        ctx.fillStyle = "#000000";
+                        ctx.fillRect(n.x - 3, y - 3, 6, 6);
                         const isEven = Math.floor(n.index / 100) % 2 === 0;
                         ctx.font = "bold 9px 'Courier New', monospace";
                         ctx.fillText(n.label, n.x, isEven ? y - 12 : y - 22);
