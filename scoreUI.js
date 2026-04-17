@@ -2,7 +2,7 @@
 // Logica: Batteria 8.1 (precisa), Canali Xtra, ZigZag e No Ottave
 // CORRETTO: note scorrono, etichette visibili
 
-console.log("scoreUI.js ver. 013.7 loaded");
+console.log("scoreUI.js ver. 013.8 loaded");
 
 export class scoreVisualizer {
     constructor() {
@@ -67,7 +67,7 @@ export class scoreVisualizer {
         this.canvas.id = "scoreCanvas"; 
         if (!this.canvas.parentElement) document.body.appendChild(this.canvas);
         if (!this.closeBtn.parentElement) document.body.appendChild(this.closeBtn);
-        this.playheadX = this.canvas.width * 0.75;
+        this.playheadX = this.canvas.width * 0.80;
         this.leftLimit = this.canvas.width * 0.12; 
     }
 
@@ -103,21 +103,21 @@ export class scoreVisualizer {
         
         // Posizioni Y per ogni track (LE STESSE usate per disegnare le note)
         const tracksY = {
-            "Lead": 0.22, "LeadXtra": 0.22,
-            "Rhythm": 0.45, "RhythmXtra": 0.45,
-            "Bass": 0.70, "BassXtra": 0.70,
-            "Drums": 0.88
+            "Lead": 0.22, "LeadXtra": 0.14,
+            "Rhythm": 0.38, "RhythmXtra": 0.30,
+            "Bass": 0.54, "BassXtra": 0.46,
+            "Drums": 0.70
         };
         
         // Etichette per la visualizzazione a sinistra
         const tracksDisplay = {
             "Lead": { y: 0.22, label: currentLabels["Lead"] },
-            "LeadXtra": { y: 0.22, label: currentLabels["LeadXtra"] },
-            "Rhythm": { y: 0.45, label: currentLabels["Rhythm"] },
-            "RhythmXtra": { y: 0.45, label: currentLabels["RhythmXtra"] },
-            "Bass": { y: 0.70, label: currentLabels["Bass"] },
-            "BassXtra": { y: 0.70, label: currentLabels["BassXtra"] },
-            "Drums": { y: 0.88, label: currentLabels["Drums"] }
+            "LeadXtra": { y: 0.14, elabel: currentLabels["LeadXtra"] },
+            "Rhythm": { y: 0.38, label: currentLabels["Rhythm"] },
+            "RhythmXtra": { y: 0.30, label: currentLabels["RhythmXtra"] },
+            "Bass": { y: 0.54, label: currentLabels["Bass"] },
+            "BassXtra": { y: 0.46, label: currentLabels["BassXtra"] },
+            "Drums": { y: 0.70, label: currentLabels["Drums"] }
         };
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
