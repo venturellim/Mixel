@@ -1,7 +1,7 @@
 // scoreUI.js — ver. 013
 // Logica: Batteria 8.1 (precisa), Canali Xtra, ZigZag e No Ottave
 
-console.log("scoreUI.js ver. 013.2 loaded");
+console.log("scoreUI.js ver. 013.3 loaded");
 
 export class scoreVisualizer {
     constructor() {
@@ -40,7 +40,9 @@ export class scoreVisualizer {
             },
             piano: { 
                 "Lead": "PIANO R", "LeadXtra": "", 
-                "Rhythm": "PIANO L", "RhythmXtra": "" 
+                "Rhythm": "PIANO L", "RhythmXtra": "",
+                "Bass": " ", "BassXtra": " ",
+                "Drums": " " 
             }
         };
 
@@ -101,6 +103,19 @@ export class scoreVisualizer {
         const { ctx, canvas, playheadX, leftLimit, bgImage, imageLoaded } = this;
         const currentLabels = this.themes[this.currentGenre] || this.themes.metal;
         
+        const tracks = {
+            "Lead":   { y: 0.24, label: currentLabels["Lead"] },    
+            "Rhythm": { y: 0.42, label: currentLabels["Rhythm"] },  
+            "Bass":   { y: 0.60, label: currentLabels["Bass"] },       
+            "Drums":  { y: 0.80, label: currentLabels["Drums"] }       
+        };
+        
+        const tracksXtra = {
+            "LeadXtra":   { y: 0.14, label: currentLabels["LeadXtra"] },    
+            "RhythmXtra": { y: 0.32, label: currentLabels["RhythmXtra"] },  
+            "BassXtra":   { y: 0.50, label: currentLabels["BassXtra"] }       
+        };
+        
         const tracksY = {
             "Lead": 0.22, "LeadXtra": 0.22,
             "Rhythm": 0.45, "RhythmXtra": 0.45,
@@ -122,6 +137,14 @@ if (this.currentSection) {
         Object.keys(tracks).forEach(key => {
             const trackY = canvas.height * tracks[key].y;
             ctx.fillStyle = "#444";
+            ctx.font = "bold 11px sans-serif";
+            ctx.textAlign = "left";
+            ctx.fillText(tracks[key].label, canvas.width * 0.02, trackY - 15);
+        });
+        
+        Object.keys(tracksXtra).forEach(key => {
+            const trackY = canvas.height * tracks[key].y;
+            ctx.fillStyle = "#191970";
             ctx.font = "bold 11px sans-serif";
             ctx.textAlign = "left";
             ctx.fillText(tracks[key].label, canvas.width * 0.02, trackY - 15);
