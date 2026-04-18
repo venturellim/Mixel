@@ -128,17 +128,27 @@ export async function createOrchestraEngine(params, score) {
                         }
 
                         // === VIOLA (FIX: SEMPRE UNA NOTA VALIDA) ===
-                        const violaRaw = getScaleDegree(scale, rootIdx + 2) || scale[2];
-                        const violaNote = safeNote(violaRaw, "4");
+                        const // === VIOLA (FIX + LOG) ===
+const violaRaw = getScaleDegree(scale, rootIdx + 2) || scale[2];
+const violaNote = safeNote(violaRaw, "4");
 
-                        let violaStep = mode === "vivaldi" ? 2 : 4;
-                        let violaProb = mode === "vivaldi" ? 0.5 : 0.7;
-                        let violaDur = mode === "canon" ? "2n" : "4n";
+let violaStep = mode === "vivaldi" ? 2 : 4;
+let violaProb = mode === "vivaldi" ? 0.5 : 0.7;
+let violaDur = mode === "canon" ? "2n" : "4n";
 
-                        if (violaNote && (s % violaStep === 0) && rand() < violaProb) {
-                            viola.triggerAttackRelease(violaNote, violaDur, time, 0.4);
-                            if (score) score.addNote("LeadXtra", violaNote, section.name);
-                        }
+// LOG DIAGNOSTICO
+console.log(
+    `[VIOLA] section=${section.name} m=${m} s=${s}`,
+    `raw=${violaRaw}`,
+    `note=${violaNote}`,
+    `stepOK=${(s % violaStep === 0)}`,
+    `probOK=${rand() < violaProb}`
+);
+
+if (violaNote && (s % violaStep === 0) && rand() < violaProb) {
+    viola.triggerAttackRelease(violaNote, violaDur, time, 0.4);
+    if (score) score.addNote("LeadXtra", violaNote, section.name);
+}
 
                         // === CLAVICEMBALO ===
                         if (mode !== "canon" && s % 2 === 1 && energy > 0.4) {
