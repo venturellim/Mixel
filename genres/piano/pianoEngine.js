@@ -1,5 +1,5 @@
 // ==========================================
-// pianoEngine.js — ver. 021.2 (SOLO ENGINE V1 + LH ACTIVE + TONAL FIX)
+// pianoEngine.js — ver. 021.3 (SOLO ENGINE V1 + LH ACTIVE + TONAL FIX)
 // ==========================================
 
 import * as Tone from "https://esm.sh/tone";
@@ -11,7 +11,7 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { progressions } from "../../utils/musicTheory.js"; 
 import { waitForInstruments } from "../../common.js";
 
-console.log("pianoEngine.js ver. 021.2 loaded");
+console.log("pianoEngine.js ver. 021.3 loaded");
 
 export async function waitPianoInstruments() {
     await waitForInstruments(1);
@@ -33,13 +33,13 @@ const PU = {
     }
 };
 
-// Scale
+// Scale (OFFSET!)
 const PScales = {
-    major(r){ return [0,2,4,5,7,9,11].map(i=>r+i); },
-    naturalMinor(r){ return [0,2,3,5,7,8,10].map(i=>r+i); },
-    harmonicMinor(r){ return [0,2,3,5,7,8,11].map(i=>r+i); },
-    pentatonic(r){ return [0,3,5,7,10].map(i=>r+i); },
-    lydian(r){ return [0,2,4,6,7,9,11].map(i=>r+i); }
+    major(r){ return [0,2,4,5,7,9,11]; },
+    naturalMinor(r){ return [0,2,3,5,7,8,10]; },
+    harmonicMinor(r){ return [0,2,3,5,7,8,11]; },
+    pentatonic(r){ return [0,3,5,7,10]; },
+    lydian(r){ return [0,2,4,6,7,9,11]; }
 };
 
 // Pattern melodici
@@ -102,20 +102,19 @@ const PTime = {
     hum(t,rand,a=0.015){ return t + (rand()*a*2 - a); }
 };
 
-// Espansione pattern
+// Espansione pattern (USA OFFSET + ROOT!)
 const PPhrase = {
-    expand(pattern, scale, root, desired){
-    const out=[];
-    while(out.length < desired){
-        for(let step of pattern){
-            const idx = (step % scale.length + scale.length) % scale.length;
-            const midi = scale[idx]; // la scala contiene già note MIDI complete
-            out.push(midi);
-            if(out.length >= desired) break;
+    expand(pattern,scale,root,desired){
+        const out=[];
+        while(out.length<desired){
+            for(let step of pattern){
+                const idx=(step%scale.length+scale.length)%scale.length;
+                out.push(scale[idx] + root);   // ← CORRETTO
+                if(out.length>=desired) break;
+            }
         }
-    }
-    return out;
-},
+        return out;
+    },
 
     build(pattern,scale,root,phraseTime,maxNPS,params,rand){
         const maxNotes=Math.floor(phraseTime*maxNPS);
@@ -205,7 +204,7 @@ const PianoSoloV1 = {
 
         const theme=PTheme.pick(p.brightness,p.complexity);
 
-        // TONAL FIX
+        // TONAL FIX (CORRETTO)
         const root = Tone.Frequency(params.tonalCenter + "4").toMidi();
 
         let phrases=[];
@@ -218,8 +217,8 @@ const PianoSoloV1 = {
 
             const pattern=PU.ch(patternSet);
 
-            // TONAL FIX
-            const scale = PScales[sec.scale](0).map(n => n + root);
+            // SCALE OFFSET (CORRETTO)
+            const scale = PScales[sec.scale](0);
 
             const phrase=PSelect.phrase(p,scale,root,pTime,rand);
             phrases.push({phrase});
