@@ -1,7 +1,7 @@
-// scoreUI.js — ver. 015.2 (FULL - Part 1)
-// Fix: Immagine stabile (no zoom), Batteria 10x5, Note su altezze reali + Etichette ZigZag
+// scoreUI.js — ver. 015.4
+// FULL VERSION: Xtra logic (Top/Bottom), Single ZigZag, Drum 10x5, Stable Image
 
-console.log("scoreUI.js ver. 015.2 loaded - Full Version No Cuts");
+console.log("scoreUI.js ver. 015.4 loaded - Fixed & Complete");
 
 export class scoreVisualizer {
     constructor() {
@@ -25,10 +25,7 @@ export class scoreVisualizer {
         this.bgImage = new Image();
         this.bgImage.src = "Pentagramma.jpg"; 
         this.imageLoaded = false;
-        this.bgImage.onload = () => { 
-            this.imageLoaded = true;
-            console.log("✅ Pentagramma pronto");
-        };
+        this.bgImage.onload = () => { this.imageLoaded = true; };
 
         this.closeBtn = document.createElement("button");
         this.closeBtn.innerHTML = "✕";
@@ -57,8 +54,7 @@ export class scoreVisualizer {
                 "Drums": "TIMPANI" 
             },
             piano: { 
-                "Lead": "PIANO R", "LeadXtra": "", 
-                "Rhythm": "PIANO L", "RhythmXtra": "" 
+                "Lead": "PIANO R", "LeadXtra": "", "Rhythm": "PIANO L", "RhythmXtra": "" 
             }
         };
 
@@ -66,9 +62,7 @@ export class scoreVisualizer {
         window.addEventListener("resize", () => this.initCanvas());
     }
 
-    setTheme(genre) { 
-        if (this.themes[genre]) this.currentGenre = genre; 
-    }
+    setTheme(genre) { if (this.themes[genre]) this.currentGenre = genre; }
 
     cleanNoteLabel(note) {
         if (!note || typeof note !== 'string') return "";
@@ -85,19 +79,9 @@ export class scoreVisualizer {
         this.playheadX = this.canvas.width * 0.80;
         this.leftLimit = this.canvas.width * 0.12; 
     }
-    show() { 
-        this.isVisible = true; 
-        this.canvas.style.display = "block"; 
-        this.closeBtn.style.display = "flex"; 
-        this.render(); 
-    }
 
-    hide() { 
-        this.isVisible = false; 
-        this.canvas.style.display = "none"; 
-        this.closeBtn.style.display = "none"; 
-        this.notes = []; 
-    }
+    show() { this.isVisible = true; this.canvas.style.display = "block"; this.closeBtn.style.display = "flex"; this.render(); }
+    hide() { this.isVisible = false; this.canvas.style.display = "none"; this.closeBtn.style.display = "none"; this.notes = []; }
 
     addNote(track, note, section) {
         this.currentSection = section;
@@ -116,43 +100,23 @@ export class scoreVisualizer {
         const { ctx, canvas, playheadX, leftLimit, bgImage, imageLoaded } = this;
         const currentLabels = this.themes[this.currentGenre] || this.themes.metal;
         
-        const tracksY = { 
-            "Lead": 0.22, "LeadXtra": 0.22, 
-            "Rhythm": 0.40, "RhythmXtra": 0.40, 
-            "Bass": 0.58, "BassXtra": 0.58, 
-            "Drums": 0.76 
-        };
+        const tracksY = { "Lead": 0.22, "LeadXtra": 0.22, "Rhythm": 0.40, "RhythmXtra": 0.40, "Bass": 0.58, "BassXtra": 0.58, "Drums": 0.76 };
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         if (imageLoaded) ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
 
-        // Intestazione Sezione
+        // Sezione e Playhead
         if (this.currentSection) {
-            ctx.fillStyle = "#ff0000"; ctx.font = "bold 24px serif"; 
-            ctx.textAlign = "left";
+            ctx.fillStyle = "#ff0000"; ctx.font = "bold 24px serif"; ctx.textAlign = "left";
             ctx.fillText(this.currentSection.toUpperCase(), leftLimit + 20, canvas.height * 0.10); 
         }
-
-        // Playhead e Etichette Strumenti
-        ctx.strokeStyle = "#ff000022";
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = "#ff000022"; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.moveTo(playheadX, 0); ctx.lineTo(playheadX, canvas.height); ctx.stroke();
 
-        ctx.font = "bold 13px sans-serif";
-        ctx.textAlign = "left";
-        Object.keys(tracksY).forEach(t => {
-            const label = currentLabels[t];
-            if (label && label !== "") {
-                const y = canvas.height * tracksY[t];
-                ctx.fillStyle = t.includes("Xtra") ? "#000080" : "#444";
-                const yOff = t.includes("Xtra") ? y - 22 : y - 8;
-                ctx.fillText(label, playheadX + 15, yOff);
-            }
-        });
-
-        // Ciclo Note
+        // Ciclo Note scorrenti
         for (let i = this.notes.length - 1; i >= 0; i--) {
             const n = this.notes[i];
+            const baseTrack = n.track.replace("Xtra", "");
             const trackY_ratio = tracksY[n.track];
             if(!trackY_ratio) continue;
             
@@ -160,7 +124,7 @@ export class scoreVisualizer {
             n.x -= 3.5; 
 
             if (n.x > leftLimit) {
-                // --- BATTERIA (Rettangoli 10x5) ---
+                // --- LOGICA BATTERIA ---
                 if (n.track === "Drums") {
                     ctx.fillStyle = "#000";
                     let drumY = baseY;
@@ -175,22 +139,40 @@ export class scoreVisualizer {
                         ctx.fillText("✕", n.x, drumY + 6);
                     }
                 } 
-                // --- STRUMENTI (Pitch Real + ZigZag) ---
+                // --- LOGICA STRUMENTI MELODICI ---
                 else {
                     const isXtra = n.track.includes("Xtra");
+                    const hasPartner = currentLabels[baseTrack + "Xtra"] !== "";
                     const pitchOffset = this.pitchMap[n.rawKey] || 0;
-                    const finalY = baseY + pitchOffset;
+                    let finalY = baseY + pitchOffset;
 
-                    ctx.fillStyle = isXtra ? "#000080" : "#000000";
+                    // Gestione Spaziatura Verticale
+                    if (hasPartner) {
+                        finalY += isXtra ? -15 : 15; // Separa Main e Xtra
+                        ctx.fillStyle = isXtra ? "#191970" : "#000000";
+                    } else {
+                        const isEven = Math.floor(n.index / 100) % 2 === 0;
+                        finalY += isEven ? -5 : 5; // Zigzag leggero se da solo
+                        ctx.fillStyle = "#000000";
+                    }
+
+                    // Disegno Nota
                     ctx.textAlign = "center";
                     ctx.font = "22px serif";
                     ctx.fillText("♩", n.x, finalY + 7);
 
+                    // Disegno Etichetta Nota (C, D, E...)
                     ctx.font = "bold 12px 'Courier New', monospace";
-                    const isEven = Math.floor(n.index / 100) % 2 === 0;
-                    const zigZagOffset = isEven ? -18 : -28; 
-                    const labelY = isXtra ? finalY + 22 : finalY + zigZagOffset;
+                    const isEvenZig = Math.floor(n.index / 100) % 2 === 0;
+                    let labelY;
                     
+                    if (hasPartner) {
+                        // Se c'è partner, Xtra scrive sotto, Main scrive sopra lo zigzag
+                        labelY = isXtra ? finalY + 22 : finalY - 18;
+                    } else {
+                        // Zigzag classico
+                        labelY = isEvenZig ? finalY - 18 : finalY - 28;
+                    }
                     ctx.fillText(n.label, n.x, labelY);
                 }
             }
