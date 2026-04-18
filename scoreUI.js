@@ -1,7 +1,7 @@
-// scoreUI.js — ver. 015.4
-// FULL VERSION: Xtra logic (Top/Bottom), Single ZigZag, Drum 10x5, Stable Image
+// scoreUI.js — ver. 015.5 (PARTE 1)
+// Fix: Etichette strumenti ripristinate + Xtra Sopra/Sotto + Drum 10x5
 
-console.log("scoreUI.js ver. 015.4 loaded - Fixed & Complete");
+console.log("scoreUI.js ver. 015.5 loaded - Full Version");
 
 export class scoreVisualizer {
     constructor() {
@@ -54,7 +54,8 @@ export class scoreVisualizer {
                 "Drums": "TIMPANI" 
             },
             piano: { 
-                "Lead": "PIANO R", "LeadXtra": "", "Rhythm": "PIANO L", "RhythmXtra": "" 
+                "Lead": "PIANO R", "LeadXtra": "", 
+                "Rhythm": "PIANO L", "RhythmXtra": "" 
             }
         };
 
@@ -94,7 +95,6 @@ export class scoreVisualizer {
             index: Date.now() + Math.random() 
         });
     }
-
     render() {
         if (!this.isVisible) return;
         const { ctx, canvas, playheadX, leftLimit, bgImage, imageLoaded } = this;
@@ -105,15 +105,29 @@ export class scoreVisualizer {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         if (imageLoaded) ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
 
-        // Sezione e Playhead
+        // Intestazione Sezione
         if (this.currentSection) {
             ctx.fillStyle = "#ff0000"; ctx.font = "bold 24px serif"; ctx.textAlign = "left";
             ctx.fillText(this.currentSection.toUpperCase(), leftLimit + 20, canvas.height * 0.10); 
         }
+
+        // Playhead
         ctx.strokeStyle = "#ff000022"; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.moveTo(playheadX, 0); ctx.lineTo(playheadX, canvas.height); ctx.stroke();
 
-        // Ciclo Note scorrenti
+        // --- DISEGNO NOMI STRUMENTI (Fissi a destra della Playhead) ---
+        ctx.font = "bold 13px sans-serif"; ctx.textAlign = "left";
+        Object.keys(tracksY).forEach(t => {
+            const label = currentLabels[t];
+            if (label && label !== "") {
+                const y = canvas.height * tracksY[t];
+                ctx.fillStyle = t.includes("Xtra") ? "#000080" : "#444";
+                const yOff = t.includes("Xtra") ? y - 22 : y - 8;
+                ctx.fillText(label, playheadX + 15, yOff);
+            }
+        });
+
+        // Ciclo Note
         for (let i = this.notes.length - 1; i >= 0; i--) {
             const n = this.notes[i];
             const baseTrack = n.track.replace("Xtra", "");
@@ -124,14 +138,13 @@ export class scoreVisualizer {
             n.x -= 3.5; 
 
             if (n.x > leftLimit) {
-                // --- LOGICA BATTERIA ---
+                // --- BATTERIA (10x5) ---
                 if (n.track === "Drums") {
                     ctx.fillStyle = "#000";
                     let drumY = baseY;
                     if (n.label.includes("Kick"))  drumY += 20;
                     if (n.label.includes("Snare")) drumY += 14;
                     if (n.label.includes("HiHat")) drumY += 6;
-
                     if (n.label.includes("Kick") || n.label.includes("Snare") || n.label.includes("Timpano")) {
                         ctx.fillRect(n.x - 5, drumY - 2.5, 10, 5); 
                     } else {
@@ -139,40 +152,27 @@ export class scoreVisualizer {
                         ctx.fillText("✕", n.x, drumY + 6);
                     }
                 } 
-                // --- LOGICA STRUMENTI MELODICI ---
+                // --- STRUMENTI (Xtra Sopra/Sotto + ZigZag) ---
                 else {
                     const isXtra = n.track.includes("Xtra");
                     const hasPartner = currentLabels[baseTrack + "Xtra"] !== "";
                     const pitchOffset = this.pitchMap[n.rawKey] || 0;
                     let finalY = baseY + pitchOffset;
 
-                    // Gestione Spaziatura Verticale
                     if (hasPartner) {
-                        finalY += isXtra ? -15 : 15; // Separa Main e Xtra
+                        finalY += isXtra ? -15 : 15;
                         ctx.fillStyle = isXtra ? "#191970" : "#000000";
                     } else {
-                        const isEven = Math.floor(n.index / 100) % 2 === 0;
-                        finalY += isEven ? -5 : 5; // Zigzag leggero se da solo
+                        finalY += (Math.floor(n.index / 100) % 2 === 0) ? -5 : 5;
                         ctx.fillStyle = "#000000";
                     }
 
-                    // Disegno Nota
-                    ctx.textAlign = "center";
-                    ctx.font = "22px serif";
+                    ctx.textAlign = "center"; ctx.font = "22px serif";
                     ctx.fillText("♩", n.x, finalY + 7);
 
-                    // Disegno Etichetta Nota (C, D, E...)
                     ctx.font = "bold 12px 'Courier New', monospace";
                     const isEvenZig = Math.floor(n.index / 100) % 2 === 0;
-                    let labelY;
-                    
-                    if (hasPartner) {
-                        // Se c'è partner, Xtra scrive sotto, Main scrive sopra lo zigzag
-                        labelY = isXtra ? finalY + 22 : finalY - 18;
-                    } else {
-                        // Zigzag classico
-                        labelY = isEvenZig ? finalY - 18 : finalY - 28;
-                    }
+                    const labelY = (hasPartner && isXtra) ? finalY + 22 : (isEvenZig ? finalY - 18 : finalY - 28);
                     ctx.fillText(n.label, n.x, labelY);
                 }
             }
