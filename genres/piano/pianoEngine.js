@@ -1,5 +1,5 @@
 // ==========================================
-// pianoEngine.js — ver. 021.4 (SOLO ENGINE V1 + LH ACTIVE + TONAL FIX)
+// pianoEngine.js — ver. 021.5 (SOLO ENGINE V1 + LH ACTIVE + TONAL FIX + FALLBACK)
 // ==========================================
 
 import * as Tone from "https://esm.sh/tone";
@@ -11,7 +11,7 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { progressions } from "../../utils/musicTheory.js"; 
 import { waitForInstruments } from "../../common.js";
 
-console.log("pianoEngine.js ver. 021.4 loaded");
+console.log("pianoEngine.js ver. 021.5 loaded");
 
 export async function waitPianoInstruments() {
     await waitForInstruments(1);
@@ -194,9 +194,17 @@ const PSoloStruct = {
 const PianoSoloV1 = {
     generate(section,progression,instruments,params,rand,measureDur,score){
         const {piano}=instruments;
-        if(!piano) return;
+        if(!piano) {
+            console.warn("PianoSoloV1: piano instrument not available");
+            return;
+        }
 
         const p=params.imageParams;
+        if(!p) {
+            console.warn("PianoSoloV1: imageParams not available");
+            return;
+        }
+
         const total=PSoloStruct.total(section.measures,measureDur);
         const count=PSoloStruct.count(total,p.energy);
         const pTime=PSoloStruct.phraseTime(total,count);
@@ -204,8 +212,18 @@ const PianoSoloV1 = {
 
         const theme=PTheme.pick(p.brightness,p.complexity);
 
-        // root MIDI dalla tonalità reale
-        const root = Tone.Frequency(params.tonalCenter + "4").toMidi();
+        // 🔧 FIX: root MIDI dalla tonalità reale con fallback
+        let root;
+        try {
+            // Prova a prendere tonalCenter da params (passato esplicitamente)
+            const tonalCenterNote = params.tonalCenter || p.tonalCenter || "C";
+            root = Tone.Frequency(tonalCenterNote + "4").toMidi();
+            console.log(`PianoSoloV1: tonalCenter = ${tonalCenterNote}, root MIDI = ${root}`);
+        } catch(e) {
+            // Fallback sicuro: C4 (MIDI 60)
+            console.warn("PianoSoloV1: could not determine tonalCenter, using C4 (60) as fallback", e);
+            root = 60;
+        }
 
         let phrases=[];
 
@@ -290,7 +308,6 @@ export async function createPianoEngine(params, score) {
     const step8n = measureDur / 8;
 
     const tonalCenter = p.tonalCenter;
-
     const mottoIndices = generateMotto(rand); 
     let lastNoteIdx = 1; 
 
@@ -309,7 +326,7 @@ export async function createPianoEngine(params, score) {
                 section,
                 sectionProg,
                 { piano },
-                { ...params, tonalCenter },
+                { ...params, tonalCenter: tonalCenter },  // Passa tonalCenter esplicitamente
                 rand,
                 measureDur,
                 score
