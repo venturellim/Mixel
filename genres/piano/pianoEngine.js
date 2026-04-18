@@ -1,5 +1,5 @@
 // ==========================================
-// pianoEngine.js — ver. 021.3 (SOLO ENGINE V1 + LH ACTIVE + TONAL FIX)
+// pianoEngine.js — ver. 021.4 (SOLO ENGINE V1 + LH ACTIVE + TONAL FIX)
 // ==========================================
 
 import * as Tone from "https://esm.sh/tone";
@@ -11,7 +11,7 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { progressions } from "../../utils/musicTheory.js"; 
 import { waitForInstruments } from "../../common.js";
 
-console.log("pianoEngine.js ver. 021.3 loaded");
+console.log("pianoEngine.js ver. 021.4 loaded");
 
 export async function waitPianoInstruments() {
     await waitForInstruments(1);
@@ -33,13 +33,13 @@ const PU = {
     }
 };
 
-// Scale (OFFSET!)
+// Scale (OFFSET)
 const PScales = {
-    major(r){ return [0,2,4,5,7,9,11]; },
-    naturalMinor(r){ return [0,2,3,5,7,8,10]; },
-    harmonicMinor(r){ return [0,2,3,5,7,8,11]; },
-    pentatonic(r){ return [0,3,5,7,10]; },
-    lydian(r){ return [0,2,4,6,7,9,11]; }
+    major(){ return [0,2,4,5,7,9,11]; },
+    naturalMinor(){ return [0,2,3,5,7,8,10]; },
+    harmonicMinor(){ return [0,2,3,5,7,8,11]; },
+    pentatonic(){ return [0,3,5,7,10]; },
+    lydian(){ return [0,2,4,6,7,9,11]; }
 };
 
 // Pattern melodici
@@ -102,14 +102,14 @@ const PTime = {
     hum(t,rand,a=0.015){ return t + (rand()*a*2 - a); }
 };
 
-// Espansione pattern (USA OFFSET + ROOT!)
+// Espansione pattern (usa OFFSET + ROOT)
 const PPhrase = {
     expand(pattern,scale,root,desired){
         const out=[];
         while(out.length<desired){
             for(let step of pattern){
                 const idx=(step%scale.length+scale.length)%scale.length;
-                out.push(scale[idx] + root);   // ← CORRETTO
+                out.push(scale[idx] + root);
                 if(out.length>=desired) break;
             }
         }
@@ -204,7 +204,7 @@ const PianoSoloV1 = {
 
         const theme=PTheme.pick(p.brightness,p.complexity);
 
-        // TONAL FIX (CORRETTO)
+        // root MIDI dalla tonalità reale
         const root = Tone.Frequency(params.tonalCenter + "4").toMidi();
 
         let phrases=[];
@@ -217,8 +217,8 @@ const PianoSoloV1 = {
 
             const pattern=PU.ch(patternSet);
 
-            // SCALE OFFSET (CORRETTO)
-            const scale = PScales[sec.scale](0);
+            // scala come OFFSET
+            const scale = PScales[sec.scale]();
 
             const phrase=PSelect.phrase(p,scale,root,pTime,rand);
             phrases.push({phrase});
@@ -290,7 +290,6 @@ export async function createPianoEngine(params, score) {
     const step8n = measureDur / 8;
 
     const tonalCenter = p.tonalCenter;
-    const scaleType = p.scaleType;
 
     const mottoIndices = generateMotto(rand); 
     let lastNoteIdx = 1; 
@@ -310,7 +309,7 @@ export async function createPianoEngine(params, score) {
                 section,
                 sectionProg,
                 { piano },
-                { ...params, tonalCenter, scaleType },
+                { ...params, tonalCenter },
                 rand,
                 measureDur,
                 score
