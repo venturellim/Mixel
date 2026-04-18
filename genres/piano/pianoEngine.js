@@ -11,7 +11,7 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { progressions } from "../../utils/musicTheory.js"; 
 import { waitForInstruments } from "../../common.js";
 
-console.log("pianoEngine.js ver. 021.2 loaded");
+console.log("pianoEngine.js ver. 021.3 loaded");
 
 export async function waitPianoInstruments() {
     await waitForInstruments(1);
@@ -104,18 +104,18 @@ const PTime = {
 
 // Espansione pattern
 const PPhrase = {
-    expand(pattern,scale,root,desired){
-        const out=[];
-        while(out.length<desired){
-            for(let step of pattern){
-                const idx=(step%scale.length+scale.length)%scale.length;
-                out.push(scale[idx]);
-                if(out.length>=desired) break;
-            }
+    expand(pattern, scale, root, desired){
+    const out=[];
+    while(out.length < desired){
+        for(let step of pattern){
+            const idx = (step % scale.length + scale.length) % scale.length;
+            const midi = scale[idx]; // la scala contiene già note MIDI complete
+            out.push(midi);
+            if(out.length >= desired) break;
         }
-        return out;
-    },
-
+    }
+    return out;
+}
     build(pattern,scale,root,phraseTime,maxNPS,params,rand){
         const maxNotes=Math.floor(phraseTime*maxNPS);
         const desired=PU.clamp(maxNotes,6,14);
