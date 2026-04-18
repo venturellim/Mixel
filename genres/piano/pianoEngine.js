@@ -11,7 +11,7 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { progressions } from "../../utils/musicTheory.js"; 
 import { waitForInstruments } from "../../common.js";
 
-console.log("pianoEngine.js ver. 021 loaded");
+console.log("pianoEngine.js ver. 021.1 loaded");
 
 export async function waitPianoInstruments() {
     await waitForInstruments(1);
@@ -204,7 +204,9 @@ const PianoSoloV1 = {
         const usable=PSoloStruct.filter(p);
 
         const theme=PTheme.pick(p.brightness,p.complexity);
-        const root=60;
+        // const root=60;
+        const root = Tone.Frequency(params.imageParams.tonalCenter + "4").toMidi();
+
 
         let phrases=[];
 
@@ -215,7 +217,9 @@ const PianoSoloV1 = {
                 : PMel[sec.pattern] || PArp[sec.pattern] || PArp.wideChords;
 
             const pattern=PU.ch(patternSet);
-            const scale=PScales[sec.scale](0);
+            //const scale=PScales[sec.scale](0);
+const scale = PScales[sec.scale](0).map(n => n + root);
+
 
             const phrase=PSelect.phrase(p,scale,root,pTime,rand);
             phrases.push({phrase});
