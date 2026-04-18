@@ -128,7 +128,7 @@ export async function createOrchestraEngine(params, score) {
                         }
 
                         // === VIOLA (FIX: SEMPRE UNA NOTA VALIDA) ===
-                        const // === VIOLA (FIX + LOG) ===
+                         // === VIOLA (FIX + LOG) ===
 const violaRaw = getScaleDegree(scale, rootIdx + 2) || scale[2];
 const violaNote = safeNote(violaRaw, "4");
 
