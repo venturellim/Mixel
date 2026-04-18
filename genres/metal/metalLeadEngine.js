@@ -3,7 +3,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 007 loaded");
+console.log("metalLeadEngine.js ver. 007.1 loaded");
 
 // ─────────────────────────────────────────────
 // METAL LEAD ENGINE — VERSIONE 4
@@ -437,8 +437,11 @@ const LeadSoloV4 = {
 
                     // Score
                     Tone.Draw.schedule(() => {
-                        if (score) score.addNote("Lead", noteObj.midi, p.section);
-                    }, time);
+    if (score) {
+        const noteName = Tone.Frequency(noteObj.midi, "midi").toNote();
+        score.addNote("Lead", noteName, "SOLO");
+    }
+}, time);
                 }, absTime);
             }
 
