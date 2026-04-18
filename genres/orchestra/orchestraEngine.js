@@ -1,5 +1,6 @@
 // ==========================================
-// orchestraEngine.js — ver. 020 (FIX + SOLO + MIDI SAFE)
+// orchestraEngine.js — ver. 021.3
+// (SOLO ENGINE V2 + FIX TIMPANI + FIX SCOREUI)
 // ==========================================
 
 import * as Tone from "https://esm.sh/tone";
@@ -10,18 +11,21 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { generateSongProgressions } from "../../utils/musicTheory.js"; 
 import { waitForInstruments } from "../../common.js";
 
-console.log("orchestraEngine.js ver. 020 loaded");
+console.log("orchestraEngine.js ver. 021.3 loaded");
 
-// Convert MIDI → nota stringa
+// MIDI → nota stringa
 function midiToNote(midi) {
     return Tone.Frequency(midi, "midi").toNote();
 }
 
-// safeNote ora accetta solo stringhe valide
+// safeNote accetta solo stringhe valide
 function safeNote(note) {
     if (!note || typeof note !== "string") return null;
     return isNaN(Tone.Frequency(note).toMidi()) ? null : note;
 }
+
+// Mappa timpani → note vere (come la batteria del metal)
+const timpaniNotes = ["C2", "D2", "E2", "F2", "G2"];
 
 // Motto orchestrale
 function generateOrchestraMotto(rand, complexity) {
@@ -36,6 +40,92 @@ function generateOrchestraMotto(rand, complexity) {
 export async function waitOrchestraInstruments() {
     await waitForInstruments(6);
 }
+
+// ─────────────────────────────────────────────
+// ORCHESTRA SOLO ENGINE V2 — Violino + Archi + Timpani
+// ─────────────────────────────────────────────
+
+const OrchestraSoloV2 = {
+    generate(section, progression, instruments, params, rand, measureDur, score, scale) {
+        const { violin, viola, cello, doubleBass, timpani } = instruments;
+        if (!violin) return;
+
+        const totalTime = section.measures * measureDur;
+        const phraseCount = 4;
+        const phraseTime = totalTime / phraseCount;
+
+        const patterns = [
+            [0, 2, 4, 5, 4, 2, 0],
+            [0, 3, 5, 7, 5, 3, 1],
+            [0, 4, 7, 9, 7, 4, 2],
+            [0, 5, 7, 12, 7, 5, 2]
+        ];
+
+        let cursor = section.startTime;
+
+        for (let pIndex = 0; pIndex < phraseCount; pIndex++) {
+            const pattern = patterns[rand() * patterns.length | 0];
+
+            const degree = progression[pIndex % progression.length];
+            const rootIdx = degreeToIndex(degree);
+            const rootMidi = getScaleDegree(scale, rootIdx);
+
+            const notes = pattern.map(step => {
+                const idx = (step % scale.length + scale.length) % scale.length;
+                return getScaleDegree(scale, idx) + (rootMidi - scale[0]);
+            });
+
+            const times = Array.from({ length: notes.length }, (_, i) => i * (phraseTime / notes.length));
+
+            // Violino solista
+            notes.forEach((midi, i) => {
+                const abs = cursor + times[i];
+                const note = midiToNote(midi);
+
+                Tone.Transport.schedule(time => {
+                    violin.triggerAttackRelease(note, "8n", time, 0.95);
+
+                    Tone.Draw.schedule(() => {
+                        if (score) score.addNote("Lead", note, "SOLO");
+                    }, time);
+                }, abs);
+            });
+
+            // Pad di viola
+            const padNote = midiToNote(rootMidi);
+            Tone.Transport.schedule(time => {
+                viola.triggerAttackRelease(padNote, phraseTime, time, 0.35);
+            }, cursor);
+
+            // Cello basso
+            Tone.Transport.schedule(time => {
+                cello.triggerAttackRelease(padNote, phraseTime, time, 0.4);
+            }, cursor);
+
+            // Contrabbasso sul primo battito
+            Tone.Transport.schedule(time => {
+                const dbNote = Tone.Frequency(padNote).transpose(-12).toNote();
+                doubleBass.triggerAttackRelease(dbNote, "1n", time, 0.5);
+            }, cursor);
+
+            // Timpani drammatici + nota per lo spartito
+            Tone.Transport.schedule(time => {
+                const tIndex = pIndex % 5;
+                const tName = `timpano${tIndex + 1}`;
+                timpani.player(tName).start(time);
+
+                const tNote = timpaniNotes[tIndex];
+                if (score) score.addNote("Drums", tNote, "SOLO");
+            }, cursor);
+
+            cursor += phraseTime;
+        }
+    }
+};
+
+// ─────────────────────────────────────────────
+// ORCHESTRA ENGINE PRINCIPALE
+// ─────────────────────────────────────────────
 
 export async function createOrchestraEngine(params, score) {
     const rand = createSeededRandom(params.dna);
@@ -61,7 +151,7 @@ export async function createOrchestraEngine(params, score) {
         { name: "chorus", measures: energy > 0.5 ? 16 : 8 }
     ];
     if (hasBridge) dynamicStructure.push({ name: "bridge", measures: 4 });
-    dynamicStructure.push({ name: "solo", measures: 4 }); // AGGIUNTO SOLO
+    dynamicStructure.push({ name: "solo", measures: 4 });
     dynamicStructure.push({ name: "outro", measures: energy < 0.3 ? 8 : 4 });
 
     const structure = buildSongStructure(dynamicStructure, bpm);
@@ -82,12 +172,27 @@ export async function createOrchestraEngine(params, score) {
         const sectionData = songProgressions[section.name];
         const progression = sectionData.progression;
 
-        // Scala coerente
         const sectionRoot = sectionData.root + (brightness > 0.6 ? "4" : "3");
         const scale = buildScaleFromTonic(sectionRoot, "harmonicMinor");
 
         const isSolo = section.name === "solo";
 
+        // SOLO ENGINE
+        if (isSolo) {
+            OrchestraSoloV2.generate(
+                section,
+                progression,
+                { violin, viola, cello, doubleBass, timpani },
+                params,
+                rand,
+                measureDur,
+                score,
+                scale
+            );
+            return;
+        }
+
+        // SEZIONI NORMALI
         for (let m = 0; m < section.measures; m++) {
             const measureStartTime = section.startTime + (m * measureDur);
             
@@ -101,50 +206,31 @@ export async function createOrchestraEngine(params, score) {
                         const baseMidi = getScaleDegree(scale, rootIdx);
                         const baseNote = midiToNote(baseMidi);
 
-                        // === VIOLINO SOLO ===
-                        if (isSolo) {
-                            const soloMidi = getScaleDegree(scale, rootIdx + motto[s % motto.length] + 7);
-                            const soloNote = safeNote(midiToNote(soloMidi));
+                        // Violino lead leggero
+                        const leadMidi = getScaleDegree(scale, rootIdx + 7 + motto[s % motto.length]);
+                        const leadNote = safeNote(midiToNote(leadMidi));
 
-                            if (soloNote) {
-                                violin.triggerAttackRelease(soloNote, "8n", time, 0.9);
-                                Tone.Draw.schedule(() => { 
-                                    if (score) score.addNote("Lead", soloNote, "SOLO");
-                                }, time);
-                            }
-                        } else {
-                            // === VIOLINO (Lead leggero) ===
-                            const leadMidi = getScaleDegree(scale, rootIdx + 7 + motto[s % motto.length]);
-                            const leadNote = safeNote(midiToNote(leadMidi));
-
-                            if (leadNote && rand() > (0.6 - energy * 0.3)) {
-                                violin.triggerAttackRelease(leadNote, "8n", time, 0.6);
-                                Tone.Draw.schedule(() => { 
-                                    if (score) score.addNote("Lead", leadNote, section.name);
-                                }, time);
-                            }
+                        if (leadNote && rand() > (0.6 - energy * 0.3)) {
+                            violin.triggerAttackRelease(leadNote, "8n", time, 0.6);
+                            if (score) score.addNote("Lead", leadNote, section.name);
                         }
 
-                        // === VIOLA ===
+                        // Viola
                         const violaMidi = getScaleDegree(scale, rootIdx + 2);
                         const violaNote = safeNote(midiToNote(violaMidi));
                         if (violaNote && rand() > 0.4) {
                             viola.triggerAttackRelease(violaNote, "4n", time, 0.4);
-                            Tone.Draw.schedule(() => { 
-                                if (score) score.addNote("LeadXtra", violaNote, section.name);
-                            }, time);
+                            if (score) score.addNote("LeadXtra", violaNote, section.name);
                         }
 
-                        // === CLAVICEMBALO ===
+                        // Clavicembalo
                         if (s % 2 === 1 && energy > 0.3) {
                             const hNote = safeNote(baseNote);
                             if (hNote) harpsichord.triggerAttackRelease(hNote, "16n", time, 0.3);
-                            Tone.Draw.schedule(() => { 
-                                if (score) score.addNote("Rhythm", hNote, section.name);
-                            }, time);
+                            if (score) score.addNote("Rhythm", hNote, section.name);
                         }
 
-                        // === CELLO & CONTRABBASSO ===
+                        // Cello + Contrabbasso
                         if (s % 4 === 0) {
                             const celloNote = safeNote(midiToNote(baseMidi));
                             if (celloNote) {
@@ -153,22 +239,21 @@ export async function createOrchestraEngine(params, score) {
                                 const dbNote = Tone.Frequency(celloNote).transpose(-12).toNote();
                                 doubleBass.triggerAttackRelease(dbNote, "2n", time, 0.5);
 
-                                Tone.Draw.schedule(() => { 
-                                    if (score) {
-                                        score.addNote("Bass", dbNote, section.name);
-                                        score.addNote("BassXtra", celloNote, section.name);
-                                    }
-                                }, time);
+                                if (score) {
+                                    score.addNote("Bass", dbNote, section.name);
+                                    score.addNote("BassXtra", celloNote, section.name);
+                                }
                             }
                         }
 
-                        // === TIMPANI ===
+                        // Timpani (con nota vera per lo spartito)
                         if (s === 0 || (energy > 0.7 && s === 4)) {
-                            const tName = `timpano${(m % 5) + 1}`;
+                            const tIndex = m % 5;
+                            const tName = `timpano${tIndex + 1}`;
                             timpani.player(tName).start(time);
-                            Tone.Draw.schedule(() => { 
-                                if (score) score.addNote("Drums", "Kick", section.name);
-                            }, time);
+
+                            const tNote = timpaniNotes[tIndex];
+                            if (score) score.addNote("Drums", tNote, section.name);
                         }
 
                     } catch (e) { console.warn(e); }
