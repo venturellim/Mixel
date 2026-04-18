@@ -1,5 +1,5 @@
 // ==========================================
-// pianoEngine.js — ver. 021 (SOLO ENGINE V1 + LH ACTIVE)
+// pianoEngine.js — ver. 021.2 (SOLO ENGINE V1 + LH ACTIVE + TONAL FIX)
 // ==========================================
 
 import * as Tone from "https://esm.sh/tone";
@@ -11,7 +11,7 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { progressions } from "../../utils/musicTheory.js"; 
 import { waitForInstruments } from "../../common.js";
 
-console.log("pianoEngine.js ver. 021.1 loaded");
+console.log("pianoEngine.js ver. 021.2 loaded");
 
 export async function waitPianoInstruments() {
     await waitForInstruments(1);
@@ -19,7 +19,6 @@ export async function waitPianoInstruments() {
 
 // ─────────────────────────────────────────────
 // SOLO ENGINE V1 — Minimal/Modern + Romantic
-// (Integrato direttamente qui dentro)
 // ─────────────────────────────────────────────
 
 // Utility
@@ -110,7 +109,7 @@ const PPhrase = {
         while(out.length<desired){
             for(let step of pattern){
                 const idx=(step%scale.length+scale.length)%scale.length;
-                out.push(scale[idx]+root);
+                out.push(scale[idx]);
                 if(out.length>=desired) break;
             }
         }
@@ -204,9 +203,9 @@ const PianoSoloV1 = {
         const usable=PSoloStruct.filter(p);
 
         const theme=PTheme.pick(p.brightness,p.complexity);
-        // const root=60;
-        const root = Tone.Frequency(params.imageParams.tonalCenter + "4").toMidi();
 
+        // TONAL FIX
+        const root = Tone.Frequency(params.tonalCenter + "4").toMidi();
 
         let phrases=[];
 
@@ -217,9 +216,9 @@ const PianoSoloV1 = {
                 : PMel[sec.pattern] || PArp[sec.pattern] || PArp.wideChords;
 
             const pattern=PU.ch(patternSet);
-            //const scale=PScales[sec.scale](0);
-const scale = PScales[sec.scale](0).map(n => n + root);
 
+            // TONAL FIX
+            const scale = PScales[sec.scale](0).map(n => n + root);
 
             const phrase=PSelect.phrase(p,scale,root,pTime,rand);
             phrases.push({phrase});
@@ -290,6 +289,9 @@ export async function createPianoEngine(params, score) {
     const measureDur = (60 / p.bpm) * 4;
     const step8n = measureDur / 8;
 
+    const tonalCenter = p.tonalCenter;
+    const scaleType = p.scaleType;
+
     const mottoIndices = generateMotto(rand); 
     let lastNoteIdx = 1; 
 
@@ -304,7 +306,15 @@ export async function createPianoEngine(params, score) {
 
         // SOLO → mano destra = solo engine (LH continua)
         if (isSolo) {
-            schedulePianoLead(section, sectionProg, { piano }, params, rand, measureDur, score);
+            schedulePianoLead(
+                section,
+                sectionProg,
+                { piano },
+                { ...params, tonalCenter, scaleType },
+                rand,
+                measureDur,
+                score
+            );
         }
 
         // LH SEMPRE ATTIVA
