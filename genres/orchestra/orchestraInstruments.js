@@ -148,7 +148,7 @@ export const timpani = new Tone.Players({
          timpano1: "Samples/Timpani/Timpani1.mp3", 
          timpano2: "Samples/Timpani/Timpani2.mp3",
          timpano3: "Samples/Timpani/Timpani3.mp3",
-         timpano4: "Samples/Timpani/Timpanio4.mp3",
+         timpano4: "Samples/Timpani/Timpani4.mp3",
          timpano5: "Samples/Timpani/Timpani5.mp3"
     },
     release: 3,
