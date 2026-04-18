@@ -11,7 +11,7 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { progressions } from "../../utils/musicTheory.js"; 
 import { waitForInstruments } from "../../common.js";
 
-console.log("pianoEngine.js ver. 021.5 loaded");
+console.log("pianoEngine.js ver. 021.6 loaded");
 
 export async function waitPianoInstruments() {
     await waitForInstruments(1);
@@ -217,7 +217,7 @@ const PianoSoloV1 = {
         try {
             // Prova a prendere tonalCenter da params (passato esplicitamente)
             const tonalCenterNote = params.tonalCenter || p.tonalCenter || "C";
-            root = Tone.Frequency(tonalCenterNote + "4").toMidi();
+            root = Tone.Frequency(tonalCenterNote).toMidi();
             console.log(`PianoSoloV1: tonalCenter = ${tonalCenterNote}, root MIDI = ${root}`);
         } catch(e) {
             // Fallback sicuro: C4 (MIDI 60)
