@@ -55,17 +55,17 @@ export const violin = new Tone.Sampler({
 // --- VIOLA ---
 export const viola = new Tone.Sampler({
     urls: {  
-    A3: "Samples/viola/A3.mp3",
-    B2: "Samples/viola/B2.mp3", 
-    C2: "Samples/viola/C2.mp3",
-    C4: "Samples/viola/C4.mp3", 
-    D2: "Samples/viola/D2.mp3",
-    D3: "Samples/viola/D3.mp3",
-    D5: "Samples/viola/D5.mp3",
-    E2: "Samples/viola/E2.mp3",
-    E4: "Samples/viola/E4.mp3",
-    G2: "Samples/viola/G2.mp3", 
-    G4: "Samples/viola/G4.mp3"
+    A3: "Samples/Viola/A3.mp3",
+    B2: "Samples/Viola/B2.mp3", 
+    C2: "Samples/Viola/C2.mp3",
+    C4: "Samples/Viola/C4.mp3", 
+    D2: "Samples/Viola/D2.mp3",
+    D3: "Samples/Viola/D3.mp3",
+    D5: "Samples/Viola/D5.mp3",
+    E2: "Samples/Viola/E2.mp3",
+    E4: "Samples/Viola/E4.mp3",
+    G2: "Samples/Viola/G2.mp3", 
+    G4: "Samples/Viola/G4.mp3"
     },
     release: 1.2,
     onload: () => registerInstrumentLoaded()
