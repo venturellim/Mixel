@@ -16,14 +16,14 @@
 // ===============================================================
 
 import * as Tone from "https://esm.sh/tone";
-import { orchestraInstruments } from "./orchestraInstruments.js";
+import { orchestraInstruments, orchestraVolumeMap } from "./orchestraInstruments.js";
 import { createSeededRandom } from "../../utils/randomUtils.js";
 import { buildSongStructure } from "../../utils/structureUtils.js";
 import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { generateSongProgressions } from "../../utils/musicTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("🎼 orchestraEngine.js ver. 022.7 loaded");
+console.log("🎼 orchestraEngine.js ver. 022.8 loaded");
 
 // ---------------------------------------------------------------
 // SAFE NOTE
