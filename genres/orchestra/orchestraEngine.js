@@ -22,7 +22,7 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { generateSongProgressions } from "../../utils/musicTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("🎼 orchestraEngine.js ver. 022.12 loaded");
+console.log("🎼 orchestraEngine.js ver. 022.13 loaded");
 
 // ---------------------------------------------------------------
 // SAFE NOTE
@@ -335,8 +335,8 @@ function playSolo1Section(startTime, section, engine) {
     const soloInstrument = chooseSoloInstrument(rand, img);
     const soloPlayer = soloInstrument === "viola" ? viola : violin;
 
-    const scale = songProgressions[section.index].scale;
-    const rootIdx = songProgressions[section.index].rootIdx;
+    const scale = songProgressions[section.name].scale;
+const rootIdx = songProgressions[section.name].rootIdx;
     const totalSteps = section.measures * 4;
 
     for (let s = 0; s < totalSteps; s++) {
@@ -411,8 +411,8 @@ function playSolo2Section(startTime, section, engine) {
     const soloInstrument = chooseSoloInstrument(rand, img);
     const soloPlayer = soloInstrument === "viola" ? viola : violin;
 
-    const scale = songProgressions[section.index].scale;
-    const rootIdx = songProgressions[section.index].rootIdx;
+    const scale = songProgressions[section.name].scale;
+const rootIdx = songProgressions[section.name].rootIdx;
     const totalSteps = section.measures * 4;
 
     for (let s = 0; s < totalSteps; s++) {
@@ -502,8 +502,8 @@ function playNormalSection(startTime, section, engine) {
         score
     } = engine;
 
-    const scale = songProgressions[section.index].scale;
-    const rootIdx = songProgressions[section.index].rootIdx;
+    const scale = songProgressions[section.name].scale;
+const rootIdx = songProgressions[section.name].rootIdx;
     const totalSteps = section.measures * 4;
 
     for (let s = 0; s < totalSteps; s++) {
@@ -590,8 +590,8 @@ function intensifyChorus2(startTime, section, engine) {
         score
     } = engine;
 
-    const scale = songProgressions[section.index].scale;
-    const rootIdx = songProgressions[section.index].rootIdx;
+    const scale = songProgressions[section.name].scale;
+const rootIdx = songProgressions[section.name].rootIdx;
     const totalSteps = section.measures * 4;
 
     for (let s = 0; s < totalSteps; s++) {
