@@ -23,7 +23,7 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { generateSongProgressions } from "../../utils/musicTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("🎼 orchestraEngine.js ver. 022.9 loaded");
+console.log("🎼 orchestraEngine.js ver. 022.10 loaded");
 
 // ---------------------------------------------------------------
 // SAFE NOTE
@@ -592,6 +592,73 @@ function playSolo2Section(time, section, engine) {
         }
     }
 }
+
+function playNormalSection(time, section, engine) {
+    const {
+        rand,
+        mode,
+        songProgressions,
+        instruments: { violin, viola, cello, doubleBass, harpsichord, timpani },
+        score
+    } = engine;
+
+    const scale = songProgressions[section.index].scale;
+    const rootIdx = songProgressions[section.index].rootIdx;
+    const totalSteps = section.measures * 4;
+
+    for (let s = 0; s < totalSteps; s++) {
+        const stepTime = time + s * Tone.Time("4n").toSeconds();
+
+        // 🎻 Violino
+        if (rand() < 0.45) {
+            const note = safeNote(getScaleDegree(scale, rootIdx + (rand() < 0.5 ? 2 : 4)), "5");
+            if (note) {
+                violin.triggerAttackRelease(note, "4n", stepTime, 0.45);
+                if (score) score.addNote("Violin", note, section.name);
+            }
+        }
+
+        // 🎻 Viola
+        if (rand() < 0.55) {
+            const note = safeNote(getScaleDegree(scale, rootIdx + (rand() < 0.5 ? 0 : 2)), "4");
+            if (note) {
+                viola.triggerAttackRelease(note, "4n", stepTime, 0.40);
+                if (score) score.addNote("Viola", note, section.name);
+            }
+        }
+
+        // 🎻 Cello (sempre attivo)
+        playCello(stepTime, scale, rootIdx, s, mode, cello, score, section.name, rand);
+
+        // 🎻 Contrabbasso
+        if (s % 4 === 0) {
+            const bass = safeNote(getScaleDegree(scale, rootIdx), "2");
+            if (bass) {
+                doubleBass.triggerAttackRelease(bass, "1n", stepTime, 0.40);
+                if (score) score.addNote("DoubleBass", bass, section.name);
+            }
+        }
+
+        // 🎹 Clavicembalo
+        if ((mode === "canon" || mode === "vivaldi") && rand() < 0.35) {
+            const harps = safeNote(getScaleDegree(scale, rootIdx + (rand() < 0.5 ? 4 : 7)), "4");
+            if (harps) {
+                harpsichord.triggerAttackRelease(harps, "8n", stepTime, 0.35);
+                if (score) score.addNote("Harpsichord", harps, section.name);
+            }
+        }
+
+        // 🥁 Timpani
+        if (mode === "vivaldi" && s % 8 === 0 && rand() < 0.5) {
+            const timp = safeNote(getScaleDegree(scale, rootIdx), "2");
+            if (timp) {
+                timpani.triggerAttackRelease(timp, "2n", stepTime, 0.5);
+                if (score) score.addNote("Timpani", timp, section.name);
+            }
+        }
+    }
+}
+
 // ===============================================================
 // 🎻 PARTE 5/5 — INTEGRAZIONE FINALE + ROUTING SEZIONI
 // ===============================================================
