@@ -6,9 +6,9 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { generateSongProgressions } from "../../utils/musicTheory.js"; 
 import { waitForInstruments } from "../../common.js";
 
-console.log("orchestraEngine.js ver. 022.3 loaded");
+console.log("orchestraEngine.js ver. 022.4 loaded");
 
-// === SAFE NOTE (019.1 — NON SI TOCCA) ===
+// === SAFE NOTE ===
 function safeNote(note, defaultOctave = "4") {
     if (!note || typeof note !== "string") return null;
     const validated = /\d/.test(note) ? note : `${note}${defaultOctave}`;
@@ -34,8 +34,20 @@ function selectOrchestraMode(img) {
     return "hybrid";
 }
 
+// === PATTERN VIVALDIANI ===
+function vivaldiPattern(scale, rootIdx, rand) {
+    const patterns = [
+        [0, 2, 4, 2, 4, 5, 4, 2],   // arpeggio spezzato
+        [0, 1, 2, 3, 4, 5, 6, 7],   // scala ascendente
+        [7, 6, 5, 4, 3, 2, 1, 0],   // scala discendente
+        [0, 4, 7, 4, 0, 4, 7, 4],   // triade ripetuta
+        [0, 3, 5, 7, 5, 3, 1, 0]    // moto melodico
+    ];
+    return patterns[(rand() * patterns.length) | 0];
+}
+
 export async function waitOrchestraInstruments() {
-    await waitForInstruments(6);
+    await waitForInstruments(10);
 }
 
 export async function createOrchestraEngine(params, score) {
@@ -62,7 +74,7 @@ export async function createOrchestraEngine(params, score) {
     Tone.Transport.cancel();
     Tone.Transport.bpm.value = bpm;
 
-    // === STRUTTURA PIÙ LUNGA ===
+    // === STRUTTURA ===
     let introM, verseM, chorusM, bridgeM, outroM;
 
     if (mode === "canon") {
@@ -105,6 +117,16 @@ export async function createOrchestraEngine(params, score) {
         for (let m = 0; m < section.measures; m++) {
             const measureStartTime = section.startTime + m * measureDur;
 
+            // === MACRO-DYNAMICS (profilo B) ===
+            const sectionProgress = m / section.measures;
+            let baseVel = 0.5;
+
+            if (section.name === "intro") baseVel = 0.3 + sectionProgress * 0.2;
+            else if (section.name === "verse") baseVel = 0.4 + sectionProgress * 0.3;
+            else if (section.name === "chorus") baseVel = 0.6 + sectionProgress * 0.3;
+            else if (section.name === "bridge") baseVel = 0.4 + sectionProgress * 0.3;
+            else if (section.name === "outro") baseVel = 0.5 - sectionProgress * 0.3;
+
             for (let s = 0; s < 8; s++) {
                 const stepTime = measureStartTime + s * step8n;
                 const currentDegree = progression[m % progression.length];
@@ -115,46 +137,50 @@ export async function createOrchestraEngine(params, score) {
                         const baseNote = getScaleDegree(scale, rootIdx) || scale[0];
 
                         // === VIOLINO ===
-                        const mottoShift = motto[s % motto.length];
-                        let vDur, vProb;
-                        if (mode === "canon") { vDur = "4n"; vProb = 0.5; }
-                        else if (mode === "vivaldi") { vDur = "16n"; vProb = 0.9; }
-                        else { vDur = "8n"; vProb = 0.7; }
+                        let vNote, vDur, vVel;
 
-                        const vNote = safeNote(getScaleDegree(scale, rootIdx + 7 + mottoShift), "5");
-                        if (vNote && rand() < vProb) {
-                            violin.triggerAttackRelease(vNote, vDur, time, 0.7);
+                        if (mode === "vivaldi") {
+                            const pattern = vivaldiPattern(scale, rootIdx, rand);
+                            const pIndex = s % pattern.length;
+                            const offset = pattern[pIndex];
+
+                            vNote = safeNote(getScaleDegree(scale, rootIdx + offset), "5");
+                            vDur = "16n";
+
+                            // micro-dynamics
+                            const microVel = 0.2 + (pIndex / pattern.length) * 0.2;
+                            vVel = Math.min(1, baseVel + microVel + (rand() * 0.05));
+                        } 
+                        else {
+                            const mottoShift = motto[s % motto.length];
+                            vNote = safeNote(getScaleDegree(scale, rootIdx + 7 + mottoShift), "5");
+                            vDur = mode === "canon" ? "4n" : "8n";
+                            vVel = baseVel + (rand() * 0.05);
+                        }
+
+                        if (vNote) {
+                            violin.triggerAttackRelease(vNote, vDur, time, vVel);
                             if (score) score.addNote("Lead", vNote, section.name);
                         }
 
-                        // === VIOLA (FIX: SEMPRE UNA NOTA VALIDA) ===
-                         // === VIOLA (FIX + LOG) ===
-const violaRaw = getScaleDegree(scale, rootIdx + 2) || scale[2];
-const violaNote = safeNote(violaRaw, "4");
+                        // === VIOLA ===
+                        const violaRaw = getScaleDegree(scale, rootIdx + 2) || scale[2];
+                        const violaNote = safeNote(violaRaw, "4");
 
-let violaStep = mode === "vivaldi" ? 2 : 4;
-let violaProb = mode === "vivaldi" ? 0.5 : 0.7;
-let violaDur = mode === "canon" ? "2n" : "4n";
+                        let violaStep = mode === "vivaldi" ? 2 : 4;
+                        let violaDur = mode === "canon" ? "2n" : "4n";
+                        let violaVel = baseVel + (rand() * 0.05);
 
-// LOG DIAGNOSTICO
-console.log(
-    `[VIOLA] section=${section.name} m=${m} s=${s}`,
-    `raw=${violaRaw}`,
-    `note=${violaNote}`,
-    `stepOK=${(s % violaStep === 0)}`,
-    `probOK=${rand() < violaProb}`
-);
-
-if (violaNote && (s % violaStep === 0) && rand() < violaProb) {
-    viola.triggerAttackRelease(violaNote, violaDur, time, 0.4);
-    if (score) score.addNote("LeadXtra", violaNote, section.name);
-}
+                        if (violaNote && (s % violaStep === 0)) {
+                            viola.triggerAttackRelease(violaNote, violaDur, time, violaVel);
+                            if (score) score.addNote("LeadXtra", violaNote, section.name);
+                        }
 
                         // === CLAVICEMBALO ===
                         if (mode !== "canon" && s % 2 === 1 && energy > 0.4) {
                             const hNote = safeNote(baseNote, "4");
                             if (hNote) {
-                                harpsichord.triggerAttackRelease(hNote, mode === "vivaldi" ? "16n" : "8n", time, 0.3);
+                                harpsichord.triggerAttackRelease(hNote, mode === "vivaldi" ? "16n" : "8n", time, baseVel);
                                 if (score) score.addNote("Rhythm", hNote, section.name);
                             }
                         }
@@ -164,9 +190,9 @@ if (violaNote && (s % violaStep === 0) && rand() < violaProb) {
                         if (s % bassStep === 0) {
                             const bNote = safeNote(baseNote, "2");
                             if (bNote) {
-                                cello.triggerAttackRelease(bNote, "2n", time, 0.7);
+                                cello.triggerAttackRelease(bNote, "2n", time, baseVel + 0.1);
                                 const dbNote = Tone.Frequency(bNote).transpose(-12).toNote();
-                                doubleBass.triggerAttackRelease(dbNote, "2n", time, 0.5);
+                                doubleBass.triggerAttackRelease(dbNote, "2n", time, baseVel);
 
                                 if (score) {
                                     score.addNote("Bass", dbNote, section.name);
@@ -175,7 +201,7 @@ if (violaNote && (s % violaStep === 0) && rand() < violaProb) {
                             }
                         }
 
-                        // === TIMPANI (sempre Kick per scoreUI) ===
+                        // === TIMPANI ===
                         let timpCond = false;
                         if (mode === "canon") timpCond = (s === 0 && rand() < 0.4);
                         else if (mode === "hybrid") timpCond = (s === 0 || (s === 4 && energy > 0.6));
@@ -183,7 +209,7 @@ if (violaNote && (s % violaStep === 0) && rand() < violaProb) {
 
                         if (timpCond) {
                             const tName = `timpano${(m % 5) + 1}`;
-                            timpani.player(tName).start(time);
+                            timpani.player(tName).start(time, 0, undefined, baseVel + 0.1);
                             if (score) score.addNote("Drums", "Kick", section.name);
                         }
 
