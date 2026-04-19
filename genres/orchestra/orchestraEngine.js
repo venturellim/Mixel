@@ -23,7 +23,7 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { generateSongProgressions } from "../../utils/musicTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("🎼 orchestraEngine.js ver. 022.6 loaded");
+console.log("🎼 orchestraEngine.js ver. 022.7 loaded");
 
 // ---------------------------------------------------------------
 // SAFE NOTE
@@ -159,18 +159,26 @@ export async function createOrchestraEngine(params, score) {
     // RITORNO ENGINE
     // -----------------------------------------------------------
     return {
-        rand,
-        img,
-        mode,
-        bpm,
-        structure,
-        songProgressions,
-        measureDur,
-        solo1Measures,
-        solo2Measures,
-        instruments: { violin, viola, cello, doubleBass, harpsichord, timpani },
-        score
-    };
+    totalDuration: structure.totalDuration,
+
+    play: () => { 
+        Tone.context.resume(); 
+        Tone.Transport.start("+0.1"); 
+    },
+
+    stop: () => {
+        Tone.Transport.stop();
+        Tone.Transport.cancel();
+
+        [violin, viola, cello, doubleBass, harpsichord].forEach(i => i?.releaseAll?.());
+        timpani?.stopAll?.();
+    },
+
+    mixerData: {
+        instruments: orchestraInstruments,
+        volumeMap: orchestraVolumeMap
+    }
+};
 }
 // ===============================================================
 // 🎻 PARTE 2/5 — SOLO ENGINE: FRASEGGIO + DINAMICHE + RUBATO
