@@ -23,7 +23,7 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { generateSongProgressions } from "../../utils/musicTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("🎼 orchestraEngine.js ver. 022.8 loaded");
+console.log("🎼 orchestraEngine.js ver. 022.9 loaded");
 
 // ---------------------------------------------------------------
 // SAFE NOTE
@@ -160,6 +160,8 @@ export async function createOrchestraEngine(params, score) {
     // -----------------------------------------------------------
     return {
     totalDuration: structure.totalDuration,
+
+    instruments: orchestraInstruments,   // <— MANCAVA QUESTO!
 
     play: () => { 
         Tone.context.resume(); 
