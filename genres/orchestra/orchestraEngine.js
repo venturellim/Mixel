@@ -22,7 +22,7 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { generateSongProgressions } from "../../utils/musicTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("orchestraEngine.js ver. 022.14 loaded");
+console.log("orchestraEngine.js ver. 022.15 loaded");
 
 // ---------------------------------------------------------------
 // SAFE NOTE
@@ -335,8 +335,13 @@ function playSolo1Section(startTime, section, engine) {
     const soloInstrument = chooseSoloInstrument(rand, img);
     const soloPlayer = soloInstrument === "viola" ? viola : violin;
 
-    const scale = songProgressions.sections[section.index].scale;
-const rootIdx = songProgressions.sections[section.index].rootIdx;
+    const prog = songProgressions[section.name].progression;
+const root = songProgressions[section.name].root;
+
+// Costruisci la scala armonica
+const scale = buildScaleFromTonic(root + "3", "harmonicMinor");
+const rootIdx = 0;
+
     const totalSteps = section.measures * 4;
 
     for (let s = 0; s < totalSteps; s++) {
@@ -411,8 +416,13 @@ function playSolo2Section(startTime, section, engine) {
     const soloInstrument = chooseSoloInstrument(rand, img);
     const soloPlayer = soloInstrument === "viola" ? viola : violin;
 
-    const scale = songProgressions.sections[section.index].scale;
-const rootIdx = songProgressions.sections[section.index].rootIdx;
+    const prog = songProgressions[section.name].progression;
+const root = songProgressions[section.name].root;
+
+// Costruisci la scala armonica
+const scale = buildScaleFromTonic(root + "3", "harmonicMinor");
+const rootIdx = 0;
+
     const totalSteps = section.measures * 4;
 
     for (let s = 0; s < totalSteps; s++) {
@@ -502,8 +512,12 @@ function playNormalSection(startTime, section, engine) {
         score
     } = engine;
 
-    const scale = songProgressions.sections[section.index].scale;
-const rootIdx = songProgressions.sections[section.index].rootIdx;
+    const prog = songProgressions[section.name].progression;
+const root = songProgressions[section.name].root;
+
+// Costruisci la scala armonica
+const scale = buildScaleFromTonic(root + "3", "harmonicMinor");
+const rootIdx = 0;
     const totalSteps = section.measures * 4;
 
     for (let s = 0; s < totalSteps; s++) {
@@ -590,8 +604,12 @@ function intensifyChorus2(startTime, section, engine) {
         score
     } = engine;
 
-    const scale = songProgressions.sections[section.index].scale;
-const rootIdx = songProgressions.sections[section.index].rootIdx;
+    const prog = songProgressions[section.name].progression;
+const root = songProgressions[section.name].root;
+
+// Costruisci la scala armonica
+const scale = buildScaleFromTonic(root + "3", "harmonicMinor");
+const rootIdx = 0;
     const totalSteps = section.measures * 4;
 
     for (let s = 0; s < totalSteps; s++) {
