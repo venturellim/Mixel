@@ -301,6 +301,22 @@ function playCello(time, scale, rootIdx, step, mode, cello, score, sectionName, 
         score.addNote("Cello", safe, sectionName);
     }
 }
+
+function playTimpani(time, rand, timpani, score, sectionName) {
+    if (!timpani || !timpani.player) return;
+
+    // scegli un colpo casuale
+    const keys = ["timpano1", "timpano2", "timpano3", "timpano4", "timpano5"];
+    const key = keys[Math.floor(rand() * keys.length)];
+
+    const player = timpani.player(key);
+    if (!player) return;
+
+    player.start(time);
+
+    if (score) score.addNote("Drums", "Kick", section.name);
+}
+
 // ===============================================================
 // 🎻 ORCHESTRA ENGINE 022.12 — PARTE 4/5
 // ===============================================================
@@ -490,14 +506,12 @@ const rootIdx = 0;
             const timpNote = getScaleDegree(scale, rootIdx);
             const safeTimp = safeNote(timpNote, "2");
             if (safeTimp) {
-                timpani.triggerAttackRelease(safeTimp, "2n", stepTime, 0.55);
-                if (score) score.addNote("Timpani", safeTimp, section.name);
+                playTimpani(stepTime, rand, timpani, score, section.name);
+                if (score) score.addNote("Drums", "Kick", section.name);
             }
         }
     }
 }
-
-
 
 // ---------------------------------------------------------------
 // 🎼 SEZIONI NORMALI (intro, verse, chorus, bridge, outro)
@@ -567,8 +581,8 @@ const rootIdx = 0;
         if (mode === "vivaldi" && s % 8 === 0 && rand() < 0.5) {
             const timp = safeNote(getScaleDegree(scale, rootIdx), "2");
             if (timp) {
-                timpani.triggerAttackRelease(timp, "2n", stepTime, 0.5);
-                if (score) score.addNote("Timpani", timp, section.name);
+                playTimpani(stepTime, rand, timpani, score, section.name);
+                if (score) score.addNote("Drums", "Kick", section.name);
             }
         }
     }
