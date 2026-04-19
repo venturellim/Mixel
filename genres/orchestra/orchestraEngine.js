@@ -23,7 +23,7 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { generateSongProgressions } from "../../utils/musicTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("🎼 orchestraEngine.js ver. 022.10 loaded");
+console.log("🎼 orchestraEngine.js ver. 022.11 loaded");
 
 // ---------------------------------------------------------------
 // SAFE NOTE
@@ -681,22 +681,18 @@ function playNormalSection(time, section, engine) {
 // AVVIO ENGINE ORCHESTRALE
 // ---------------------------------------------------------------
 export async function startOrchestraEngine(engine) {
-    const { structure } = engine;
 
-    // Offset iniziale per sicurezza (evita tagli)
+    // Usa SEMPRE l’array delle sezioni
+    const structure = engine.structure.sections;
+
     let currentTime = Tone.now() + 0.5;
 
-    // Scorriamo tutte le sezioni
     for (let i = 0; i < structure.length; i++) {
         const section = structure[i];
         const start = currentTime;
 
-        // Salviamo l'indice per accedere alla progressione armonica
         section.index = i;
 
-        // -------------------------------------------------------
-        // ROUTING SEZIONI
-        // -------------------------------------------------------
         if (section.name === "solo1") {
             playSolo1Section(start, section, engine);
 
@@ -704,22 +700,19 @@ export async function startOrchestraEngine(engine) {
             playSolo2Section(start, section, engine);
 
         } else if (section.name === "chorus2") {
-            // Chorus2 intensificato
             playNormalSection(start, section, engine);
             intensifyChorus2(start, section, engine);
 
         } else {
-            // Sezioni normali (intro, verse, chorus, bridge, outro)
             playNormalSection(start, section, engine);
         }
 
-        // Avanza il tempo alla prossima sezione
         currentTime += section.measures * Tone.Time("1m").toSeconds();
     }
 
-    // Avvio del Transport
     Tone.Transport.start();
 }
+
 
 
 // ---------------------------------------------------------------
