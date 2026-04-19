@@ -22,7 +22,7 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { generateSongProgressions } from "../../utils/musicTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("orchestraEngine.js ver. 022.15 loaded");
+console.log("orchestraEngine.js ver. 022.16 loaded");
 
 // ---------------------------------------------------------------
 // SAFE NOTE
@@ -314,7 +314,7 @@ function playTimpani(time, rand, timpani, score, sectionName) {
 
     player.start(time);
 
-    if (score) score.addNote("Drums", "Kick", section.name);
+    if (score) score.addNote("Drums", "Kick", sectionName);
 }
 
 // ===============================================================
