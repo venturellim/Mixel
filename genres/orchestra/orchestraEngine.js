@@ -468,7 +468,7 @@ Tone.Transport.schedule(time => {
     if (score) score.addNote(soloInstrument === "viola" ? "LeadXtra" : "Lead", safe, section.name);
 }, stepTime);
 
-            }
+            
         }
 
         // VIOLA CONTRO-CANTO
