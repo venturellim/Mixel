@@ -384,7 +384,7 @@ const rootIdx = 0;
     if (score) score.addNote(soloInstrument === "viola" ? "LeadXtra" : "Lead", safe, section.name);
 }, stepTime);
             }
-        }
+        //}
 
         // VIOLA CONTRO-CANTO (solo se non è solista)
         if (soloInstrument !== "viola") {
@@ -396,7 +396,7 @@ const rootIdx = 0;
     if (score) score.addNote("LeadXtra", safeAlt, section.name);
 }, stepTime);
             }
-        }
+        //}
 
         // CELLO
         Tone.Transport.schedule(time => {
@@ -413,7 +413,7 @@ const rootIdx = 0;
     if (score) score.addNote("Bass", safeBass, section.name);
 }, stepTime);
                 
-            }
+            //}
         }
     }
 }
@@ -482,7 +482,7 @@ Tone.Transport.schedule(time => {
 }, stepTime);
                 
             }
-        }
+        //}
 
         // CELLO
         Tone.Transport.schedule(time => {
@@ -500,7 +500,7 @@ Tone.Transport.schedule(time => {
 }, stepTime);
                 
             }
-        }
+        //}
 
         // CLAVICEMBALO (solo barocco)
         if (style === "baroque" && rand() < 0.5) {
@@ -513,7 +513,7 @@ Tone.Transport.schedule(time => {
 }, stepTime);
                 
             }
-        }
+        //}
 
         // TIMPANI (climax)
         if (style !== "lyrical" && s % 8 === 0 && sectionProgress > 0.4) {
@@ -524,7 +524,7 @@ Tone.Transport.schedule(time => {
     playTimpani(time, rand, timpani, score, section.name);
 }, stepTime);
                 if (score) score.addNote("Drums", "Kick", section.name);
-            }
+            //}
         }
     }
 }
@@ -564,7 +564,7 @@ const rootIdx = 0;
 }, stepTime);
                 
             }
-        }
+        //}
 
         // VIOLA
         if (rand() < 0.55) {
@@ -576,7 +576,7 @@ const rootIdx = 0;
 }, stepTime);
                 
             }
-        }
+        //}
 
         // CELLO
         Tone.Transport.schedule(time => {
@@ -593,7 +593,7 @@ const rootIdx = 0;
 }, stepTime);
                 
             }
-        }
+        //}
 
         // CLAVICEMBALO
         if ((mode === "canon" || mode === "vivaldi") && rand() < 0.35) {
@@ -605,7 +605,7 @@ const rootIdx = 0;
 }, stepTime);
                 
             }
-        }
+        //}
 
         // TIMPANI
         if (mode === "vivaldi" && s % 8 === 0 && rand() < 0.5) {
@@ -615,7 +615,7 @@ const rootIdx = 0;
     playTimpani(time, rand, timpani, score, section.name);
 }, stepTime);
                 if (score) score.addNote("Drums", "Kick", section.name);
-            }
+            //}
         }
     }
 }
@@ -672,7 +672,7 @@ const rootIdx = 0;
     if (score) score.addNote("Lead", safe, section.name);
 }, stepTime);
             }
-        }
+        //}
 
         // VIOLA più presente
         if (rand() < 0.5) {
@@ -684,7 +684,7 @@ const rootIdx = 0;
     if (score) score.addNote("LeadXtra", safe, section.name);
 }, stepTime);
             }
-        }
+        //}
 
         // CELLO più forte
         if (rand() < 0.8) {
@@ -697,7 +697,7 @@ const rootIdx = 0;
 }, stepTime);
 
                 
-            }
+            //}
         }
     }
 }
