@@ -215,9 +215,9 @@ function dynamicCurve(baseVel, sectionProgress, style) {
 // --- LIRICO (cinematografico, morbido) ---
 function lyricalSoloPhrase(scale, rootIdx, rand) {
     const patterns = [
-        [0, 2, 4, 5, 4, 2, 0]
-[0, 3, 5, 7, 5, 3]
-[0, 1, 3, 5, 7, 5, 3]
+        [0, 2, 4, 5, 4, 2, 0],
+[0, 3, 5, 7, 5, 3],
+[0, 1, 3, 5, 7, 5, 3],
         [0, 1, 3, 5],
         [0, 2, 4],
         [0, 1, 2, 1, 0],
@@ -229,9 +229,9 @@ function lyricalSoloPhrase(scale, rootIdx, rand) {
 // --- BAROCCO (virtuosistico, rapido) ---
 function baroqueSoloPhrase(scale, rootIdx, rand) {
     const patterns = [
-    [0, 2, 4, 7, 9, 7, 4, 2]
-[0, 1, 2, 3, 4, 5, 6, 7]
-[7, 6, 5, 4, 3, 2, 1, 0]
+    [0, 2, 4, 7, 9, 7, 4, 2],
+[0, 1, 2, 3, 4, 5, 6, 7],
+[7, 6, 5, 4, 3, 2, 1, 0],
         [0, 2, 4, 7, 4, 2],
         [0, 1, 2, 3, 4, 5, 6],
         [7, 6, 5, 4, 3, 2, 1],
@@ -243,9 +243,9 @@ function baroqueSoloPhrase(scale, rootIdx, rand) {
 // --- ROMANTICO (drammatico, intervalli ampi) ---
 function romanticSoloPhrase(scale, rootIdx, rand) {
     const patterns = [
-    [0, 5, 3, 8, 10, 8, 5]
-[0, 2, 7, 9, 12, 9, 7]
-[0, -2, 3, 10, 12, 10, 3]
+    [0, 5, 3, 8, 10, 8, 5],
+[0, 2, 7, 9, 12, 9, 7],
+[0, -2, 3, 10, 12, 10, 3],
 
         [0, 5, 3, 8],
         [0, 2, 7, 9],
@@ -371,17 +371,43 @@ function playSolo1Section(startTime, section, engine) {
 
         // SOLO
         const phrase = generateSoloPhrase(style, scale, rootIdx, rand);
-        const noteOffset = phrase[(s / 2) % phrase.length | 0];
+        // Direzione melodica: frasi ascendenti o discendenti
+const direction = rand() < 0.5 ? 1 : -1;
+const idx = (s * direction) % longPhrase.length;
+const noteOffset = longPhrase[(idx + longPhrase.length) % longPhrase.length];
+
+        //const noteOffset = phrase[(s / 2) % phrase.length | 0];
         const note = getScaleDegree(scale, rootIdx + noteOffset);
         const safe = safeNote(note, soloInstrument === "viola" ? "4" : "5");
 
         if (safe) {
+        // Pause naturali (10% di probabilità)
+if (rand() < 0.10) {
+    return; // salta la nota
+}
+
             const vel = dynamicCurve(0.55, sectionProgress, style);
-            const vib = vibratoVelocity(vel, rand, style === "romantic" ? 0.08 : 0.04);
+            // Climax dinamico: più vibrato verso la fine
+const climax = sectionProgress > 0.7 ? 1.5 : 1.0;
+const vib = vibratoVelocity(vel * climax, rand, style === "romantic" ? 0.12 : 0.06);
+
+            //const vib = vibratoVelocity(vel, rand, style === "romantic" ? 0.08 : 0.04);
             const t = style === "romantic" ? applyRubato(stepTime, rand) : stepTime;
 
             const durations = ["8n", "4n", "4n", "8n", "2n"];
 const dur = durations[(rand() * durations.length) | 0];
+// Note di passaggio cromatiche (5%)
+if (rand() < 0.05) {
+    const midi = Tone.Frequency(safe).toMidi();
+    const chromatic = Tone.Frequency(midi + (rand() < 0.5 ? -1 : 1), "midi").toNote();
+    safe = safeNote(chromatic, soloInstrument === "viola" ? "4" : "5");
+}
+// Salti di ottava (solo barocco o climax)
+if (style === "baroque" && rand() < 0.15) {
+    const midi = Tone.Frequency(safe).toMidi();
+    const up = Tone.Frequency(midi + 12, "midi").toNote();
+    safe = safeNote(up, soloInstrument === "viola" ? "5" : "6");
+}
 
 Tone.Transport.schedule(time => {
     soloPlayer.triggerAttackRelease(safe, dur, time, vib);
@@ -451,17 +477,44 @@ function playSolo2Section(startTime, section, engine) {
 
         // SOLO
         const phrase = generateSoloPhrase(style, scale, rootIdx, rand);
-        const noteOffset = phrase[(s / 2) % phrase.length | 0];
+        // Direzione melodica: frasi ascendenti o discendenti
+const direction = rand() < 0.5 ? 1 : -1;
+const idx = (s * direction) % longPhrase.length;
+const noteOffset = longPhrase[(idx + longPhrase.length) % longPhrase.length];
+
+        // const noteOffset = phrase[(s / 2) % phrase.length | 0];
         const note = getScaleDegree(scale, rootIdx + noteOffset);
         const safe = safeNote(note, soloInstrument === "viola" ? "4" : "5");
 
         if (safe) {
+        // Pause naturali (10% di probabilità)
+if (rand() < 0.10) {
+    return; // salta la nota
+}
+
             const vel = dynamicCurve(0.65, sectionProgress, style);
-            const vib = vibratoVelocity(vel, rand, style === "romantic" ? 0.12 : 0.06);
+            // Climax dinamico: più vibrato verso la fine
+const climax = sectionProgress > 0.7 ? 1.5 : 1.0;
+const vib = vibratoVelocity(vel * climax, rand, style === "romantic" ? 0.12 : 0.06);
+
+            //const vib = vibratoVelocity(vel, rand, style === "romantic" ? 0.12 : 0.06);
             const t = style === "romantic" ? applyRubato(stepTime, rand) : stepTime;
 
             const durations = ["8n", "4n", "4n", "8n", "2n"];
 const dur = durations[(rand() * durations.length) | 0];
+// Note di passaggio cromatiche (5%)
+if (rand() < 0.05) {
+    const midi = Tone.Frequency(safe).toMidi();
+    const chromatic = Tone.Frequency(midi + (rand() < 0.5 ? -1 : 1), "midi").toNote();
+    safe = safeNote(chromatic, soloInstrument === "viola" ? "4" : "5");
+}
+// Salti di ottava (solo barocco o climax)
+if (style === "baroque" && rand() < 0.15) {
+    const midi = Tone.Frequency(safe).toMidi();
+    const up = Tone.Frequency(midi + 12, "midi").toNote();
+    safe = safeNote(up, soloInstrument === "viola" ? "5" : "6");
+}
+
 
 Tone.Transport.schedule(time => {
     soloPlayer.triggerAttackRelease(safe, dur, time, vib);
