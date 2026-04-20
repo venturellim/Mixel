@@ -22,7 +22,7 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { generateSongProgressions } from "../../utils/musicTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("orchestraEngine.js ver. 022.20 loaded");
+console.log("orchestraEngine.js ver. 022.19 loaded");
 
 // ---------------------------------------------------------------
 // SAFE NOTE
@@ -297,11 +297,11 @@ function playCello(time, scale, rootIdx, step, mode, cello, score, sectionName, 
 
     const vel = 0.55 + (rand() * 0.1);
 
-    cello.triggerAttackRelease(safe, "4n", time, vel);
-
-    if (score) score.addNote("BassXtra", safe, sectionName);
+    Tone.Transport.schedule(time => {
+        cello.triggerAttackRelease(safe, "4n", time, vel);
+        if (score) score.addNote("BassXtra", safe, sectionName);
+    }, time);
 }
-
 
 function playTimpani(time, rand, timpani, score, sectionName) {
     if (!timpani || !timpani.player) return;
