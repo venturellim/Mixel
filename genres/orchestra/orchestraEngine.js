@@ -22,7 +22,7 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { generateSongProgressions } from "../../utils/musicTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("orchestraEngine.js ver. 022.19 loaded");
+console.log("orchestraEngine.js ver. 022.20 loaded");
 
 // ---------------------------------------------------------------
 // SAFE NOTE
@@ -215,6 +215,9 @@ function dynamicCurve(baseVel, sectionProgress, style) {
 // --- LIRICO (cinematografico, morbido) ---
 function lyricalSoloPhrase(scale, rootIdx, rand) {
     const patterns = [
+        [0, 2, 4, 5, 4, 2, 0]
+[0, 3, 5, 7, 5, 3]
+[0, 1, 3, 5, 7, 5, 3]
         [0, 1, 3, 5],
         [0, 2, 4],
         [0, 1, 2, 1, 0],
@@ -226,6 +229,9 @@ function lyricalSoloPhrase(scale, rootIdx, rand) {
 // --- BAROCCO (virtuosistico, rapido) ---
 function baroqueSoloPhrase(scale, rootIdx, rand) {
     const patterns = [
+    [0, 2, 4, 7, 9, 7, 4, 2]
+[0, 1, 2, 3, 4, 5, 6, 7]
+[7, 6, 5, 4, 3, 2, 1, 0]
         [0, 2, 4, 7, 4, 2],
         [0, 1, 2, 3, 4, 5, 6],
         [7, 6, 5, 4, 3, 2, 1],
@@ -237,6 +243,10 @@ function baroqueSoloPhrase(scale, rootIdx, rand) {
 // --- ROMANTICO (drammatico, intervalli ampi) ---
 function romanticSoloPhrase(scale, rootIdx, rand) {
     const patterns = [
+    [0, 5, 3, 8, 10, 8, 5]
+[0, 2, 7, 9, 12, 9, 7]
+[0, -2, 3, 10, 12, 10, 3]
+
         [0, 5, 3, 8],
         [0, 2, 7, 9],
         [0, -2, 3, 10],
@@ -273,9 +283,9 @@ function generateSoloPhrase(style, scale, rootIdx, rand) {
 // PATTERN DEL VIOLONCELLO PER OGNI MODALITÀ
 // ---------------------------------------------------------------
 const celloPatterns = {
-    canon:  [0, 4, 7, 4],   // arpeggio lento e dolce
-    hybrid: [0, 2, 3, 2],   // moto congiunto cinematografico
-    vivaldi:[0, 4, 0, 4]    // ostinato leggero e ritmico
+    canon:  [0, 4, 7, 9, 7, 4],
+hybrid: [0, 2, 3, 5, 3, 2],
+vivaldi:[0, 4, 5, 7, 5, 4]
 };
 
 // ---------------------------------------------------------------
@@ -361,7 +371,7 @@ function playSolo1Section(startTime, section, engine) {
 
         // SOLO
         const phrase = generateSoloPhrase(style, scale, rootIdx, rand);
-        const noteOffset = phrase[s % phrase.length];
+        const noteOffset = phrase[(s / 2) % phrase.length | 0];
         const note = getScaleDegree(scale, rootIdx + noteOffset);
         const safe = safeNote(note, soloInstrument === "viola" ? "4" : "5");
 
@@ -370,10 +380,13 @@ function playSolo1Section(startTime, section, engine) {
             const vib = vibratoVelocity(vel, rand, style === "romantic" ? 0.08 : 0.04);
             const t = style === "romantic" ? applyRubato(stepTime, rand) : stepTime;
 
-            Tone.Transport.schedule(time => {
-                soloPlayer.triggerAttackRelease(safe, "4n", time, vib);
-                if (score) score.addNote(soloInstrument === "viola" ? "LeadXtra" : "Lead", safe, section.name);
-            }, t);
+            const durations = ["8n", "4n", "4n", "8n", "2n"];
+const dur = durations[(rand() * durations.length) | 0];
+
+Tone.Transport.schedule(time => {
+    soloPlayer.triggerAttackRelease(safe, dur, time, vib);
+    if (score) score.addNote(soloInstrument === "viola" ? "LeadXtra" : "Lead", safe, section.name);
+}, t);
         }
 
         // VIOLA CONTRO-CANTO (solo se non è solista)
@@ -393,7 +406,7 @@ function playSolo1Section(startTime, section, engine) {
 
         // CONTRABBASSO
         if (s % 4 === 0) {
-            const bassNote = getScaleDegree(scale, rootIdx);
+            const bassNote = getScaleDegree(scale, rootIdx + (rand() < 0.3 ? -2 : 0))
             const safeBass = safeNote(bassNote, "2");
             if (safeBass) {
                 Tone.Transport.schedule(time => {
@@ -438,7 +451,7 @@ function playSolo2Section(startTime, section, engine) {
 
         // SOLO
         const phrase = generateSoloPhrase(style, scale, rootIdx, rand);
-        const noteOffset = phrase[s % phrase.length];
+        const noteOffset = phrase[(s / 2) % phrase.length | 0];
         const note = getScaleDegree(scale, rootIdx + noteOffset);
         const safe = safeNote(note, soloInstrument === "viola" ? "4" : "5");
 
@@ -447,10 +460,13 @@ function playSolo2Section(startTime, section, engine) {
             const vib = vibratoVelocity(vel, rand, style === "romantic" ? 0.12 : 0.06);
             const t = style === "romantic" ? applyRubato(stepTime, rand) : stepTime;
 
-            Tone.Transport.schedule(time => {
-                soloPlayer.triggerAttackRelease(safe, "4n", time, vib);
-                if (score) score.addNote(soloInstrument === "viola" ? "LeadXtra" : "Lead", safe, section.name);
-            }, t);
+            const durations = ["8n", "4n", "4n", "8n", "2n"];
+const dur = durations[(rand() * durations.length) | 0];
+
+Tone.Transport.schedule(time => {
+    soloPlayer.triggerAttackRelease(safe, dur, time, vib);
+    if (score) score.addNote(soloInstrument === "viola" ? "LeadXtra" : "Lead", safe, section.name);
+}, t);
         }
 
         // VIOLA CONTRO-CANTO
@@ -470,7 +486,7 @@ function playSolo2Section(startTime, section, engine) {
 
         // CONTRABBASSO
         if (s % 4 === 0) {
-            const bassNote = getScaleDegree(scale, rootIdx);
+            const bassNote = getScaleDegree(scale, rootIdx + (rand() < 0.3 ? -2 : 0))
             const safeBass = safeNote(bassNote, "2");
             if (safeBass) {
                 Tone.Transport.schedule(time => {
@@ -527,7 +543,7 @@ function playNormalSection(startTime, section, engine) {
 
         // VIOLINO
         if (rand() < 0.45) {
-            const note = safeNote(getScaleDegree(scale, rootIdx + (rand() < 0.5 ? 2 : 4)), "5");
+            const note = safeNote(getScaleDegree(scale, rootIdx + [0, 1, 2, 3, 4, 5, 7][(rand() * 7) | 0]
             if (note) {
                 Tone.Transport.schedule(time => {
                     violin.triggerAttackRelease(note, "4n", time, 0.45);
