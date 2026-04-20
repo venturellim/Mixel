@@ -161,8 +161,8 @@ export function setVolume(busName, dbValue) {
     if (bus) bus.gain.value = Tone.dbToGain(dbValue);
 }
 
-setVolume("violin", -2);
-setVolume("viola", -2);
+setVolume("violin", +2);
+setVolume("viola", +2);
 setVolume("cello", -2);
 setVolume("doubleBass", +2);
 setVolume("harpsichord", -6);
