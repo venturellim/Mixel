@@ -22,7 +22,7 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { generateSongProgressions } from "../../utils/musicTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("orchestraEngine.js ver. 022.16 loaded");
+console.log("orchestraEngine.js ver. 022.17 loaded");
 
 // ---------------------------------------------------------------
 // SAFE NOTE
@@ -298,7 +298,7 @@ function playCello(time, scale, rootIdx, step, mode, cello, score, sectionName, 
     cello.triggerAttackRelease(safe, "4n", time, vel);
 
     if (score) {
-        score.addNote("Cello", safe, sectionName);
+        score.addNote("BassXtra", safe, sectionName);
     }
 }
 
@@ -380,7 +380,7 @@ const rootIdx = 0;
 
             if (score) {
                 score.addNote(
-                    soloInstrument === "viola" ? "ViolaSolo" : "ViolinSolo",
+                    soloInstrument === "viola" ? "LeadXtra" : "Lead",
                     safe,
                     section.name
                 );
@@ -393,7 +393,7 @@ const rootIdx = 0;
             const safeAlt = safeNote(alt, "4");
             if (safeAlt && rand() < 0.4) {
                 viola.triggerAttackRelease(safeAlt, "4n", stepTime, 0.35);
-                if (score) score.addNote("Viola", safeAlt, section.name);
+                if (score) score.addNote("LeadXtra", safeAlt, section.name);
             }
         }
 
@@ -406,7 +406,7 @@ const rootIdx = 0;
             const safeBass = safeNote(bassNote, "2");
             if (safeBass) {
                 doubleBass.triggerAttackRelease(safeBass, "1n", stepTime, 0.35);
-                if (score) score.addNote("DoubleBass", safeBass, section.name);
+                if (score) score.addNote("Bass", safeBass, section.name);
             }
         }
     }
@@ -461,7 +461,7 @@ const rootIdx = 0;
 
             if (score) {
                 score.addNote(
-                    soloInstrument === "viola" ? "ViolaSolo" : "ViolinSolo",
+                    soloInstrument === "viola" ? "LeadXtra" : "Lead",
                     safe,
                     section.name
                 );
@@ -474,7 +474,7 @@ const rootIdx = 0;
             const safeAlt = safeNote(alt, "4");
             if (safeAlt && rand() < 0.45) {
                 viola.triggerAttackRelease(safeAlt, "4n", stepTime, 0.45);
-                if (score) score.addNote("Viola", safeAlt, section.name);
+                if (score) score.addNote("LeadXtra", safeAlt, section.name);
             }
         }
 
@@ -487,7 +487,7 @@ const rootIdx = 0;
             const safeBass = safeNote(bassNote, "2");
             if (safeBass) {
                 doubleBass.triggerAttackRelease(safeBass, "1n", stepTime, 0.45);
-                if (score) score.addNote("DoubleBass", safeBass, section.name);
+                if (score) score.addNote("Bass", safeBass, section.name);
             }
         }
 
@@ -497,7 +497,7 @@ const rootIdx = 0;
             const safeHarps = safeNote(harpsNote, "4");
             if (safeHarps) {
                 harpsichord.triggerAttackRelease(safeHarps, "8n", stepTime, 0.35);
-                if (score) score.addNote("Harpsichord", safeHarps, section.name);
+                if (score) score.addNote("Rhythm", safeHarps, section.name);
             }
         }
 
@@ -543,7 +543,7 @@ const rootIdx = 0;
             const note = safeNote(getScaleDegree(scale, rootIdx + (rand() < 0.5 ? 2 : 4)), "5");
             if (note) {
                 violin.triggerAttackRelease(note, "4n", stepTime, 0.45);
-                if (score) score.addNote("Violin", note, section.name);
+                if (score) score.addNote("Lead", note, section.name);
             }
         }
 
@@ -552,7 +552,7 @@ const rootIdx = 0;
             const note = safeNote(getScaleDegree(scale, rootIdx + (rand() < 0.5 ? 0 : 2)), "4");
             if (note) {
                 viola.triggerAttackRelease(note, "4n", stepTime, 0.40);
-                if (score) score.addNote("Viola", note, section.name);
+                if (score) score.addNote("LeadXtra", note, section.name);
             }
         }
 
@@ -564,7 +564,7 @@ const rootIdx = 0;
             const bass = safeNote(getScaleDegree(scale, rootIdx), "2");
             if (bass) {
                 doubleBass.triggerAttackRelease(bass, "1n", stepTime, 0.40);
-                if (score) score.addNote("DoubleBass", bass, section.name);
+                if (score) score.addNote("Bass", bass, section.name);
             }
         }
 
@@ -573,7 +573,7 @@ const rootIdx = 0;
             const harps = safeNote(getScaleDegree(scale, rootIdx + (rand() < 0.5 ? 4 : 7)), "4");
             if (harps) {
                 harpsichord.triggerAttackRelease(harps, "8n", stepTime, 0.35);
-                if (score) score.addNote("Harpsichord", harps, section.name);
+                if (score) score.addNote("Rhythm", harps, section.name);
             }
         }
 
@@ -636,7 +636,7 @@ const rootIdx = 0;
             const safe = safeNote(note, "5");
             if (safe) {
                 violin.triggerAttackRelease(safe, "4n", stepTime, 0.65);
-                if (score) score.addNote("Violin", safe, section.name);
+                if (score) score.addNote("Lead", safe, section.name);
             }
         }
 
@@ -646,7 +646,7 @@ const rootIdx = 0;
             const safe = safeNote(note, "4");
             if (safe) {
                 viola.triggerAttackRelease(safe, "4n", stepTime, 0.55);
-                if (score) score.addNote("Viola", safe, section.name);
+                if (score) score.addNote("LeadXtra", safe, section.name);
             }
         }
 
@@ -656,7 +656,7 @@ const rootIdx = 0;
             const safe = safeNote(note, "3");
             if (safe) {
                 cello.triggerAttackRelease(safe, "4n", stepTime, 0.65);
-                if (score) score.addNote("Cello", safe, section.name);
+                if (score) score.addNote("BassXtra", safe, section.name);
             }
         }
     }
