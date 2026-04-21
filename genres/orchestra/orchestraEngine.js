@@ -22,7 +22,7 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { generateSongProgressions } from "../../utils/musicTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("orchestraEngine.js ver. 022.29 loaded");
+console.log("orchestraEngine.js ver. 022.30 loaded");
 
 // ---------------------------------------------------------------
 // SAFE NOTE
@@ -174,7 +174,7 @@ export async function createOrchestraEngine(params, score) {
         seek: (s) => {
             Tone.Transport.seconds = s;
         },
-
+        
         mixerData: {
             instruments: orchestraInstruments,
             volumeMap: orchestraVolumeMap
@@ -472,7 +472,7 @@ if (style === "baroque" && rand() < 0.15) {
 Tone.Transport.schedule(t => {
     soloPlayer.triggerAttackRelease(safe, dur, t, vib);
     if (score) score.addNote(soloInstrument === "viola" ? "LeadXtra" : "Lead", safe, section.name);
-}, t);
+}, stepTime);
         }
 
         // VIOLA CONTRO-CANTO (solo se non è solista)
@@ -579,7 +579,7 @@ if (style === "baroque" && rand() < 0.15) {
 Tone.Transport.schedule(t => {
     soloPlayer.triggerAttackRelease(safe, dur, t, vib);
     if (score) score.addNote(soloInstrument === "viola" ? "LeadXtra" : "Lead", safe, section.name);
-}, t);
+}, stepTime);
         }
 
         // VIOLA CONTRO-CANTO
