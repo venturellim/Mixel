@@ -22,7 +22,7 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { generateSongProgressions } from "../../utils/musicTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("orchestraEngine.js ver. 022.20 loaded");
+console.log("orchestraEngine.js ver. 022.21 loaded");
 
 // ---------------------------------------------------------------
 // SAFE NOTE
@@ -378,7 +378,7 @@ const noteOffset = phrase[(idx + phrase.length) % phrase.length];
 
         //const noteOffset = phrase[(s / 2) % phrase.length | 0];
         const note = getScaleDegree(scale, rootIdx + noteOffset);
-        const safe = safeNote(note, soloInstrument === "viola" ? "4" : "5");
+        let safe = safeNote(note, soloInstrument === "viola" ? "4" : "5");
 
         if (safe) {
         // Pause naturali (10% di probabilità)
@@ -484,7 +484,7 @@ const noteOffset = phrase[(idx + phrase.length) % phrase.length];
 
         // const noteOffset = phrase[(s / 2) % phrase.length | 0];
         const note = getScaleDegree(scale, rootIdx + noteOffset);
-        const safe = safeNote(note, soloInstrument === "viola" ? "4" : "5");
+        let safe = safeNote(note, soloInstrument === "viola" ? "4" : "5");
 
         if (safe) {
         // Pause naturali (10% di probabilità)
