@@ -161,12 +161,12 @@ export function setVolume(busName, dbValue) {
     if (bus) bus.gain.value = Tone.dbToGain(dbValue);
 }
 
-setVolume("violin", +2);
+setVolume("violin", +8);
 setVolume("viola", +2);
-setVolume("cello", -2);
+setVolume("cello", -6);
 setVolume("doubleBass", +2);
 setVolume("harpsichord", -6);
-setVolume("timpani", +4);
+setVolume("timpani", +6);
 
 export const orchestraInstruments = {
     violin,
