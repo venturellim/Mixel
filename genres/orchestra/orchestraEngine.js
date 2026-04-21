@@ -166,6 +166,7 @@ export async function createOrchestraEngine(params, score) {
     mixerData: {
             instruments: orchestraInstruments,
             volumeMap: orchestraVolumeMap
+            }
 };
 
 }
