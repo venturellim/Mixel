@@ -22,7 +22,7 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { generateSongProgressions } from "../../utils/musicTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("orchestraEngine.js ver. 022.27 loaded");
+console.log("orchestraEngine.js ver. 022.28 loaded");
 
 // ---------------------------------------------------------------
 // SAFE NOTE
@@ -64,6 +64,7 @@ export async function waitOrchestraInstruments() {
 // CREAZIONE ENGINE ORCHESTRALE
 // ---------------------------------------------------------------
 export async function createOrchestraEngine(params, score) {
+
     const rand = createSeededRandom(params.dna);
     const { violin, viola, cello, doubleBass, harpsichord, percussion } = orchestraInstruments;
 
@@ -72,6 +73,7 @@ export async function createOrchestraEngine(params, score) {
     const complexity = img.complexity ?? 0.5;
     const brightness = img.brightness ?? 0.5;
 
+    // MODALITÀ
     let mode;
     if (energy < 0.35 || (brightness < 0.4 && complexity < 0.5)) mode = "canon";
     else if (energy > 0.65 || complexity > 0.7) mode = "vivaldi";
@@ -79,19 +81,24 @@ export async function createOrchestraEngine(params, score) {
 
     console.log("🎼 Orchestra Mode:", mode);
 
+    // BPM
     let bpm;
     if (mode === "canon") bpm = 60 + energy * 20;
     else if (mode === "vivaldi") bpm = 130 + energy * 30;
     else bpm = 90 + energy * 25;
 
+    // Durata misura (4/4)
     const measureDur = (60 / bpm) * 4;
 
+    // SOLO1
     const solo1Sec = 10 + rand() * 5;
     let solo1Measures = Math.max(4, Math.min(8, Math.round(solo1Sec / measureDur)));
 
+    // SOLO2
     const solo2Sec = 20 + rand() * 25;
     let solo2Measures = Math.max(8, Math.min(24, Math.round(solo2Sec / measureDur)));
 
+    // STRUTTURA
     const dynamicStructure = [
         { name: "intro",   measures: 4 },
         { name: "verse",   measures: 16 },
@@ -105,6 +112,7 @@ export async function createOrchestraEngine(params, score) {
 
     const structure = buildSongStructure(dynamicStructure, bpm);
 
+    // ARMONIA
     const tonalBase = params.tonalCenter || "A";
     const songProgressions = generateSongProgressions(structure, img, tonalBase, rand);
 
@@ -112,7 +120,8 @@ export async function createOrchestraEngine(params, score) {
         score.notes = [];
         if (score.setTheme) score.setTheme("orchestra");
     }
-
+    
+    // ENGINE OBJECT
     const engine = {
         structure,
         songProgressions,
@@ -128,35 +137,37 @@ export async function createOrchestraEngine(params, score) {
             volumeMap: orchestraVolumeMap
         }
     };
+    
+    startOrchestraEngine(engine);   // crea gli eventi
 
-    // PLAY / PAUSE / STOP / SEEK in stile metalEngine
-    engine.play = () => {
+    return {
+    totalDuration: structure.totalDuration,
+
+    play: () => {
         if (Tone.context.state !== "running") Tone.context.resume();
         Tone.Transport.stop();
         Tone.Transport.cancel();
         Tone.Transport.bpm.value = engine.bpm;
+        Tone.Transport.start("+0.1");   // parte come metalEngine
+    },
 
-        startOrchestraEngine(engine);   // crea tutti gli eventi
-        Tone.Transport.start("+0.1");
-    };
+    pause: () => Tone.Transport.pause(),
 
-    engine.pause = () => {
-        Tone.Transport.pause();
-    };
-
-    engine.stop = () => {
+    stop: () => {
         Tone.Transport.stop();
         Tone.Transport.cancel();
         Tone.Transport.seconds = 0;
-        [violin, viola, cello, doubleBass, harpsichord].forEach(i => i?.releaseAll?.());
-        percussion?.stopAll?.();
-    };
+    },
 
-    engine.seek = (s) => {
+    seek: (s) => {
         Tone.Transport.seconds = s;
-    };
+    },
 
-    return engine;
+    mixerData: {
+            instruments: orchestraInstruments,
+            volumeMap: orchestraVolumeMap
+};
+
 }
 
 // ===============================================================
