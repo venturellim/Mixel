@@ -22,7 +22,7 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { generateSongProgressions } from "../../utils/musicTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("orchestraEngine.js ver. 022.22 loaded");
+console.log("orchestraEngine.js ver. 022.23 loaded");
 
 // ---------------------------------------------------------------
 // SAFE NOTE
@@ -307,8 +307,8 @@ function playCello(time, scale, rootIdx, step, mode, cello, score, sectionName, 
 
     const vel = 0.55 + (rand() * 0.1);
 
-    Tone.Transport.schedule(time => {
-        cello.triggerAttackRelease(safe, "4n", time, vel);
+    Tone.Transport.schedule(t => {
+        cello.triggerAttackRelease(safe, "4n", t, vel);
         if (score) score.addNote("BassXtra", safe, sectionName);
     }, time);
 }
@@ -322,8 +322,8 @@ function playTimpani(time, rand, percussion, score, sectionName) {
     const player = percussion.player(key);
     if (!player) return;
 
-    Tone.Transport.schedule(time => {
-        player.start(time);
+    Tone.Transport.schedule(t => {
+        player.start(t);
         if (score) score.addNote("Drums", "Kick", sectionName);
     }, time);
 }
@@ -347,19 +347,19 @@ function smartTimpaniRoll(startTime, percussion, score, lastMidi, nextMidi, rand
     const interval = 0.12; // 120ms tra colpi
 
     sequence.forEach((key, idx) => {
-        Tone.Transport.schedule(time => {
-            percussion.player(key).start(time);
-            if (score) score.addNote("Drums", key, sectionName);
+        Tone.Transport.schedule(t => {
+            percussion.player(key).start(t);
+            if (score) score.addNote("Drums", "Kick", sectionName);
         }, startTime + idx * interval);
     });
 
     // Ultimo colpo + gong
     const lastHitTime = startTime + (sequence.length - 1) * interval;
 
-    Tone.Transport.schedule(time => {
+    Tone.Transport.schedule(t => {
         const gong = percussion.player("gong");
         if (gong) {
-            gong.start(time);
+            gong.start(t);
             if (score) score.addNote("Drums", "Gong", sectionName);
         }
     }, lastHitTime);
@@ -446,8 +446,8 @@ if (style === "baroque" && rand() < 0.15) {
     safe = safeNote(up, soloInstrument === "viola" ? "5" : "6");
 }
 
-Tone.Transport.schedule(time => {
-    soloPlayer.triggerAttackRelease(safe, dur, time, vib);
+Tone.Transport.schedule(t => {
+    soloPlayer.triggerAttackRelease(safe, dur, t, vib);
     if (score) score.addNote(soloInstrument === "viola" ? "LeadXtra" : "Lead", safe, section.name);
 }, t);
         }
@@ -457,8 +457,8 @@ Tone.Transport.schedule(time => {
             const alt = getScaleDegree(scale, rootIdx + 2);
             const safeAlt = safeNote(alt, "4");
             if (safeAlt && rand() < 0.4) {
-                Tone.Transport.schedule(time => {
-                    viola.triggerAttackRelease(safeAlt, "4n", time, 0.35);
+                Tone.Transport.schedule(t => {
+                    viola.triggerAttackRelease(safeAlt, "4n", t, 0.35);
                     if (score) score.addNote("LeadXtra", safeAlt, section.name);
                 }, stepTime);
             }
@@ -472,8 +472,8 @@ Tone.Transport.schedule(time => {
             const bassNote = getScaleDegree(scale, rootIdx + (rand() < 0.3 ? -2 : 0))
             const safeBass = safeNote(bassNote, "2");
             if (safeBass) {
-                Tone.Transport.schedule(time => {
-                    doubleBass.triggerAttackRelease(safeBass, "1n", time, 0.35);
+                Tone.Transport.schedule(t => {
+                    doubleBass.triggerAttackRelease(safeBass, "1n", t, 0.35);
                     if (score) score.addNote("Bass", safeBass, section.name);
                 }, stepTime);
             }
@@ -553,8 +553,8 @@ if (style === "baroque" && rand() < 0.15) {
 }
 
 
-Tone.Transport.schedule(time => {
-    soloPlayer.triggerAttackRelease(safe, dur, time, vib);
+Tone.Transport.schedule(t => {
+    soloPlayer.triggerAttackRelease(safe, dur, t, vib);
     if (score) score.addNote(soloInstrument === "viola" ? "LeadXtra" : "Lead", safe, section.name);
 }, t);
         }
@@ -564,8 +564,8 @@ Tone.Transport.schedule(time => {
             const alt = getScaleDegree(scale, rootIdx + (style === "baroque" ? -2 : 2));
             const safeAlt = safeNote(alt, "4");
             if (safeAlt && rand() < 0.45) {
-                Tone.Transport.schedule(time => {
-                    viola.triggerAttackRelease(safeAlt, "4n", time, 0.45);
+                Tone.Transport.schedule(t => {
+                    viola.triggerAttackRelease(safeAlt, "4n", t, 0.45);
                     if (score) score.addNote("LeadXtra", safeAlt, section.name);
                 }, stepTime);
             }
@@ -579,8 +579,8 @@ Tone.Transport.schedule(time => {
             const bassNote = getScaleDegree(scale, rootIdx + (rand() < 0.3 ? -2 : 0))
             const safeBass = safeNote(bassNote, "2");
             if (safeBass) {
-                Tone.Transport.schedule(time => {
-                    doubleBass.triggerAttackRelease(safeBass, "1n", time, 0.45);
+                Tone.Transport.schedule(t => {
+                    doubleBass.triggerAttackRelease(safeBass, "1n", t, 0.45);
                     if (score) score.addNote("Bass", safeBass, section.name);
                 }, stepTime);
             }
@@ -591,8 +591,8 @@ Tone.Transport.schedule(time => {
             const harpsNote = getScaleDegree(scale, rootIdx + (rand() < 0.5 ? 4 : 7));
             const safeHarps = safeNote(harpsNote, "4");
             if (safeHarps) {
-                Tone.Transport.schedule(time => {
-                    harpsichord.triggerAttackRelease(safeHarps, "8n", time, 0.35);
+                Tone.Transport.schedule(t => {
+                    harpsichord.triggerAttackRelease(safeHarps, "8n", t, 0.35);
                     if (score) score.addNote("Rhythm", safeHarps, section.name);
                 }, stepTime);
             }
@@ -600,8 +600,8 @@ Tone.Transport.schedule(time => {
 
         // TIMPANI (climax)
         if (style !== "lyrical" && s % 8 === 0 && sectionProgress > 0.4) {
-            Tone.Transport.schedule(time => {
-                playTimpani(time, rand, percussion, score, section.name);
+            Tone.Transport.schedule(t => {
+                playTimpani(t, rand, percussion, score, section.name);
             }, stepTime);
         }
     }
@@ -635,8 +635,8 @@ function playNormalSection(startTime, section, engine) {
         if (rand() < 0.45) {
             const note = safeNote(getScaleDegree(scale, rootIdx + [0, 1, 2, 3, 4, 5, 7][(rand() * 7) | 0]), "5");
             if (note) {
-                Tone.Transport.schedule(time => {
-                    violin.triggerAttackRelease(note, "4n", time, 0.45);
+                Tone.Transport.schedule(t => {
+                    violin.triggerAttackRelease(note, "4n", t, 0.45);
                     if (score) score.addNote("Lead", note, section.name);
                 }, stepTime);
             }
@@ -646,8 +646,8 @@ function playNormalSection(startTime, section, engine) {
         if (rand() < 0.55) {
             const note = safeNote(getScaleDegree(scale, rootIdx + (rand() < 0.5 ? 0 : 2)), "4");
             if (note) {
-                Tone.Transport.schedule(time => {
-                    viola.triggerAttackRelease(note, "4n", time, 0.40);
+                Tone.Transport.schedule(t => {
+                    viola.triggerAttackRelease(note, "4n", t, 0.40);
                     if (score) score.addNote("LeadXtra", note, section.name);
                 }, stepTime);
             }
@@ -660,8 +660,8 @@ function playNormalSection(startTime, section, engine) {
         if (s % 4 === 0) {
             const bass = safeNote(getScaleDegree(scale, rootIdx), "2");
             if (bass) {
-                Tone.Transport.schedule(time => {
-                    doubleBass.triggerAttackRelease(bass, "1n", time, 0.40);
+                Tone.Transport.schedule(t => {
+                    doubleBass.triggerAttackRelease(bass, "1n", t, 0.40);
                     if (score) score.addNote("Bass", bass, section.name);
                 }, stepTime);
             }
@@ -671,8 +671,8 @@ function playNormalSection(startTime, section, engine) {
         if ((mode === "canon" || mode === "vivaldi") && rand() < 0.35) {
             const harps = safeNote(getScaleDegree(scale, rootIdx + (rand() < 0.5 ? 4 : 7)), "4");
             if (harps) {
-                Tone.Transport.schedule(time => {
-                    harpsichord.triggerAttackRelease(harps, "8n", time, 0.35);
+                Tone.Transport.schedule(t => {
+                    harpsichord.triggerAttackRelease(harps, "8n", t, 0.35);
                     if (score) score.addNote("Rhythm", harps, section.name);
                 }, stepTime);
             }
@@ -680,8 +680,8 @@ function playNormalSection(startTime, section, engine) {
 
         // TIMPANI
         if (mode === "vivaldi" && s % 8 === 0 && rand() < 0.5) {
-            Tone.Transport.schedule(time => {
-                playTimpani(time, rand, percussion, score, section.name);
+            Tone.Transport.schedule(t => {
+                playTimpani(t, rand, percussion, score, section.name);
             }, stepTime);
         }
     }
@@ -724,8 +724,8 @@ function intensifyChorus2(startTime, section, engine) {
             const note = getScaleDegree(scale, rootIdx + (rand() < 0.5 ? 4 : 7));
             const safe = safeNote(note, "5");
             if (safe) {
-                Tone.Transport.schedule(time => {
-                    violin.triggerAttackRelease(safe, "4n", time, 0.65);
+                Tone.Transport.schedule(t => {
+                    violin.triggerAttackRelease(safe, "4n", t, 0.65);
                     if (score) score.addNote("Lead", safe, section.name);
                 }, stepTime);
             }
@@ -736,8 +736,8 @@ function intensifyChorus2(startTime, section, engine) {
             const note = getScaleDegree(scale, rootIdx + 2);
             const safe = safeNote(note, "4");
             if (safe) {
-                Tone.Transport.schedule(time => {
-                    viola.triggerAttackRelease(safe, "4n", time, 0.55);
+                Tone.Transport.schedule(t => {
+                    viola.triggerAttackRelease(safe, "4n", t, 0.55);
                     if (score) score.addNote("LeadXtra", safe, section.name);
                 }, stepTime);
             }
@@ -748,8 +748,8 @@ function intensifyChorus2(startTime, section, engine) {
             const note = getScaleDegree(scale, rootIdx);
             const safe = safeNote(note, "3");
             if (safe) {
-                Tone.Transport.schedule(time => {
-                    cello.triggerAttackRelease(safe, "4n", time, 0.65);
+                Tone.Transport.schedule(t => {
+                    cello.triggerAttackRelease(safe, "4n", t, 0.65);
                     if (score) score.addNote("BassXtra", safe, section.name);
                 }, stepTime);
             }
