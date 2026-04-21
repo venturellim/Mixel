@@ -22,7 +22,7 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { generateSongProgressions } from "../../utils/musicTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("orchestraEngine.js ver. 022.28 loaded");
+console.log("orchestraEngine.js ver. 022.29 loaded");
 
 // ---------------------------------------------------------------
 // SAFE NOTE
@@ -138,37 +138,48 @@ export async function createOrchestraEngine(params, score) {
         }
     };
     
-    startOrchestraEngine(engine);   // crea gli eventi
+    // Funzione per schedulare (NON chiamarla qui!)
+    // startOrchestraEngine(engine);   // <-- RIMUOVI questa riga
+    
+    // Salva i riferimenti agli strumenti per lo stop
+    const instruments = { violin, viola, cello, doubleBass, harpsichord, percussion };
 
     return {
-    totalDuration: structure.totalDuration,
+        totalDuration: structure.totalDuration,
 
-    play: () => {
-        if (Tone.context.state !== "running") Tone.context.resume();
-        Tone.Transport.stop();
-        Tone.Transport.cancel();
-        Tone.Transport.bpm.value = engine.bpm;
-        Tone.Transport.start("+0.1");   // parte come metalEngine
-    },
+        play: () => {
+            if (Tone.context.state !== "running") Tone.context.resume();
+            Tone.Transport.stop();
+            Tone.Transport.cancel();        // Cancella eventi vecchi
+            Tone.Transport.bpm.value = engine.bpm;
+            startOrchestraEngine(engine);   // RISCHEDULA GLI EVENTI
+            Tone.Transport.start("+0.1");
+        },
 
-    pause: () => Tone.Transport.pause(),
+        pause: () => Tone.Transport.pause(),
 
-    stop: () => {
-        Tone.Transport.stop();
-        Tone.Transport.cancel();
-        Tone.Transport.seconds = 0;
-    },
+        stop: () => {
+            Tone.Transport.stop();
+            Tone.Transport.cancel();
+            Tone.Transport.seconds = 0;
+            // Rilascia tutti i suoni
+            if (violin) violin.releaseAll?.();
+            if (viola) viola.releaseAll?.();
+            if (cello) cello.releaseAll?.();
+            if (doubleBass) doubleBass.releaseAll?.();
+            if (harpsichord) harpsichord.releaseAll?.();
+            if (percussion?.stopAll) percussion.stopAll();
+        },
 
-    seek: (s) => {
-        Tone.Transport.seconds = s;
-    },
+        seek: (s) => {
+            Tone.Transport.seconds = s;
+        },
 
-    mixerData: {
+        mixerData: {
             instruments: orchestraInstruments,
             volumeMap: orchestraVolumeMap
-            }
-};
-
+        }
+    };
 }
 
 // ===============================================================
