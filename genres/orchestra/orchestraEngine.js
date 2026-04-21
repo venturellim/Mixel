@@ -373,8 +373,8 @@ function playSolo1Section(startTime, section, engine) {
         const phrase = generateSoloPhrase(style, scale, rootIdx, rand);
         // Direzione melodica: frasi ascendenti o discendenti
 const direction = rand() < 0.5 ? 1 : -1;
-const idx = (s * direction) % longPhrase.length;
-const noteOffset = longPhrase[(idx + longPhrase.length) % longPhrase.length];
+const idx = (s * direction) % phrase.length;
+const noteOffset = phrase[(idx + phrase.length) % phrase.length];
 
         //const noteOffset = phrase[(s / 2) % phrase.length | 0];
         const note = getScaleDegree(scale, rootIdx + noteOffset);
@@ -479,8 +479,8 @@ function playSolo2Section(startTime, section, engine) {
         const phrase = generateSoloPhrase(style, scale, rootIdx, rand);
         // Direzione melodica: frasi ascendenti o discendenti
 const direction = rand() < 0.5 ? 1 : -1;
-const idx = (s * direction) % longPhrase.length;
-const noteOffset = longPhrase[(idx + longPhrase.length) % longPhrase.length];
+const idx = (s * direction) % phrase.length;
+const noteOffset = phrase[(idx + phrase.length) % phrase.length];
 
         // const noteOffset = phrase[(s / 2) % phrase.length | 0];
         const note = getScaleDegree(scale, rootIdx + noteOffset);
@@ -596,7 +596,7 @@ function playNormalSection(startTime, section, engine) {
 
         // VIOLINO
         if (rand() < 0.45) {
-            const note = safeNote(getScaleDegree(scale, rootIdx + [0, 1, 2, 3, 4, 5, 7][(rand() * 7) | 0]
+            const note = safeNote(getScaleDegree(scale, rootIdx + [0, 1, 2, 3, 4, 5, 7][(rand() * 7) | 0], "5");
             if (note) {
                 Tone.Transport.schedule(time => {
                     violin.triggerAttackRelease(note, "4n", time, 0.45);
