@@ -147,12 +147,12 @@ export async function createOrchestraEngine(params, score) {
     return {
         totalDuration: structure.totalDuration,
 
-        play: () => {
+        play: async () => {
             if (Tone.context.state !== "running") Tone.context.resume();
             Tone.Transport.stop();
             Tone.Transport.cancel();        // Cancella eventi vecchi
             Tone.Transport.bpm.value = engine.bpm;
-            startOrchestraEngine(engine);   // RISCHEDULA GLI EVENTI
+            await startOrchestraEngine(engine);   // RISCHEDULA GLI EVENTI
             Tone.Transport.start("+0.1");
         },
 
@@ -171,9 +171,13 @@ export async function createOrchestraEngine(params, score) {
             if (percussion?.stopAll) percussion.stopAll();
         },
 
-        seek: (s) => {
-            Tone.Transport.seconds = s;
-        },
+        seek: async (s) => {  // ← async
+    Tone.Transport.stop();
+    Tone.Transport.seconds = s;
+    Tone.Transport.cancel();
+    await startOrchestraEngine(engine);   // ← rischedula
+    Tone.Transport.start();
+},
         
         currentTime: () => Tone.Transport.seconds,
         
