@@ -148,7 +148,7 @@ export class scoreVisualizer {
                     if (n.label.includes("Kick") || n.label.includes("Snare") || n.label.includes("Timpano")) {
                         ctx.fillRect(n.x - 5, drumY - 2.5, 10, 5); 
                     } else {
-                        ctx.font = "bold 16px sans-serif"; ctx.textAlign = "center";
+                        ctx.font = "bold 12px sans-serif"; ctx.textAlign = "center";
                         ctx.fillText("✕", n.x, drumY + 6);
                     }
                 } 
