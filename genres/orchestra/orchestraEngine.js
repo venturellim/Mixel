@@ -22,7 +22,7 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { generateSongProgressions } from "../../utils/musicTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("orchestraEngine.js ver. 022.21 loaded");
+console.log("orchestraEngine.js ver. 022.22 loaded");
 
 // ---------------------------------------------------------------
 // SAFE NOTE
@@ -383,7 +383,7 @@ const noteOffset = phrase[(idx + phrase.length) % phrase.length];
         if (safe) {
         // Pause naturali (10% di probabilità)
 if (rand() < 0.10) {
-    return; // salta la nota
+    continue; // salta la nota
 }
 
             const vel = dynamicCurve(0.55, sectionProgress, style);
@@ -489,7 +489,7 @@ const noteOffset = phrase[(idx + phrase.length) % phrase.length];
         if (safe) {
         // Pause naturali (10% di probabilità)
 if (rand() < 0.10) {
-    return; // salta la nota
+    continue; // salta la nota
 }
 
             const vel = dynamicCurve(0.65, sectionProgress, style);
