@@ -66,7 +66,7 @@ export async function waitOrchestraInstruments() {
 export async function createOrchestraEngine(params, score) {
 
     const rand = createSeededRandom(params.dna);
-    const { violin, viola, cello, doubleBass, harpsichord, timpani } = orchestraInstruments;
+    const { violin, viola, cello, doubleBass, harpsichord, percussion } = orchestraInstruments;
 
     const img = params.imageParams || {};
     const energy = img.energy ?? 0.5;
@@ -153,7 +153,7 @@ export async function createOrchestraEngine(params, score) {
         Tone.Transport.stop();
         Tone.Transport.cancel();
         [violin, viola, cello, doubleBass, harpsichord].forEach(i => i?.releaseAll?.());
-        timpani?.stopAll?.();
+        percussion?.stopAll?.();
     };
 
     return engine;
@@ -313,19 +313,56 @@ function playCello(time, scale, rootIdx, step, mode, cello, score, sectionName, 
     }, time);
 }
 
-function playTimpani(time, rand, timpani, score, sectionName) {
-    if (!timpani || !timpani.player) return;
+function playTimpani(time, rand, percussion, score, sectionName) {
+    if (!percussion || !percussion.player) return;
 
     const keys = ["timpano1", "timpano2", "timpano3", "timpano4", "timpano5"];
     const key = keys[Math.floor(rand() * keys.length)];
 
-    const player = timpani.player(key);
+    const player = percussion.player(key);
     if (!player) return;
 
     Tone.Transport.schedule(time => {
         player.start(time);
         if (score) score.addNote("Drums", "Kick", sectionName);
     }, time);
+}
+
+function smartTimpaniRoll(startTime, percussion, score, lastMidi, nextMidi, rand, sectionName) {
+    if (!percussion || !percussion.player) return;
+
+    let sequence;
+
+    if (lastMidi < nextMidi) {
+        // Ascendente
+        sequence = ["timpano1", "timpano2", "timpano3", "timpano4", "timpano5"];
+    } else if (lastMidi > nextMidi) {
+        // Discendente
+        sequence = ["timpano5", "timpano4", "timpano3", "timpano2", "timpano1"];
+    } else {
+        // Uguali → alternanza centrale
+        sequence = ["timpano4", "timpano3", "timpano4", "timpano3"];
+    }
+
+    const interval = 0.12; // 120ms tra colpi
+
+    sequence.forEach((key, idx) => {
+        Tone.Transport.schedule(time => {
+            percussion.player(key).start(time);
+            if (score) score.addNote("Drums", key, sectionName);
+        }, startTime + idx * interval);
+    });
+
+    // Ultimo colpo + gong
+    const lastHitTime = startTime + (sequence.length - 1) * interval;
+
+    Tone.Transport.schedule(time => {
+        const gong = percussion.player("gong");
+        if (gong) {
+            gong.start(time);
+            if (score) score.addNote("Drums", "Gong", sectionName);
+        }
+    }, lastHitTime);
 }
 
 // ===============================================================
@@ -454,7 +491,7 @@ function playSolo2Section(startTime, section, engine) {
         img,
         mode,
         songProgressions,
-        instruments: { violin, viola, cello, doubleBass, harpsichord, timpani },
+        instruments: { violin, viola, cello, doubleBass, harpsichord, percussion },
         score
     } = engine;
 
@@ -564,7 +601,7 @@ Tone.Transport.schedule(time => {
         // TIMPANI (climax)
         if (style !== "lyrical" && s % 8 === 0 && sectionProgress > 0.4) {
             Tone.Transport.schedule(time => {
-                playTimpani(time, rand, timpani, score, section.name);
+                playTimpani(time, rand, percussion, score, section.name);
             }, stepTime);
         }
     }
@@ -579,7 +616,7 @@ function playNormalSection(startTime, section, engine) {
         rand,
         mode,
         songProgressions,
-        instruments: { violin, viola, cello, doubleBass, harpsichord, timpani },
+        instruments: { violin, viola, cello, doubleBass, harpsichord, percussion },
         score
     } = engine;
 
@@ -644,7 +681,7 @@ function playNormalSection(startTime, section, engine) {
         // TIMPANI
         if (mode === "vivaldi" && s % 8 === 0 && rand() < 0.5) {
             Tone.Transport.schedule(time => {
-                playTimpani(time, rand, timpani, score, section.name);
+                playTimpani(time, rand, percussion, score, section.name);
             }, stepTime);
         }
     }
@@ -733,6 +770,31 @@ export async function startOrchestraEngine(engine) {
         const section = structure[i];
         const start = currentTime;
 
+// RULLATA DI TIMPANI AL CAMBIO SEZIONE (tranne la prima)
+if (i > 0 && i < structure.length - 1) {
+
+    const prevSection = structure[i - 1];
+    const nextSection = structure[i];
+
+    const prevRoot = engine.songProgressions[prevSection.name].root;
+    const nextRoot = engine.songProgressions[nextSection.name].root;
+
+    const prevNote = getScaleDegree(buildScaleFromTonic(prevRoot + "3", "harmonicMinor"), 0);
+    const nextNote = getScaleDegree(buildScaleFromTonic(nextRoot + "3", "harmonicMinor"), 0);
+
+    const prevMidi = Tone.Frequency(prevNote).toMidi();
+    const nextMidi = Tone.Frequency(nextNote).toMidi();
+
+    smartTimpaniRoll(
+        Math.max(0, start - 0.6),
+        engine.instruments.percussion,
+        engine.score,
+        prevMidi,
+        nextMidi,
+        engine.rand,
+        nextSection.name
+    );
+}
         section.index = i;
 
         if (section.name === "solo1") {
