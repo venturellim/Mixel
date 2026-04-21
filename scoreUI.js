@@ -1,7 +1,7 @@
 // scoreUI.js — ver. 015.5 (PARTE 1)
 // Fix: Etichette strumenti ripristinate + Xtra Sopra/Sotto + Drum 10x5
 
-console.log("scoreUI.js ver. 015.5 loaded - Full Version");
+console.log("scoreUI.js ver. 015.5 loaded");
 
 export class scoreVisualizer {
     constructor() {
@@ -51,7 +51,7 @@ export class scoreVisualizer {
                 "Lead": "VIOLINO", "LeadXtra": "VIOLA", 
                 "Rhythm": "CLAVICEMBALO", "RhythmXtra": "",
                 "Bass": "CONTRABBASSO", "BassXtra": "VIOLONCELLO",
-                "Drums": "TIMPANI" 
+                "Drums": "PERCUSSIONI" 
             },
             piano: { 
                 "Lead": "PIANO R", "LeadXtra": "", 
