@@ -22,7 +22,7 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { generateSongProgressions } from "../../utils/musicTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("orchestraEngine.js ver. 022.24 loaded");
+console.log("orchestraEngine.js ver. 022.25 loaded");
 
 // ---------------------------------------------------------------
 // SAFE NOTE
@@ -146,7 +146,7 @@ export async function createOrchestraEngine(params, score) {
         Tone.Transport.bpm.value = engine.bpm;
 
         startOrchestraEngine(engine);
-        Tone.Transport.start(0.01);
+        Tone.Transport.start("+0.1");
     };
 
     engine.stop = () => {
@@ -155,6 +155,13 @@ export async function createOrchestraEngine(params, score) {
         [violin, viola, cello, doubleBass, harpsichord].forEach(i => i?.releaseAll?.());
         percussion?.stopAll?.();
     };
+    engine.pause = () => {
+    Tone.Transport.pause();
+};
+
+engine.seek = (seconds) => {
+    Tone.Transport.seconds = seconds;
+};
 
     return engine;
 }
