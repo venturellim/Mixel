@@ -596,7 +596,7 @@ function playNormalSection(startTime, section, engine) {
 
         // VIOLINO
         if (rand() < 0.45) {
-            const note = safeNote(getScaleDegree(scale, rootIdx + [0, 1, 2, 3, 4, 5, 7][(rand() * 7) | 0], "5");
+            const note = safeNote(getScaleDegree(scale, rootIdx + [0, 1, 2, 3, 4, 5, 7][(rand() * 7) | 0]), "5");
             if (note) {
                 Tone.Transport.schedule(time => {
                     violin.triggerAttackRelease(note, "4n", time, 0.45);
