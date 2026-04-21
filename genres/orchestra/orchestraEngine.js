@@ -22,7 +22,7 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { generateSongProgressions } from "../../utils/musicTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("orchestraEngine.js ver. 022.30 loaded");
+console.log("orchestraEngine.js ver. 022.31 loaded");
 
 // ---------------------------------------------------------------
 // SAFE NOTE
@@ -174,6 +174,8 @@ export async function createOrchestraEngine(params, score) {
         seek: (s) => {
             Tone.Transport.seconds = s;
         },
+        
+        currentTime: () => Tone.Transport.seconds,
         
         mixerData: {
             instruments: orchestraInstruments,
