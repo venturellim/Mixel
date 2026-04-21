@@ -22,7 +22,7 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { generateSongProgressions } from "../../utils/musicTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("orchestraEngine.js ver. 022.25 loaded");
+console.log("orchestraEngine.js ver. 022.26 loaded");
 
 // ---------------------------------------------------------------
 // SAFE NOTE
@@ -122,48 +122,34 @@ export async function createOrchestraEngine(params, score) {
     }
 
     // ENGINE OBJECT
-    const engine = {
-        structure,
-        songProgressions,
-        rand,
-        img,
-        mode,
-        bpm,
-        instruments: orchestraInstruments,
-        score,
-        totalDuration: structure.totalDuration,
-        mixerData: {
-            instruments: orchestraInstruments,
-            volumeMap: orchestraVolumeMap
-        }
-    };
+    return {
+    totalDuration: structure.totalDuration,
 
-    // PLAY / STOP
-    engine.play = () => {
-        Tone.context.resume();
+    play: () => {
+        if (Tone.context.state !== "running") Tone.context.resume();
         Tone.Transport.stop();
         Tone.Transport.cancel();
         Tone.Transport.bpm.value = engine.bpm;
 
-        startOrchestraEngine(engine);
-        Tone.Transport.start("+0.1");
-    };
+        startOrchestraEngine(engine);   // crea gli eventi
+        Tone.Transport.start("+0.1");   // parte come metalEngine
+    },
 
-    engine.stop = () => {
+    pause: () => Tone.Transport.pause(),
+
+    stop: () => {
         Tone.Transport.stop();
         Tone.Transport.cancel();
-        [violin, viola, cello, doubleBass, harpsichord].forEach(i => i?.releaseAll?.());
-        percussion?.stopAll?.();
-    };
-    engine.pause = () => {
-    Tone.Transport.pause();
+        Tone.Transport.seconds = 0;
+    },
+
+    seek: (s) => {
+        Tone.Transport.seconds = s;
+    },
+
+    mixerData: engine.mixerData
 };
 
-engine.seek = (seconds) => {
-    Tone.Transport.seconds = seconds;
-};
-
-    return engine;
 }
 
 // ===============================================================
