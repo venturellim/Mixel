@@ -298,7 +298,7 @@ function getLHPattern(sectionName, stepIdx, rand, complexity) {
 // 🎹 RH MELODIC ENGINE 
 // ─────────────────────────────────────────────
 
-function schedulePianoMelodyStep({
+function schedulePianoMelody({
     section,
     s,
     chordStartTime,
