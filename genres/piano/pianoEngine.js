@@ -11,7 +11,7 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { progressions } from "../../utils/musicTheory.js"; 
 import { waitForInstruments } from "../../common.js";
 
-console.log("pianoEngine.js ver. 022.1 loaded");
+console.log("pianoEngine.js ver. 022.2 loaded");
 
 export async function waitPianoInstruments() {
     await waitForInstruments(1);
@@ -318,16 +318,44 @@ function schedulePianoMelody({
 
     const stepTime = chordStartTime + (s * step8n) + swingOffset + waveRubato + ritardando;
 
-    // Movimento melodico
-    const melodicStep = Math.floor(rand() * 7) - 3; // -3..+3
-    let midi = Tone.Frequency(getScaleDegree(scale, melodicStep)).toMidi();
+    // Tema ricorrente
+    if (!section._melodyTheme) {
+        section._melodyTheme = [
+            0,
+            rand() < 0.5 ? 2 : -2,
+            rand() < 0.5 ? 4 : -4,
+            0
+        ];
+        section._melodicStep = 0;
+    }
 
-    // Range melodico C4–C6
+    function nextMelodicStep(prev) {
+        const r = rand();
+        if (r < 0.7) return prev + (rand() < 0.5 ? 1 : -1);
+        if (r < 0.9) return prev + (rand() < 0.5 ? 2 : -2);
+        return prev + (rand() < 0.5 ? 4 : -4);
+    }
+
+    // Applica tema ogni tanto
+    if (rand() < 0.15) {
+        section._melodicStep = section._melodyTheme[s % section._melodyTheme.length];
+    } else {
+        section._melodicStep = nextMelodicStep(section._melodicStep);
+    }
+
+    // Otteniamo la nota della scala SENZA ottava
+    let noteName = getScaleDegree(scale, section._melodicStep);
+
+    // Aggiungiamo un’ottava sicura (C4–C6)
+    let midi = Tone.Frequency(noteName + "4").toMidi();
+
+    // Range melodico
     midi = Math.min(Math.max(midi, 60), 84);
 
     // Passing tones
     if (rand() < 0.12) midi += rand() < 0.5 ? -1 : 1;
 
+    // Convertiamo in nota valida
     const note = Tone.Frequency(midi, "midi").toNote();
 
     // Fraseggio
@@ -347,6 +375,7 @@ function schedulePianoMelody({
         }, t);
     }, stepTime);
 }
+
 
 export async function createPianoEngine(params, score) {
     const rand = createSeededRandom(params.dna);
