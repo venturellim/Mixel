@@ -22,7 +22,7 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { generateSongProgressions } from "../../utils/musicTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("orchestraEngine.js ver. 022.31 loaded");
+console.log("orchestraEngine.js ver. 023 loaded");
 
 // ---------------------------------------------------------------
 // SAFE NOTE
@@ -60,133 +60,6 @@ export async function waitOrchestraInstruments() {
     await waitForInstruments(6);
 }
 
-// ---------------------------------------------------------------
-// CREAZIONE ENGINE ORCHESTRALE
-// ---------------------------------------------------------------
-export async function createOrchestraEngine(params, score) {
-
-    const rand = createSeededRandom(params.dna);
-    const { violin, viola, cello, doubleBass, harpsichord, percussion } = orchestraInstruments;
-
-    const img = params.imageParams || {};
-    const energy = img.energy ?? 0.5;
-    const complexity = img.complexity ?? 0.5;
-    const brightness = img.brightness ?? 0.5;
-
-    // MODALITÀ
-    let mode;
-    if (energy < 0.35 || (brightness < 0.4 && complexity < 0.5)) mode = "canon";
-    else if (energy > 0.65 || complexity > 0.7) mode = "vivaldi";
-    else mode = "hybrid";
-
-    console.log("🎼 Orchestra Mode:", mode);
-
-    // BPM
-    let bpm;
-    if (mode === "canon") bpm = 60 + energy * 20;
-    else if (mode === "vivaldi") bpm = 130 + energy * 30;
-    else bpm = 90 + energy * 25;
-
-    // Durata misura (4/4)
-    const measureDur = (60 / bpm) * 4;
-
-    // SOLO1
-    const solo1Sec = 10 + rand() * 5;
-    let solo1Measures = Math.max(4, Math.min(8, Math.round(solo1Sec / measureDur)));
-
-    // SOLO2
-    const solo2Sec = 20 + rand() * 25;
-    let solo2Measures = Math.max(8, Math.min(24, Math.round(solo2Sec / measureDur)));
-
-    // STRUTTURA
-    const dynamicStructure = [
-        { name: "intro",   measures: 4 },
-        { name: "verse",   measures: 16 },
-        { name: "chorus",  measures: 16 },
-        { name: "solo1",   measures: solo1Measures },
-        { name: "bridge",  measures: 8 },
-        { name: "chorus2", measures: 16 },
-        { name: "solo2",   measures: solo2Measures },
-        { name: "outro",   measures: 4 }
-    ];
-
-    const structure = buildSongStructure(dynamicStructure, bpm);
-
-    // ARMONIA
-    const tonalBase = params.tonalCenter || "A";
-    const songProgressions = generateSongProgressions(structure, img, tonalBase, rand);
-
-    if (score) {
-        score.notes = [];
-        if (score.setTheme) score.setTheme("orchestra");
-    }
-    
-    // ENGINE OBJECT
-    const engine = {
-        structure,
-        songProgressions,
-        rand,
-        img,
-        mode,
-        bpm,
-        instruments: orchestraInstruments,
-        score,
-        totalDuration: structure.totalDuration,
-        mixerData: {
-            instruments: orchestraInstruments,
-            volumeMap: orchestraVolumeMap
-        }
-    };
-    
-    // Funzione per schedulare (NON chiamarla qui!)
-    // startOrchestraEngine(engine);   // <-- RIMUOVI questa riga
-    
-    // Salva i riferimenti agli strumenti per lo stop
-    const instruments = { violin, viola, cello, doubleBass, harpsichord, percussion };
-
-    return {
-        totalDuration: structure.totalDuration,
-
-        play: async () => {
-            if (Tone.context.state !== "running") Tone.context.resume();
-            Tone.Transport.stop();
-            Tone.Transport.cancel();        // Cancella eventi vecchi
-            Tone.Transport.bpm.value = engine.bpm;
-            await startOrchestraEngine(engine);   // RISCHEDULA GLI EVENTI
-            Tone.Transport.start("+0.1");
-        },
-
-        pause: () => Tone.Transport.pause(),
-
-        stop: () => {
-            Tone.Transport.stop();
-            Tone.Transport.cancel();
-            Tone.Transport.seconds = 0;
-            // Rilascia tutti i suoni
-            if (violin) violin.releaseAll?.();
-            if (viola) viola.releaseAll?.();
-            if (cello) cello.releaseAll?.();
-            if (doubleBass) doubleBass.releaseAll?.();
-            if (harpsichord) harpsichord.releaseAll?.();
-            if (percussion?.stopAll) percussion.stopAll();
-        },
-
-        seek: async (s) => {  // ← async
-    Tone.Transport.stop();
-    Tone.Transport.seconds = s;
-    Tone.Transport.cancel();
-    await startOrchestraEngine(engine);   // ← rischedula
-    Tone.Transport.start();
-},
-        
-        currentTime: () => Tone.Transport.seconds,
-        
-        mixerData: {
-            instruments: orchestraInstruments,
-            volumeMap: orchestraVolumeMap
-        }
-    };
-}
 
 // ===============================================================
 // 🎻 ORCHESTRA ENGINE 022.12 — PARTE 2/5
@@ -787,56 +660,174 @@ function intensifyChorus2(startTime, section, engine) {
 }
 
 // ---------------------------------------------------------------
-// 🎼 AVVIO ENGINE ORCHESTRALE
+// CREAZIONE ENGINE ORCHESTRALE
 // ---------------------------------------------------------------
-export async function startOrchestraEngine(engine) {
 
-    const structure = engine.structure.sections;
+
+// ---------------------------------------------------------------
+// CREAZIONE ENGINE ORCHESTRALE 
+// ---------------------------------------------------------------
+export function createOrchestraEngine(params, score) {
+
+    const rand = createSeededRandom(params.dna);
+    const { violin, viola, cello, doubleBass, harpsichord, percussion } = orchestraInstruments;
+
+    const img = params.imageParams || {};
+    const energy = img.energy ?? 0.5;
+    const complexity = img.complexity ?? 0.5;
+    const brightness = img.brightness ?? 0.5;
+
+    // MODALITÀ
+    let mode;
+    if (energy < 0.35 || (brightness < 0.4 && complexity < 0.5)) mode = "canon";
+    else if (energy > 0.65 || complexity > 0.7) mode = "vivaldi";
+    else mode = "hybrid";
+
+    console.log("🎼 Orchestra Mode:", mode);
+
+    // BPM
+    let bpm;
+    if (mode === "canon") bpm = 60 + energy * 20;
+    else if (mode === "vivaldi") bpm = 130 + energy * 30;
+    else bpm = 90 + energy * 25;
+
+    // Durata misura (4/4)
+    const measureDur = (60 / bpm) * 4;
+
+    // SOLO1
+    const solo1Sec = 10 + rand() * 5;
+    let solo1Measures = Math.max(4, Math.min(8, Math.round(solo1Sec / measureDur)));
+
+    // SOLO2
+    const solo2Sec = 20 + rand() * 25;
+    let solo2Measures = Math.max(8, Math.min(24, Math.round(solo2Sec / measureDur)));
+
+    // STRUTTURA
+    const dynamicStructure = [
+        { name: "intro",   measures: 4 },
+        { name: "verse",   measures: 16 },
+        { name: "chorus",  measures: 16 },
+        { name: "solo1",   measures: solo1Measures },
+        { name: "bridge",  measures: 8 },
+        { name: "chorus2", measures: 16 },
+        { name: "solo2",   measures: solo2Measures },
+        { name: "outro",   measures: 4 }
+    ];
+
+    const structure = buildSongStructure(dynamicStructure, bpm);
+
+    // ARMONIA
+    const tonalBase = params.tonalCenter || "A";
+    const songProgressions = generateSongProgressions(structure, img, tonalBase, rand);
+
+    if (score) {
+        score.notes = [];
+        if (score.setTheme) score.setTheme("orchestra");
+    }
+    
+    // RESET Transport
+    Tone.Transport.stop();
+    Tone.Transport.cancel();
+    Tone.Transport.bpm.value = bpm;
+
+    // ============================================================
+    // SCHEDULAZIONE EVENTI 
+    // ============================================================
+    const sections = structure.sections;
     let currentTime = 0;
 
-    for (let i = 0; i < structure.length; i++) {
+    for (let i = 0; i < sections.length; i++) {
 
-        const section = structure[i];
+        const section = sections[i];
         const start = currentTime;
 
-// RULLATA DI TIMPANI AL CAMBIO SEZIONE (tranne la prima)
-if (i > 0 && i < structure.length - 1) {
+        // RULLATA DI TIMPANI AL CAMBIO SEZIONE (tranne la prima)
+        if (i > 0 && i < sections.length - 1) {
 
-    const prevSection = structure[i - 1];
-    const nextSection = structure[i];
+            const prevSection = sections[i - 1];
+            const nextSection = sections[i];
 
-    const prevRoot = engine.songProgressions[prevSection.name].root;
-    const nextRoot = engine.songProgressions[nextSection.name].root;
+            const prevRoot = songProgressions[prevSection.name].root;
+            const nextRoot = songProgressions[nextSection.name].root;
 
-    const prevNote = getScaleDegree(buildScaleFromTonic(prevRoot + "3", "harmonicMinor"), 0);
-    const nextNote = getScaleDegree(buildScaleFromTonic(nextRoot + "3", "harmonicMinor"), 0);
+            const prevNote = getScaleDegree(buildScaleFromTonic(prevRoot + "3", "harmonicMinor"), 0);
+            const nextNote = getScaleDegree(buildScaleFromTonic(nextRoot + "3", "harmonicMinor"), 0);
 
-    const prevMidi = Tone.Frequency(prevNote).toMidi();
-    const nextMidi = Tone.Frequency(nextNote).toMidi();
+            const prevMidi = Tone.Frequency(prevNote).toMidi();
+            const nextMidi = Tone.Frequency(nextNote).toMidi();
 
-    smartTimpaniRoll(
-        Math.max(0, start - 0.6),
-        engine.instruments.percussion,
-        engine.score,
-        prevMidi,
-        nextMidi,
-        engine.rand,
-        nextSection.name
-    );
-}
+            smartTimpaniRoll(
+                Math.max(0, start - 0.6),
+                percussion,
+                score,
+                prevMidi,
+                nextMidi,
+                rand,
+                nextSection.name
+            );
+        }
+
         section.index = i;
 
+        // SCHEDULA LA SEZIONE
         if (section.name === "solo1") {
-            playSolo1Section(start, section, engine);
+            playSolo1Section(start, section, {
+                rand, img, mode, songProgressions,
+                violin, viola, cello, doubleBass, score
+            });
         } else if (section.name === "solo2") {
-            playSolo2Section(start, section, engine);
+            playSolo2Section(start, section, {
+                rand, img, mode, songProgressions,
+                violin, viola, cello, doubleBass, harpsichord, percussion, score
+            });
         } else if (section.name === "chorus2") {
-            playNormalSection(start, section, engine);
-            intensifyChorus2(start, section, engine);
+            playNormalSection(start, section, {
+                rand, mode, songProgressions,
+                violin, viola, cello, doubleBass, harpsichord, percussion, score
+            });
+            intensifyChorus2(start, section, {
+                rand, songProgressions,
+                violin, viola, cello, score
+            });
         } else {
-            playNormalSection(start, section, engine);
+            playNormalSection(start, section, {
+                rand, mode, songProgressions,
+                violin, viola, cello, doubleBass, harpsichord, percussion, score
+            });
         }
 
         currentTime += section.measures * Tone.Time("1m").toSeconds();
     }
+
+    return {
+        totalDuration: structure.totalDuration,
+        
+        play: () => {
+            if (Tone.context.state !== "running") Tone.context.resume();
+            Tone.Transport.start("+0.1");
+        },
+        
+        pause: () => Tone.Transport.pause(),
+        
+        stop: () => {
+            Tone.Transport.stop();
+            Tone.Transport.cancel();
+            Tone.Transport.seconds = 0;
+            if (violin) violin.releaseAll?.();
+            if (viola) viola.releaseAll?.();
+            if (cello) cello.releaseAll?.();
+            if (doubleBass) doubleBass.releaseAll?.();
+            if (harpsichord) harpsichord.releaseAll?.();
+            if (percussion?.stopAll) percussion.stopAll();
+        },
+        
+        seek: (s) => {
+            Tone.Transport.seconds = s;
+        },
+        
+        mixerData: {
+            instruments: orchestraInstruments,
+            volumeMap: orchestraVolumeMap
+        }
+    };
 }
