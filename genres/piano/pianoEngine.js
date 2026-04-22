@@ -11,7 +11,7 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { progressions } from "../../utils/musicTheory.js"; 
 import { waitForInstruments } from "../../common.js";
 
-console.log("pianoEngine.js ver. 022.2 loaded");
+console.log("pianoEngine.js ver. 022.3 loaded");
 
 export async function waitPianoInstruments() {
     await waitForInstruments(1);
@@ -294,11 +294,11 @@ function getLHPattern(sectionName, stepIdx, rand, complexity) {
     return hit;
 }
 
-    // ─────────────────────────────────────────────
-// 🎹 RH MELODIC ENGINE v1 — Drop‑in
+// ─────────────────────────────────────────────
+// 🎹 RH MELODIC ENGINE 
 // ─────────────────────────────────────────────
 
-function schedulePianoMelody({
+function schedulePianoMelodyStep({
     section,
     s,
     chordStartTime,
@@ -311,6 +311,7 @@ function schedulePianoMelody({
     rand,
     score
 }) {
+    // Timing RH
     const isEvenStep = s % 2 !== 0;
     const swingOffset = isEvenStep ? (step8n * swingFactor) : 0;
     const waveRubato = Math.sin((s / 8) * Math.PI) * rubatoIntensity;
@@ -318,7 +319,7 @@ function schedulePianoMelody({
 
     const stepTime = chordStartTime + (s * step8n) + swingOffset + waveRubato + ritardando;
 
-    // Tema ricorrente
+    // Tema ricorrente (una sola volta per sezione)
     if (!section._melodyTheme) {
         section._melodyTheme = [
             0,
@@ -329,11 +330,12 @@ function schedulePianoMelody({
         section._melodicStep = 0;
     }
 
+    // Movimento melodico naturale
     function nextMelodicStep(prev) {
         const r = rand();
-        if (r < 0.7) return prev + (rand() < 0.5 ? 1 : -1);
-        if (r < 0.9) return prev + (rand() < 0.5 ? 2 : -2);
-        return prev + (rand() < 0.5 ? 4 : -4);
+        if (r < 0.7) return prev + (rand() < 0.5 ? 1 : -1); // scalare
+        if (r < 0.9) return prev + (rand() < 0.5 ? 2 : -2); // terza
+        return prev + (rand() < 0.5 ? 4 : -4); // quinta
     }
 
     // Applica tema ogni tanto
@@ -344,15 +346,18 @@ function schedulePianoMelody({
     }
 
     // Otteniamo la nota della scala SENZA ottava
-    let noteName = getScaleDegree(scale, section._melodicStep);
+    let rawNote = getScaleDegree(scale, section._melodicStep);
 
-    // Aggiungiamo un’ottava sicura (C4–C6)
+    // Rimuoviamo l’ottava dalla nota (es. "C#5" → "C#")
+    const noteName = rawNote.replace(/[0-9]/g, "");
+
+    // Ricostruiamo la nota in un’ottava sicura (C4–C6)
     let midi = Tone.Frequency(noteName + "4").toMidi();
 
-    // Range melodico
+    // Range melodico sicuro
     midi = Math.min(Math.max(midi, 60), 84);
 
-    // Passing tones
+    // Passing tones (sempre validi ora)
     if (rand() < 0.12) midi += rand() < 0.5 ? -1 : 1;
 
     // Convertiamo in nota valida
