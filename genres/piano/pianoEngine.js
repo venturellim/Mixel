@@ -11,7 +11,7 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { progressions } from "../../utils/musicTheory.js"; 
 import { waitForInstruments } from "../../common.js";
 
-console.log("pianoEngine.js ver. 022 loaded");
+console.log("pianoEngine.js ver. 022.1 loaded");
 
 export async function waitPianoInstruments() {
     await waitForInstruments(1);
@@ -315,59 +315,59 @@ function schedulePianoMelody(section, scale, tonalCenter, params, rand, measureD
         0
     ];
 
-    function nextMelodicStep(prev) {
-        const r = rand();
-        if (r < 0.7) return prev + (rand() < 0.5 ? 1 : -1); // stepwise
-        if (r < 0.9) return prev + (rand() < 0.5 ? 2 : -2); // terza
-        return prev + (rand() < 0.5 ? 4 : -4); // quinta
-    }
+    // ─────────────────────────────────────────────
+// 🎹 RH MELODIC ENGINE v1 — Drop‑in
+// ─────────────────────────────────────────────
 
-    for (let s = 0; s < totalSteps; s++) {
+function schedulePianoMelodyStep({
+    section,
+    s,
+    chordStartTime,
+    step8n,
+    swingFactor,
+    rubatoIntensity,
+    isClosingMeasure,
+    scale,
+    tonalCenter,
+    rand,
+    score
+}) {
+    const isEvenStep = s % 2 !== 0;
+    const swingOffset = isEvenStep ? (step8n * swingFactor) : 0;
+    const waveRubato = Math.sin((s / 8) * Math.PI) * rubatoIntensity;
+    const ritardando = (isClosingMeasure && s > 4) ? (s - 4) * 0.03 : 0;
 
-        const stepTime = section.startTime + (s * (measureDur / phraseLength));
+    const stepTime = chordStartTime + (s * step8n) + swingOffset + waveRubato + ritardando;
 
-        // Tema ricorrente ogni tanto
-        if (rand() < 0.15) {
-            melodicStep = theme[s % theme.length];
-        } else {
-            melodicStep = nextMelodicStep(melodicStep);
-        }
+    // Movimento melodico
+    const melodicStep = Math.floor(rand() * 7) - 3; // -3..+3
+    let midi = Tone.Frequency(getScaleDegree(scale, melodicStep)).toMidi();
 
-        // Nota di scala
-        const scaleNote = getScaleDegree(scale, melodicStep);
-        let midi = Tone.Frequency(scaleNote).toMidi();
+    // Range melodico C4–C6
+    midi = Math.min(Math.max(midi, 60), 84);
 
-        // Range melodico indipendente (C4–C6)
-        midi = Math.min(Math.max(midi, 60), 84);
+    // Passing tones
+    if (rand() < 0.12) midi += rand() < 0.5 ? -1 : 1;
 
-        // Passing tones (±1 semitono)
-        if (rand() < 0.12) {
-            midi += rand() < 0.5 ? -1 : 1;
-        }
+    const note = Tone.Frequency(midi, "midi").toNote();
 
-        const note = Tone.Frequency(midi, "midi").toNote();
+    // Fraseggio
+    const phraseProgress = (s % 8) / 8;
+    let vel = 0.35 + phraseProgress * 0.45;
+    if (phraseProgress > 0.8) vel *= 1.15;
 
-        // Fraseggio: crescendo → climax → risoluzione
-        const phraseProgress = (s % phraseLength) / phraseLength;
-        let vel = 0.35 + phraseProgress * 0.45;
-        if (phraseProgress > 0.8) vel *= 1.15;
+    // Micro‑rubato
+    const micro = (rand() - 0.5) * 0.02;
 
-        // Micro‑rubato
-        const micro = (rand() - 0.5) * 0.02;
+    Tone.Transport.schedule(time => {
+        const t = time + micro;
+        piano.triggerAttackRelease(note, "8n", t, vel);
 
-        Tone.Transport.schedule(time => {
-            const t = time + micro;
-            piano.triggerAttackRelease(note, "8n", t, vel);
-
-            Tone.Draw.schedule(() => {
-                if (score) score.addNote("Lead", note, section.name);
-            }, t);
-        }, stepTime);
-
-        lastMidi = midi;
-    }
+        Tone.Draw.schedule(() => {
+            if (score) score.addNote("Lead", note, section.name);
+        }, t);
+    }, stepTime);
 }
-
 
 export async function createPianoEngine(params, score) {
     const rand = createSeededRandom(params.dna);
