@@ -294,32 +294,11 @@ function getLHPattern(sectionName, stepIdx, rand, complexity) {
     return hit;
 }
 
-// ─────────────────────────────────────────────
-// 🎹 RH MELODIC ENGINE v1 — Drop‑in
-// ─────────────────────────────────────────────
-
-function schedulePianoMelody(section, scale, tonalCenter, params, rand, measureDur, score) {
-
-    const phraseLength = 8; // numero di step per frase
-    const totalSteps = section.measures * phraseLength;
-    const baseMidi = Tone.Frequency(tonalCenter).toMidi();
-
-    let melodicStep = 0; // posizione nella scala
-    let lastMidi = baseMidi + 12; // C4–C6 range
-
-    // Genera un piccolo tema ricorrente
-    const theme = [
-        0,
-        rand() < 0.5 ? 2 : -2,
-        rand() < 0.5 ? 4 : -4,
-        0
-    ];
-
     // ─────────────────────────────────────────────
 // 🎹 RH MELODIC ENGINE v1 — Drop‑in
 // ─────────────────────────────────────────────
 
-function schedulePianoMelodyStep({
+function schedulePianoMelody({
     section,
     s,
     chordStartTime,
@@ -453,7 +432,7 @@ export async function createPianoEngine(params, score) {
 
                     // RH MELODICA (solo se non è solo)
                     if (!isSolo) {
-                        schedulePianoMelodyStep({
+                        schedulePianoMelody({
                             section,
                             s,
                             chordStartTime,
