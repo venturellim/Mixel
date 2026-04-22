@@ -22,7 +22,7 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { generateSongProgressions } from "../../utils/musicTheory.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("orchestraEngine.js ver. 023 loaded");
+console.log("orchestraEngine.js ver. 023.1 loaded");
 
 // ---------------------------------------------------------------
 // SAFE NOTE
@@ -667,7 +667,7 @@ function intensifyChorus2(startTime, section, engine) {
 // ---------------------------------------------------------------
 // CREAZIONE ENGINE ORCHESTRALE 
 // ---------------------------------------------------------------
-export function createOrchestraEngine(params, score) {
+export async function createOrchestraEngine(params, score) {
 
     const rand = createSeededRandom(params.dna);
     const { violin, viola, cello, doubleBass, harpsichord, percussion } = orchestraInstruments;
@@ -770,31 +770,48 @@ export function createOrchestraEngine(params, score) {
         section.index = i;
 
         // SCHEDULA LA SEZIONE
-        if (section.name === "solo1") {
-            playSolo1Section(start, section, {
-                rand, img, mode, songProgressions,
-                violin, viola, cello, doubleBass, score
-            });
-        } else if (section.name === "solo2") {
-            playSolo2Section(start, section, {
-                rand, img, mode, songProgressions,
-                violin, viola, cello, doubleBass, harpsichord, percussion, score
-            });
-        } else if (section.name === "chorus2") {
-            playNormalSection(start, section, {
-                rand, mode, songProgressions,
-                violin, viola, cello, doubleBass, harpsichord, percussion, score
-            });
-            intensifyChorus2(start, section, {
-                rand, songProgressions,
-                violin, viola, cello, score
-            });
-        } else {
-            playNormalSection(start, section, {
-                rand, mode, songProgressions,
-                violin, viola, cello, doubleBass, harpsichord, percussion, score
-            });
-        }
+        // SCHEDULA LA SEZIONE
+if (section.name === "solo1") {
+    playSolo1Section(start, section, {
+        rand,
+        img,
+        mode,
+        songProgressions,
+        instruments: { violin, viola, cello, doubleBass },
+        score
+    });
+} else if (section.name === "solo2") {
+    playSolo2Section(start, section, {
+        rand,
+        img,
+        mode,
+        songProgressions,
+        instruments: { violin, viola, cello, doubleBass, harpsichord, percussion },
+        score
+    });
+} else if (section.name === "chorus2") {
+    playNormalSection(start, section, {
+        rand,
+        mode,
+        songProgressions,
+        instruments: { violin, viola, cello, doubleBass, harpsichord, percussion },
+        score
+    });
+    intensifyChorus2(start, section, {
+        rand,
+        songProgressions,
+        instruments: { violin, viola, cello },
+        score
+    });
+} else {
+    playNormalSection(start, section, {
+        rand,
+        mode,
+        songProgressions,
+        instruments: { violin, viola, cello, doubleBass, harpsichord, percussion },
+        score
+    });
+}
 
         currentTime += section.measures * Tone.Time("1m").toSeconds();
     }
