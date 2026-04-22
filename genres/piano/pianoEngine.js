@@ -11,7 +11,7 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { progressions } from "../../utils/musicTheory.js"; 
 import { waitForInstruments } from "../../common.js";
 
-console.log("pianoEngine.js ver. 022.4 loaded");
+console.log("pianoEngine.js ver. 022.5 loaded");
 
 export async function waitPianoInstruments() {
     await waitForInstruments(1);
@@ -298,51 +298,88 @@ export async function createPianoEngine(params, score) {
                         }, stepTime);
                     }
 
-                    // ============================================
-                    // RIGHT HAND - MELODIA (corretta!)
+                                        // ============================================
+                    // RIGHT HAND - MELODIA A NOTE SINGOLE (come lead)
                     // ============================================
                     if (isSolo) continue; // Se è solo, la RH è già gestita dal solo engine
                     
-                    // Scala melodica per la RH
-                    const melodyScale = buildScaleFromTonic(p.tonalCenter, p.scaleType);
+                    // Inizializza cursore melodico per questa sezione (se non esiste)
+                    if (typeof section._melodicCursor === 'undefined') {
+                        section._melodicCursor = Math.floor(rand() * 7);
+                        section._melodyDirection = 1;
+                        section._lastNote = null;
+                    }
                     
-                    // Progressi per dinamica
+                    // Scala melodica (nota: getScaleDegree restituisce una nota singola, non un accordo!)
+                    const melodyScaleNotes = [];
+                    for (let deg = 0; deg < 7; deg++) {
+                        const note = getScaleDegree(scale, deg);
+                        if (note) melodyScaleNotes.push(note);
+                    }
+                    
+                    if (melodyScaleNotes.length === 0) continue;
+                    
+                    // Probabilità di suonare una nota (non sempre, per creare respiro)
+                    const noteProbability = (section.name === "chorus") ? 0.75 : 0.55;
+                    if (rand() > noteProbability) continue;
+                    
+                    // Movimento melodico: più fluido (step di 1 o 2 gradi)
+                    if (rand() < 0.08) section._melodyDirection *= -1; // cambia direzione ogni tanto
+                    
+                    // Passo melodico: raramente salta più di 2 gradi
+                    let step = 1;
+                    if (rand() < 0.15) step = 2;
+                    if (rand() < 0.05) step = 3; // salto raro per enfasi
+                    
+                    section._melodicCursor += step * section._melodyDirection;
+                    section._melodicCursor = (section._melodicCursor + melodyScaleNotes.length) % melodyScaleNotes.length;
+                    
+                    // Ottieni la nota singola dalla scala
+                    let noteName = melodyScaleNotes[section._melodicCursor];
+                    
+                    // Converti in MIDI per gestire l'ottava
+                    let midiNote = Tone.Frequency(noteName).toMidi();
+                    
+                    // Ottava corretta per la melodia (lead)
+                    if (section.name === "chorus") {
+                        midiNote += 12; // Ottava alta per il chorus
+                    } else if (section.name === "verse") {
+                        midiNote += 7;  // Ottava media per la verse
+                    } else {
+                        midiNote += 5;  // Ottava bassa per intro/outro
+                    }
+                    
+                    // Range sicuro per lead (C4 - C7)
+                    midiNote = Math.min(Math.max(midiNote, 60), 96);
+                    const noteToPlay = Tone.Frequency(midiNote, "midi").toNote();
+                    
+                    // Evita note ripetute troppo spesso
+                    if (section._lastNote === noteToPlay && rand() < 0.7) continue;
+                    section._lastNote = noteToPlay;
+                    
+                    // Dinamica espressiva (come un chitarrista che suona)
                     const phraseProgress = (s % 8) / 8;
                     const measureProgress = m / section.measures;
                     
-                    // Muovi il cursore melodico (passi piccoli = melodia fluida)
-                    if (rand() < 0.05) section._melodyDirection *= -1;
+                    let velocity = 0.4;
+                    velocity += phraseProgress * 0.3; // crescendo nella frase
+                    if (measureProgress > 0.8) velocity += 0.15; // finale più forte
+                    if (section.name === "chorus") velocity += 0.15;
                     
-                    // Passo di 1 o 2 gradi (mai salti grandi)
-                    const step = rand() < 0.7 ? 1 : 2;
-                    section._melodicCursor += step * section._melodyDirection;
-                    section._melodicCursor = (section._melodicCursor + melodyScale.length) % melodyScale.length;
+                    // Accenti sulle note forti (battuta 1 e 3)
+                    if (s === 0 || s === 4) velocity *= 1.2;
                     
-                    // Ottieni la nota dalla scala
-                    let midiNote = Tone.Frequency(melodyScale[section._melodicCursor]).toMidi();
+                    // Durata della nota (legato/staccato)
+                    let duration = "8n";
+                    if (rand() < 0.3) duration = "4n";  // nota più lunga
+                    if (rand() < 0.15) duration = "16n"; // nota più corta
                     
-                    // Ottava giusta per melodia (C4-C6 per melodie, C5-C7 per chorus)
-                    if (section.name === "chorus") {
-                        midiNote += 12; // C5-C7
-                    } else {
-                        midiNote += 7;  // C4-C6
-                    }
-                    midiNote = Math.min(Math.max(midiNote, 60), 84); // Range C4-C6
-                    
-                    const noteToPlay = Tone.Frequency(midiNote, "midi").toNote();
-                    
-                    // Dinamica espressiva (crescendo verso fine frase)
-                    let rhVel = 0.35 + phraseProgress * 0.4;
-                    if (measureProgress > 0.8) rhVel *= 1.15;
-                    if (section.name === "chorus") rhVel += 0.15;
-                    
-                    // Legato e micro-rubato
-                    const legato = (rand() < 0.3) ? "4n" : "8n";
-                    const microDelay = (rand() - 0.5) * 0.015;
+                    // Micro-rubato per umanizzare
+                    const microDelay = (rand() - 0.5) * 0.02;
                     
                     Tone.Transport.schedule((time) => {
                         const t = time + microDelay;
-                        piano.triggerAttackRelease(noteToPlay, legato, t, rhVel * rhBus.gain.value);
+                        piano.triggerAttackRelease(noteToPlay, duration, t, velocity * rhBus.gain.value);
                         
                         Tone.Draw.schedule(() => {
                             if (score) score.addNote("Lead", noteToPlay, section.name);
