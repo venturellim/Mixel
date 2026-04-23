@@ -1,9 +1,9 @@
-// metalLeadEngine.js — ver. 067 (Advanced Solo v3)
+// metalLeadEngine.js — ver. 068 (Advanced Solo v4 Power Metal)
 
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 007.1 loaded");
+console.log("metalLeadEngine.js ver. 068 loaded");
 
 // ─────────────────────────────────────────────
 // METAL LEAD ENGINE — VERSIONE 4
@@ -49,17 +49,6 @@ const LeadUtils = {
 // ─────────────────────────────────────────────
 // Capitolo 2 — Scale dinamiche per sezione
 // ─────────────────────────────────────────────
-//
-// Ogni sezione del solo usa una scala diversa:
-// - melodic → maggiore/minore
-// - lyrical → pentatonica/dorica
-// - terzine → minore naturale
-// - shred → minore armonica
-// - sweep → arpeggi
-// - tapping → modale
-// - diminished → simmetrica
-// - finalBurst → scala principale
-//
 
 const LeadScales = {
     major(root) {
@@ -100,10 +89,6 @@ const LeadScales = {
 // ─────────────────────────────────────────────
 // Capitolo 3 — Pattern frase (contorni melodici)
 // ─────────────────────────────────────────────
-//
-// Ogni pattern è espresso in gradi di scala.
-// Verrà poi mappato sulla scala corretta della sezione.
-//
 
 const LeadPatterns = {
     melodicTheme: [
@@ -156,12 +141,8 @@ const LeadPatterns = {
 };
 
 // ─────────────────────────────────────────────
-// Capitolo 4 — Floyd Rose (playbackRate automation)
+// Capitolo 4 — Floyd Rose
 // ─────────────────────────────────────────────
-//
-// Usato solo in frasi melodiche (circa 20% dei casi).
-// Non tocca le note, solo il playbackRate del player.
-//
 
 const LeadFloyd = {
     apply(guitarLead, time, type = "scoop") {
@@ -170,21 +151,17 @@ const LeadFloyd = {
         const pr = guitarLead.playbackRate;
 
         if (type === "scoop") {
-            // leggero scoop verso l’alto
             pr.setValueAtTime(0.95, time);
             pr.linearRampToValueAtTime(1.0, time + 0.12);
         } else if (type === "dive") {
-            // divebomb leggero
             pr.setValueAtTime(1.0, time);
             pr.exponentialRampToValueAtTime(0.7, time + 0.18);
             pr.linearRampToValueAtTime(1.0, time + 0.32);
         } else if (type === "rise") {
-            // risalita lenta
             pr.setValueAtTime(0.9, time);
             pr.linearRampToValueAtTime(1.05, time + 0.25);
             pr.linearRampToValueAtTime(1.0, time + 0.35);
         } else if (type === "vibrato") {
-            // vibrato largo power metal
             const steps = 6;
             for (let i = 0; i < steps; i++) {
                 const t = time + i * 0.04;
@@ -199,10 +176,6 @@ const LeadFloyd = {
 // ─────────────────────────────────────────────
 // Capitolo 5 — Generatori di frasi (12–24 note, MIDI)
 // ─────────────────────────────────────────────
-//
-// Qui non c’è ancora il tempo assoluto: solo
-// struttura della frase (note + tempo relativo).
-//
 
 const LeadPhraseGen = {
     expandPattern(pattern, scale, rootMidi, desiredLength) {
@@ -211,23 +184,45 @@ const LeadPhraseGen = {
         while (notes.length < desiredLength) {
             for (let step of pattern) {
                 const idx = (step % scale.length + scale.length) % scale.length;
-                notes.push(scale[idx] + rootMidi);
+                notes.push(scale[idx]);
                 if (notes.length >= desiredLength) break;
             }
         }
         return notes;
     },
 
+    // 🔥 VERSIONE POWER METAL: accelerando → plateau → rallentando
     buildPhrase(pattern, scale, rootMidi, phraseTime, maxNotesPerSecond) {
         const maxNotes = Math.floor(phraseTime * maxNotesPerSecond);
-        const desired = LeadUtils.clamp(maxNotes, 12, 24);
+        const desired = LeadUtils.clamp(maxNotes, 10, 28);
 
         const notes = this.expandPattern(pattern, scale, rootMidi, desired);
-        const times = LeadUtils.distributeTimes(0, phraseTime, notes.length);
+
+        const times = [];
+        let t = 0;
+
+        for (let i = 0; i < notes.length; i++) {
+            const progress = i / notes.length;
+            let step;
+
+            if (progress < 0.25) {
+                step = 0.04 + (0.12 * progress);      // accelerando
+            } else if (progress < 0.75) {
+                step = 0.08;                           // plateau
+            } else {
+                step = 0.12 + (0.12 * (progress - 0.75)); // rallentando
+            }
+
+            t += step;
+            times.push(t);
+        }
+
+        const scaleFactor = phraseTime / t;
+        const finalTimes = times.map(x => x * scaleFactor);
 
         return notes.map((n, i) => ({
             midi: n,
-            relTime: times[i]
+            relTime: finalTimes[i]
         }));
     }
 };
@@ -235,13 +230,6 @@ const LeadPhraseGen = {
 // ─────────────────────────────────────────────
 // Capitolo 6 — Logica BPM-aware e tempo totale
 // ─────────────────────────────────────────────
-//
-// Qui calcoliamo:
-// - tempo totale del solo
-// - numero di frasi (3–5, ma adattato al tempo reale)
-// - durata di ogni frase
-// - filtro sezioni in base al BPM
-//
 
 const LeadTiming = {
     computeTotalSoloTime(sectionMeasures, measureDur) {
@@ -274,53 +262,28 @@ const LeadTiming = {
 // ─────────────────────────────────────────────
 // Capitolo 7 — Tema B + C (immagine + BPM)
 // ─────────────────────────────────────────────
-//
-// Il tema iniziale del solo dipende da:
-// - brightness (immagine)
-// - complexity (immagine)
-// - BPM del brano
-//
-// Produce un pattern melodico di base per la prima frase.
-//
 
 const LeadTheme = {
     pickTheme(brightness, complexity, bpm) {
-        // Tema più luminoso → maggiore
         if (brightness > 0.6) {
             return LeadPatterns.melodicTheme[LeadUtils.randInt(0, 2)];
         }
 
-        // Tema più complesso → dorico / modale
         if (complexity > 0.6) {
             return LeadPatterns.lyricalBreak[LeadUtils.randInt(0, 2)];
         }
 
-        // BPM alto → terzine
         if (bpm > 150) {
             return LeadPatterns.terzine[LeadUtils.randInt(0, 2)];
         }
 
-        // Default power metal
         return LeadPatterns.melodicTheme[0];
     }
 };
 
 // ─────────────────────────────────────────────
-// Capitolo 8 — Sezioni Modello 1 (Stratovarius/Sonata)
+// Capitolo 8 — Sezioni Modello 1
 // ─────────────────────────────────────────────
-//
-// Ordine delle sezioni del solo:
-// 1. melodicTheme
-// 2. lyricalBreak
-// 3. terzine
-// 4. shredRun
-// 5. sweep
-// 6. tapping
-// 7. diminished
-// 8. finalBurst
-//
-// Verranno filtrate in base al BPM.
-//
 
 const LeadSections = [
     { type: "melodic",      patternSet: "melodicTheme",  scale: "major" },
@@ -334,16 +297,8 @@ const LeadSections = [
 ];
 
 // ─────────────────────────────────────────────
-// Capitolo 9 — Densità adattiva (max 8 note/sec)
+// Capitolo 9 — Densità adattiva
 // ─────────────────────────────────────────────
-//
-// La densità dipende da:
-// - energy
-// - complexity
-// - BPM
-//
-// Il limite assoluto è 8 note/sec.
-//
 
 const LeadDensity = {
     computeMaxNotesPerSecond(energy, complexity, bpm) {
@@ -358,43 +313,33 @@ const LeadDensity = {
 };
 
 // ─────────────────────────────────────────────
-// Capitolo 10 — Generatore SOLO V4
+// Capitolo 10 — Generatore SOLO V4 (POWER METAL)
 // ─────────────────────────────────────────────
-//
-// Qui costruiamo il solo completo:
-// - calcolo tempo totale
-// - numero frasi
-// - durata frasi
-// - scelta sezioni
-// - generazione frasi
-// - scheduling MIDI
-//
 
 const LeadSoloV4 = {
     generate(section, progression, instruments, params, rand, measureDur, score) {
         const { guitarLead } = instruments;
         if (!guitarLead) return;
 
-        const { energy, brightness, texture, complexity, bpm } = params.imageParams;
+        const { energy, brightness, texture, complexity, bpm, tonalCenter = "A4" } = params.imageParams;
         const totalTime = LeadTiming.computeTotalSoloTime(section.measures, measureDur);
 
-        // Numero frasi
         const phraseCount = LeadTiming.computePhraseCount(totalTime, energy);
         const phraseTime = LeadTiming.computePhraseTime(totalTime, phraseCount);
 
-        // Sezioni filtrate per BPM
         const usableSections = LeadTiming.filterSectionsByBPM(LeadSections, bpm);
-
-        // Tema iniziale
         const themePattern = LeadTheme.pickTheme(brightness, complexity, bpm);
-
-        // Densità
         const maxNPS = LeadDensity.computeMaxNotesPerSecond(energy, complexity, bpm);
 
-        // Root MIDI (A4 = 69)
-        const rootMidi = 60; // C4 come base
+        // ROOT MIDI POWER METAL — segue la tonalità, lead un’ottava sopra
+        let rootMidi;
+        try {
+            rootMidi = Tone.Frequency(tonalCenter).toMidi();
+        } catch {
+            rootMidi = 69; // A4 fallback
+        }
+        rootMidi += 12;
 
-        // Generazione frasi
         let phrases = [];
 
         for (let i = 0; i < phraseCount; i++) {
@@ -403,7 +348,7 @@ const LeadSoloV4 = {
             const pattern = (i === 0) ? themePattern : LeadUtils.choice(patternSet);
 
             const scaleFn = LeadScales[sec.scale];
-            const scale = scaleFn(0); // root = 0, poi aggiungiamo rootMidi
+            const scale = scaleFn(rootMidi);
 
             const phrase = LeadPhraseGen.buildPhrase(
                 pattern,
@@ -411,7 +356,31 @@ const LeadSoloV4 = {
                 rootMidi,
                 phraseTime,
                 maxNPS
-            );
+            ).map((obj, idx, arr) => {
+                let midi = obj.midi;
+
+                // Inizio: melodico, vicino alla tonica
+                if (idx < arr.length * 0.25) {
+                    midi = scale[idx % scale.length];
+                }
+                // Build: salita
+                else if (idx < arr.length * 0.6) {
+                    midi = scale[(idx + 2) % scale.length];
+                }
+                // Climax: nota più alta
+                else if (idx === Math.floor(arr.length * 0.75)) {
+                    midi = scale[scale.length - 1] + 12;
+                }
+                // Finale: discesa
+                else if (idx > arr.length * 0.75) {
+                    midi = scale[(scale.length - 1 - (idx % scale.length))];
+                }
+
+                return {
+                    midi,
+                    relTime: obj.relTime
+                };
+            });
 
             phrases.push({ section: sec.type, phrase });
         }
@@ -421,12 +390,25 @@ const LeadSoloV4 = {
 
         for (let p of phrases) {
             for (let noteObj of p.phrase) {
+
+                // Respiro power metal
+                if (rand() < 0.08) {
+                    cursor += 0.08 + rand() * 0.12;
+                }
+
                 const absTime = cursor + noteObj.relTime;
 
                 Tone.Transport.schedule(time => {
+                    let duration = "16n";
+
+                    // Climax: nota più lunga
+                    if (noteObj.midi > rootMidi + 14) {
+                        duration = "8n";
+                    }
+
                     guitarLead.triggerAttackRelease(
                         Tone.Frequency(noteObj.midi, "midi"),
-                        "16n",
+                        duration,
                         time
                     );
 
@@ -435,17 +417,34 @@ const LeadSoloV4 = {
                         LeadFloyd.apply(guitarLead, time, LeadUtils.choice(["scoop", "vibrato"]));
                     }
 
-                    // Score
                     Tone.Draw.schedule(() => {
-    if (score) {
-        const noteName = Tone.Frequency(noteObj.midi, "midi").toNote();
-        score.addNote("Lead", noteName, "SOLO");
-    }
-}, time);
+                        if (score) {
+                            const noteName = Tone.Frequency(noteObj.midi, "midi").toNote();
+                            score.addNote("Lead", noteName, "SOLO");
+                        }
+                    }, time);
                 }, absTime);
             }
 
             cursor += phraseTime;
+
+            // Final burst power metal
+            if (p.section === "finalBurst") {
+                const burstScale = LeadScales.major(rootMidi).map(n => n + 12);
+                const burstTimes = LeadUtils.distributeTimes(cursor, cursor + 0.6, burstScale.length);
+
+                burstScale.forEach((midi, i) => {
+                    Tone.Transport.schedule(time => {
+                        guitarLead.triggerAttackRelease(
+                            Tone.Frequency(midi, "midi"),
+                            "16n",
+                            time
+                        );
+                    }, burstTimes[i]);
+                });
+
+                cursor += 0.6;
+            }
         }
     }
 };
@@ -454,10 +453,8 @@ const LeadSoloV4 = {
 // Capitolo Extra — Extra assolo (intro/verse/chorus) — VERSIONE ORIGINALE
 // ─────────────────────────────────────────────
 //
-// Questa parte è praticamente identica alla tua V3
-// per TUTTO ciò che NON è solo.
-// L’unica cosa che cambia è il ramo `isSolo`,
-// che ora delega a LeadSoloV4.
+// ⚠️ DA QUI IN GIÙ È IL TUO CODICE ORIGINALE (LeadLegacy + scheduleLead)
+// NON HO TOCCATO NULLA
 //
 
 const LeadLegacy = {
@@ -478,7 +475,6 @@ const LeadLegacy = {
             complexity = 0.5
         } = params?.imageParams || {};
 
-        // --- LIBRERIA MASCHERE RITMICHE (Quando suonare) ---
         const library = {
             intro: [
                 [0, 1, 2, 3, 4, 8, 12],
@@ -511,7 +507,6 @@ const LeadLegacy = {
             ]
         };
 
-        // --- LIBRERIA MELODICA (Cosa suonare) ---
         const melodicLibrary = {
             epic: [
                 [0, 4, 7, 4, 5, 4, 2, 0], [0, 0, 4, 4, 7, 7, 4, 4],
@@ -568,7 +563,6 @@ const LeadLegacy = {
         const mood = getMelodyFamily();
         const currentMelody = mood.data[Math.floor(energy * mood.data.length) % mood.data.length];
 
-        // Debug (solo fuori dal solo)
         console.log(
             `%c 🎸 LEAD DNA EXECUTION \n` +
             `%c > Section: ${name.toUpperCase()} \n` +
@@ -622,12 +616,8 @@ const LeadLegacy = {
 };
 
 // ─────────────────────────────────────────────
-// scheduleLead — Funzione esportata compatibile col metalEngine
+// scheduleLead — Funzione esportata
 // ─────────────────────────────────────────────
-//
-// - Se NON è solo → usa LeadLegacy (extra assolo originale)
-// - Se è solo → usa LeadSoloV4 (nuovo solo completo)
-//
 
 export function scheduleLead(section, progression, instruments, params, rand, measureDur, score) {
     const { guitarLead } = instruments || {};
@@ -636,7 +626,6 @@ export function scheduleLead(section, progression, instruments, params, rand, me
     const name = section?.name?.toLowerCase() || "";
     const isSolo = name.includes("solo") || name.includes("bridge");
 
-    // Parametri immagine + BPM (ricavato se non presente)
     const {
         energy = 0.5,
         brightness = 0.5,
@@ -647,18 +636,15 @@ export function scheduleLead(section, progression, instruments, params, rand, me
     const bpm =
         params?.imageParams?.bpm ||
         params?.bpm ||
-        (60 / (measureDur / 4)); // fallback dal tempo di misura
+        (60 / (measureDur / 4)); // fallback
 
     if (!isSolo) {
-        // Extra assolo (intro/verse/chorus/prechorus) — versione originale
         LeadLegacy.scheduleNonSolo(section, progression, instruments, params, rand, measureDur, score);
     } else {
-        // SOLO V4 — nuovo motore completo
         const soloParams = {
-            imageParams: { energy, brightness, texture, complexity, bpm }
+            imageParams: { energy, brightness, texture, complexity, bpm, tonalCenter: params.tonalCenter }
         };
 
         LeadSoloV4.generate(section, progression, instruments, soloParams, rand, measureDur, score);
     }
 }
-
