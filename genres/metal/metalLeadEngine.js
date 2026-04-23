@@ -347,8 +347,23 @@ const LeadSoloV4 = {
             const patternSet = LeadPatterns[sec.patternSet];
             const pattern = (i === 0) ? themePattern : LeadUtils.choice(patternSet);
 
-            const scaleFn = LeadScales[sec.scale];
-            const scale = scaleFn(rootMidi);
+            // Scala armonica basata sulla progressione
+const chord = progression[i % progression.length]; // es. "Am", "F", "G"
+let chordRoot = chord.replace(/[^A-G#b]/g, "");    // estrae "A", "F", "G"
+
+if (!chordRoot) chordRoot = tonalCenter;
+
+// MIDI della fondamentale dell’accordo
+let chordMidi;
+try {
+    chordMidi = Tone.Frequency(chordRoot + "4").toMidi();
+} catch {
+    chordMidi = rootMidi;
+}
+
+// Scala power metal centrata sull’accordo corrente
+const scaleFn = LeadScales[sec.scale];
+const scale = scaleFn(chordMidi);
 
             const phrase = LeadPhraseGen.buildPhrase(
                 pattern,
@@ -667,12 +682,29 @@ export function scheduleLead(section, progression, instruments, params, rand, me
         (60 / (measureDur / 4)); // fallback
 
     if (!isSolo) {
-        LeadLegacy.scheduleNonSolo(section, progression, instruments, params, rand, measureDur, score);
-    } else {
-        const soloParams = {
-            imageParams: { energy, brightness, texture, complexity, bpm, tonalCenter: params.tonalCenter }
-        };
-
-        LeadSoloV4.generate(section, progression, instruments, soloParams, rand, measureDur, score);
+    // Se NON è solo → torna al volume normale
+    if (leadBus._soloBoostApplied) {
+        leadBus.gain.cancelScheduledValues(Tone.now());
+        leadBus.gain.rampTo(leadBus._originalGain, 0.25);
+        leadBus._soloBoostApplied = false;
     }
+
+    LeadLegacy.scheduleNonSolo(section, progression, instruments, params, rand, measureDur, score);
+} 
+else {
+    // SOLO → aumenta il volume della lead
+    if (!leadBus._soloBoostApplied) {
+        leadBus._originalGain = leadBus.gain.value;   // salva il volume originale
+        const boosted = leadBus._originalGain * 2.0;  // ≈ +6 dB
+        leadBus.gain.cancelScheduledValues(Tone.now());
+        leadBus.gain.rampTo(boosted, 0.20);           // fade‑in morbido
+        leadBus._soloBoostApplied = true;
+    }
+
+    const soloParams = {
+        imageParams: { energy, brightness, texture, complexity, bpm, tonalCenter: params.tonalCenter }
+    };
+
+    LeadSoloV4.generate(section, progression, instruments, soloParams, rand, measureDur, score);
+}
 }
