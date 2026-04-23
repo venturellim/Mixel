@@ -3,7 +3,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 068 loaded");
+console.log("metalLeadEngine.js ver. 068.1 loaded");
 
 // ─────────────────────────────────────────────
 // METAL LEAD ENGINE — VERSIONE 4
@@ -399,18 +399,46 @@ const LeadSoloV4 = {
                 const absTime = cursor + noteObj.relTime;
 
                 Tone.Transport.schedule(time => {
-                    let duration = "16n";
+                    // POWER METAL SUSTAIN ENGINE
+let baseDur = 0.18; // durata minima
 
-                    // Climax: nota più lunga
-                    if (noteObj.midi > rootMidi + 14) {
-                        duration = "8n";
-                    }
+// Inizio frase → più lungo
+if (noteObj.relTime < phraseTime * 0.15) {
+    baseDur = 0.28;
+}
 
-                    guitarLead.triggerAttackRelease(
-                        Tone.Frequency(noteObj.midi, "midi"),
-                        duration,
-                        time
-                    );
+// Climax → molto più lungo
+if (noteObj.midi > rootMidi + 14) {
+    baseDur = 0.40;
+}
+
+// Finale frase → rallenta
+if (noteObj.relTime > phraseTime * 0.75) {
+    baseDur = 0.32;
+}
+
+// Durata variabile con micro‑random
+const sustain = baseDur + (rand() * 0.08);
+
+// Legato: overlap leggero
+const overlap = (rand() * 0.04);
+
+// Trigger nota con sustain
+guitarLead.triggerAttackRelease(
+    Tone.Frequency(noteObj.midi, "midi"),
+    sustain,
+    time
+);
+
+// Risonanza power metal (leggero ring)
+Tone.Transport.schedule(t2 => {
+    guitarLead.triggerAttackRelease(
+        Tone.Frequency(noteObj.midi - 12, "midi"),
+        0.12,
+        t2,
+        0.15
+    );
+}, time + sustain - overlap);
 
                     // Floyd Rose solo nelle sezioni melodiche
                     if (p.section === "melodic" && rand() < 0.2) {
