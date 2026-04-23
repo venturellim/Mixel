@@ -11,27 +11,27 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { progressions } from "../../utils/musicTheory.js"; 
 import { waitForInstruments } from "../../common.js";
 
-console.log("pianoEngine.js ver. 022.7 loaded");
+console.log("pianoEngine.js ver. 022.8 loaded");
 
 export async function waitPianoInstruments() {
     await waitForInstruments(1);
 }
 
 // ============================================================
-// SOLO ENGINE V2 — Espressivo, fluido, melodico
+// SOLO ENGINE V3 — Espressivo con accelerazioni, pause, dinamica
 // ============================================================
 
-const PianoSoloV2 = {
+const PianoSolo = {
     generate(section, progression, instruments, params, rand, measureDur, score) {
         const { piano } = instruments;
         if (!piano) {
-            console.warn("PianoSoloV2: piano instrument not available");
+            console.warn("PianoSoloV3: piano instrument not available");
             return;
         }
 
         const p = params.imageParams;
         if (!p) {
-            console.warn("PianoSoloV2: imageParams not available");
+            console.warn("PianoSoloV3: imageParams not available");
             return;
         }
 
@@ -40,9 +40,9 @@ const PianoSoloV2 = {
         try {
             const tonalCenterNote = params.tonalCenter || p.tonalCenter || "C";
             rootMidi = Tone.Frequency(tonalCenterNote).toMidi();
-            console.log(`PianoSoloV2: tonalCenter = ${tonalCenterNote}, root MIDI = ${rootMidi}`);
+            console.log(`PianoSoloV3: tonalCenter = ${tonalCenterNote}, root MIDI = ${rootMidi}`);
         } catch (e) {
-            console.warn("PianoSoloV2: fallback a C4", e);
+            console.warn("PianoSoloV3: fallback a C4", e);
             rootMidi = 60;
         }
 
@@ -53,9 +53,48 @@ const PianoSoloV2 = {
         // Durata totale del solo
         const totalSeconds = section.measures * measureDur;
         
-        // Numero di frasi (3-5 a seconda dell'energia)
-        const numPhrases = Math.floor(3 + p.energy * 3);
-        const phraseDuration = totalSeconds / numPhrases;
+        // Numero di frasi (3-6 a seconda dell'energia)
+        const numPhrases = Math.floor(3 + p.energy * 4);
+        
+        // ============================================================
+        // STRUTTURA DELL'ASSOLO CON ACCELERAZIONI E PAUSE
+        // ============================================================
+        
+        // Distribuisci le frasi con timing espressivo
+        const phraseTimings = [];
+        let remainingTime = totalSeconds;
+        
+        for (let i = 0; i < numPhrases; i++) {
+            const progress = i / numPhrases;
+            let phraseDuration;
+            
+            // Accelerando verso la metà, poi rallentando
+            if (progress < 0.3) {
+                // Inizio: più lento (build up)
+                phraseDuration = (remainingTime / (numPhrases - i)) * (1 + (0.3 - progress) * 0.5);
+            } else if (progress < 0.7) {
+                // Metà: più veloce (climax)
+                phraseDuration = (remainingTime / (numPhrases - i)) * 0.7;
+            } else {
+                // Fine: rallenta (finale)
+                phraseDuration = (remainingTime / (numPhrases - i)) * 1.3;
+            }
+            
+            // Aggiungi pausa dopo alcune frasi (respiro)
+            let pauseAfter = 0;
+            if (i > 0 && i < numPhrases - 1 && rand() < 0.3) {
+                pauseAfter = 0.2 + rand() * 0.3; // pausa di 0.2-0.5 secondi
+            }
+            
+            phraseTimings.push({
+                duration: Math.min(phraseDuration, remainingTime - pauseAfter),
+                pause: pauseAfter,
+                isClimax: (progress > 0.4 && progress < 0.7)
+            });
+            
+            remainingTime -= (phraseDuration + pauseAfter);
+            if (remainingTime < 0.5) break;
+        }
         
         // Stile del solo
         let soloStyle = "lyrical";
@@ -67,17 +106,23 @@ const PianoSoloV2 = {
             lyrical: [
                 [0, 2, 3, 5, 3, 2, 0],
                 [0, 2, 4, 5, 4, 2],
-                [0, 1, 3, 5, 3, 1]
+                [0, 1, 3, 5, 3, 1],
+                [0, 2, 5, 7, 5, 2],
+                [0, 3, 2, 1, 2, 3]
             ],
             romantic: [
                 [0, 3, 5, 7, 9, 7, 5, 3],
-                [0, 2, 5, 7, 9, 7, 5],
-                [0, 4, 7, 9, 7, 4]
+                [0, 2, 5, 7, 9, 7, 5, 2],
+                [0, 4, 7, 9, 7, 4],
+                [0, 3, 7, 10, 7, 3],
+                [0, 5, 3, 1, 3, 5]
             ],
             cinematic: [
                 [0, 5, 7, 12, 7, 5],
                 [0, 4, 7, 12, 7, 4],
-                [0, 5, 9, 12, 9, 5]
+                [0, 5, 9, 12, 9, 5],
+                [0, 7, 12, 14, 12, 7],
+                [0, 5, 12, 7, 5]
             ]
         };
         
@@ -85,49 +130,90 @@ const PianoSoloV2 = {
         
         let cursor = section.startTime;
         let melodicCursor = 0;
-        let direction = 1;
+        let lastNote = null;
+        let repeatCount = 0;
         
-        for (let phrase = 0; phrase < numPhrases; phrase++) {
-            // Scegli pattern per questa frase
-            const pattern = patterns[phrase % patterns.length];
+        // ============================================================
+        // GENERA LE FRASI
+        // ============================================================
+        
+        for (let phraseIdx = 0; phraseIdx < phraseTimings.length; phraseIdx++) {
+            const timing = phraseTimings[phraseIdx];
+            const pattern = patterns[phraseIdx % patterns.length];
             
-            // Calcola quante note in questa frase
-            const notesPerPhrase = Math.floor(5 + p.complexity * 8);
+            // Numero di note in questa frase (variabile)
+            let notesPerPhrase = Math.floor(4 + p.complexity * 8);
             
-            // Estendi il pattern alla lunghezza desiderata
-            const noteOffsets = [];
-            for (let i = 0; i < notesPerPhrase; i++) {
-                noteOffsets.push(pattern[i % pattern.length]);
+            // Frase climax = più note
+            if (timing.isClimax) notesPerPhrase = Math.floor(notesPerPhrase * 1.5);
+            
+            // Aggiungi pause all'interno della frase (respiro)
+            const internalPauses = [];
+            if (phraseIdx > 0 && rand() < 0.4) {
+                const pausePosition = Math.floor(notesPerPhrase * 0.3 + rand() * 0.4);
+                internalPauses.push(pausePosition);
+            }
+            if (rand() < 0.2 && notesPerPhrase > 6) {
+                const pausePosition = Math.floor(notesPerPhrase * 0.6);
+                internalPauses.push(pausePosition);
             }
             
-            // Timing delle note (con rubato e accelerando)
+            // Estendi il pattern
+            const noteOffsets = [];
+            for (let i = 0; i < notesPerPhrase; i++) {
+                // Aggiungi ripetizioni occasionali
+                let offset = pattern[i % pattern.length];
+                if (rand() < 0.15 && lastNote !== null && repeatCount < 2) {
+                    // Ripeti la nota precedente
+                    offset = noteOffsets[noteOffsets.length - 1] || offset;
+                    repeatCount++;
+                } else {
+                    repeatCount = 0;
+                }
+                noteOffsets.push(offset);
+            }
+            
+            // Timing delle note con accelerando interno
             const noteTimings = [];
             let timePos = 0;
-            const totalPhraseTime = phraseDuration;
             
-            // Distribuisci le note con ritmo naturale
             for (let i = 0; i < noteOffsets.length; i++) {
-                // Durata variabile tra 0.2 e 0.5 secondi
-                let duration = 0.25 + (rand() * 0.3);
-                // Accelera verso la fine della frase
+                // Verifica se c'è una pausa qui
+                if (internalPauses.includes(i)) {
+                    timePos += 0.15 + rand() * 0.2; // pausa breve
+                }
+                
+                // Durata variabile con accelerando
                 const progress = i / noteOffsets.length;
-                duration *= (1 - progress * 0.4);
+                let duration;
+                
+                if (timing.isClimax) {
+                    // Nella parte climax: note più corte (accelerando)
+                    duration = 0.12 + (1 - progress) * 0.1;
+                } else if (phraseIdx === phraseTimings.length - 1) {
+                    // Ultima frase: rallenta
+                    duration = 0.3 + progress * 0.2;
+                } else {
+                    // Normale
+                    duration = 0.18 + rand() * 0.12;
+                }
                 
                 noteTimings.push({
                     offset: timePos,
-                    duration: duration
+                    duration: duration,
+                    isAccented: (i % 4 === 0) // accento ogni 4 note
                 });
                 timePos += duration;
             }
             
             // Normalizza alla durata della frase
-            const timeScale = totalPhraseTime / timePos;
+            const timeScale = timing.duration / timePos;
             
             // Genera le note
             for (let i = 0; i < noteOffsets.length; i++) {
                 const absTime = cursor + noteTimings[i].offset * timeScale;
                 
-                // Movimento melodico naturale
+                // Movimento melodico
                 melodicCursor += noteOffsets[i];
                 melodicCursor = (melodicCursor + scale.length) % scale.length;
                 
@@ -138,23 +224,45 @@ const PianoSoloV2 = {
                 if (p.brightness > 0.6 && rand() < 0.2) {
                     noteMidi += 12;
                 }
+                if (timing.isClimax && rand() < 0.3) {
+                    noteMidi += 12; // ottava alta nel climax
+                }
                 
-                // Range sicuro (C4 - C7)
                 noteMidi = Math.min(Math.max(noteMidi, 60), 96);
                 const note = Tone.Frequency(noteMidi, "midi").toNote();
                 
+                // Evita troppe ripetizioni consecutive
+                if (lastNote === note && rand() < 0.8) continue;
+                lastNote = note;
+                
                 // Dinamica espressiva
                 const phraseProgress = i / noteOffsets.length;
-                let velocity = 0.5 + phraseProgress * 0.4;
+                let velocity = 0.4;
                 
-                // Climax verso la fine del solo
-                const soloProgress = phrase / numPhrases;
-                if (soloProgress > 0.7) velocity *= 1.2;
+                if (timing.isClimax) {
+                    // Climax: più forte
+                    velocity = 0.7 + phraseProgress * 0.3;
+                } else if (phraseIdx === phraseTimings.length - 1) {
+                    // Finale: piano
+                    velocity = 0.35 + (1 - phraseProgress) * 0.2;
+                } else {
+                    // Normale: crescendo
+                    velocity = 0.45 + phraseProgress * 0.3;
+                }
+                
+                // Accento sulle note forti
+                if (noteTimings[i].isAccented) velocity *= 1.2;
+                
+                // Durata variabile
+                let durationStr = "8n";
+                const durationSec = noteTimings[i].duration * timeScale;
+                if (durationSec < 0.15) durationStr = "16n";
+                else if (durationSec < 0.25) durationStr = "8n";
+                else if (durationSec < 0.4) durationStr = "4n";
+                else durationStr = "2n";
                 
                 // Micro-rubato
-                const microDelay = (rand() - 0.5) * 0.025;
-                const duration = noteTimings[i].duration * timeScale;
-                const durationStr = duration < 0.3 ? "8n" : (duration < 0.5 ? "4n" : "2n");
+                const microDelay = (rand() - 0.5) * 0.02;
                 
                 Tone.Transport.schedule(time => {
                     const t = time + microDelay;
@@ -166,17 +274,22 @@ const PianoSoloV2 = {
                 }, absTime);
             }
             
-            cursor += totalPhraseTime;
+            // Avanza il cursore (frase + pausa)
+            cursor += timing.duration;
+            if (timing.pause > 0) {
+                // Schedulazione del silenzio (pausa)
+                cursor += timing.pause;
+            }
         }
     }
 };
 
+// Wrapper aggiornato
 function schedulePianoLead(section, progression, instruments, params, rand, measureDur, score) {
     const name = section.name.toLowerCase();
     if (!name.includes("solo")) return;
-    PianoSoloV2.generate(section, progression, instruments, params, rand, measureDur, score);
+    PianoSolo.generate(section, progression, instruments, params, rand, measureDur, score);
 }
-
 // ============================================================
 // UTILITIES
 // ============================================================
