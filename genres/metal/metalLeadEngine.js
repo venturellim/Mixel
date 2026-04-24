@@ -3,7 +3,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote, leadBus } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 073 loaded");
+console.log("metalLeadEngine.js ver. 073.1 loaded");
 
 // ─────────────────────────────────────────────
 // Utility
@@ -180,7 +180,7 @@ const LeadTiming = {
 
     computePhraseCount(totalTime, energy) {
         let count = energy>0.7 ? 5 : energy>0.4 ? 4 : 3;
-        const minPhraseTime = 1.2;
+        const minPhraseTime = 2.8;
         while (count*minPhraseTime > totalTime) count--;
         return Math.max(2, count);
     },
