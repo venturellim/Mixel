@@ -3,7 +3,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote, leadBus } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 073.7 loaded");
+console.log("metalLeadEngine.js ver. 073.8 loaded");
 
 // ─────────────────────────────────────────────
 // Utility
@@ -451,6 +451,23 @@ if (directionToNext==="up") {
                 nextChordMidi
             });
         }
+        const { guitarLead } = instruments;
+
+phrases.forEach(phrase => {
+    phrase.phrase.forEach(n => {
+        Tone.Transport.schedule(time => {
+            const noteName = Tone.Frequency(n.midi, "midi").toNote();
+            console.log("🎵 SOLO NOTE:", noteName, "at", time);
+
+            guitarLead.triggerAttackRelease(
+                noteName,
+                0.25,
+                time
+            );
+        }, section.startTime + n.relTime);
+    });
+});
+
         // DEBUG: prima frase dell'assolo
 if (phrases.length > 0) {
     const first = phrases[0];
