@@ -451,7 +451,6 @@ if (directionToNext==="up") {
                 nextChordMidi
             });
         }
-        const { guitarLead } = instruments;
 
 phrases.forEach(phrase => {
     phrase.phrase.forEach(n => {
@@ -487,7 +486,7 @@ if (phrases.length > 0) {
 }
 
 
-        // ─────────────────────────────────────────────
+   ──────────────────────────────────────────
         // ─────────────────────────────────────────────
         // SCHEDULING DELLE FRASI SOLO
         // ─────────────────────────────────────────────
