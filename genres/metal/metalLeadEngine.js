@@ -1,40 +1,31 @@
-// metalLeadEngine.js — ver. 072 (Solo Direction Engine)
+// metalLeadEngine.js — ver. 073 (Solo Direction Engine)
 
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote, leadBus } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 072 loaded");
+console.log("metalLeadEngine.js ver. 073 loaded");
 
 // ─────────────────────────────────────────────
 // Utility
 // ─────────────────────────────────────────────
 
 const LeadUtils = {
-    rand() {
-        return Math.random();
-    },
-    randInt(min, max) {
-        return Math.floor(Math.random() * (max - min + 1)) + min;
-    },
-    choice(arr) {
-        return arr[Math.floor(Math.random() * arr.length)];
-    },
-    clamp(value, min, max) {
-        return Math.max(min, Math.min(max, value));
-    },
+    rand() { return Math.random(); },
+    randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; },
+    choice(arr) { return arr[Math.floor(Math.random() * arr.length)]; },
+    clamp(v, min, max) { return Math.max(min, Math.min(max, v)); },
+
     distributeTimes(start, end, count) {
         const step = (end - start) / count;
         return Array.from({ length: count }, (_, i) => start + i * step);
     },
+
     nearestNote(targetMidi, scale) {
         let best = scale[0];
         let bestDist = Math.abs(targetMidi - best);
         for (let n of scale) {
             const d = Math.abs(targetMidi - n);
-            if (d < bestDist) {
-                best = n;
-                bestDist = d;
-            }
+            if (d < bestDist) { best = n; bestDist = d; }
         }
         return best;
     }
@@ -45,30 +36,14 @@ const LeadUtils = {
 // ─────────────────────────────────────────────
 
 const LeadScales = {
-    major(root) {
-        return [0, 2, 4, 5, 7, 9, 11].map(i => root + i);
-    },
-    minor(root) {
-        return [0, 2, 3, 5, 7, 8, 10].map(i => root + i);
-    },
-    harmonicMinor(root) {
-        return [0, 2, 3, 5, 7, 8, 11].map(i => root + i);
-    },
-    dorian(root) {
-        return [0, 2, 3, 5, 7, 9, 10].map(i => root + i);
-    },
-    pentatonicMinor(root) {
-        return [0, 3, 5, 7, 10].map(i => root + i);
-    },
-    phrygian(root) {
-        return [0, 1, 3, 5, 7, 8, 10].map(i => root + i);
-    },
-    diminished(root) {
-        return [0, 2, 3, 5, 6, 8, 9, 11].map(i => root + i);
-    },
-    wholeTone(root) {
-        return [0, 2, 4, 6, 8, 10].map(i => root + i);
-    }
+    major(root) { return [0,2,4,5,7,9,11].map(i => root+i); },
+    minor(root) { return [0,2,3,5,7,8,10].map(i => root+i); },
+    harmonicMinor(root) { return [0,2,3,5,7,8,11].map(i => root+i); },
+    dorian(root) { return [0,2,3,5,7,9,10].map(i => root+i); },
+    pentatonicMinor(root) { return [0,3,5,7,10].map(i => root+i); },
+    phrygian(root) { return [0,1,3,5,7,8,10].map(i => root+i); },
+    diminished(root) { return [0,2,3,5,6,8,9,11].map(i => root+i); },
+    wholeTone(root) { return [0,2,4,6,8,10].map(i => root+i); }
 };
 
 // ─────────────────────────────────────────────
@@ -77,44 +52,44 @@ const LeadScales = {
 
 const LeadPatterns = {
     melodicTheme: [
-        [0, 2, 4, 5, 4, 2, 0],
-        [0, 2, 5, 4, 2, 0],
-        [0, 4, 5, 7, 5, 4, 2]
+        [0,2,4,5,4,2,0],
+        [0,2,5,4,2,0],
+        [0,4,5,7,5,4,2]
     ],
     lyricalBreak: [
-        [0, 2, 3, 2, 0],
-        [0, 3, 5, 3, 0],
-        [0, 2, 0, -2, 0]
+        [0,2,3,2,0],
+        [0,3,5,3,0],
+        [0,2,0,-2,0]
     ],
     terzine: [
-        [0, 2, 4],
-        [2, 4, 5],
-        [4, 5, 7]
+        [0,2,4],
+        [2,4,5],
+        [4,5,7]
     ],
     shredRun: [
-        [0, 2, 3, 5, 7, 8, 11],
-        [0, 2, 3, 5, 7, 9, 11],
-        [0, 1, 3, 5, 7, 8, 10]
+        [0,2,3,5,7,8,11],
+        [0,2,3,5,7,9,11],
+        [0,1,3,5,7,8,10]
     ],
     sweep: [
-        [0, 4, 7, 12],
-        [0, 3, 7, 12],
-        [0, 4, 8, 12]
+        [0,4,7,12],
+        [0,3,7,12],
+        [0,4,8,12]
     ],
     tapping: [
-        [0, 7, 12, 7],
-        [0, 5, 12, 5],
-        [0, 8, 12, 8]
+        [0,7,12,7],
+        [0,5,12,5],
+        [0,8,12,8]
     ],
     diminished: [
-        [0, 2, 3, 5, 6, 8, 9, 11],
-        [0, 3, 6, 9],
-        [0, 2, 5, 8]
+        [0,2,3,5,6,8,9,11],
+        [0,3,6,9],
+        [0,2,5,8]
     ],
     finalBurst: [
-        [0, 2, 4, 5, 7, 9, 11, 12],
-        [0, 3, 5, 7, 10, 12],
-        [0, 2, 5, 7, 9, 12]
+        [0,2,4,5,7,9,11,12],
+        [0,3,5,7,10,12],
+        [0,2,5,7,9,12]
     ]
 };
 
@@ -123,82 +98,74 @@ const LeadPatterns = {
 // ─────────────────────────────────────────────
 
 const LeadFloyd = {
-    apply(guitarLead, time, type = "scoop") {
+    apply(guitarLead, time, type="scoop") {
         if (!guitarLead || !guitarLead.playbackRate) return;
         const pr = guitarLead.playbackRate;
 
-        if (type === "scoop") {
+        if (type==="scoop") {
             pr.setValueAtTime(0.95, time);
-            pr.linearRampToValueAtTime(1.0, time + 0.12);
-        } else if (type === "dive") {
+            pr.linearRampToValueAtTime(1.0, time+0.12);
+        } else if (type==="dive") {
             pr.setValueAtTime(1.0, time);
-            pr.exponentialRampToValueAtTime(0.7, time + 0.18);
-            pr.linearRampToValueAtTime(1.0, time + 0.32);
-        } else if (type === "rise") {
+            pr.exponentialRampToValueAtTime(0.7, time+0.18);
+            pr.linearRampToValueAtTime(1.0, time+0.32);
+        } else if (type==="rise") {
             pr.setValueAtTime(0.9, time);
-            pr.linearRampToValueAtTime(1.05, time + 0.25);
-            pr.linearRampToValueAtTime(1.0, time + 0.35);
-        } else if (type === "vibrato") {
-            const steps = 6;
-            for (let i = 0; i < steps; i++) {
-                const t = time + i * 0.04;
-                const val = i % 2 === 0 ? 0.98 : 1.02;
+            pr.linearRampToValueAtTime(1.05, time+0.25);
+            pr.linearRampToValueAtTime(1.0, time+0.35);
+        } else if (type==="vibrato") {
+            for (let i=0;i<6;i++){
+                const t = time + i*0.04;
+                const val = i%2===0 ? 0.98 : 1.02;
                 pr.setValueAtTime(val, t);
             }
-            pr.setValueAtTime(1.0, time + 0.25);
+            pr.setValueAtTime(1.0, time+0.25);
         }
     }
 };
 
 // ─────────────────────────────────────────────
-// Phrase generator (base)
+// Phrase generator
 // ─────────────────────────────────────────────
 
 const LeadPhraseGen = {
     expandPattern(pattern, scale, desiredLength) {
-        const notes = [];
-        while (notes.length < desiredLength) {
-            for (let step of pattern) {
-                const idx = (step % scale.length + scale.length) % scale.length;
+        const notes=[];
+        while (notes.length<desiredLength){
+            for (let step of pattern){
+                const idx=(step%scale.length+scale.length)%scale.length;
                 notes.push(scale[idx]);
-                if (notes.length >= desiredLength) break;
+                if (notes.length>=desiredLength) break;
             }
         }
         return notes;
     },
 
-    buildPhrase(pattern, scale, phraseTime, maxNotesPerSecond) {
-        const maxNotes = Math.floor(phraseTime * maxNotesPerSecond);
+    buildPhrase(pattern, scale, phraseTime, maxNPS) {
+        const maxNotes = Math.floor(phraseTime * maxNPS);
         const desired = LeadUtils.clamp(maxNotes, 10, 28);
 
         const notes = this.expandPattern(pattern, scale, desired);
 
-        const times = [];
-        let t = 0;
+        const times=[];
+        let t=0;
 
-        for (let i = 0; i < notes.length; i++) {
-            const progress = i / notes.length;
+        for (let i=0;i<notes.length;i++){
+            const progress=i/notes.length;
             let step;
 
-            if (progress < 0.25) {
-                step = 0.04 + (0.12 * progress);
-            } else if (progress < 0.75) {
-                step = 0.08;
-            } else {
-                step = 0.12 + (0.12 * (progress - 0.75));
-            }
+            if (progress<0.25) step=0.04+(0.12*progress);
+            else if (progress<0.75) step=0.08;
+            else step=0.12+(0.12*(progress-0.75));
 
-            t += step;
+            t+=step;
             times.push(t);
         }
 
-        const scaleFactor = phraseTime / t;
-        const finalTimes = times.map(x => x * scaleFactor);
+        const scaleFactor = phraseTime/t;
+        const finalTimes = times.map(x=>x*scaleFactor);
 
-        return notes.map((n, i) => ({
-            midi: n,
-            relTime: finalTimes[i]
-        }));
+        return notes.map((n,i)=>({ midi:n, relTime:finalTimes[i] }));
     }
 };
 
@@ -207,24 +174,25 @@ const LeadPhraseGen = {
 // ─────────────────────────────────────────────
 
 const LeadTiming = {
-    computeTotalSoloTime(sectionMeasures, measureDur) {
-        return sectionMeasures * measureDur;
+    computeTotalSoloTime(measures, measureDur) {
+        return measures * measureDur;
     },
+
     computePhraseCount(totalTime, energy) {
-        let count = energy > 0.7 ? 5 : energy > 0.4 ? 4 : 3;
+        let count = energy>0.7 ? 5 : energy>0.4 ? 4 : 3;
         const minPhraseTime = 1.2;
-        while (count * minPhraseTime > totalTime) {
-            count--;
-        }
-        return Math.max(2, count); // almeno 2 frasi per avere semi-sezione
+        while (count*minPhraseTime > totalTime) count--;
+        return Math.max(2, count);
     },
+
     computePhraseTime(totalTime, phraseCount) {
         return totalTime / phraseCount;
     },
+
     filterSectionsByBPM(sections, bpm) {
-        return sections.filter(sec => {
-            if (bpm > 150 && sec.type === "lyrical") return false;
-            if (bpm < 110 && sec.type === "shred") return false;
+        return sections.filter(sec=>{
+            if (bpm>150 && sec.type==="lyrical") return false;
+            if (bpm<110 && sec.type==="shred") return false;
             return true;
         });
     }
@@ -236,15 +204,9 @@ const LeadTiming = {
 
 const LeadTheme = {
     pickTheme(brightness, complexity, bpm) {
-        if (brightness > 0.6) {
-            return LeadPatterns.melodicTheme[LeadUtils.randInt(0, 2)];
-        }
-        if (complexity > 0.6) {
-            return LeadPatterns.lyricalBreak[LeadUtils.randInt(0, 2)];
-        }
-        if (bpm > 150) {
-            return LeadPatterns.terzine[LeadUtils.randInt(0, 2)];
-        }
+        if (brightness>0.6) return LeadPatterns.melodicTheme[LeadUtils.randInt(0,2)];
+        if (complexity>0.6) return LeadPatterns.lyricalBreak[LeadUtils.randInt(0,2)];
+        if (bpm>150) return LeadPatterns.terzine[LeadUtils.randInt(0,2)];
         return LeadPatterns.melodicTheme[0];
     }
 };
@@ -254,14 +216,14 @@ const LeadTheme = {
 // ─────────────────────────────────────────────
 
 const LeadSections = [
-    { type: "melodic",      patternSet: "melodicTheme",  scale: "major" },
-    { type: "lyrical",      patternSet: "lyricalBreak",  scale: "pentatonicMinor" },
-    { type: "terzine",      patternSet: "terzine",       scale: "minor" },
-    { type: "shred",        patternSet: "shredRun",      scale: "harmonicMinor" },
-    { type: "sweep",        patternSet: "sweep",         scale: "major" },
-    { type: "tapping",      patternSet: "tapping",       scale: "phrygian" },
-    { type: "diminished",   patternSet: "diminished",    scale: "diminished" },
-    { type: "finalBurst",   patternSet: "finalBurst",    scale: "major" }
+    { type:"melodic", patternSet:"melodicTheme", scale:"major" },
+    { type:"lyrical", patternSet:"lyricalBreak", scale:"pentatonicMinor" },
+    { type:"terzine", patternSet:"terzine", scale:"minor" },
+    { type:"shred", patternSet:"shredRun", scale:"harmonicMinor" },
+    { type:"sweep", patternSet:"sweep", scale:"major" },
+    { type:"tapping", patternSet:"tapping", scale:"phrygian" },
+    { type:"diminished", patternSet:"diminished", scale:"diminished" },
+    { type:"finalBurst", patternSet:"finalBurst", scale:"major" }
 ];
 
 // ─────────────────────────────────────────────
@@ -270,10 +232,10 @@ const LeadSections = [
 
 const LeadDensity = {
     computeMaxNotesPerSecond(energy, complexity, bpm) {
-        let base = 4;
-        if (energy > 0.6) base += 1.5;
-        if (complexity > 0.6) base += 1.5;
-        if (bpm > 150) base += 1.0;
+        let base=4;
+        if (energy>0.6) base+=1.5;
+        if (complexity>0.6) base+=1.5;
+        if (bpm>150) base+=1;
         return Math.min(8, base);
     }
 };
@@ -287,157 +249,188 @@ const LeadSoloV4 = {
         const { guitarLead } = instruments;
         if (!guitarLead) return;
 
-        const { energy, brightness, texture, complexity, bpm, tonalCenter = "A4" } = params.imageParams;
-        const totalTime = LeadTiming.computeTotalSoloTime(section.measures, measureDur);
+        const { energy, brightness, texture, complexity, bpm, tonalCenter="A4" } = params.imageParams;
 
+        const totalTime = LeadTiming.computeTotalSoloTime(section.measures, measureDur);
         const phraseCount = LeadTiming.computePhraseCount(totalTime, energy);
         const phraseTime = LeadTiming.computePhraseTime(totalTime, phraseCount);
-        const halfIndex = Math.floor(phraseCount / 2);
+        const halfIndex = Math.floor(phraseCount/2);
 
         const usableSections = LeadTiming.filterSectionsByBPM(LeadSections, bpm);
         const themePattern = LeadTheme.pickTheme(brightness, complexity, bpm);
         const maxNPS = LeadDensity.computeMaxNotesPerSecond(energy, complexity, bpm);
 
         let rootMidi;
-        try {
-            rootMidi = Tone.Frequency(tonalCenter).toMidi();
-        } catch {
-            rootMidi = 69;
-        }
+        try { rootMidi = Tone.Frequency(tonalCenter).toMidi(); }
+        catch { rootMidi = 69; }
         rootMidi += 12;
 
-        const chordRootsMidi = progression.map(root => {
-            let clean = root.replace(/[^A-G#b]/g, "");
-            if (!clean) clean = tonalCenter.replace(/[0-9]/g, "");
-            try {
-                return Tone.Frequency(clean + "4").toMidi();
-            } catch {
-                return rootMidi;
-            }
+        const chordRootsMidi = progression.map(root=>{
+            let clean = root.replace(/[^A-G#b]/g,"");
+            if (!clean) clean = tonalCenter.replace(/[0-9]/g,"");
+            try { return Tone.Frequency(clean+"4").toMidi(); }
+            catch { return rootMidi; }
         });
 
-        let phrases = [];
-        let usedSustainFirstHalf = false;
-        let usedSustainSecondHalf = false;
+        let phrases=[];
+        let usedSustainFirst=false;
+        let usedSustainSecond=false;
 
-        for (let i = 0; i < phraseCount; i++) {
+        for (let i=0;i<phraseCount;i++){
             const sec = usableSections[i % usableSections.length];
             const patternSet = LeadPatterns[sec.patternSet];
-            const pattern = (i === 0) ? themePattern : LeadUtils.choice(patternSet);
+            const pattern = (i===0) ? themePattern : LeadUtils.choice(patternSet);
 
             const chordMidi = chordRootsMidi[i % chordRootsMidi.length];
-            const nextChordMidi = chordRootsMidi[(i + 1) % chordRootsMidi.length];
-            const nextNextChordMidi = chordRootsMidi[(i + 2) % chordRootsMidi.length];
+            const nextChordMidi = chordRootsMidi[(i+1)%chordRootsMidi.length];
+            const nextNextChordMidi = chordRootsMidi[(i+2)%chordRootsMidi.length];
 
             const scaleFn = LeadScales[sec.scale];
             const scale = scaleFn(chordMidi);
 
-            const directionToNext = nextChordMidi > chordMidi ? "up" : (nextChordMidi < chordMidi ? "down" : "flat");
-            const directionNextToNext = nextNextChordMidi > nextChordMidi ? "up" : (nextNextChordMidi < nextChordMidi ? "down" : "flat");
+            const directionToNext =
+                nextChordMidi>chordMidi ? "up" :
+                nextChordMidi<chordMidi ? "down" : "flat";
 
-            const sameDirection = (directionToNext === directionNextToNext && directionToNext !== "flat");
+            const directionNextToNext =
+                nextNextChordMidi>nextChordMidi ? "up" :
+                nextNextChordMidi<nextChordMidi ? "down" : "flat";
 
-            const isHighBPM = bpm >= 140;
-            const isFirstHalf = i < halfIndex;
-            const isSecondHalf = i >= halfIndex;
-            const isMiddlePhrase = (i === halfIndex);
+            const sameDirection =
+                directionToNext===directionNextToNext &&
+                directionToNext!=="flat";
+
+            const isHighBPM = bpm>=140;
+            const isVeryHighBPM = bpm>=150;
+
+            const isFirstPhrase = (i===0);
+            const isMiddlePhrase = (i===halfIndex);
+            const isFirstHalf = (i<halfIndex);
+            const isSecondHalf = (i>=halfIndex);
 
             const intervalToNext = Math.abs(nextChordMidi - chordMidi);
 
             let specialMode = null;
 
-            if (isHighBPM && intervalToNext <= 2) {
-                if (isMiddlePhrase && LeadUtils.rand() < 0.6) {
-                    specialMode = "root4";
-                } else {
-                    if (isFirstHalf && !usedSustainFirstHalf && LeadUtils.rand() < 0.3) {
-                        specialMode = "sustain";
-                        usedSustainFirstHalf = true;
-                    } else if (isSecondHalf && !usedSustainSecondHalf && LeadUtils.rand() < 0.3) {
-                        specialMode = "sustain";
-                        usedSustainSecondHalf = true;
-                    }
+            // ─────────────────────────────────────────────
+            // ROOT × 4 — SOLO FRASE CENTRALE
+            // ─────────────────────────────────────────────
+            if (isMiddlePhrase && isHighBPM && intervalToNext<=2) {
+                if (LeadUtils.rand()<0.4) {
+                    specialMode="root4";
                 }
             }
 
-            if (!specialMode && intervalToNext <= 3 && LeadUtils.rand() < 0.5) {
-                specialMode = "updown";
+            // ─────────────────────────────────────────────
+            // SUSTAIN — RARISSIMO, MAI NELLA PRIMA FRASE
+            // ─────────────────────────────────────────────
+            if (!specialMode && !isFirstPhrase && isVeryHighBPM && intervalToNext<=1) {
+                if (isFirstHalf && !usedSustainFirst && LeadUtils.rand()<0.1) {
+                    specialMode="sustain";
+                    usedSustainFirst=true;
+                } else if (isSecondHalf && !usedSustainSecond && LeadUtils.rand()<0.1) {
+                    specialMode="sustain";
+                    usedSustainSecond=true;
+                }
             }
 
-            let phraseNotes = [];
+            // ─────────────────────────────────────────────
+            // UP/DOWN — POSSIBILE ANCHE NELLA PRIMA FRASE
+            // ─────────────────────────────────────────────
+            if (!specialMode && intervalToNext<=3) {
+                const prob = isFirstPhrase ? 0.3 : 0.25;
+                if (LeadUtils.rand()<prob) {
+                    specialMode="updown";
+                }
+            }
 
-            if (specialMode === "sustain") {
-                const sustainTime = phraseTime * 0.9;
+            // ─────────────────────────────────────────────
+            // FRASE NORMALE — DEFAULT
+            // ─────────────────────────────────────────────
+
+            let phraseNotes=[];
+
+            // ─────────────────────────────────────────────
+            // SPECIAL MODE: SUSTAIN
+            // ─────────────────────────────────────────────
+            if (specialMode==="sustain") {
                 phraseNotes.push({
                     midi: chordMidi,
                     relTime: 0,
-                    sustain: sustainTime
+                    sustain: phraseTime*0.9
                 });
-            } else if (specialMode === "root4") {
-                const hits = 4;
-                const step = phraseTime / (hits + 1);
-                for (let h = 0; h < hits; h++) {
+            }
+
+            // ─────────────────────────────────────────────
+            // SPECIAL MODE: ROOT × 4
+            // ─────────────────────────────────────────────
+            else if (specialMode==="root4") {
+                const hits=4;
+                const step=phraseTime/(hits+1);
+                for (let h=0;h<hits;h++){
                     phraseNotes.push({
                         midi: chordMidi,
-                        relTime: h * step,
-                        sustain: step * 0.7
+                        relTime: h*step,
+                        sustain: step*0.7
                     });
                 }
-            } else if (specialMode === "updown") {
-                const basePhrase = LeadPhraseGen.buildPhrase(pattern, scale, phraseTime, maxNPS);
-                const midIdx = Math.floor(basePhrase.length / 2);
-                const ascending = basePhrase.slice(0, midIdx).map((n, idx) => ({
+            }
+
+            // ─────────────────────────────────────────────
+            // SPECIAL MODE: UP/DOWN
+            // ─────────────────────────────────────────────
+            else if (specialMode==="updown") {
+                const base = LeadPhraseGen.buildPhrase(pattern, scale, phraseTime, maxNPS);
+                const midIdx = Math.floor(base.length/2);
+
+                const ascending = base.slice(0,midIdx).map((n,idx)=>({
                     midi: scale[idx % scale.length],
-                    relTime: (phraseTime * 0.5) * (idx / Math.max(1, midIdx - 1))
+                    relTime: (phraseTime*0.5)*(idx/Math.max(1,midIdx-1))
                 }));
-                const descending = [];
-                const targetMidi = nextChordMidi;
-                const targetNote = LeadUtils.nearestNote(targetMidi, scale);
-                const descLen = basePhrase.length - midIdx;
-                for (let j = 0; j < descLen; j++) {
-                    const t = phraseTime * 0.5 + (phraseTime * 0.5) * (j / Math.max(1, descLen - 1));
+
+                const descending=[];
+                const targetNote = LeadUtils.nearestNote(nextChordMidi, scale);
+                const descLen = base.length-midIdx;
+
+                for (let j=0;j<descLen;j++){
+                    const t = phraseTime*0.5 + (phraseTime*0.5)*(j/Math.max(1,descLen-1));
                     let midi;
-                    if (j === descLen - 1) {
-                        midi = targetNote;
-                    } else {
-                        const idx = scale.length - 1 - (j % scale.length);
-                        midi = scale[idx];
-                    }
-                    descending.push({ midi, relTime: t });
+                    if (j===descLen-1) midi=targetNote;
+                    else midi = scale[(scale.length-1 - (j%scale.length))];
+                    descending.push({ midi, relTime:t });
                 }
+
                 phraseNotes = ascending.concat(descending);
-            } else {
-                const basePhrase = LeadPhraseGen.buildPhrase(pattern, scale, phraseTime, maxNPS);
+            }
 
-                const targetMidi = nextChordMidi;
-                const targetNote = LeadUtils.nearestNote(targetMidi, scale);
+            // ─────────────────────────────────────────────
+            // NORMAL MODE (SCALE)
+            // ─────────────────────────────────────────────
+            else {
+                const base = LeadPhraseGen.buildPhrase(pattern, scale, phraseTime, maxNPS);
+                const targetNote = LeadUtils.nearestNote(nextChordMidi, scale);
 
-                phraseNotes = basePhrase.map((obj, idx, arr) => {
-                    let midi = obj.midi;
+                phraseNotes = base.map((obj,idx,arr)=>{
+                    let midi=obj.midi;
 
-                    if (idx === 0) {
-                        midi = chordMidi;
-                    } else if (idx === arr.length - 1) {
-                        midi = targetNote;
-                    } else {
-                        const progress = idx / arr.length;
-                        if (directionToNext === "up") {
-                            const offset = Math.floor(progress * 3);
-                            midi = scale[(scale.indexOf(chordMidi) + offset + scale.length) % scale.length] || midi;
-                        } else if (directionToNext === "down") {
-                            const offset = -Math.floor(progress * 3);
-                            midi = scale[(scale.indexOf(chordMidi) + offset + scale.length) % scale.length] || midi;
+                    if (idx===0) midi=chordMidi;
+                    else if (idx===arr.length-1) midi=targetNote;
+                    else {
+                        const progress=idx/arr.length;
+                        if (directionToNext==="up") {
+                            const offset=Math.floor(progress*3);
+                            midi = scale[(scale.indexOf(chordMidi)+offset+scale.length)%scale.length] || midi;
+                        } else if (directionToNext==="down") {
+                            const offset=-Math.floor(progress*3);
+                            midi = scale[(scale.indexOf(chordMidi)+offset+scale.length)%scale.length] || midi;
                         }
                     }
 
-                    if (sameDirection && idx === arr.length - 2 && LeadUtils.rand() < 0.7) {
-                        midi = targetNote;
+                    if (sameDirection && idx===arr.length-2 && LeadUtils.rand()<0.7) {
+                        midi=targetNote;
                     }
 
-                    return {
-                        midi,
-                        relTime: obj.relTime
-                    };
+                    return { midi, relTime:obj.relTime };
                 });
             }
 
@@ -449,9 +442,14 @@ const LeadSoloV4 = {
             });
         }
 
+        // ─────────────────────────────────────────────
+        // ─────────────────────────────────────────────
+        // SCHEDULING DELLE FRASI SOLO
+        // ─────────────────────────────────────────────
+
         let cursor = section.startTime;
 
-        for (let pIndex = 0; pIndex < phrases.length; pIndex++) {
+        for (let pIndex=0; pIndex<phrases.length; pIndex++) {
             const p = phrases[pIndex];
 
             for (let noteObj of p.phrase) {
