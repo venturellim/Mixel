@@ -413,7 +413,7 @@ if (directionToNext==="up") {
                     }
 
                     return { midi, relTime: obj.relTime * phraseTime };
-
+});
             }
 
             phrases.push({
