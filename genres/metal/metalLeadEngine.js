@@ -1,8 +1,7 @@
 // metalLeadEngine.js — ver. 068 (Advanced Solo v4 Power Metal)
 
 import * as Tone from "https://esm.sh/tone";
-import { normalizeNote, leadbus } from "./metalInstruments.js";
-
+import { normalizeNote, leadBus } from "./metalInstruments.js";
 
 console.log("metalLeadEngine.js ver. 068.1 loaded");
 
