@@ -3,7 +3,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote, leadBus } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 073.5 loaded");
+console.log("metalLeadEngine.js ver. 073.6 loaded");
 
 // ─────────────────────────────────────────────
 // Utility
@@ -451,6 +451,22 @@ if (directionToNext==="up") {
                 nextChordMidi
             });
         }
+        // DEBUG: prima frase dell'assolo
+if (phrases.length > 0) {
+    const first = phrases[0];
+    console.log("🎯 SOLO V4 DEBUG — prima frase");
+    console.log("  sectionType:", first.section);
+    console.log("  chordMidi:", first.chordMidi, "→", Tone.Frequency(first.chordMidi, "midi").toNote());
+    console.log("  nextChordMidi:", first.nextChordMidi, "→", Tone.Frequency(first.nextChordMidi, "midi").toNote());
+    console.log("  notes:",
+        first.phrase.map(n => ({
+            midi: n.midi,
+            note: Tone.Frequency(n.midi, "midi").toNote(),
+            t: n.relTime.toFixed(3)
+        }))
+    );
+}
+
 
         // ─────────────────────────────────────────────
         // ─────────────────────────────────────────────
