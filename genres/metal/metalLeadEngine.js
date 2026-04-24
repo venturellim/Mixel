@@ -5,9 +5,7 @@ import { normalizeNote, leadBus } from "./metalInstruments.js";
 
 console.log("metalLeadEngine.js ver. 073.8 loaded");
 
-// ─────────────────────────────────────────────
 // Utility
-// ─────────────────────────────────────────────
 
 const LeadUtils = {
     rand() { return Math.random(); },
@@ -31,9 +29,7 @@ const LeadUtils = {
     }
 };
 
-// ─────────────────────────────────────────────
 // Scale
-// ─────────────────────────────────────────────
 
 const LeadScales = {
     major(root) { return [0,2,4,5,7,9,11].map(i => root+i); },
@@ -46,9 +42,7 @@ const LeadScales = {
     wholeTone(root) { return [0,2,4,6,8,10].map(i => root+i); }
 };
 
-// ─────────────────────────────────────────────
 // Pattern
-// ─────────────────────────────────────────────
 
 const LeadPatterns = {
     melodicTheme: [
@@ -93,9 +87,7 @@ const LeadPatterns = {
     ]
 };
 
-// ─────────────────────────────────────────────
 // Floyd Rose
-// ─────────────────────────────────────────────
 
 const LeadFloyd = {
     apply(guitarLead, time, type="scoop") {
@@ -124,9 +116,7 @@ const LeadFloyd = {
     }
 };
 
-// ─────────────────────────────────────────────
 // Phrase generator
-// ─────────────────────────────────────────────
 
 const LeadPhraseGen = {
     expandPattern(pattern, scale, desiredLength) {
@@ -169,9 +159,7 @@ const LeadPhraseGen = {
     }
 };
 
-// ─────────────────────────────────────────────
 // Timing
-// ─────────────────────────────────────────────
 
 const LeadTiming = {
     computeTotalSoloTime(measures, measureDur) {
@@ -198,9 +186,7 @@ const LeadTiming = {
     }
 };
 
-// ─────────────────────────────────────────────
 // Theme
-// ─────────────────────────────────────────────
 
 const LeadTheme = {
     pickTheme(brightness, complexity, bpm) {
@@ -211,9 +197,7 @@ const LeadTheme = {
     }
 };
 
-// ─────────────────────────────────────────────
 // Sections
-// ─────────────────────────────────────────────
 
 const LeadSections = [
     { type:"melodic", patternSet:"melodicTheme", scale:"major" },
@@ -226,9 +210,7 @@ const LeadSections = [
     { type:"finalBurst", patternSet:"finalBurst", scale:"major" }
 ];
 
-// ─────────────────────────────────────────────
 // Density
-// ─────────────────────────────────────────────
 
 const LeadDensity = {
     computeMaxNotesPerSecond(energy, complexity, bpm) {
@@ -240,9 +222,7 @@ const LeadDensity = {
     }
 };
 
-// ─────────────────────────────────────────────
 // Solo V4 — Direction Engine
-// ─────────────────────────────────────────────
 
 const LeadSoloV4 = {
     generate(section, progression, instruments, params, rand, measureDur, score) {
@@ -319,18 +299,16 @@ Tone.Transport.schedule(time => {
 
             let specialMode = null;
 
-            // ─────────────────────────────────────────────
-            // ROOT × 4 — SOLO FRASE CENTRALE
-            // ─────────────────────────────────────────────
+// ROOT × 4 — SOLO FRASE CENTRALE
+            
             if (isMiddlePhrase && isHighBPM && intervalToNext<=2) {
                 if (LeadUtils.rand()<0.4) {
                     specialMode="root4";
                 }
             }
 
-            // ─────────────────────────────────────────────
-            // SUSTAIN — RARISSIMO, MAI NELLA PRIMA FRASE
-            // ─────────────────────────────────────────────
+// SUSTAIN — RARISSIMO, MAI NELLA PRIMA FRASE
+            
             if (!specialMode && !isFirstPhrase && isVeryHighBPM && intervalToNext<=1) {
                 if (isFirstHalf && !usedSustainFirst && LeadUtils.rand()<0.1) {
                     specialMode="sustain";
@@ -341,9 +319,8 @@ Tone.Transport.schedule(time => {
                 }
             }
 
-            // ─────────────────────────────────────────────
-            // UP/DOWN — POSSIBILE ANCHE NELLA PRIMA FRASE
-            // ─────────────────────────────────────────────
+// UP/DOWN — POSSIBILE ANCHE NELLA PRIMA FRASE
+            
             if (!specialMode && intervalToNext<=3) {
                 const prob = isFirstPhrase ? 0.3 : 0.25;
                 if (LeadUtils.rand()<prob) {
@@ -351,15 +328,12 @@ Tone.Transport.schedule(time => {
                 }
             }
 
-            // ─────────────────────────────────────────────
-            // FRASE NORMALE — DEFAULT
-            // ─────────────────────────────────────────────
+// FRASE NORMALE — DEFAULT
 
             let phraseNotes=[];
 
-            // ─────────────────────────────────────────────
-            // SPECIAL MODE: SUSTAIN
-            // ─────────────────────────────────────────────
+// SPECIAL MODE: SUSTAIN
+            
             if (specialMode==="sustain") {
                 phraseNotes.push({
                     midi: chordMidi,
@@ -368,9 +342,8 @@ Tone.Transport.schedule(time => {
                 });
             }
 
-            // ─────────────────────────────────────────────
-            // SPECIAL MODE: ROOT × 4
-            // ─────────────────────────────────────────────
+// SPECIAL MODE: ROOT × 4
+            
             else if (specialMode==="root4") {
                 const hits=4;
                 const step=phraseTime/(hits+1);
@@ -383,9 +356,8 @@ Tone.Transport.schedule(time => {
                 }
             }
 
-            // ─────────────────────────────────────────────
-            // SPECIAL MODE: UP/DOWN
-            // ─────────────────────────────────────────────
+// SPECIAL MODE: UP/DOWN
+            
             else if (specialMode==="updown") {
                 const base = LeadPhraseGen.buildPhrase(pattern, scale, phraseTime, maxNPS);
                 const midIdx = Math.floor(base.length/2);
@@ -410,9 +382,8 @@ Tone.Transport.schedule(time => {
                 phraseNotes = ascending.concat(descending);
             }
 
-            // ─────────────────────────────────────────────
-            // NORMAL MODE (SCALE)
-            // ─────────────────────────────────────────────
+// NORMAL MODE (SCALE)
+            
             else {
                 const base = LeadPhraseGen.buildPhrase(pattern, scale, phraseTime, maxNPS);
                 const targetNote = LeadUtils.nearestNote(nextChordMidi, scale);
@@ -485,11 +456,7 @@ if (phrases.length > 0) {
 
 }
 
-
-   ──────────────────────────────────────────
-        // ─────────────────────────────────────────────
-        // SCHEDULING DELLE FRASI SOLO
-        // ─────────────────────────────────────────────
+// SCHEDULING DELLE FRASI SOLO
 
         let cursor = section.startTime;
 
@@ -569,9 +536,7 @@ if (phrases.length > 0) {
     }
 };
 
-// ─────────────────────────────────────────────
 // LeadLegacy (non-solo) — originale
-// ─────────────────────────────────────────────
 
 const LeadLegacy = {
     scheduleNonSolo(section, progression, instruments, params, rand, measureDur, score) {
@@ -731,9 +696,7 @@ const LeadLegacy = {
     }
 };
 
-// ─────────────────────────────────────────────
 // scheduleLead
-// ─────────────────────────────────────────────
 
 export function scheduleLead(section, progression, instruments, params, rand, measureDur, score) {
     const { guitarLead } = instruments || {};
