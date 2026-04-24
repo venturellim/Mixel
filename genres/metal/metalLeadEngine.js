@@ -3,7 +3,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote, leadBus } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 073.4 loaded");
+console.log("metalLeadEngine.js ver. 073.5 loaded");
 
 // ─────────────────────────────────────────────
 // Utility
@@ -246,7 +246,13 @@ const LeadDensity = {
 
 const LeadSoloV4 = {
     generate(section, progression, instruments, params, rand, measureDur, score) {
+    console.log("🔥 SOLO V4 ATTIVATO su sezione:", section.name);
         const { guitarLead } = instruments;
+Tone.Transport.schedule(time => {
+    console.log("🎯 TEST SOLO NOTE @", time);
+    guitarLead.triggerAttackRelease("A4", 0.5, time);
+}, section.startTime + 0.1);
+
         if (!guitarLead) return;
 
         const { energy, brightness, texture, complexity, bpm, tonalCenter="A4" } = params.imageParams;
