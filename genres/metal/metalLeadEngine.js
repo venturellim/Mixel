@@ -3,7 +3,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote, leadBus } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 073.8 loaded");
+console.log("metalLeadEngine.js ver. 073.9 loaded");
 
 // Utility
 
@@ -376,7 +376,8 @@ Tone.Transport.schedule(time => {
                     let midi;
                     if (j===descLen-1) midi=targetNote;
                     else midi = scale[(scale.length-1 - (j%scale.length))];
-                    descending.push({ midi, relTime:t });
+                    descending.push({ midi, relTime: t * phraseTime
+ });
                 }
 
                 phraseNotes = ascending.concat(descending);
@@ -411,8 +412,8 @@ if (directionToNext==="up") {
                         midi=targetNote;
                     }
 
-                    return { midi, relTime:obj.relTime };
-                });
+                    return { midi, relTime: obj.relTime * phraseTime };
+
             }
 
             phrases.push({
