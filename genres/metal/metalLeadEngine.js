@@ -417,13 +417,16 @@ const LeadSoloV4 = {
                     else if (idx===arr.length-1) midi=targetNote;
                     else {
                         const progress=idx/arr.length;
-                        if (directionToNext==="up") {
-                            const offset=Math.floor(progress*3);
-                            midi = scale[(scale.indexOf(chordMidi)+offset+scale.length)%scale.length] || midi;
-                        } else if (directionToNext==="down") {
-                            const offset=-Math.floor(progress*3);
-                            midi = scale[(scale.indexOf(chordMidi)+offset+scale.length)%scale.length] || midi;
-                        }
+                        const startNote = LeadUtils.nearestNote(chordMidi, scale);
+const startIndex = scale.indexOf(startNote);
+
+if (directionToNext==="up") {
+    const offset = Math.floor(progress * 3);
+    midi = scale[(startIndex + offset + scale.length) % scale.length];
+} else if (directionToNext==="down") {
+    const offset = -Math.floor(progress * 3);
+    midi = scale[(startIndex + offset + scale.length) % scale.length];
+}
                     }
 
                     if (sameDirection && idx===arr.length-2 && LeadUtils.rand()<0.7) {
