@@ -3,7 +3,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote, leadBus } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 073.1 loaded");
+console.log("metalLeadEngine.js ver. 073.2 loaded");
 
 // ─────────────────────────────────────────────
 // Utility
@@ -699,7 +699,9 @@ export function scheduleLead(section, progression, instruments, params, rand, me
     if (!guitarLead) return;
 
     const name = section?.name?.toLowerCase() || "";
-    const isSolo = name.includes("solo") || name.includes("bridge");
+    const clean = name.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").trim();
+const isSolo = /(solo|lead|assolo|guitar|bridge)/i.test(clean);
+
 
     const {
         energy = 0.5,
