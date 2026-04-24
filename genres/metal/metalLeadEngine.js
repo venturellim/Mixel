@@ -1,93 +1,78 @@
-// metalLeadEngine.js — ver. 068 (Advanced Solo v4 Power Metal)
+// metalLeadEngine.js — ver. 072 (Solo Direction Engine)
 
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote, leadBus } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 068.1 loaded");
+console.log("metalLeadEngine.js ver. 072 loaded");
 
 // ─────────────────────────────────────────────
-// METAL LEAD ENGINE — VERSIONE 4
-// Modello: Stratovarius / Sonata Arctica
-// Note: MIDI-based (più veloce per Tone.js)
-// Floyd Rose: playbackRate automation
-// Densità: adattiva (max 8 note/sec)
-// Scale: dinamiche per sezione
-// ─────────────────────────────────────────────
-
-
-
-// ─────────────────────────────────────────────
-// Capitolo 1 — Utility
+// Utility
 // ─────────────────────────────────────────────
 
 const LeadUtils = {
     rand() {
         return Math.random();
     },
-
     randInt(min, max) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
     },
-
     choice(arr) {
         return arr[Math.floor(Math.random() * arr.length)];
     },
-
     clamp(value, min, max) {
         return Math.max(min, Math.min(max, value));
     },
-
-    // Distribuisce N note in un intervallo temporale
     distributeTimes(start, end, count) {
         const step = (end - start) / count;
         return Array.from({ length: count }, (_, i) => start + i * step);
+    },
+    nearestNote(targetMidi, scale) {
+        let best = scale[0];
+        let bestDist = Math.abs(targetMidi - best);
+        for (let n of scale) {
+            const d = Math.abs(targetMidi - n);
+            if (d < bestDist) {
+                best = n;
+                bestDist = d;
+            }
+        }
+        return best;
     }
 };
 
-
-
 // ─────────────────────────────────────────────
-// Capitolo 2 — Scale dinamiche per sezione
+// Scale
 // ─────────────────────────────────────────────
 
 const LeadScales = {
     major(root) {
         return [0, 2, 4, 5, 7, 9, 11].map(i => root + i);
     },
-
     minor(root) {
         return [0, 2, 3, 5, 7, 8, 10].map(i => root + i);
     },
-
     harmonicMinor(root) {
         return [0, 2, 3, 5, 7, 8, 11].map(i => root + i);
     },
-
     dorian(root) {
         return [0, 2, 3, 5, 7, 9, 10].map(i => root + i);
     },
-
     pentatonicMinor(root) {
         return [0, 3, 5, 7, 10].map(i => root + i);
     },
-
     phrygian(root) {
         return [0, 1, 3, 5, 7, 8, 10].map(i => root + i);
     },
-
     diminished(root) {
         return [0, 2, 3, 5, 6, 8, 9, 11].map(i => root + i);
     },
-
     wholeTone(root) {
         return [0, 2, 4, 6, 8, 10].map(i => root + i);
     }
 };
 
-
-
 // ─────────────────────────────────────────────
-// Capitolo 3 — Pattern frase (contorni melodici)
+// Pattern
 // ─────────────────────────────────────────────
 
 const LeadPatterns = {
@@ -96,43 +81,36 @@ const LeadPatterns = {
         [0, 2, 5, 4, 2, 0],
         [0, 4, 5, 7, 5, 4, 2]
     ],
-
     lyricalBreak: [
         [0, 2, 3, 2, 0],
         [0, 3, 5, 3, 0],
         [0, 2, 0, -2, 0]
     ],
-
     terzine: [
         [0, 2, 4],
         [2, 4, 5],
         [4, 5, 7]
     ],
-
     shredRun: [
         [0, 2, 3, 5, 7, 8, 11],
         [0, 2, 3, 5, 7, 9, 11],
         [0, 1, 3, 5, 7, 8, 10]
     ],
-
     sweep: [
         [0, 4, 7, 12],
         [0, 3, 7, 12],
         [0, 4, 8, 12]
     ],
-
     tapping: [
         [0, 7, 12, 7],
         [0, 5, 12, 5],
         [0, 8, 12, 8]
     ],
-
     diminished: [
         [0, 2, 3, 5, 6, 8, 9, 11],
         [0, 3, 6, 9],
         [0, 2, 5, 8]
     ],
-
     finalBurst: [
         [0, 2, 4, 5, 7, 9, 11, 12],
         [0, 3, 5, 7, 10, 12],
@@ -141,13 +119,12 @@ const LeadPatterns = {
 };
 
 // ─────────────────────────────────────────────
-// Capitolo 4 — Floyd Rose
+// Floyd Rose
 // ─────────────────────────────────────────────
 
 const LeadFloyd = {
     apply(guitarLead, time, type = "scoop") {
         if (!guitarLead || !guitarLead.playbackRate) return;
-
         const pr = guitarLead.playbackRate;
 
         if (type === "scoop") {
@@ -174,13 +151,12 @@ const LeadFloyd = {
 };
 
 // ─────────────────────────────────────────────
-// Capitolo 5 — Generatori di frasi (12–24 note, MIDI)
+// Phrase generator (base)
 // ─────────────────────────────────────────────
 
 const LeadPhraseGen = {
-    expandPattern(pattern, scale, rootMidi, desiredLength) {
+    expandPattern(pattern, scale, desiredLength) {
         const notes = [];
-
         while (notes.length < desiredLength) {
             for (let step of pattern) {
                 const idx = (step % scale.length + scale.length) % scale.length;
@@ -191,12 +167,11 @@ const LeadPhraseGen = {
         return notes;
     },
 
-    // 🔥 VERSIONE POWER METAL: accelerando → plateau → rallentando
-    buildPhrase(pattern, scale, rootMidi, phraseTime, maxNotesPerSecond) {
+    buildPhrase(pattern, scale, phraseTime, maxNotesPerSecond) {
         const maxNotes = Math.floor(phraseTime * maxNotesPerSecond);
         const desired = LeadUtils.clamp(maxNotes, 10, 28);
 
-        const notes = this.expandPattern(pattern, scale, rootMidi, desired);
+        const notes = this.expandPattern(pattern, scale, desired);
 
         const times = [];
         let t = 0;
@@ -206,11 +181,11 @@ const LeadPhraseGen = {
             let step;
 
             if (progress < 0.25) {
-                step = 0.04 + (0.12 * progress);      // accelerando
+                step = 0.04 + (0.12 * progress);
             } else if (progress < 0.75) {
-                step = 0.08;                           // plateau
+                step = 0.08;
             } else {
-                step = 0.12 + (0.12 * (progress - 0.75)); // rallentando
+                step = 0.12 + (0.12 * (progress - 0.75));
             }
 
             t += step;
@@ -228,28 +203,24 @@ const LeadPhraseGen = {
 };
 
 // ─────────────────────────────────────────────
-// Capitolo 6 — Logica BPM-aware e tempo totale
+// Timing
 // ─────────────────────────────────────────────
 
 const LeadTiming = {
     computeTotalSoloTime(sectionMeasures, measureDur) {
         return sectionMeasures * measureDur;
     },
-
     computePhraseCount(totalTime, energy) {
         let count = energy > 0.7 ? 5 : energy > 0.4 ? 4 : 3;
         const minPhraseTime = 1.2;
-
         while (count * minPhraseTime > totalTime) {
             count--;
         }
-        return Math.max(1, count);
+        return Math.max(2, count); // almeno 2 frasi per avere semi-sezione
     },
-
     computePhraseTime(totalTime, phraseCount) {
         return totalTime / phraseCount;
     },
-
     filterSectionsByBPM(sections, bpm) {
         return sections.filter(sec => {
             if (bpm > 150 && sec.type === "lyrical") return false;
@@ -260,7 +231,7 @@ const LeadTiming = {
 };
 
 // ─────────────────────────────────────────────
-// Capitolo 7 — Tema B + C (immagine + BPM)
+// Theme
 // ─────────────────────────────────────────────
 
 const LeadTheme = {
@@ -268,21 +239,18 @@ const LeadTheme = {
         if (brightness > 0.6) {
             return LeadPatterns.melodicTheme[LeadUtils.randInt(0, 2)];
         }
-
         if (complexity > 0.6) {
             return LeadPatterns.lyricalBreak[LeadUtils.randInt(0, 2)];
         }
-
         if (bpm > 150) {
             return LeadPatterns.terzine[LeadUtils.randInt(0, 2)];
         }
-
         return LeadPatterns.melodicTheme[0];
     }
 };
 
 // ─────────────────────────────────────────────
-// Capitolo 8 — Sezioni Modello 1
+// Sections
 // ─────────────────────────────────────────────
 
 const LeadSections = [
@@ -297,23 +265,21 @@ const LeadSections = [
 ];
 
 // ─────────────────────────────────────────────
-// Capitolo 9 — Densità adattiva
+// Density
 // ─────────────────────────────────────────────
 
 const LeadDensity = {
     computeMaxNotesPerSecond(energy, complexity, bpm) {
         let base = 4;
-
         if (energy > 0.6) base += 1.5;
         if (complexity > 0.6) base += 1.5;
         if (bpm > 150) base += 1.0;
-
         return Math.min(8, base);
     }
 };
 
 // ─────────────────────────────────────────────
-// Capitolo 10 — Generatore SOLO V4 (POWER METAL)
+// Solo V4 — Direction Engine
 // ─────────────────────────────────────────────
 
 const LeadSoloV4 = {
@@ -326,136 +292,206 @@ const LeadSoloV4 = {
 
         const phraseCount = LeadTiming.computePhraseCount(totalTime, energy);
         const phraseTime = LeadTiming.computePhraseTime(totalTime, phraseCount);
+        const halfIndex = Math.floor(phraseCount / 2);
 
         const usableSections = LeadTiming.filterSectionsByBPM(LeadSections, bpm);
         const themePattern = LeadTheme.pickTheme(brightness, complexity, bpm);
         const maxNPS = LeadDensity.computeMaxNotesPerSecond(energy, complexity, bpm);
 
-        // ROOT MIDI POWER METAL — segue la tonalità, lead un’ottava sopra
         let rootMidi;
         try {
             rootMidi = Tone.Frequency(tonalCenter).toMidi();
         } catch {
-            rootMidi = 69; // A4 fallback
+            rootMidi = 69;
         }
         rootMidi += 12;
 
+        const chordRootsMidi = progression.map(root => {
+            let clean = root.replace(/[^A-G#b]/g, "");
+            if (!clean) clean = tonalCenter.replace(/[0-9]/g, "");
+            try {
+                return Tone.Frequency(clean + "4").toMidi();
+            } catch {
+                return rootMidi;
+            }
+        });
+
         let phrases = [];
+        let usedSustainFirstHalf = false;
+        let usedSustainSecondHalf = false;
 
         for (let i = 0; i < phraseCount; i++) {
             const sec = usableSections[i % usableSections.length];
             const patternSet = LeadPatterns[sec.patternSet];
             const pattern = (i === 0) ? themePattern : LeadUtils.choice(patternSet);
 
-            // Scala armonica basata sulla progressione
-const chord = progression[i % progression.length]; // es. "Am", "F", "G"
-let chordRoot = chord.replace(/[^A-G#b]/g, "");    // estrae "A", "F", "G"
+            const chordMidi = chordRootsMidi[i % chordRootsMidi.length];
+            const nextChordMidi = chordRootsMidi[(i + 1) % chordRootsMidi.length];
+            const nextNextChordMidi = chordRootsMidi[(i + 2) % chordRootsMidi.length];
 
-if (!chordRoot) chordRoot = tonalCenter;
+            const scaleFn = LeadScales[sec.scale];
+            const scale = scaleFn(chordMidi);
 
-// MIDI della fondamentale dell’accordo
-let chordMidi;
-try {
-    chordMidi = Tone.Frequency(chordRoot + "4").toMidi();
-} catch {
-    chordMidi = rootMidi;
-}
+            const directionToNext = nextChordMidi > chordMidi ? "up" : (nextChordMidi < chordMidi ? "down" : "flat");
+            const directionNextToNext = nextNextChordMidi > nextChordMidi ? "up" : (nextNextChordMidi < nextChordMidi ? "down" : "flat");
 
-// Scala power metal centrata sull’accordo corrente
-const scaleFn = LeadScales[sec.scale];
-const scale = scaleFn(chordMidi);
+            const sameDirection = (directionToNext === directionNextToNext && directionToNext !== "flat");
 
-            const phrase = LeadPhraseGen.buildPhrase(
-                pattern,
-                scale,
-                rootMidi,
-                phraseTime,
-                maxNPS
-            ).map((obj, idx, arr) => {
-                let midi = obj.midi;
+            const isHighBPM = bpm >= 140;
+            const isFirstHalf = i < halfIndex;
+            const isSecondHalf = i >= halfIndex;
+            const isMiddlePhrase = (i === halfIndex);
 
-                // Inizio: melodico, vicino alla tonica
-                if (idx < arr.length * 0.25) {
-                    midi = scale[idx % scale.length];
+            const intervalToNext = Math.abs(nextChordMidi - chordMidi);
+
+            let specialMode = null;
+
+            if (isHighBPM && intervalToNext <= 2) {
+                if (isMiddlePhrase && LeadUtils.rand() < 0.6) {
+                    specialMode = "root4";
+                } else {
+                    if (isFirstHalf && !usedSustainFirstHalf && LeadUtils.rand() < 0.3) {
+                        specialMode = "sustain";
+                        usedSustainFirstHalf = true;
+                    } else if (isSecondHalf && !usedSustainSecondHalf && LeadUtils.rand() < 0.3) {
+                        specialMode = "sustain";
+                        usedSustainSecondHalf = true;
+                    }
                 }
-                // Build: salita
-                else if (idx < arr.length * 0.6) {
-                    midi = scale[(idx + 2) % scale.length];
-                }
-                // Climax: nota più alta
-                else if (idx === Math.floor(arr.length * 0.75)) {
-                    midi = scale[scale.length - 1] + 12;
-                }
-                // Finale: discesa
-                else if (idx > arr.length * 0.75) {
-                    midi = scale[(scale.length - 1 - (idx % scale.length))];
-                }
+            }
 
-                return {
-                    midi,
-                    relTime: obj.relTime
-                };
+            if (!specialMode && intervalToNext <= 3 && LeadUtils.rand() < 0.5) {
+                specialMode = "updown";
+            }
+
+            let phraseNotes = [];
+
+            if (specialMode === "sustain") {
+                const sustainTime = phraseTime * 0.9;
+                phraseNotes.push({
+                    midi: chordMidi,
+                    relTime: 0,
+                    sustain: sustainTime
+                });
+            } else if (specialMode === "root4") {
+                const hits = 4;
+                const step = phraseTime / (hits + 1);
+                for (let h = 0; h < hits; h++) {
+                    phraseNotes.push({
+                        midi: chordMidi,
+                        relTime: h * step,
+                        sustain: step * 0.7
+                    });
+                }
+            } else if (specialMode === "updown") {
+                const basePhrase = LeadPhraseGen.buildPhrase(pattern, scale, phraseTime, maxNPS);
+                const midIdx = Math.floor(basePhrase.length / 2);
+                const ascending = basePhrase.slice(0, midIdx).map((n, idx) => ({
+                    midi: scale[idx % scale.length],
+                    relTime: (phraseTime * 0.5) * (idx / Math.max(1, midIdx - 1))
+                }));
+                const descending = [];
+                const targetMidi = nextChordMidi;
+                const targetNote = LeadUtils.nearestNote(targetMidi, scale);
+                const descLen = basePhrase.length - midIdx;
+                for (let j = 0; j < descLen; j++) {
+                    const t = phraseTime * 0.5 + (phraseTime * 0.5) * (j / Math.max(1, descLen - 1));
+                    let midi;
+                    if (j === descLen - 1) {
+                        midi = targetNote;
+                    } else {
+                        const idx = scale.length - 1 - (j % scale.length);
+                        midi = scale[idx];
+                    }
+                    descending.push({ midi, relTime: t });
+                }
+                phraseNotes = ascending.concat(descending);
+            } else {
+                const basePhrase = LeadPhraseGen.buildPhrase(pattern, scale, phraseTime, maxNPS);
+
+                const targetMidi = nextChordMidi;
+                const targetNote = LeadUtils.nearestNote(targetMidi, scale);
+
+                phraseNotes = basePhrase.map((obj, idx, arr) => {
+                    let midi = obj.midi;
+
+                    if (idx === 0) {
+                        midi = chordMidi;
+                    } else if (idx === arr.length - 1) {
+                        midi = targetNote;
+                    } else {
+                        const progress = idx / arr.length;
+                        if (directionToNext === "up") {
+                            const offset = Math.floor(progress * 3);
+                            midi = scale[(scale.indexOf(chordMidi) + offset + scale.length) % scale.length] || midi;
+                        } else if (directionToNext === "down") {
+                            const offset = -Math.floor(progress * 3);
+                            midi = scale[(scale.indexOf(chordMidi) + offset + scale.length) % scale.length] || midi;
+                        }
+                    }
+
+                    if (sameDirection && idx === arr.length - 2 && LeadUtils.rand() < 0.7) {
+                        midi = targetNote;
+                    }
+
+                    return {
+                        midi,
+                        relTime: obj.relTime
+                    };
+                });
+            }
+
+            phrases.push({
+                section: sec.type,
+                phrase: phraseNotes,
+                chordMidi,
+                nextChordMidi
             });
-
-            phrases.push({ section: sec.type, phrase });
         }
 
-        // Scheduling
         let cursor = section.startTime;
 
-        for (let p of phrases) {
+        for (let pIndex = 0; pIndex < phrases.length; pIndex++) {
+            const p = phrases[pIndex];
+
             for (let noteObj of p.phrase) {
-
-                // Respiro power metal
-                if (rand() < 0.08) {
-                    cursor += 0.08 + rand() * 0.12;
-                }
-
                 const absTime = cursor + noteObj.relTime;
 
                 Tone.Transport.schedule(time => {
-                    // POWER METAL SUSTAIN ENGINE
-let baseDur = 0.18; // durata minima
+                    let sustain = noteObj.sustain ?? 0.18;
 
-// Inizio frase → più lungo
-if (noteObj.relTime < phraseTime * 0.15) {
-    baseDur = 0.28;
-}
+                    if (!noteObj.sustain) {
+                        if (noteObj.relTime < phraseTime * 0.15) {
+                            sustain = 0.28;
+                        }
+                        if (noteObj.midi > p.chordMidi + 14) {
+                            sustain = 0.40;
+                        }
+                        if (noteObj.relTime > phraseTime * 0.75) {
+                            sustain = 0.32;
+                        }
+                        sustain += (rand() * 0.08);
+                    }
 
-// Climax → molto più lungo
-if (noteObj.midi > rootMidi + 14) {
-    baseDur = 0.40;
-}
+                    const overlap = (rand() * 0.04);
 
-// Finale frase → rallenta
-if (noteObj.relTime > phraseTime * 0.75) {
-    baseDur = 0.32;
-}
+                    guitarLead.triggerAttackRelease(
+                        Tone.Frequency(noteObj.midi, "midi"),
+                        sustain,
+                        time
+                    );
 
-// Durata variabile con micro‑random
-const sustain = baseDur + (rand() * 0.08);
+                    Tone.Transport.schedule(t2 => {
+                        try {
+                            guitarLead.triggerAttackRelease(
+                                Tone.Frequency(noteObj.midi - 12, "midi"),
+                                0.12,
+                                t2,
+                                0.15
+                            );
+                        } catch (e) {}
+                    }, time + sustain - overlap);
 
-// Legato: overlap leggero
-const overlap = (rand() * 0.04);
-
-// Trigger nota con sustain
-guitarLead.triggerAttackRelease(
-    Tone.Frequency(noteObj.midi, "midi"),
-    sustain,
-    time
-);
-
-// Risonanza power metal (leggero ring)
-Tone.Transport.schedule(t2 => {
-    guitarLead.triggerAttackRelease(
-        Tone.Frequency(noteObj.midi - 12, "midi"),
-        0.12,
-        t2,
-        0.15
-    );
-}, time + sustain - overlap);
-
-                    // Floyd Rose solo nelle sezioni melodiche
                     if (p.section === "melodic" && rand() < 0.2) {
                         LeadFloyd.apply(guitarLead, time, LeadUtils.choice(["scoop", "vibrato"]));
                     }
@@ -471,16 +507,15 @@ Tone.Transport.schedule(t2 => {
 
             cursor += phraseTime;
 
-            // Final burst power metal
             if (p.section === "finalBurst") {
-                const burstScale = LeadScales.major(rootMidi).map(n => n + 12);
+                const burstScale = LeadScales.major(p.chordMidi).map(n => n + 12);
                 const burstTimes = LeadUtils.distributeTimes(cursor, cursor + 0.6, burstScale.length);
 
                 burstScale.forEach((midi, i) => {
                     Tone.Transport.schedule(time => {
                         guitarLead.triggerAttackRelease(
                             Tone.Frequency(midi, "midi"),
-                            "16n",
+                            0.16,
                             time
                         );
                     }, burstTimes[i]);
@@ -493,12 +528,8 @@ Tone.Transport.schedule(t2 => {
 };
 
 // ─────────────────────────────────────────────
-// Capitolo Extra — Extra assolo (intro/verse/chorus) — VERSIONE ORIGINALE
+// LeadLegacy (non-solo) — originale
 // ─────────────────────────────────────────────
-//
-// ⚠️ DA QUI IN GIÙ È IL TUO CODICE ORIGINALE (LeadLegacy + scheduleLead)
-// NON HO TOCCATO NULLA
-//
 
 const LeadLegacy = {
     scheduleNonSolo(section, progression, instruments, params, rand, measureDur, score) {
@@ -627,7 +658,7 @@ const LeadLegacy = {
             const altNames = { "DB": "C#", "EB": "D#", "GB": "F#", "AB": "G#", "BB": "A#" };
             cleanRoot = altNames[cleanRoot] || cleanRoot;
             let rootIdx = allNotes.indexOf(cleanRoot);
-            if (rootIdx === -1) rootIdx = 9; // Default A
+            if (rootIdx === -1) rootIdx = 9;
             const intervals = isMinor ? [0, 2, 3, 5, 7, 8, 10] : [0, 2, 4, 5, 7, 9, 11];
             return intervals.map(interval => allNotes[(rootIdx + interval) % 12]);
         };
@@ -659,7 +690,7 @@ const LeadLegacy = {
 };
 
 // ─────────────────────────────────────────────
-// scheduleLead — Funzione esportata
+// scheduleLead
 // ─────────────────────────────────────────────
 
 export function scheduleLead(section, progression, instruments, params, rand, measureDur, score) {
@@ -679,32 +710,29 @@ export function scheduleLead(section, progression, instruments, params, rand, me
     const bpm =
         params?.imageParams?.bpm ||
         params?.bpm ||
-        (60 / (measureDur / 4)); // fallback
+        (60 / (measureDur / 4));
 
     if (!isSolo) {
-    // Se NON è solo → torna al volume normale
-    if (leadBus._soloBoostApplied) {
-        leadBus.gain.cancelScheduledValues(Tone.now());
-        leadBus.gain.rampTo(leadBus._originalGain, 0.25);
-        leadBus._soloBoostApplied = false;
+        if (leadBus._soloBoostApplied) {
+            leadBus.gain.cancelScheduledValues(Tone.now());
+            leadBus.gain.rampTo(leadBus._originalGain, 0.25);
+            leadBus._soloBoostApplied = false;
+        }
+
+        LeadLegacy.scheduleNonSolo(section, progression, instruments, params, rand, measureDur, score);
+    } else {
+        if (!leadBus._soloBoostApplied) {
+            leadBus._originalGain = leadBus.gain.value;
+            const boosted = leadBus._originalGain * 2.0;
+            leadBus.gain.cancelScheduledValues(Tone.now());
+            leadBus.gain.rampTo(boosted, 0.20);
+            leadBus._soloBoostApplied = true;
+        }
+
+        const soloParams = {
+            imageParams: { energy, brightness, texture, complexity, bpm, tonalCenter: params.tonalCenter }
+        };
+
+        LeadSoloV4.generate(section, progression, instruments, soloParams, rand, measureDur, score);
     }
-
-    LeadLegacy.scheduleNonSolo(section, progression, instruments, params, rand, measureDur, score);
-} 
-else {
-    // SOLO → aumenta il volume della lead
-    if (!leadBus._soloBoostApplied) {
-        leadBus._originalGain = leadBus.gain.value;   // salva il volume originale
-        const boosted = leadBus._originalGain * 2.0;  // ≈ +6 dB
-        leadBus.gain.cancelScheduledValues(Tone.now());
-        leadBus.gain.rampTo(boosted, 0.20);           // fade‑in morbido
-        leadBus._soloBoostApplied = true;
-    }
-
-    const soloParams = {
-        imageParams: { energy, brightness, texture, complexity, bpm, tonalCenter: params.tonalCenter }
-    };
-
-    LeadSoloV4.generate(section, progression, instruments, soloParams, rand, measureDur, score);
-}
 }
