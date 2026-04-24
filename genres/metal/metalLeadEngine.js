@@ -3,7 +3,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote, leadBus } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 073.3 loaded");
+console.log("metalLeadEngine.js ver. 073.4 loaded");
 
 // ─────────────────────────────────────────────
 // Utility
@@ -285,7 +285,8 @@ const LeadSoloV4 = {
             const nextChordMidi = chordRootsMidi[(i+1)%chordRootsMidi.length];
             const nextNextChordMidi = chordRootsMidi[(i+2)%chordRootsMidi.length];
 
-            const scaleFn = LeadScales[sec.scale];
+            const scaleFn = LeadScales[sec.scale] || LeadScales.minor;
+
             const scale = scaleFn(chordMidi);
 
             const directionToNext =
