@@ -3,7 +3,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote, leadBus } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 073.9 loaded");
+console.log("metalLeadEngine.js ver. 073.10 loaded");
 
 // Utility
 
@@ -423,6 +423,12 @@ if (directionToNext==="up") {
                 nextChordMidi
             });
         }
+
+// Dopo phrases.push, dentro il loop delle frasi
+console.log(`🔍 FRASE ${i}: phraseTime=${phraseTime}, noteCount=${phraseNotes.length}`);
+if (phraseNotes.length > 0) {
+    console.log("  prime 3 note:", phraseNotes.slice(0,3).map(n => ({midi: n.midi, relTime: n.relTime})));
+}
 
 phrases.forEach(phrase => {
     phrase.phrase.forEach(n => {
