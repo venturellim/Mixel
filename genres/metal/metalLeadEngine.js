@@ -3,7 +3,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote, leadBus } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 073.6 loaded");
+console.log("metalLeadEngine.js ver. 073.7 loaded");
 
 // ─────────────────────────────────────────────
 // Utility
@@ -465,6 +465,8 @@ if (phrases.length > 0) {
             t: n.relTime.toFixed(3)
         }))
     );
+    console.log("🔍 RAW FIRST NOTE OBJECT:", first.phrase[0]);
+
 }
 
 
