@@ -3,7 +3,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote, leadBus } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 073.10 loaded");
+console.log("metalLeadEngine.js ver. 074 loaded");
 
 // Utility
 
@@ -224,326 +224,260 @@ const LeadDensity = {
 
 // Solo V4 — Direction Engine
 
-const LeadSoloV4 = {
-    generate(section, progression, instruments, params, rand, measureDur, score) {
-    console.log("🔥 SOLO V4 ATTIVATO su sezione:", section.name);
-        const { guitarLead } = instruments;
-Tone.Transport.schedule(time => {
-    console.log("🎯 TEST SOLO NOTE @", time);
-    guitarLead.triggerAttackRelease("A4", 0.5, time);
-}, section.startTime + 0.1);
+// Solo V5 — Direction & Continuity Engine (basato su root1, root2, root3)
 
+const LeadSolo = {
+    generate(section, progression, instruments, params, rand, measureDur, score) {
+        console.log("🔥 SOLO V5 ATTIVATO su sezione:", section.name);
+        const { guitarLead } = instruments;
+        
         if (!guitarLead) return;
 
-        const { energy, brightness, texture, complexity, bpm, tonalCenter="A4" } = params.imageParams;
+        const { energy, brightness, complexity, bpm, tonalCenter = "A4" } = params.imageParams;
 
-        const totalTime = LeadTiming.computeTotalSoloTime(section.measures, measureDur);
-        const phraseCount = LeadTiming.computePhraseCount(totalTime, energy);
-        const phraseTime = LeadTiming.computePhraseTime(totalTime, phraseCount);
-        const halfIndex = Math.floor(phraseCount/2);
-
-        const usableSections = LeadTiming.filterSectionsByBPM(LeadSections, bpm);
-        const themePattern = LeadTheme.pickTheme(brightness, complexity, bpm);
-        const maxNPS = LeadDensity.computeMaxNotesPerSecond(energy, complexity, bpm);
-
+        const totalTime = section.measures * measureDur;
+        
+        // Numero di frasi in base all'energia
+        let phraseCount = energy > 0.7 ? 4 : energy > 0.4 ? 3 : 2;
+        phraseCount = Math.min(phraseCount, Math.floor(totalTime / 2.5));
+        
+        const phraseTime = totalTime / phraseCount;
+        
+        // Root MIDI
         let rootMidi;
         try { rootMidi = Tone.Frequency(tonalCenter).toMidi(); }
         catch { rootMidi = 69; }
-        rootMidi += 12;
-
-        const chordRootsMidi = progression.map(root=>{
-            let clean = root.replace(/[^A-G#b]/g,"");
-            if (!clean) clean = tonalCenter.replace(/[0-9]/g,"");
-            try { return Tone.Frequency(clean+"4").toMidi(); }
+        
+        // Calcola le root in MIDI
+        const chordRootsMidi = progression.map(root => {
+            let clean = root.replace(/[^A-G#b]/g, "");
+            if (!clean) clean = tonalCenter.replace(/[0-9]/g, "");
+            try { return Tone.Frequency(clean + "4").toMidi(); }
             catch { return rootMidi; }
         });
-
-        let phrases=[];
-        let usedSustainFirst=false;
-        let usedSustainSecond=false;
-
-        for (let i=0;i<phraseCount;i++){
-            const sec = usableSections[i % usableSections.length];
-            const patternSet = LeadPatterns[sec.patternSet];
-            const pattern = (i===0) ? themePattern : LeadUtils.choice(patternSet);
-
-            const chordMidi = chordRootsMidi[i % chordRootsMidi.length];
-            const nextChordMidi = chordRootsMidi[(i+1)%chordRootsMidi.length];
-            const nextNextChordMidi = chordRootsMidi[(i+2)%chordRootsMidi.length];
-
-            const scaleFn = LeadScales[sec.scale] || LeadScales.minor;
-
-            const scale = scaleFn(chordMidi);
-
-            const directionToNext =
-                nextChordMidi>chordMidi ? "up" :
-                nextChordMidi<chordMidi ? "down" : "flat";
-
-            const directionNextToNext =
-                nextNextChordMidi>nextChordMidi ? "up" :
-                nextNextChordMidi<nextChordMidi ? "down" : "flat";
-
-            const sameDirection =
-                directionToNext===directionNextToNext &&
-                directionToNext!=="flat";
-
-            const isHighBPM = bpm>=140;
-            const isVeryHighBPM = bpm>=150;
-
-            const isFirstPhrase = (i===0);
-            const isMiddlePhrase = (i===halfIndex);
-            const isFirstHalf = (i<halfIndex);
-            const isSecondHalf = (i>=halfIndex);
-
-            const intervalToNext = Math.abs(nextChordMidi - chordMidi);
-
+        
+        // Tracciamento dello stato per il solo
+        let lastNoteMidi = null;
+        let sustainUsed = false;
+        let root4Used = false;
+        
+        // Collezione delle frasi
+        let phrases = [];
+        let cursor = section.startTime;
+        
+        // Determina velocità delle note in base al BPM
+        const isHighBPM = bpm >= 140;
+        const noteDuration = isHighBPM ? 0.12 : 0.18;
+        
+        for (let i = 0; i < phraseCount; i++) {
+            // Root della frase corrente (root1)
+            const root1 = chordRootsMidi[i % chordRootsMidi.length];
+            // Root della prossima frase (root2)
+            const root2 = chordRootsMidi[(i + 1) % chordRootsMidi.length];
+            // Root della dopo prossima (root3)
+            const root3 = chordRootsMidi[(i + 2) % chordRootsMidi.length];
+            
+            // Calcola direzioni
+            const dir1to2 = root2 > root1 ? "up" : (root2 < root1 ? "down" : "flat");
+            const dir2to3 = root3 > root2 ? "up" : (root3 < root2 ? "down" : "flat");
+            const sameDirection = (dir1to2 === dir2to3 && dir1to2 !== "flat");
+            
+            // Distanza tra le root
+            const distance12 = Math.abs(root2 - root1);
+            const distance23 = Math.abs(root3 - root2);
+            const isConsecutive12 = distance12 <= 2;
+            const isConsecutive23 = distance23 <= 2;
+            
+            // Scegli la scala in base alla root1
+            const scaleType = complexity > 0.6 ? "harmonicMinor" : "minor";
+            const scaleFn = LeadScales[scaleType] || LeadScales.minor;
+            let scale = scaleFn(root1);
+            
+            // Determina il pattern in base all'energia e brightness
+            let pattern;
+            if (energy > 0.7) pattern = LeadPatterns.shredRun[0];
+            else if (brightness > 0.6) pattern = LeadPatterns.melodicTheme[0];
+            else pattern = LeadPatterns.lyricalBreak[0];
+            
+            // ============================================================
+            // LOGICA DI DIREZIONE E CONTINUITÀ
+            // ============================================================
+            
+            let phraseNotes = [];
             let specialMode = null;
-
-// ROOT × 4 — SOLO FRASE CENTRALE
             
-            if (isMiddlePhrase && isHighBPM && intervalToNext<=2) {
-                if (LeadUtils.rand()<0.4) {
-                    specialMode="root4";
-                }
-            }
-
-// SUSTAIN — RARISSIMO, MAI NELLA PRIMA FRASE
-            
-            if (!specialMode && !isFirstPhrase && isVeryHighBPM && intervalToNext<=1) {
-                if (isFirstHalf && !usedSustainFirst && LeadUtils.rand()<0.1) {
-                    specialMode="sustain";
-                    usedSustainFirst=true;
-                } else if (isSecondHalf && !usedSustainSecond && LeadUtils.rand()<0.1) {
-                    specialMode="sustain";
-                    usedSustainSecond=true;
-                }
-            }
-
-// UP/DOWN — POSSIBILE ANCHE NELLA PRIMA FRASE
-            
-            if (!specialMode && intervalToNext<=3) {
-                const prob = isFirstPhrase ? 0.3 : 0.25;
-                if (LeadUtils.rand()<prob) {
-                    specialMode="updown";
-                }
-            }
-
-// FRASE NORMALE — DEFAULT
-
-            let phraseNotes=[];
-
-// SPECIAL MODE: SUSTAIN
-            
-            if (specialMode==="sustain") {
+            // ──────────────────────────────────────────────────────────
+            // OPZIONE 1: SUSTAIN (se root consecutive, BPM alto, una volta per semi-sezione)
+            // ──────────────────────────────────────────────────────────
+            if (!sustainUsed && isHighBPM && isConsecutive12 && energy > 0.5 && LeadUtils.rand() < 0.3) {
+                specialMode = "sustain";
+                sustainUsed = true;
                 phraseNotes.push({
-                    midi: chordMidi,
+                    midi: root1,
                     relTime: 0,
-                    sustain: phraseTime*0.9
+                    sustain: phraseTime * 0.9,
+                    duration: phraseTime * 0.9
                 });
             }
-
-// SPECIAL MODE: ROOT × 4
             
-            else if (specialMode==="root4") {
-                const hits=4;
-                const step=phraseTime/(hits+1);
-                for (let h=0;h<hits;h++){
+            // ──────────────────────────────────────────────────────────
+            // OPZIONE 2: ROOT × 4 (cambio semi-sezione, root consecutive, BPM alto)
+            // ──────────────────────────────────────────────────────────
+            else if (!root4Used && i === Math.floor(phraseCount / 2) && isHighBPM && isConsecutive12 && LeadUtils.rand() < 0.4) {
+                specialMode = "root4";
+                root4Used = true;
+                const hits = 4;
+                const step = phraseTime / (hits + 1);
+                for (let h = 0; h < hits; h++) {
                     phraseNotes.push({
-                        midi: chordMidi,
-                        relTime: h*step,
-                        sustain: step*0.7
+                        midi: root1,
+                        relTime: h * step,
+                        sustain: step * 0.7,
+                        duration: step * 0.7
                     });
                 }
             }
-
-// SPECIAL MODE: UP/DOWN
             
-            else if (specialMode==="updown") {
-                const base = LeadPhraseGen.buildPhrase(pattern, scale, phraseTime, maxNPS);
-                const midIdx = Math.floor(base.length/2);
-
-                const ascending = base.slice(0,midIdx).map((n,idx)=>({
-                    midi: scale[idx % scale.length],
-                    relTime: (phraseTime*0.5)*(idx/Math.max(1,midIdx-1))
-                }));
-
-                const descending=[];
-                const targetNote = LeadUtils.nearestNote(nextChordMidi, scale);
-                const descLen = base.length-midIdx;
-
-                for (let j=0;j<descLen;j++){
-                    const t = phraseTime*0.5 + (phraseTime*0.5)*(j/Math.max(1,descLen-1));
-                    let midi;
-                    if (j===descLen-1) midi=targetNote;
-                    else midi = scale[(scale.length-1 - (j%scale.length))];
-                    descending.push({ midi, relTime: t * phraseTime
- });
-                }
-
-                phraseNotes = ascending.concat(descending);
-            }
-
-// NORMAL MODE (SCALE)
-            
+            // ──────────────────────────────────────────────────────────
+            // OPZIONE 3: SCALA CON DIREZIONE (la più importante!)
+            // ──────────────────────────────────────────────────────────
             else {
-                const base = LeadPhraseGen.buildPhrase(pattern, scale, phraseTime, maxNPS);
-                const targetNote = LeadUtils.nearestNote(nextChordMidi, scale);
-
-                phraseNotes = base.map((obj,idx,arr)=>{
-                    let midi=obj.midi;
-
-                    if (idx===0) midi=chordMidi;
-                    else if (idx===arr.length-1) midi=targetNote;
-                    else {
-                        const progress=idx/arr.length;
-                        const startNote = LeadUtils.nearestNote(chordMidi, scale);
-const startIndex = scale.indexOf(startNote);
-
-if (directionToNext==="up") {
-    const offset = Math.floor(progress * 3);
-    midi = scale[(startIndex + offset + scale.length) % scale.length];
-} else if (directionToNext==="down") {
-    const offset = -Math.floor(progress * 3);
-    midi = scale[(startIndex + offset + scale.length) % scale.length];
-}
+                // Trova la nota più vicina a root2 all'interno della scala di root1
+                const targetNote = LeadUtils.nearestNote(root2, scale);
+                const targetIndex = scale.indexOf(targetNote);
+                
+                // Determina la direzione della scala in base a root2
+                let scaleDirection = dir1to2;
+                
+                // Se abbiamo root3, possiamo prevedere la direzione
+                if (distance23 <= 3 && sameDirection) {
+                    // Stessa direzione → scala continua fino a nota prima di root2
+                    scaleDirection = dir1to2;
+                } else if (distance23 <= 3 && !sameDirection) {
+                    // Direzioni opposte → arriviamo a root2 e poi invertiamo
+                    scaleDirection = dir1to2;
+                }
+                
+                // Trova l'indice di partenza (nota più vicina a lastNoteMidi o root1)
+                let startIndex = 0;
+                if (lastNoteMidi !== null) {
+                    const nearestStart = LeadUtils.nearestNote(lastNoteMidi, scale);
+                    startIndex = scale.indexOf(nearestStart);
+                    if (startIndex === -1) startIndex = 0;
+                } else {
+                    startIndex = scale.indexOf(root1);
+                    if (startIndex === -1) startIndex = 0;
+                }
+                
+                // Determina quanti step fare (fino a targetIndex o fino alla fine)
+                let steps = [];
+                
+                if (scaleDirection === "up") {
+                    // Scala ascendente
+                    for (let s = startIndex; s <= targetIndex && s < scale.length; s++) {
+                        steps.push(scale[s]);
                     }
-
-                    if (sameDirection && idx===arr.length-2 && LeadUtils.rand()<0.7) {
-                        midi=targetNote;
+                    // Opzione: continuare oltre root2 se stessa direzione (30% probabilità)
+                    if (sameDirection && LeadUtils.rand() < 0.3 && targetIndex + 2 < scale.length) {
+                        steps.push(scale[targetIndex + 1]);
+                        steps.push(scale[targetIndex + 2]);
                     }
-
-                    return { midi, relTime: obj.relTime * phraseTime };
-});
+                } else if (scaleDirection === "down") {
+                    // Scala discendente
+                    for (let s = startIndex; s >= targetIndex && s >= 0; s--) {
+                        steps.push(scale[s]);
+                    }
+                    // Opzione: continuare oltre root2 se stessa direzione
+                    if (sameDirection && LeadUtils.rand() < 0.3 && targetIndex - 2 >= 0) {
+                        steps.push(scale[targetIndex - 1]);
+                        steps.push(scale[targetIndex - 2]);
+                    }
+                } else {
+                    // flat → nota singola
+                    steps = [root1];
+                }
+                
+                // Se le note sono consecutive e direzioni opposte, possiamo fare salita+discesa
+                if (isConsecutive12 && !sameDirection && LeadUtils.rand() < 0.5 && steps.length > 2) {
+                    // Scala: sali fino a root2, poi scendi
+                    const upSteps = [];
+                    const downSteps = [];
+                    for (let s = startIndex; s <= targetIndex && s < scale.length; s++) {
+                        upSteps.push(scale[s]);
+                    }
+                    for (let s = targetIndex - 1; s >= startIndex && s >= 0; s--) {
+                        downSteps.push(scale[s]);
+                    }
+                    steps = [...upSteps, ...downSteps];
+                }
+                
+                if (steps.length === 0) steps = [root1];
+                
+                // Distribuisci le note nel tempo
+                const stepTime = phraseTime / steps.length;
+                
+                for (let stepIdx = 0; stepIdx < steps.length; stepIdx++) {
+                    const isLast = (stepIdx === steps.length - 1);
+                    phraseNotes.push({
+                        midi: steps[stepIdx],
+                        relTime: stepIdx * stepTime,
+                        duration: isLast ? noteDuration * 1.5 : noteDuration,
+                        sustain: isLast ? noteDuration * 1.5 : noteDuration
+                    });
+                }
+                
+                // Salva l'ultima nota per la continuità
+                lastNoteMidi = steps[steps.length - 1];
             }
-
+            
+            // Aggiungi la frase alla collezione
             phrases.push({
-                section: sec.type,
                 phrase: phraseNotes,
-                chordMidi,
-                nextChordMidi
+                chordMidi: root1,
+                nextChordMidi: root2
             });
         }
-
-// Dopo phrases.push, dentro il loop delle frasi
-console.log(`🔍 FRASE ${i}: phraseTime=${phraseTime}, noteCount=${phraseNotes.length}`);
-if (phraseNotes.length > 0) {
-    console.log("  prime 3 note:", phraseNotes.slice(0,3).map(n => ({midi: n.midi, relTime: n.relTime})));
-}
-
-phrases.forEach(phrase => {
-    phrase.phrase.forEach(n => {
-        Tone.Transport.schedule(time => {
-            const noteName = Tone.Frequency(n.midi, "midi").toNote();
-            console.log("🎵 SOLO NOTE:", noteName, "at", time);
-
-            guitarLead.triggerAttackRelease(
-                noteName,
-                0.25,
-                time
-            );
-        }, section.startTime + n.relTime);
-    });
-});
-
-        // DEBUG: prima frase dell'assolo
-if (phrases.length > 0) {
-    const first = phrases[0];
-    console.log("🎯 SOLO V4 DEBUG — prima frase");
-    console.log("  sectionType:", first.section);
-    console.log("  chordMidi:", first.chordMidi, "→", Tone.Frequency(first.chordMidi, "midi").toNote());
-    console.log("  nextChordMidi:", first.nextChordMidi, "→", Tone.Frequency(first.nextChordMidi, "midi").toNote());
-    console.log("  notes:",
-        first.phrase.map(n => ({
-            midi: n.midi,
-            note: Tone.Frequency(n.midi, "midi").toNote(),
-            t: n.relTime.toFixed(3)
-        }))
-    );
-    console.log("🔍 RAW FIRST NOTE OBJECT:", first.phrase[0]);
-
-}
-
-// SCHEDULING DELLE FRASI SOLO
-
-        let cursor = section.startTime;
-
-        for (let pIndex=0; pIndex<phrases.length; pIndex++) {
+        
+        // ============================================================
+        // SCHEDULAZIONE DELLE FRASI
+        // ============================================================
+        
+        let cursorTime = section.startTime;
+        
+        for (let pIndex = 0; pIndex < phrases.length; pIndex++) {
             const p = phrases[pIndex];
-
+            
             for (let noteObj of p.phrase) {
-                const absTime = cursor + noteObj.relTime;
-
+                const absTime = cursorTime + noteObj.relTime;
+                const duration = noteObj.duration || 0.18;
+                
                 Tone.Transport.schedule(time => {
-                    let sustain = noteObj.sustain ?? 0.18;
-
-                    if (!noteObj.sustain) {
-                        if (noteObj.relTime < phraseTime * 0.15) {
-                            sustain = 0.28;
-                        }
-                        if (noteObj.midi > p.chordMidi + 14) {
-                            sustain = 0.40;
-                        }
-                        if (noteObj.relTime > phraseTime * 0.75) {
-                            sustain = 0.32;
-                        }
-                        sustain += (rand() * 0.08);
+                    const noteName = Tone.Frequency(noteObj.midi, "midi").toNote();
+                    guitarLead.triggerAttackRelease(noteName, duration, time, 0.7);
+                    
+                    // Effetto Floyd Rose occasionale
+                    if (LeadUtils.rand() < 0.15) {
+                        LeadFloyd.apply(guitarLead, time, "vibrato");
                     }
-
-                    const overlap = (rand() * 0.04);
-
-                    guitarLead.triggerAttackRelease(
-                        Tone.Frequency(noteObj.midi, "midi"),
-                        sustain,
-                        time
-                    );
-
-                    Tone.Transport.schedule(t2 => {
-                        try {
-                            guitarLead.triggerAttackRelease(
-                                Tone.Frequency(noteObj.midi - 12, "midi"),
-                                0.12,
-                                t2,
-                                0.15
-                            );
-                        } catch (e) {}
-                    }, time + sustain - overlap);
-
-                    if (p.section === "melodic" && rand() < 0.2) {
-                        LeadFloyd.apply(guitarLead, time, LeadUtils.choice(["scoop", "vibrato"]));
-                    }
-
+                    
                     Tone.Draw.schedule(() => {
-                        if (score) {
-                            const noteName = Tone.Frequency(noteObj.midi, "midi").toNote();
-                            score.addNote("Lead", noteName, "SOLO");
-                        }
+                        if (score) score.addNote("Lead", noteName, section.name);
                     }, time);
                 }, absTime);
             }
-
-            cursor += phraseTime;
-
-            if (p.section === "finalBurst") {
-                const burstScale = LeadScales.major(p.chordMidi).map(n => n + 12);
-                const burstTimes = LeadUtils.distributeTimes(cursor, cursor + 0.6, burstScale.length);
-
-                burstScale.forEach((midi, i) => {
-                    Tone.Transport.schedule(time => {
-                        guitarLead.triggerAttackRelease(
-                            Tone.Frequency(midi, "midi"),
-                            0.16,
-                            time
-                        );
-                    }, burstTimes[i]);
-                });
-
-                cursor += 0.6;
-            }
+            
+            cursorTime += phraseTime;
         }
+        
+        console.log(`✅ SOLO V5 completato: ${phrases.length} frasi, durata totale ${totalTime.toFixed(2)}s`);
     }
 };
 
-// LeadLegacy (non-solo) — originale
+// Aggiorna il riferimento in scheduleLead
+// Sostituisci la chiamata a LeadSoloV4 con LeadSoloV5:
+// LeadSoloV5.generate(section, progression, instruments, soloParams, rand, measureDur, score);
+
+//legacy (non-solo) — originale
 
 const LeadLegacy = {
     scheduleNonSolo(section, progression, instruments, params, rand, measureDur, score) {
@@ -762,6 +696,6 @@ console.log("DEBUG SOLO CHECK → isSolo:", isSolo);
             imageParams: { energy, brightness, texture, complexity, bpm, tonalCenter: params.tonalCenter }
         };
 
-        LeadSoloV4.generate(section, progression, instruments, soloParams, rand, measureDur, score);
+        LeadSolo.generate(section, progression, instruments, soloParams, rand, measureDur, score);
     }
 }
