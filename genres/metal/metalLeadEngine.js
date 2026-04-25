@@ -2,7 +2,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote, leadBus } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js — versione ottimizzata caricata");
+console.log("metalLeadEngine.js ver. 76 loaded");
 
 // ============================================================================
 // UTILITY
@@ -25,7 +25,7 @@ const LeadUtils = {
 };
 
 // ============================================================================
-// SCALE UTILI PER IL SOLO
+// SCALE (se servono in futuro, ora non usate direttamente dal solo)
 // ============================================================================
 const LeadScales = {
     minor(root) { return [0,2,3,5,7,8,10].map(i => root+i); },
@@ -35,41 +35,47 @@ const LeadScales = {
     pentatonicMinor(root) { return [0,3,5,7,10].map(i => root+i); }
 };
 // ============================================================================
-// NUOVO SOLO LEGACY — POTENZIATO, STABILE, MUSICALE
+// NUOVO SOLO LEGACY — SENZA MIDI, COERENTE CON IL LEGACY, SCALE AVANZATE
 // ============================================================================
 const LeadLegacySolo = {
+
     scheduleSolo(section, progression, instruments, params, rand, measureDur, score) {
         const { guitarLead } = instruments;
         if (!guitarLead) return;
 
         const { energy, brightness, complexity, bpm, tonalCenter = "A4" } = params.imageParams;
 
+        // Durata totale della sezione
         const totalTime = section.measures * measureDur;
+
+        // Numero di note (18–60)
         const totalNotes = Math.floor(18 + energy * 35 + complexity * 15);
 
-        // SCELTA SCALA
-        let rootMidi;
-        try { rootMidi = Tone.Frequency(tonalCenter).toMidi(); }
-        catch { rootMidi = 69; }
+        // ============================================================
+        // SCALE AVANZATE (NOMI DI NOTE, NON MIDI)
+        // ============================================================
+        const scaleSets = {
+            minor: ["A","B","C","D","E","F","G"],
+            harmonicMinor: ["A","B","C","D","E","F","G#"],
+            dorian: ["A","B","C","D","E","F#","G"],
+            phrygian: ["A","Bb","C","D","E","F","G"],
+            pentatonic: ["A","C","D","E","G"]
+        };
 
-        let scaleFn;
-        if (brightness > 0.6) scaleFn = LeadScales.dorian;
-        else if (complexity > 0.6) scaleFn = LeadScales.harmonicMinor;
-        else if (brightness < 0.3) scaleFn = LeadScales.phrygian;
-        else if (energy < 0.4) scaleFn = LeadScales.pentatonicMinor;
-        else scaleFn = LeadScales.minor;
+        // Scelta scala intelligente
+        let scale;
+        if (brightness > 0.6) scale = scaleSets.dorian;
+        else if (complexity > 0.6) scale = scaleSets.harmonicMinor;
+        else if (brightness < 0.3) scale = scaleSets.phrygian;
+        else if (energy < 0.4) scale = scaleSets.pentatonic;
+        else scale = scaleSets.minor;
 
-        const baseScale = scaleFn(rootMidi);
-
-        const fullScale = [];
-        for (let oct = -1; oct <= 2; oct++) {
-            for (let n of baseScale) fullScale.push(n + oct * 12);
-        }
-        fullScale.sort((a, b) => a - b);
-
-        // DISTRIBUZIONE TEMPORALE
+        // ============================================================
+        // DISTRIBUZIONE TEMPORALE (accelerazione/decelerazione)
+        // ============================================================
         const timing = [];
         let t = 0;
+
         for (let i = 0; i < totalNotes; i++) {
             const p = i / totalNotes;
             let step;
@@ -89,15 +95,25 @@ const LeadLegacySolo = {
         const scaleFactor = totalTime / t;
         for (let x of timing) x.relTime *= scaleFactor;
 
-        // ROOT MIDI PROGRESSIONE
-        const chordRootsMidi = progression.map(root => {
-            let clean = root.replace(/[^A-G#b]/g, "");
-            if (!clean) clean = tonalCenter.replace(/[0-9]/g, "");
-            try { return Tone.Frequency(clean + "4").toMidi(); }
-            catch { return rootMidi; }
-        });
+        // ============================================================
+        // FUNZIONE STRICT SCALE (come il Legacy non-solo, locale al solo)
+        // ============================================================
+        const getStrictScale = (root) => {
+            const allNotes = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+            let cleanRoot = root.split('/')[0].replace(/[0-9]/g, '').trim();
+            let isMinor = root.includes('m') || (cleanRoot === cleanRoot.toLowerCase() && cleanRoot.length === 1);
+            cleanRoot = cleanRoot.toUpperCase();
+            const alt = { "DB":"C#", "EB":"D#", "GB":"F#", "AB":"G#", "BB":"A#" };
+            cleanRoot = alt[cleanRoot] || cleanRoot;
+            let idx = allNotes.indexOf(cleanRoot);
+            if (idx === -1) idx = 9;
+            const intervals = isMinor ? [0,2,3,5,7,8,10] : [0,2,4,5,7,9,11];
+            return intervals.map(i => allNotes[(idx + i) % 12]);
+        };
 
-        // GENERAZIONE NOTE
+        // ============================================================
+        // GENERAZIONE NOTE (SENZA MIDI)
+        // ============================================================
         const notes = [];
         const pauseProb = energy < 0.8 ? 0.12 : 0.04;
         let skip = 0;
@@ -105,52 +121,51 @@ const LeadLegacySolo = {
         for (let i = 0; i < timing.length; i++) {
             const tm = timing[i];
 
+            // Pause
             if (skip === 0 && Math.random() < pauseProb && i > 2 && i < timing.length - 3) {
                 skip = 1 + Math.floor(Math.random() * 2);
                 continue;
             }
             if (skip > 0) { skip--; continue; }
 
+            // Root corrente
             const timePos = tm.relTime;
             const measurePos = Math.floor(timePos / measureDur);
             const phrasePos = Math.floor(measurePos / 4);
-            const rootIndex = phrasePos % chordRootsMidi.length;
+            const rootIndex = phrasePos % progression.length;
 
-            const rootNow = chordRootsMidi[rootIndex];
-            const rootNext = chordRootsMidi[(rootIndex + 1) % chordRootsMidi.length];
+            const strictScale = getStrictScale(progression[rootIndex]);
 
-            const direction = rootNext > rootNow ? 1 : (rootNext < rootNow ? -1 : 0);
-
-            const notesPerPhrase = timing.length / chordRootsMidi.length;
+            // Direzione melodica
+            const notesPerPhrase = timing.length / progression.length;
             const phraseProgress = (i % notesPerPhrase) / notesPerPhrase;
 
-            let targetNote;
-            if (direction === 1) targetNote = rootNow + phraseProgress * Math.abs(rootNext - rootNow);
-            else if (direction === -1) targetNote = rootNow - phraseProgress * Math.abs(rootNext - rootNow);
-            else targetNote = rootNow;
+            // Movimento melodico: indice nella scala avanzata
+            let idx = Math.floor(phraseProgress * (scale.length - 1));
 
-            let best = fullScale[0];
-            let bestDist = Math.abs(fullScale[0] - targetNote);
-            for (let n of fullScale) {
-                const d = Math.abs(n - targetNote);
-                if (d < bestDist) { best = n; bestDist = d; }
-            }
+            // Variazioni
+            if (Math.random() < 0.25) idx += (Math.random() < 0.5 ? 1 : -1);
+            idx = Math.max(0, Math.min(scale.length - 1, idx));
 
-            if (Math.random() < 0.25) {
-                const idx = fullScale.indexOf(best);
-                const newIdx = Math.min(Math.max(idx + (Math.random() < 0.5 ? 1 : -1), 0), fullScale.length - 1);
-                best = fullScale[newIdx];
-            }
+            // Pitch avanzato (dorian, harmonic minor, ecc.)
+            let pitch = scale[idx];
 
-            if (notes.length > 0 && notes[notes.length - 1].midi === best && Math.random() < 0.5) {
-                continue;
-            }
+            // Normalizzazione per il sampler
+            pitch = normalizeNote(pitch, "guitarLead");
 
+            // Ottava sicura
+            let octave = 4;
+            if (energy > 0.6) octave = 5;
+
+            const noteName = pitch + octave;
+
+            // Durata
             let duration = tm.step * scaleFactor * 0.6;
             const endP = i / timing.length;
 
             if (endP > 0.8) duration *= (1 + (endP - 0.8) * 1.5);
             if (Math.abs(endP - 0.5) < 0.2 && energy > 0.6) duration *= 0.6;
+
             duration = Math.max(0.08, duration);
 
             let velocity = 0.45 + phraseProgress * 0.25;
@@ -158,28 +173,29 @@ const LeadLegacySolo = {
             if (i === 0) velocity = 0.25;
 
             notes.push({
-                midi: best,
+                noteName,
                 relTime: tm.relTime,
                 duration,
                 velocity
             });
         }
 
+        // ============================================================
         // PLAYBACK
+        // ============================================================
         for (let n of notes) {
             const abs = section.startTime + n.relTime;
 
             Tone.Transport.schedule(time => {
-                const noteName = Tone.Frequency(n.midi, "midi").toNote();
-                guitarLead.triggerAttackRelease(noteName, n.duration, time, n.velocity);
+                guitarLead.triggerAttackRelease(n.noteName, n.duration, time, n.velocity);
 
                 Tone.Draw.schedule(() => {
-                    if (score) score.addNote("Lead", noteName, section.name);
+                    if (score) score.addNote("Lead", n.noteName, section.name);
                 }, time);
             }, abs);
         }
 
-        console.log(`🎸 SOLO LEGACY: ${notes.length} note generate`);
+        console.log(`🎸 SOLO LEGACY (NO MIDI): ${notes.length} note generate`);
     }
 };
 // ============================================================================
