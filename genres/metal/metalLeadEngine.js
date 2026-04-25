@@ -3,7 +3,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote, leadBus } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 081.4 loaded");
+console.log("metalLeadEngine.js ver. 081.5 loaded");
 
 // ============================================================
 // UTILITY
@@ -47,7 +47,7 @@ const LeadFloyd = {
 // ============================================================
 
 const LeadLegacy = {
-    schedule(section, progression, instruments, params, rand, measureDur, score) {
+    schedule(section, progression, instruments, params, rand, measureDur, rootNote, isMinor, score) {
         const { guitarLead } = instruments || {};
         if (!guitarLead) return;
 
@@ -298,13 +298,12 @@ const LeadLegacy = {
         for (let m = 0; m < section.measures; m++) {
     const measureStartTime = section.startTime + (m * measureDur);
     
-    // PER L'ASSOLO: usa scala fissa (ignora la progressione)
     let currentScale;
     if (isSolo) {
-        // Scala fissa basata sul tonalCenter
-        const fixedRoot = rootNote; 
-        const fixedScaleRoot = fixedRoot + (isMinor ? "m" : "");
-    currentScale = getStrictScale(fixedScaleRoot);
+        // Scala fissa basata su tonalCenter e scaleType
+        const fixedScaleRoot = rootNote + (isMinor ? "m" : "");
+        currentScale = getStrictScale(fixedScaleRoot);
+        console.log(`🎸 ASSOLO scala fissa: ${fixedScaleRoot} → [${currentScale.join(", ")}]`);
     } else {
         currentScale = getStrictScale(progression[m % progression.length] || "A");
     }
@@ -338,11 +337,16 @@ export function scheduleLead(section, progression, instruments, params, rand, me
     const { guitarLead } = instruments || {};
     if (!guitarLead) return;
 
-    // Estrai tonalCenter (con fallback)
+    // Estrai tonalCenter e scaleType
     const tonalCenter = params?.tonalCenter || params?.imageParams?.tonalCenter || "A4";
+    const scaleType = params?.scaleType || params?.imageParams?.scaleType || "naturalMinor";
     const rootNote = tonalCenter.replace(/[0-9]/g, "");  // "A4" → "A"
     
-    console.log("🎸 tonalCenter ricevuto:", tonalCenter, "→ root:", rootNote);
+    // Determina se è minore (naturalMinor o harmonicMinor)
+    const isMinor = scaleType.includes("minor");
+    
+    console.log("🎸 tonalCenter:", tonalCenter, "→ root:", rootNote);
+    console.log("🎸 scaleType:", scaleType, "→ isMinor:", isMinor);
       
-    LeadLegacy.schedule(section, progression, instruments, params, rand, measureDur, score);
+    LeadLegacy.schedule(section, progression, instruments, params, rand, measureDur, rootNote, isMinor, score);
 }
