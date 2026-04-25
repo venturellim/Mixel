@@ -3,7 +3,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote, leadBus } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 081.2 loaded");
+console.log("metalLeadEngine.js ver. 081.3 loaded");
 
 // ============================================================
 // UTILITY
@@ -47,7 +47,7 @@ const LeadFloyd = {
 // ============================================================
 
 const LeadLegacy = {
-    scheduleNonSolo(section, progression, instruments, params, rand, measureDur, score) {
+    schedule(section, progression, instruments, params, rand, measureDur, score) {
         const { guitarLead } = instruments || {};
         if (!guitarLead) return;
 
@@ -55,6 +55,7 @@ const LeadLegacy = {
         const isChorus = name.includes("chorus") && !name.includes("pre");
         const isPreChorus = name.includes("pre");
         const isIntro = name.includes("intro") || name.includes("outro");
+        const isSolo = name.includes("solo");
         const stepTime = measureDur / 16;
 
         const {
@@ -226,6 +227,16 @@ const LeadLegacy = {
         // getMelodyFamily PIÙ SEMPLICE (come nella 76.1)
         // ============================================================
         const getMelodyFamily = () => {
+        // PER L'ASSOLO
+            if (isSolo) {
+                if (energy > 0.8 && complexity > 0.7) return { name: "SOLO SHRED ⚡", data: melodicLibrary.solo_shred };
+                if (energy > 0.7 && brightness > 0.6) return { name: "SOLO EPIC 🏰", data: melodicLibrary.solo_epic };
+                if (complexity > 0.7) return { name: "SOLO TAPPING 🎸", data: melodicLibrary.solo_tapping };
+                if (brightness < 0.4) return { name: "SOLO EVIL 😈", data: melodicLibrary.solo_evil };
+                if (energy < 0.5) return { name: "SOLO ROMANTIC 💕", data: melodicLibrary.solo_romantic };
+                if (complexity > 0.5 && energy > 0.5) return { name: "SOLO FAST 🚀", data: melodicLibrary.solo_fast };
+                return { name: "SOLO EPIC 🏰", data: melodicLibrary.solo_epic };
+            }
             if (isPreChorus) return { name: "PRE-CHORUS 📈", data: melodicLibrary.prechorus };
             if (isChorus) {
                 return brightness > 0.5
@@ -303,5 +314,5 @@ export function scheduleLead(section, progression, instruments, params, rand, me
     if (!guitarLead) return;
 
     // Usa lo stesso identico sistema per TUTTE le sezioni (assolo compreso!)
-    LeadLegacy.scheduleNonSolo(section, progression, instruments, params, rand, measureDur, score);
+    LeadLegacy.schedule(section, progression, instruments, params, rand, measureDur, score);
 }
