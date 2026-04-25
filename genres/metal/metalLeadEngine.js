@@ -2,7 +2,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote, leadBus } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 76 loaded");
+console.log("metalLeadEngine.js ver. 76.1 loaded");
 
 // ============================================================================
 // UTILITY
@@ -35,7 +35,7 @@ const LeadScales = {
     pentatonicMinor(root) { return [0,3,5,7,10].map(i => root+i); }
 };
 // ============================================================================
-// NUOVO SOLO LEGACY — SENZA MIDI, COERENTE CON IL LEGACY, SCALE AVANZATE
+// NUOVO SOLO LEGACY — COERENTE, MUSICALE, DINAMICO, SENZA MIDI
 // ============================================================================
 const LeadLegacySolo = {
 
@@ -43,17 +43,27 @@ const LeadLegacySolo = {
         const { guitarLead } = instruments;
         if (!guitarLead) return;
 
-        const { energy, brightness, complexity, bpm, tonalCenter = "A4" } = params.imageParams;
+        const { energy, brightness, complexity, bpm } = params.imageParams;
 
-        // Durata totale della sezione
-        const totalTime = section.measures * measureDur;
+        // ====================================================================
+        // 1) DENSITÀ DINAMICA BASATA SUI BPM
+        // ====================================================================
+        let densityMode;
+        if (bpm > 165) densityMode = "low";        // pochi step → più melodico
+        else if (bpm > 120) densityMode = "medium"; // densità equilibrata
+        else densityMode = "high";                 // molte note → frasi lunghe
 
-        // Numero di note (18–60)
-        const totalNotes = Math.floor(18 + energy * 35 + complexity * 15);
+        let notesPerBeat;
+        if (densityMode === "low") notesPerBeat = 1.2;
+        if (densityMode === "medium") notesPerBeat = 2.4;
+        if (densityMode === "high") notesPerBeat = 4.0;
 
-        // ============================================================
-        // SCALE AVANZATE (NOMI DI NOTE, NON MIDI)
-        // ============================================================
+        const beatsInSection = section.measures * 4;
+        const totalNotes = Math.floor(notesPerBeat * beatsInSection);
+
+        // ====================================================================
+        // 2) SCALE AVANZATE (nomi di note, non MIDI)
+        // ====================================================================
         const scaleSets = {
             minor: ["A","B","C","D","E","F","G"],
             harmonicMinor: ["A","B","C","D","E","F","G#"],
@@ -62,7 +72,6 @@ const LeadLegacySolo = {
             pentatonic: ["A","C","D","E","G"]
         };
 
-        // Scelta scala intelligente
         let scale;
         if (brightness > 0.6) scale = scaleSets.dorian;
         else if (complexity > 0.6) scale = scaleSets.harmonicMinor;
@@ -70,34 +79,9 @@ const LeadLegacySolo = {
         else if (energy < 0.4) scale = scaleSets.pentatonic;
         else scale = scaleSets.minor;
 
-        // ============================================================
-        // DISTRIBUZIONE TEMPORALE (accelerazione/decelerazione)
-        // ============================================================
-        const timing = [];
-        let t = 0;
-
-        for (let i = 0; i < totalNotes; i++) {
-            const p = i / totalNotes;
-            let step;
-
-            if (energy > 0.6) {
-                const d = Math.abs(p - 0.5) * 2;
-                step = 0.7 + d * 1.8;
-            } else {
-                step = 1.1 - p * 0.3;
-            }
-
-            step *= (0.85 + Math.random() * 0.3);
-            timing.push({ relTime: t, step });
-            t += step;
-        }
-
-        const scaleFactor = totalTime / t;
-        for (let x of timing) x.relTime *= scaleFactor;
-
-        // ============================================================
-        // FUNZIONE STRICT SCALE (come il Legacy non-solo, locale al solo)
-        // ============================================================
+        // ====================================================================
+        // 3) STRICT SCALE (come il Legacy non-solo)
+        // ====================================================================
         const getStrictScale = (root) => {
             const allNotes = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
             let cleanRoot = root.split('/')[0].replace(/[0-9]/g, '').trim();
@@ -111,43 +95,34 @@ const LeadLegacySolo = {
             return intervals.map(i => allNotes[(idx + i) % 12]);
         };
 
-        // ============================================================
-        // GENERAZIONE NOTE (SENZA MIDI)
-        // ============================================================
+        // ====================================================================
+        // 4) GENERAZIONE NOTE (NO MIDI, COERENTE CON LEGACY)
+        // ====================================================================
         const notes = [];
-        const pauseProb = energy < 0.8 ? 0.12 : 0.04;
-        let skip = 0;
 
-        for (let i = 0; i < timing.length; i++) {
-            const tm = timing[i];
+        for (let i = 0; i < totalNotes; i++) {
 
-            // Pause
-            if (skip === 0 && Math.random() < pauseProb && i > 2 && i < timing.length - 3) {
-                skip = 1 + Math.floor(Math.random() * 2);
-                continue;
-            }
-            if (skip > 0) { skip--; continue; }
+            // Tempo relativo
+            const relTime = (i / totalNotes) * (section.measures * measureDur);
 
-            // Root corrente
-            const timePos = tm.relTime;
-            const measurePos = Math.floor(timePos / measureDur);
-            const phrasePos = Math.floor(measurePos / 4);
-            const rootIndex = phrasePos % progression.length;
+            // Misura corrente
+            const measurePos = Math.floor(relTime / measureDur);
+            const rootIndex = measurePos % progression.length;
 
+            // Strict scale della misura
             const strictScale = getStrictScale(progression[rootIndex]);
 
             // Direzione melodica
-            const notesPerPhrase = timing.length / progression.length;
-            const phraseProgress = (i % notesPerPhrase) / notesPerPhrase;
+            const phraseProgress = (i % (totalNotes / progression.length)) / (totalNotes / progression.length);
 
-            // Movimento melodico: indice nella scala avanzata
+            // Indice nella scala avanzata
             let idx = Math.floor(phraseProgress * (scale.length - 1));
 
             // Variazioni
             if (Math.random() < 0.25) idx += (Math.random() < 0.5 ? 1 : -1);
             idx = Math.max(0, Math.min(scale.length - 1, idx));
 
-            // Pitch avanzato (dorian, harmonic minor, ecc.)
+            // Pitch avanzato
             let pitch = scale[idx];
 
             // Normalizzazione per il sampler
@@ -159,30 +134,26 @@ const LeadLegacySolo = {
 
             const noteName = pitch + octave;
 
-            // Durata
-            let duration = tm.step * scaleFactor * 0.6;
-            const endP = i / timing.length;
-
-            if (endP > 0.8) duration *= (1 + (endP - 0.8) * 1.5);
-            if (Math.abs(endP - 0.5) < 0.2 && energy > 0.6) duration *= 0.6;
-
+            // Durata dinamica
+            let duration = (measureDur / 4) / notesPerBeat;
+            duration *= (0.8 + Math.random() * 0.4);
             duration = Math.max(0.08, duration);
 
+            // Velocity dinamica
             let velocity = 0.45 + phraseProgress * 0.25;
-            if (endP > 0.85) velocity *= 1.2;
             if (i === 0) velocity = 0.25;
 
             notes.push({
                 noteName,
-                relTime: tm.relTime,
+                relTime,
                 duration,
                 velocity
             });
         }
 
-        // ============================================================
-        // PLAYBACK
-        // ============================================================
+        // ====================================================================
+        // 5) PLAYBACK
+        // ====================================================================
         for (let n of notes) {
             const abs = section.startTime + n.relTime;
 
@@ -195,9 +166,10 @@ const LeadLegacySolo = {
             }, abs);
         }
 
-        console.log(`🎸 SOLO LEGACY (NO MIDI): ${notes.length} note generate`);
+        console.log(`🎸 SOLO LEGACY DINAMICO: ${notes.length} note generate (mode: ${densityMode})`);
     }
 };
+
 // ============================================================================
 // LEGACY NON-SOLO (ORIGINALE, NON TOCCATO)
 // ============================================================================
