@@ -1,17 +1,22 @@
-// metalLeadEngine.js — versione ottimizzata con Legacy Solo
+// metalLeadEngine.js — ver. 075 (Solo Boosted Legacy)
+
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote, leadBus } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 76.1 loaded");
+console.log("metalLeadEngine.js ver. 075 loaded");
 
-// ============================================================================
-// UTILITY
-// ============================================================================
+// Utility
+
 const LeadUtils = {
     rand() { return Math.random(); },
     randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; },
     choice(arr) { return arr[Math.floor(Math.random() * arr.length)]; },
     clamp(v, min, max) { return Math.max(min, Math.min(max, v)); },
+
+    distributeTimes(start, end, count) {
+        const step = (end - start) / count;
+        return Array.from({ length: count }, (_, i) => start + i * step);
+    },
 
     nearestNote(targetMidi, scale) {
         let best = scale[0];
@@ -24,155 +29,95 @@ const LeadUtils = {
     }
 };
 
-// ============================================================================
-// SCALE (se servono in futuro, ora non usate direttamente dal solo)
-// ============================================================================
+// Scale
+
 const LeadScales = {
+    major(root) { return [0,2,4,5,7,9,11].map(i => root+i); },
     minor(root) { return [0,2,3,5,7,8,10].map(i => root+i); },
     harmonicMinor(root) { return [0,2,3,5,7,8,11].map(i => root+i); },
     dorian(root) { return [0,2,3,5,7,9,10].map(i => root+i); },
+    pentatonicMinor(root) { return [0,3,5,7,10].map(i => root+i); },
     phrygian(root) { return [0,1,3,5,7,8,10].map(i => root+i); },
-    pentatonicMinor(root) { return [0,3,5,7,10].map(i => root+i); }
+    diminished(root) { return [0,2,3,5,6,8,9,11].map(i => root+i); },
+    wholeTone(root) { return [0,2,4,6,8,10].map(i => root+i); }
 };
-// ============================================================================
-// NUOVO SOLO LEGACY — COERENTE, MUSICALE, DINAMICO, SENZA MIDI
-// ============================================================================
-const LeadLegacySolo = {
 
-    scheduleSolo(section, progression, instruments, params, rand, measureDur, score) {
-        const { guitarLead } = instruments;
-        if (!guitarLead) return;
+// Pattern
 
-        const { energy, brightness, complexity, bpm } = params.imageParams;
+const LeadPatterns = {
+    melodicTheme: [
+        [0,2,4,5,4,2,0],
+        [0,2,5,4,2,0],
+        [0,4,5,7,5,4,2]
+    ],
+    lyricalBreak: [
+        [0,2,3,2,0],
+        [0,3,5,3,0],
+        [0,2,0,-2,0]
+    ],
+    terzine: [
+        [0,2,4],
+        [2,4,5],
+        [4,5,7]
+    ],
+    shredRun: [
+        [0,2,3,5,7,8,11],
+        [0,2,3,5,7,9,11],
+        [0,1,3,5,7,8,10]
+    ],
+    sweep: [
+        [0,4,7,12],
+        [0,3,7,12],
+        [0,4,8,12]
+    ],
+    tapping: [
+        [0,7,12,7],
+        [0,5,12,5],
+        [0,8,12,8]
+    ],
+    diminished: [
+        [0,2,3,5,6,8,9,11],
+        [0,3,6,9],
+        [0,2,5,8]
+    ],
+    finalBurst: [
+        [0,2,4,5,7,9,11,12],
+        [0,3,5,7,10,12],
+        [0,2,5,7,9,12]
+    ]
+};
 
-        // ====================================================================
-        // 1) DENSITÀ DINAMICA BASATA SUI BPM
-        // ====================================================================
-        let densityMode;
-        if (bpm > 165) densityMode = "low";        // pochi step → più melodico
-        else if (bpm > 120) densityMode = "medium"; // densità equilibrata
-        else densityMode = "high";                 // molte note → frasi lunghe
+// Floyd Rose
 
-        let notesPerBeat;
-        if (densityMode === "low") notesPerBeat = 1.2;
-        if (densityMode === "medium") notesPerBeat = 2.4;
-        if (densityMode === "high") notesPerBeat = 4.0;
+const LeadFloyd = {
+    apply(guitarLead, time, type="scoop") {
+        if (!guitarLead || !guitarLead.playbackRate) return;
+        const pr = guitarLead.playbackRate;
 
-        const beatsInSection = section.measures * 4;
-        const totalNotes = Math.floor(notesPerBeat * beatsInSection);
-
-        // ====================================================================
-        // 2) SCALE AVANZATE (nomi di note, non MIDI)
-        // ====================================================================
-        const scaleSets = {
-            minor: ["A","B","C","D","E","F","G"],
-            harmonicMinor: ["A","B","C","D","E","F","G#"],
-            dorian: ["A","B","C","D","E","F#","G"],
-            phrygian: ["A","Bb","C","D","E","F","G"],
-            pentatonic: ["A","C","D","E","G"]
-        };
-
-        let scale;
-        if (brightness > 0.6) scale = scaleSets.dorian;
-        else if (complexity > 0.6) scale = scaleSets.harmonicMinor;
-        else if (brightness < 0.3) scale = scaleSets.phrygian;
-        else if (energy < 0.4) scale = scaleSets.pentatonic;
-        else scale = scaleSets.minor;
-
-        // ====================================================================
-        // 3) STRICT SCALE (come il Legacy non-solo)
-        // ====================================================================
-        const getStrictScale = (root) => {
-            const allNotes = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
-            let cleanRoot = root.split('/')[0].replace(/[0-9]/g, '').trim();
-            let isMinor = root.includes('m') || (cleanRoot === cleanRoot.toLowerCase() && cleanRoot.length === 1);
-            cleanRoot = cleanRoot.toUpperCase();
-            const alt = { "DB":"C#", "EB":"D#", "GB":"F#", "AB":"G#", "BB":"A#" };
-            cleanRoot = alt[cleanRoot] || cleanRoot;
-            let idx = allNotes.indexOf(cleanRoot);
-            if (idx === -1) idx = 9;
-            const intervals = isMinor ? [0,2,3,5,7,8,10] : [0,2,4,5,7,9,11];
-            return intervals.map(i => allNotes[(idx + i) % 12]);
-        };
-
-        // ====================================================================
-        // 4) GENERAZIONE NOTE (NO MIDI, COERENTE CON LEGACY)
-        // ====================================================================
-        const notes = [];
-
-        for (let i = 0; i < totalNotes; i++) {
-
-            // Tempo relativo
-            const relTime = (i / totalNotes) * (section.measures * measureDur);
-
-            // Misura corrente
-            const measurePos = Math.floor(relTime / measureDur);
-            const rootIndex = measurePos % progression.length;
-
-            // Strict scale della misura
-            const strictScale = getStrictScale(progression[rootIndex]);
-
-            // Direzione melodica
-            const phraseProgress = (i % (totalNotes / progression.length)) / (totalNotes / progression.length);
-
-            // Indice nella scala avanzata
-            let idx = Math.floor(phraseProgress * (scale.length - 1));
-
-            // Variazioni
-            if (Math.random() < 0.25) idx += (Math.random() < 0.5 ? 1 : -1);
-            idx = Math.max(0, Math.min(scale.length - 1, idx));
-
-            // Pitch avanzato
-            let pitch = scale[idx];
-
-            // Normalizzazione per il sampler
-            pitch = normalizeNote(pitch, "guitarLead");
-
-            // Ottava sicura
-            let octave = 4;
-            if (energy > 0.6) octave = 5;
-
-            const noteName = pitch + octave;
-
-            // Durata dinamica
-            let duration = (measureDur / 4) / notesPerBeat;
-            duration *= (0.8 + Math.random() * 0.4);
-            duration = Math.max(0.08, duration);
-
-            // Velocity dinamica
-            let velocity = 0.45 + phraseProgress * 0.25;
-            if (i === 0) velocity = 0.25;
-
-            notes.push({
-                noteName,
-                relTime,
-                duration,
-                velocity
-            });
+        if (type==="scoop") {
+            pr.setValueAtTime(0.95, time);
+            pr.linearRampToValueAtTime(1.0, time+0.12);
+        } else if (type==="dive") {
+            pr.setValueAtTime(1.0, time);
+            pr.exponentialRampToValueAtTime(0.7, time+0.18);
+            pr.linearRampToValueAtTime(1.0, time+0.32);
+        } else if (type==="rise") {
+            pr.setValueAtTime(0.9, time);
+            pr.linearRampToValueAtTime(1.05, time+0.25);
+            pr.linearRampToValueAtTime(1.0, time+0.35);
+        } else if (type==="vibrato") {
+            for (let i=0;i<6;i++){
+                const t = time + i*0.04;
+                const val = i%2===0 ? 0.98 : 1.02;
+                pr.setValueAtTime(val, t);
+            }
+            pr.setValueAtTime(1.0, time+0.25);
         }
-
-        // ====================================================================
-        // 5) PLAYBACK
-        // ====================================================================
-        for (let n of notes) {
-            const abs = section.startTime + n.relTime;
-
-            Tone.Transport.schedule(time => {
-                guitarLead.triggerAttackRelease(n.noteName, n.duration, time, n.velocity);
-
-                Tone.Draw.schedule(() => {
-                    if (score) score.addNote("Lead", n.noteName, section.name);
-                }, time);
-            }, abs);
-        }
-
-        console.log(`🎸 SOLO LEGACY DINAMICO: ${notes.length} note generate (mode: ${densityMode})`);
     }
 };
 
-// ============================================================================
-// LEGACY NON-SOLO (ORIGINALE, NON TOCCATO)
-// ============================================================================
+// Legacy (non-solo) — originale
+
 const LeadLegacy = {
     scheduleNonSolo(section, progression, instruments, params, rand, measureDur, score) {
         const { guitarLead } = instruments || {};
@@ -278,6 +223,7 @@ const LeadLegacy = {
         const currentPattern = getPattern(sectionType);
         const mood = getMelodyFamily();
         const currentMelody = mood.data[Math.floor(energy * mood.data.length) % mood.data.length];
+
         console.log(
             `%c 🎸 LEAD DNA EXECUTION \n` +
             `%c > Section: ${name.toUpperCase()} \n` +
@@ -329,30 +275,130 @@ const LeadLegacy = {
         }
     }
 };
-// ============================================================================
-// SCHEDULAZIONE LEAD (SOLO + NON-SOLO)
-// ============================================================================
+
+// ============================================================
+// LeadSoloBoosted — versione potenziata di Legacy per l'assolo
+// ============================================================
+
+const LeadSoloBoosted = {
+    schedule(section, progression, instruments, params, rand, measureDur, score) {
+        // Potenzia i parametri per l'assolo
+        const boostedParams = {
+            ...params,
+            imageParams: {
+                ...params.imageParams,
+                energy: Math.min(1, (params.imageParams?.energy || 0.5) * 1.5),
+                complexity: Math.min(1, (params.imageParams?.complexity || 0.5) * 1.4),
+                brightness: Math.min(1, (params.imageParams?.brightness || 0.5) * 1.2),
+                texture: Math.min(1, (params.imageParams?.texture || 0.5) * 1.2)
+            }
+        };
+        
+        console.log(`🎸 SOLO BOOSTED: energy ${(params.imageParams?.energy || 0.5).toFixed(2)} → ${boostedParams.imageParams.energy.toFixed(2)}`);
+        
+        // Usa il sistema legacy con parametri potenziati
+        LeadLegacy.scheduleNonSolo(section, progression, instruments, boostedParams, rand, measureDur, score);
+        
+        // Aggiungi una scala finale veloce per energia alta
+        if (boostedParams.imageParams.energy > 0.7) {
+            this.addFinalRun(section, instruments, boostedParams, measureDur, score);
+        }
+        
+        // Aggiungi note di passaggio extra per complessità alta
+        if (boostedParams.imageParams.complexity > 0.7) {
+            this.addPassingNotes(section, progression, instruments, boostedParams, rand, measureDur, score);
+        }
+    },
+    
+    addFinalRun(section, instruments, params, measureDur, score) {
+        const { guitarLead } = instruments;
+        if (!guitarLead) return;
+        
+        const tonalCenter = params.tonalCenter || "A4";
+        let rootMidi;
+        try { rootMidi = Tone.Frequency(tonalCenter).toMidi(); }
+        catch { return; }
+        
+        // Costruisci una scala rapida (7-12 note)
+        const allNotes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+        let rootName = tonalCenter.replace(/[0-9]/g, "");
+        let rootIdx = allNotes.indexOf(rootName);
+        if (rootIdx === -1) rootIdx = 9;
+        
+        // Scala di LA minore (o della tonalità corrente)
+        const scale = [0, 2, 3, 5, 7, 8, 10].map(interval => {
+            const idx = (rootIdx + interval) % 12;
+            return allNotes[idx];
+        });
+        
+        const startTime = section.startTime + (section.measures * measureDur) - 1.2;
+        const stepTime = 0.07;
+        const octave = 5;
+        
+        console.log(`🎸 SOLO FINAL RUN: ${scale.length} note`);
+        
+        for (let i = 0; i < scale.length; i++) {
+            const noteName = scale[i] + octave;
+            Tone.Transport.schedule(time => {
+                guitarLead.triggerAttackRelease(noteName, 0.1, time, 0.75);
+                if (score) score.addNote("Lead", noteName, section.name + "_RUN");
+            }, startTime + (i * stepTime));
+        }
+        
+        // Aggiungi un'ultima nota tenuta
+        const lastNote = scale[0] + (octave + 1);
+        Tone.Transport.schedule(time => {
+            guitarLead.triggerAttackRelease(lastNote, 0.8, time, 0.7);
+            if (score) score.addNote("Lead", lastNote, section.name + "_FINALE");
+        }, startTime + (scale.length * stepTime) + 0.1);
+    },
+    
+    addPassingNotes(section, progression, instruments, params, rand, measureDur, score) {
+        const { guitarLead } = instruments;
+        if (!guitarLead) return;
+        
+        const tonalCenter = params.tonalCenter || "A4";
+        let rootMidi;
+        try { rootMidi = Tone.Frequency(tonalCenter).toMidi(); }
+        catch { return; }
+        
+        // Note di passaggio aggiuntive (trilli o abbellimenti)
+        const allNotes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+        let rootName = tonalCenter.replace(/[0-9]/g, "");
+        let rootIdx = allNotes.indexOf(rootName);
+        if (rootIdx === -1) rootIdx = 9;
+        
+        // Aggiungi alcune note veloci sparse nell'assolo
+        const numPassing = Math.floor(5 + rand() * 8);
+        
+        for (let i = 0; i < numPassing; i++) {
+            const timeOffset = 0.5 + rand() * (section.measures * measureDur - 1.5);
+            const absTime = section.startTime + timeOffset;
+            const noteIdx = (rootIdx + 5 + Math.floor(rand() * 5)) % 12;
+            const noteName = allNotes[noteIdx] + (rand() < 0.5 ? 5 : 4);
+            
+            Tone.Transport.schedule(time => {
+                guitarLead.triggerAttackRelease(noteName, 0.08, time, 0.5);
+                if (score) score.addNote("Lead", noteName, section.name + "_PASS");
+            }, absTime);
+        }
+    }
+};
+
+// scheduleLead
+
 export function scheduleLead(section, progression, instruments, params, rand, measureDur, score) {
     const { guitarLead } = instruments || {};
     if (!guitarLead) return;
 
     const rawName = section?.name;
-    const name = String(rawName).toLowerCase();
-
-    console.log("DEBUG SOLO CHECK → raw name:", rawName);
-    console.log("DEBUG SOLO CHECK → lower:", name);
-
     const clean = String(rawName)
         .normalize("NFKD")
         .replace(/[\u0300-\u036f]/g, "")
         .replace(/[^a-zA-Z]/g, "")
         .toLowerCase();
 
-    console.log("DEBUG SOLO CHECK → clean:", clean);
-
     const isSolo = /(solo|lead|assolo|guitar|bridge)/i.test(clean);
-
-    console.log("DEBUG SOLO CHECK → isSolo:", isSolo);
 
     const {
         energy = 0.5,
@@ -361,35 +407,28 @@ export function scheduleLead(section, progression, instruments, params, rand, me
         complexity = 0.5
     } = params?.imageParams || {};
 
-    const bpm =
-        params?.imageParams?.bpm ||
-        params?.bpm ||
-        (60 / (measureDur / 4));
+    const bpm = params?.imageParams?.bpm || params?.bpm || (60 / (measureDur / 4));
 
     if (!isSolo) {
+        // Sezioni normali
         if (leadBus._soloBoostApplied) {
             leadBus.gain.cancelScheduledValues(Tone.now());
             leadBus.gain.rampTo(leadBus._originalGain, 0.25);
             leadBus._soloBoostApplied = false;
         }
-
         LeadLegacy.scheduleNonSolo(section, progression, instruments, params, rand, measureDur, score);
+        
     } else {
+        // ============================================================
+        // ASSOLO: usa la versione potenziata
+        // ============================================================
+        
         if (!leadBus._soloBoostApplied) {
             leadBus._originalGain = leadBus.gain.value;
-            const boosted = leadBus._originalGain * 2.0;
-            leadBus.gain.cancelScheduledValues(Tone.now());
-            leadBus.gain.rampTo(boosted, 0.20);
+            leadBus.gain.rampTo(leadBus._originalGain * 2.0, 0.20);
             leadBus._soloBoostApplied = true;
         }
-
-        const soloParams = {
-            imageParams: { energy, brightness, texture, complexity, bpm, tonalCenter: params.tonalCenter }
-        };
-
-        console.log("🔍 progression prima del solo:", progression);
-        console.log("🔍 progression length:", progression?.length);
-
-        LeadLegacySolo.scheduleSolo(section, progression, instruments, soloParams, rand, measureDur, score);
+        
+        LeadSoloBoosted.schedule(section, progression, instruments, params, rand, measureDur, score);
     }
 }
