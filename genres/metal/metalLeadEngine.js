@@ -338,6 +338,11 @@ export function scheduleLead(section, progression, instruments, params, rand, me
     const { guitarLead } = instruments || {};
     if (!guitarLead) return;
 
-    // Usa lo stesso identico sistema per TUTTE le sezioni (assolo compreso!)
+    // Estrai tonalCenter (con fallback)
+    const tonalCenter = params?.tonalCenter || params?.imageParams?.tonalCenter || "A4";
+    const rootNote = tonalCenter.replace(/[0-9]/g, "");  // "A4" → "A"
+    
+    console.log("🎸 tonalCenter ricevuto:", tonalCenter, "→ root:", rootNote);
+      
     LeadLegacy.schedule(section, progression, instruments, params, rand, measureDur, score);
 }
