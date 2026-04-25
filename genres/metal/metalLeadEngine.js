@@ -3,7 +3,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote, leadBus } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 081.3 loaded");
+console.log("metalLeadEngine.js ver. 081.4 loaded");
 
 // ============================================================
 // UTILITY
@@ -249,7 +249,22 @@ const LeadLegacy = {
             return { name: "EPIC 🏰", data: melodicLibrary.epic };
         };
 
-        const sectionType = isIntro ? "intro" : (isPreChorus ? "prechorus" : (isChorus ? "chorus" : "verse"));
+                // Seleziona il tipo di sezione per library
+        let sectionType;
+        if (isSolo) {
+            if (energy > 0.7) sectionType = "solo_fast";
+            else if (energy < 0.4) sectionType = "solo_slow";
+            else sectionType = "solo";
+        } else if (isIntro) {
+            sectionType = "intro";
+        } else if (isPreChorus) {
+            sectionType = "prechorus";
+        } else if (isChorus) {
+            sectionType = "chorus";
+        } else {
+            sectionType = "verse";
+        }
+        
         const currentPattern = getPattern(sectionType);
         const mood = getMelodyFamily();
         const currentMelody = mood.data[Math.floor(energy * mood.data.length) % mood.data.length];
@@ -281,8 +296,18 @@ const LeadLegacy = {
         };
 
         for (let m = 0; m < section.measures; m++) {
-            const measureStartTime = section.startTime + (m * measureDur);
-            const currentScale = getStrictScale(progression[m % progression.length] || "A");
+    const measureStartTime = section.startTime + (m * measureDur);
+    
+    // PER L'ASSOLO: usa scala fissa (ignora la progressione)
+    let currentScale;
+    if (isSolo) {
+        // Scala fissa basata sul tonalCenter
+        const fixedRoot = rootNote; 
+        const fixedScaleRoot = fixedRoot + (isMinor ? "m" : "");
+    currentScale = getStrictScale(fixedScaleRoot);
+    } else {
+        currentScale = getStrictScale(progression[m % progression.length] || "A");
+    }
             const isTransitionMeasure = (m === section.measures - 1);
 
             currentPattern.forEach((s, i) => {
