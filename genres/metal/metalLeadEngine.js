@@ -3,7 +3,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote, leadBus } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 074 loaded");
+console.log("metalLeadEngine.js ver. 074.1 loaded");
 
 // Utility
 
@@ -222,16 +222,24 @@ const LeadDensity = {
     }
 };
 
-// Solo V4 — Direction Engine
-
 // Solo V5 — Direction & Continuity Engine (basato su root1, root2, root3)
 
 const LeadSolo = {
     generate(section, progression, instruments, params, rand, measureDur, score) {
         console.log("🔥 SOLO V5 ATTIVATO su sezione:", section.name);
-        const { guitarLead } = instruments;
+        console.log("🔍 progression ricevuta:", progression);
         
+        const { guitarLead } = instruments;
         if (!guitarLead) return;
+
+        // ============================================================
+        // FALLBACK: se progression è vuota, crea una progressione di default
+        // ============================================================
+        let validProgression = progression;
+        if (!progression || progression.length === 0) {
+            console.warn("⚠️ progressione vuota! Uso fallback: ['i', 'iv', 'v', 'i']");
+            validProgression = ["i", "iv", "v", "i"];
+        }
 
         const { energy, brightness, complexity, bpm, tonalCenter = "A4" } = params.imageParams;
 
@@ -240,6 +248,7 @@ const LeadSolo = {
         // Numero di frasi in base all'energia
         let phraseCount = energy > 0.7 ? 4 : energy > 0.4 ? 3 : 2;
         phraseCount = Math.min(phraseCount, Math.floor(totalTime / 2.5));
+        if (phraseCount < 1) phraseCount = 2; // minimo 2 frasi
         
         const phraseTime = totalTime / phraseCount;
         
@@ -248,13 +257,25 @@ const LeadSolo = {
         try { rootMidi = Tone.Frequency(tonalCenter).toMidi(); }
         catch { rootMidi = 69; }
         
-        // Calcola le root in MIDI
-        const chordRootsMidi = progression.map(root => {
+        // Calcola le root in MIDI usando la progressione validata
+        const chordRootsMidi = validProgression.map(root => {
             let clean = root.replace(/[^A-G#b]/g, "");
             if (!clean) clean = tonalCenter.replace(/[0-9]/g, "");
-            try { return Tone.Frequency(clean + "4").toMidi(); }
-            catch { return rootMidi; }
+            try { 
+                const freq = Tone.Frequency(clean + "4");
+                return freq.toMidi();
+            }
+            catch { 
+                return rootMidi; 
+            }
         });
+        
+        console.log("🔍 chordRootsMidi calcolate:", chordRootsMidi);
+        
+        // Se ancora vuoto, usa rootMidi come default
+        if (chordRootsMidi.length === 0) {
+            chordRootsMidi.push(rootMidi);
+        }      
         
         // Tracciamento dello stato per il solo
         let lastNoteMidi = null;
@@ -696,6 +717,8 @@ console.log("DEBUG SOLO CHECK → isSolo:", isSolo);
             imageParams: { energy, brightness, texture, complexity, bpm, tonalCenter: params.tonalCenter }
         };
 
+console.log("🔍 progression prima del solo:", progression);
+console.log("🔍 progression length:", progression?.length);
         LeadSolo.generate(section, progression, instruments, soloParams, rand, measureDur, score);
     }
 }
