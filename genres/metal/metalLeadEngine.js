@@ -3,7 +3,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote, leadBus } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 082.3 loaded");
+console.log("metalLeadEngine.js ver. 082.4 loaded");
 
 // ============================================================
 // UTILITY
@@ -47,7 +47,7 @@ const LeadFloyd = {
 // ============================================================
 
 const LeadLegacy = {
-    schedule(section, progression, instruments, params, rand, measureDur, rootNote, isMinor, score) {
+    schedule(section, progression, instruments, params, rand, measureDur, rootNote, isMinor, scaleType, score) {
         const { guitarLead } = instruments || {};
         if (!guitarLead) return;
 
@@ -463,5 +463,5 @@ export function scheduleLead(section, progression, instruments, params, rand, me
     console.log("🎸 tonalCenter:", tonalCenter, "→ root:", rootNote);
     console.log("🎸 scaleType:", scaleType, "→ isMinor:", isMinor);
       
-    LeadLegacy.schedule(section, progression, instruments, params, rand, measureDur, rootNote, isMinor, score);
+    LeadLegacy.schedule(section, progression, instruments, params, rand, measureDur, rootNote, isMinor, scaleType, score);
 }
