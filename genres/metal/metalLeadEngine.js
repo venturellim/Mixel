@@ -3,7 +3,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote, leadBus } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 082.2 loaded");
+console.log("metalLeadEngine.js ver. 082.3 loaded");
 
 // ============================================================
 // UTILITY
@@ -283,6 +283,41 @@ name.includes("bridge");
             const intervals = isMinor ? [0, 2, 3, 5, 7, 8, 10] : [0, 2, 4, 5, 7, 9, 11];
             return intervals.map(interval => allNotes[(rootIdx + interval) % 12]);
         };
+        
+function applyOrnaments(noteName, idx, currentScale) {
+    let finalNote = noteName;
+
+    // 1) Passing tone cromatico (10% di probabilità)
+    if (Math.random() < 0.10) {
+        const up = Math.random() < 0.5;
+        const newIdx = idx + (up ? 1 : -1);
+        if (newIdx >= 0 && newIdx < currentScale.length) {
+            finalNote = normalizeNote(currentScale[newIdx], "guitarLead") + noteName.slice(-1);
+        }
+    }
+
+    // 2) Slide di un semitono (8% di probabilità)
+    if (Math.random() < 0.08) {
+        const up = Math.random() < 0.5;
+        const newIdx = idx + (up ? 1 : -1);
+        if (newIdx >= 0 && newIdx < currentScale.length) {
+            finalNote = normalizeNote(currentScale[newIdx], "guitarLead") + noteName.slice(-1);
+        }
+    }
+
+    // 3) Mini‑bend (pitch shift leggero) — 6%
+    if (Math.random() < 0.06) {
+        finalNote = finalNote; // la nota rimane, ma il pitch verrà modulato
+        finalNote._bend = true;
+    }
+
+    // 4) Ripetizione veloce (5%)
+    if (Math.random() < 0.05) {
+        finalNote._repeat = true;
+    }
+
+    return finalNote;
+}
 
         for (let m = 0; m < section.measures; m++) {
     const measureStartTime = section.startTime + (m * measureDur);
@@ -345,14 +380,43 @@ name.includes("bridge");
                 const nextStep = (i < currentPattern.length - 1) ? currentPattern[i + 1] : 16;
                 const noteIdx = currentMelody[i % currentMelody.length];
                 const octave = isChorus ? 5 : 4;
-                const noteName = normalizeNote(currentScale[noteIdx % 7], "guitarLead") + octave;
+                let noteName = normalizeNote(currentScale[idx], "guitarLead") + octave;
+
+// applica ornamenti
+noteName = applyOrnaments(noteName, idx, currentScale);
+
 
                 Tone.Transport.schedule(time => {
-                    guitarLead.triggerAttackRelease(noteName, (nextStep - s) * stepTime, time);
-                    Tone.Draw.schedule(() => {
-                        if (score) score.addNote("Lead", noteName, section.name);
-                    }, time);
-                }, absoluteTime);
+
+    // mini‑bend
+    if (noteName._bend && guitarLead.playbackRate) {
+        guitarLead.playbackRate.setValueAtTime(1.02, time);
+        guitarLead.playbackRate.linearRampToValueAtTime(1.0, time + 0.12);
+    }
+
+    // nota principale
+    guitarLead.triggerAttackRelease(
+        typeof noteName === "string" ? noteName : noteName.toString(),
+        (nextStep - s) * stepTime,
+        time
+    );
+
+    // ripetizione veloce
+    if (noteName._repeat) {
+        Tone.Transport.schedule(t2 => {
+            guitarLead.triggerAttackRelease(
+                typeof noteName === "string" ? noteName : noteName.toString(),
+                (nextStep - s) * stepTime * 0.5,
+                t2
+            );
+        }, time + 0.06);
+    }
+
+    Tone.Draw.schedule(() => {
+        if (score) score.addNote("Lead", noteName, section.name);
+    }, time);
+
+}, absoluteTime);
             });
         }
     }
