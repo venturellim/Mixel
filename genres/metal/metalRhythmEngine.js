@@ -98,18 +98,6 @@ const grooveCharacteristics = {
     // SEMPRE il migliore (nessun random)
     return scoredGrooves[0].name;
 };
-    
-    // Ordina per score e prendi il migliore (con un po' di random)
-    scoredGrooves.sort((a, b) => b.score - a.score);
-    
-    // 70% prende il migliore, 30% prende uno dei top 3 (per varietà)
-    if (Math.random() < 0.7) {
-        return scoredGrooves[0].name;
-    } else {
-        const randomIndex = Math.floor(Math.random() * Math.min(3, scoredGrooves.length));
-        return scoredGrooves[randomIndex].name;
-    }
-};
 
     const currentGroove = getGroove(
     isIntro ? "intro" : (isPreChorus ? "prechorus" : (isChorus ? "chorus" : "verse")),
