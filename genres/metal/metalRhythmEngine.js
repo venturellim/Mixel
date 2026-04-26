@@ -2,7 +2,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
 
-console.log("metalRhythmEngine.js ver. 015.1 loaded");
+console.log("metalRhythmEngine.js ver. 015.3 loaded");
 
 export function scheduleRhythm(section, progression, instruments, params, rand, measureDur, nextSectionRoot, score) {
     const { drums, guitarPalm, guitarOpen, bass } = instruments;
@@ -18,20 +18,105 @@ name.includes("bridge");
     const { energy = 0.5, brightness = 0.5, complexity = 0.5, texture = 0.5 } = params?.imageParams || {};
 
     const grooves = {
-        intro: ["intro_ambient", "intro_heavy_strikes", "stratovarius_intro", "doom_slow", "cinematic_buildup", "industrial_static"],
-        verse: ["gallop_classic", "gallop_triplet", "thrash_diamond", "palm_mute_chug", "motorhead_drive", "technical_sync", "meshuggah_ish", "breakdown_heavy", "jump_groove", "double_time_punk"],
-        prechorus: ["pre_build_up", "driving_eights", "march_to_war", "suspended_tension"],
-        chorus: ["helloween_speed", "chorus_pure_sustain", "chorus_sustain_hit", "anthem_half_time", "power_ride_groove", "double_kick_wall", "blast_beat_light", "epic_waltz_feel"]
-    };
+    intro: ["intro_ambient", "intro_heavy_strikes", "stratovarius_intro", "doom_slow", "cinematic_buildup", "industrial_static", "stoner_doom", "power_ballad"],
+    verse: ["gallop_classic", "gallop_triplet", "thrash_diamond", "palm_mute_chug", "motorhead_drive", "technical_sync", "meshuggah_ish", "breakdown_heavy", "jump_groove", "double_time_punk", "power_gallop", "groove_metal", "black_tremolo", "speed_metal", "death_roll", "thrash_skank"],
+    prechorus: ["pre_build_up", "driving_eights", "march_to_war", "suspended_tension", "epic_buildup", "power_ballad"],
+    bridge: ["pre_build_up", "driving_eights", "march_to_war", "suspended_tension", "epic_buildup", "power_ballad"],
+    chorus: ["helloween_speed", "chorus_pure_sustain", "chorus_sustain_hit", "anthem_half_time", "power_ride_groove", "double_kick_wall", "blast_beat_light", "epic_waltz_feel", "symphonic_blast", "power_gallop", "speed_metal", "power_ballad"]
+};
 
-    const getGroove = (type) => {
-        const family = grooves[type] || grooves.verse;
-        let dnaScore = (energy * 400) + (brightness * 30) + (complexity * 2) + (texture * 0.1);
-        const scoreIdx = Math.floor(Math.abs(dnaScore) * (type === "chorus" ? 2.15 : 1.0));
-        return family[scoreIdx % family.length];
-    };
+// Definizione dei groove con caratteristiche
+const grooveCharacteristics = {
+    // INTRO
+    "intro_ambient": { energy: 0.2, brightness: 0.3, complexity: 0.2, tempo: "slow" },
+    "intro_heavy_strikes": { energy: 0.6, brightness: 0.5, complexity: 0.3, tempo: "medium" },
+    "stratovarius_intro": { energy: 0.7, brightness: 0.7, complexity: 0.4, tempo: "medium" },
+    "cinematic_buildup": { energy: 0.4, brightness: 0.6, complexity: 0.3, tempo: "slow" },
+    "industrial_static": { energy: 0.5, brightness: 0.3, complexity: 0.6, tempo: "medium" },
+    "doom_slow": { energy: 0.3, brightness: 0.2, complexity: 0.2, tempo: "slow" },
+    "stoner_doom": { energy: 0.3, brightness: 0.2, complexity: 0.3, tempo: "slow" },
+    "power_ballad": { energy: 0.4, brightness: 0.6, complexity: 0.3, tempo: "slow" },
+    
+    // VERSE
+    "gallop_classic": { energy: 0.7, brightness: 0.5, complexity: 0.5, tempo: "fast" },
+    "gallop_triplet": { energy: 0.7, brightness: 0.5, complexity: 0.6, tempo: "fast" },
+    "power_gallop": { energy: 0.8, brightness: 0.7, complexity: 0.5, tempo: "fast" },
+    "thrash_diamond": { energy: 0.9, brightness: 0.4, complexity: 0.7, tempo: "very_fast" },
+    "palm_mute_chug": { energy: 0.6, brightness: 0.3, complexity: 0.3, tempo: "medium" },
+    "motorhead_drive": { energy: 0.8, brightness: 0.5, complexity: 0.4, tempo: "fast" },
+    "technical_sync": { energy: 0.6, brightness: 0.5, complexity: 0.9, tempo: "medium" },
+    "meshuggah_ish": { energy: 0.7, brightness: 0.3, complexity: 0.8, tempo: "medium" },
+    "breakdown_heavy": { energy: 0.5, brightness: 0.2, complexity: 0.4, tempo: "slow" },
+    "jump_groove": { energy: 0.7, brightness: 0.4, complexity: 0.5, tempo: "medium" },
+    "double_time_punk": { energy: 0.8, brightness: 0.5, complexity: 0.4, tempo: "very_fast" },
+    "groove_metal": { energy: 0.6, brightness: 0.3, complexity: 0.6, tempo: "medium" },
+    "black_tremolo": { energy: 0.8, brightness: 0.2, complexity: 0.7, tempo: "very_fast" },
+    "speed_metal": { energy: 0.9, brightness: 0.6, complexity: 0.6, tempo: "very_fast" },
+    "death_roll": { energy: 0.9, brightness: 0.2, complexity: 0.7, tempo: "very_fast" },
+    "thrash_skank": { energy: 0.9, brightness: 0.4, complexity: 0.6, tempo: "very_fast" },
+    
+    // PRECHORUS / BRIDGE
+    "pre_build_up": { energy: 0.5, brightness: 0.5, complexity: 0.4, tempo: "medium" },
+    "driving_eights": { energy: 0.7, brightness: 0.5, complexity: 0.3, tempo: "fast" },
+    "march_to_war": { energy: 0.6, brightness: 0.4, complexity: 0.4, tempo: "medium" },
+    "suspended_tension": { energy: 0.4, brightness: 0.5, complexity: 0.3, tempo: "slow" },
+    "epic_buildup": { energy: 0.5, brightness: 0.7, complexity: 0.4, tempo: "slow" },
+    "prog_odd": { energy: 0.6, brightness: 0.5, complexity: 0.9, tempo: "medium" },
+    "metalcore_breakdown": { energy: 0.4, brightness: 0.3, complexity: 0.4, tempo: "slow" },
+    
+    // CHORUS
+    "helloween_speed": { energy: 0.9, brightness: 0.7, complexity: 0.6, tempo: "fast" },
+    "chorus_pure_sustain": { energy: 0.7, brightness: 0.7, complexity: 0.3, tempo: "medium" },
+    "chorus_sustain_hit": { energy: 0.8, brightness: 0.7, complexity: 0.4, tempo: "medium" },
+    "anthem_half_time": { energy: 0.7, brightness: 0.8, complexity: 0.3, tempo: "slow" },
+    "power_ride_groove": { energy: 0.8, brightness: 0.6, complexity: 0.4, tempo: "fast" },
+    "double_kick_wall": { energy: 0.9, brightness: 0.5, complexity: 0.5, tempo: "very_fast" },
+    "blast_beat_light": { energy: 1.0, brightness: 0.3, complexity: 0.7, tempo: "very_fast" },
+    "epic_waltz_feel": { energy: 0.6, brightness: 0.7, complexity: 0.4, tempo: "slow" },
+    "symphonic_blast": { energy: 0.9, brightness: 0.8, complexity: 0.7, tempo: "very_fast" },
+    "folk_hop": { energy: 0.7, brightness: 0.7, complexity: 0.5, tempo: "fast" },
+    "djent": { energy: 0.6, brightness: 0.3, complexity: 0.9, tempo: "medium" }
+};
 
-    let currentGroove = getGroove(isIntro ? "intro" : (isPreChorus ? "prechorus" : (isChorus ? "chorus" : "verse")));
+    const getGroove = (type, energy, brightness, complexity) => {
+    const family = grooves[type] || grooves.verse;
+    
+    const scoredGrooves = family.map(groove => {
+        const chars = grooveCharacteristics[groove];
+        if (!chars) return { name: groove, score: 0 };
+        
+        const energyDiff = Math.abs(energy - chars.energy);
+        const brightnessDiff = Math.abs(brightness - chars.brightness);
+        const complexityDiff = Math.abs(complexity - chars.complexity);
+        
+        let score = 1 - (energyDiff * 0.5 + brightnessDiff * 0.3 + complexityDiff * 0.2);
+        return { name: groove, score: score };
+    });
+    
+    scoredGrooves.sort((a, b) => b.score - a.score);
+    
+    // SEMPRE il migliore (nessun random)
+    return scoredGrooves[0].name;
+};
+    
+    // Ordina per score e prendi il migliore (con un po' di random)
+    scoredGrooves.sort((a, b) => b.score - a.score);
+    
+    // 70% prende il migliore, 30% prende uno dei top 3 (per varietà)
+    if (Math.random() < 0.7) {
+        return scoredGrooves[0].name;
+    } else {
+        const randomIndex = Math.floor(Math.random() * Math.min(3, scoredGrooves.length));
+        return scoredGrooves[randomIndex].name;
+    }
+};
+
+    const currentGroove = getGroove(
+    isIntro ? "intro" : (isPreChorus ? "prechorus" : (isChorus ? "chorus" : "verse")),
+    energy,
+    brightness,
+    complexity
+);
 
     for (let m = 0; m < section.measures; m++) {
         const measureStartTime = section.startTime + (m * measureDur);
@@ -52,22 +137,289 @@ if (isChorus) {
 }
 
             // --- LOGICA GROOVE (Rimane invariata) ---
-            switch (currentGroove) {
-                case "intro_ambient": if (s === 0) { playGuitar = true; inst = guitarOpen; sustain = true; kick = true; } break;
-                case "intro_heavy_strikes": if ([0, 4, 8, 12].includes(s)) { playGuitar = true; inst = guitarOpen; kick = true; snare = (s === 4 || s === 12); } break;
-                case "doom_slow": if (s === 0 || s === 8) { playGuitar = true; inst = guitarOpen; sustain = true; kick = true; snare = (s === 8); } break;
-                case "gallop_classic": if (s % 4 !== 1) { playGuitar = true; kick = (s % 4 === 0); } if (s === 4 || s === 12) snare = true; break;
-                case "meshuggah_ish": if ([0, 3, 6, 8, 11, 14].includes(s)) { playGuitar = true; kick = true; } if (s === 4 || s === 12) snare = true; break;
-                case "thrash_diamond": if ([0, 3, 6, 8, 11, 14].includes(s)) { playGuitar = true; kick = true; } if (s === 4 || s === 12) snare = true; break;
-                case "breakdown_heavy": if ([0, 8, 14].includes(s)) { playGuitar = true; inst = guitarOpen; kick = true; sustain = true; } if (s === 4 || s === 12) snare = true; break;
-                case "pre_build_up": kick = (s % 4 === 0); snare = (s === 12); playGuitar = (s % 2 === 0); break;
-                case "driving_eights": kick = (s % 2 === 0); snare = (s === 4 || s === 12); playGuitar = true; break;
-                case "helloween_speed": kick = true; if (s % 4 === 0) { playGuitar = true; inst = guitarOpen; sustain = true; } if (s === 4 || s === 12) snare = true; break;
-                case "anthem_half_time": if (s === 0 || s === 8) { playGuitar = true; inst = guitarOpen; sustain = true; kick = true; if (s === 8) snare = true; } break;
-                case "double_kick_wall": kick = true; playGuitar = true; if (s === 4 || s === 12) snare = true; break;
-                case "blast_beat_light": kick = true; snare = (s % 2 !== 0); playGuitar = true; break;
-                default: if (s % 2 === 0) { playGuitar = true; kick = (s % 4 === 0); } if (s === 4 || s === 12) snare = true; break;
-            }
+                switch (currentGroove) {
+    // ========== INTRO ==========
+    case "intro_ambient":
+        if (s === 0) { playGuitar = true; inst = guitarOpen; sustain = true; kick = true; }
+        break;
+    case "intro_heavy_strikes":
+        if ([0, 4, 8, 12].includes(s)) { playGuitar = true; inst = guitarOpen; kick = true; snare = (s === 4 || s === 12); }
+        break;
+    case "stratovarius_intro":
+        if (s === 0 || s === 2) { playGuitar = true; inst = guitarPalm; kick = true; }
+        if (s === 4) { playGuitar = true; inst = guitarOpen; snare = true; sustain = true; }
+        if (s === 12) snare = true;
+        break;
+    case "cinematic_buildup":
+        kick = true;
+        if (s === 0) { playGuitar = true; inst = guitarOpen; sustain = true; }
+        break;
+    case "industrial_static":
+        if (s % 4 === 0) { playGuitar = true; inst = guitarPalm; kick = true; }
+        if (s === 6 || s === 14) snare = true;
+        if (s === 8) { playGuitar = true; inst = guitarOpen; sustain = true; }
+        break;
+    case "doom_slow":
+        if (s === 0 || s === 8) { playGuitar = true; inst = guitarOpen; sustain = true; kick = true; snare = (s === 8); }
+        break;
+
+    // ========== VERSE ==========
+    case "gallop":
+    case "gallop_classic":
+        if (s % 4 !== 1) { playGuitar = true; inst = guitarPalm; kick = (s % 4 === 0); }
+        if (s === 4 || s === 12) snare = true;
+        break;
+    case "gallop_triplet":
+        const tripletBeat = Math.floor(s / 2.666);
+        if (tripletBeat % 3 !== 0) { playGuitar = true; inst = guitarPalm; }
+        kick = (tripletBeat % 3 === 0);
+        if (tripletBeat === 4 || tripletBeat === 10) snare = true;
+        break;
+    case "palm_mute_chug":
+        playGuitar = true;
+        inst = guitarPalm;
+        kick = (s % 2 === 0);
+        if (s === 4 || s === 12) snare = true;
+        break;
+    case "motorhead_drive":
+        playGuitar = true;
+        inst = guitarPalm;
+        kick = (s % 2 === 0);
+        snare = (s === 4 || s === 12);
+        if (s === 0 || s === 8) inst = guitarOpen;
+        break;
+    case "technical_sync":
+        playGuitar = ([0, 3, 5, 8, 11, 13].includes(s));
+        kick = ([0, 4, 8, 12].includes(s)) || (s === 3 || s === 11);
+        snare = (s === 4 || s === 12);
+        if (playGuitar) inst = guitarPalm;
+        break;
+    case "thrash_diamond":
+        if ([0, 2, 6].includes(s)) { playGuitar = true; inst = guitarPalm; kick = true; }
+        if (s === 4) { playGuitar = true; inst = guitarOpen; sustain = true; snare = true; }
+        if (s === 12) snare = true;
+        break;
+    case "meshuggah_ish":
+        if ([0, 3, 6, 8, 11, 14].includes(s)) { playGuitar = true; kick = true; }
+        if (s === 4 || s === 12) snare = true;
+        break;
+    case "breakdown_heavy":
+        if ([0, 8, 14].includes(s)) { playGuitar = true; inst = guitarOpen; kick = true; sustain = true; }
+        if (s === 4 || s === 12) snare = true;
+        break;
+    case "jump_groove":
+        if ([0, 3, 8, 11].includes(s)) { playGuitar = true; kick = true; }
+        if (s === 4 || s === 12) snare = true;
+        break;
+    case "double_time_punk":
+        kick = (s % 4 === 0 || s % 4 === 1);
+        snare = (s % 4 === 2);
+        playGuitar = (s % 2 === 0);
+        break;
+
+    // ========== PRECHORUS ==========
+    case "pre_build_up":
+        kick = (s % 4 === 0);
+        snare = (s === 12);
+        playGuitar = (s % 2 === 0);
+        break;
+    case "driving_eights":
+        kick = (s % 2 === 0);
+        snare = (s === 4 || s === 12);
+        playGuitar = true;
+        break;
+    case "march_to_war":
+        kick = ([0, 4, 8, 12].includes(s));
+        snare = (s === 4 || s === 12);
+        playGuitar = ([0, 2, 4, 6, 8, 10, 12, 14].includes(s));
+        if (playGuitar) inst = guitarPalm;
+        if (s === 0 || s === 8) inst = guitarOpen;
+        break;
+    case "suspended_tension":
+        if (s === 0) { playGuitar = true; inst = guitarOpen; sustain = true; kick = true; }
+        if (s === 8) { playGuitar = true; inst = guitarOpen; sustain = true; }
+        if (s === 12) snare = true;
+        break;
+
+    // ========== CHORUS ==========
+    case "helloween":
+    case "helloween_speed":
+        kick = true;
+        if (s % 4 === 0) { playGuitar = true; inst = guitarOpen; sustain = true; }
+        if (s === 4 || s === 12) snare = true;
+        break;
+    case "chorus_pure_sustain":
+        if (s === 0) { playGuitar = true; inst = guitarOpen; sustain = true; kick = true; }
+        if (s === 8) kick = true;
+        if (s === 4 || s === 12) snare = true;
+        break;
+    case "chorus_sustain_hit":
+        if (s === 0) { playGuitar = true; inst = guitarOpen; sustain = true; kick = true; }
+        if (s === 14) { playGuitar = true; inst = guitarOpen; kick = true; }
+        if (s === 4 || s === 12) snare = true;
+        break;
+    case "anthem_half_time":
+        if (s === 0 || s === 8) { playGuitar = true; inst = guitarOpen; sustain = true; kick = true; if (s === 8) snare = true; }
+        break;
+    case "power_ride_groove":
+        playGuitar = true;
+        inst = guitarOpen;
+        kick = (s % 4 === 0);
+        snare = (s === 4 || s === 12);
+        break;
+    case "double_kick_wall":
+        kick = true;
+        playGuitar = true;
+        if (s === 4 || s === 12) snare = true;
+        break;
+    case "blast_beat_light":
+        kick = true;
+        snare = (s % 2 !== 0);
+        playGuitar = true;
+        break;
+    case "epic_waltz_feel":
+        if (s % 3 === 0) { playGuitar = true; inst = guitarOpen; kick = true; }
+        if (s === 6 || s === 12) snare = true;
+        break;
+        // ========== NUOVI GROOVE DA AGGIUNGERE ==========
+
+case "power_gallop":
+    // Gallop potenziato con accenti aperti (es. Blind Guardian, Gamma Ray)
+    if (s % 4 !== 1) { 
+        playGuitar = true; 
+        inst = (s % 8 === 0 || s % 8 === 4) ? guitarOpen : guitarPalm;
+        kick = (s % 4 === 0); 
+    }
+    if (s === 4 || s === 12) snare = true;
+    if (s === 8) kick = true;
+    break;
+
+case "symphonic_blast":
+    // Stile symphonic metal (es. Epica, Nightwish - veloce)
+    kick = true;
+    snare = (s % 2 !== 0);
+    playGuitar = (s % 4 === 0);
+    if (playGuitar) { inst = guitarOpen; sustain = true; }
+    break;
+
+case "groove_metal":
+    // Groove metal pesante (es. Pantera, Lamb of God)
+    playGuitar = ([0, 3, 5, 8, 10, 13].includes(s));
+    kick = ([0, 3, 5, 8, 10, 13].includes(s));
+    snare = (s === 6 || s === 14);
+    if (playGuitar) inst = guitarPalm;
+    break;
+
+case "black_tremolo":
+    // Black metal: tremolo picking costante
+    playGuitar = true;
+    inst = guitarPalm;
+    kick = (s % 4 === 0 || s % 4 === 2);
+    snare = (s === 4 || s === 12);
+    break;
+
+case "stoner_doom":
+    // Stoner/Doom: lento e pesante (es. Sleep, Electric Wizard)
+    if (s === 0) { playGuitar = true; inst = guitarOpen; sustain = true; kick = true; }
+    if (s === 8) { playGuitar = true; inst = guitarOpen; sustain = true; kick = true; snare = true; }
+    if (s === 4 || s === 12) snare = true;
+    break;
+
+case "prog_odd":
+    // Progressive metal in 7/8 o 5/4 (pattern asimmetrico)
+    const oddPattern = [0, 2, 4, 6, 9, 11, 13];
+    playGuitar = oddPattern.includes(s);
+    kick = oddPattern.includes(s);
+    snare = (s === 6 || s === 13);
+    if (playGuitar) inst = guitarPalm;
+    break;
+
+case "folk_hop":
+    // Folk metal con influssi dance (es. Korpiklaani, Finntroll)
+    playGuitar = ([0, 4, 8, 12].includes(s));
+    kick = ([0, 3, 6, 8, 11, 14].includes(s));
+    snare = (s === 4 || s === 12);
+    if (playGuitar) inst = guitarOpen;
+    break;
+
+case "metalcore_breakdown":
+    // Breakdown metalcore lento e pesante
+    if (s === 0 || s === 4 || s === 8 || s === 12) {
+        playGuitar = true;
+        inst = guitarOpen;
+        sustain = true;
+        kick = true;
+    }
+    if (s === 6 || s === 14) snare = true;
+    break;
+
+case "speed_metal":
+    // Speed metal puro (es. early Helloween, Running Wild)
+    kick = true;
+    playGuitar = true;
+    inst = guitarPalm;
+    snare = (s === 4 || s === 12);
+    if (s % 4 === 0) inst = guitarOpen;
+    break;
+
+case "epic_buildup":
+    // Crescendo epico per bridge o pre-chorus (es. Manowar, Rhapsody)
+    const buildupIntensity = Math.floor(s / 4);
+    if (s === 0) { playGuitar = true; inst = guitarOpen; sustain = true; kick = true; }
+    if (buildupIntensity > 1 && s % 4 === 0) { 
+        playGuitar = true; 
+        inst = guitarOpen; 
+        sustain = true; 
+        kick = true; 
+    }
+    if (buildupIntensity > 2 && s === 14) snare = true;
+    if (buildupIntensity > 3) kick = true;
+    break;
+
+case "death_roll":
+    // Stile death metal con doppio pedale continuo (es. Death, Carcass)
+    kick = (s % 2 === 0);
+    snare = (s % 4 === 1 || s % 4 === 3);
+    playGuitar = (s % 2 === 0);
+    inst = guitarPalm;
+    if (s % 8 === 0) inst = guitarOpen;
+    break;
+
+case "power_ballad":
+    // Power ballad: lenta, emotiva, accordi aperti
+    if (s === 0 || s === 8) {
+        playGuitar = true;
+        inst = guitarOpen;
+        sustain = true;
+        kick = true;
+    }
+    if (s === 4 || s === 12) snare = true;
+    break;
+
+case "thrash_skank":
+    // Skank beat thrash metal (es. Anthrax, Slayer)
+    playGuitar = true;
+    inst = guitarPalm;
+    kick = (s % 4 === 0 || s % 4 === 2);
+    snare = (s % 4 === 1 || s % 4 === 3);
+    if (s % 8 === 0) inst = guitarOpen;
+    break;
+
+case "djent":
+    // Djent moderno: sincopi pesanti, palm mute (es. Meshuggah, Periphery)
+    playGuitar = ([0, 3, 5, 8, 11, 13].includes(s));
+    kick = ([0, 3, 5, 8, 11, 13].includes(s));
+    snare = (s === 6 || s === 14);
+    inst = guitarPalm;
+    if (s === 0 || s === 8) inst = guitarOpen;
+    break;
+
+    // ========== DEFAULT ==========
+    default:
+        if (s % 2 === 0) { playGuitar = true; inst = guitarPalm; kick = (s % 4 === 0); }
+        if (s === 4 || s === 12) snare = true;
+        break;
+}
 
             const isFillZone = isLastMeasure && s >= 12;
             if (isFillZone && complexity > 0.4) {
