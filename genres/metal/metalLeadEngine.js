@@ -1,9 +1,9 @@
-// metalLeadEngine.js — ver. 083 FINAL (unificato: ornamenti + assolo diviso)
+// metalLeadEngine.js — ver. 085 FINAL (Solo con librerie dedicate, stesso sistema del non-solo)
 
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote, leadBus } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 083 loaded");
+console.log("metalLeadEngine.js ver. 082.2 loaded");
 
 // ============================================================
 // UTILITY
@@ -56,7 +56,8 @@ const LeadLegacy = {
         const isPreChorus = name.includes("pre");
         const isIntro = name.includes("intro") || name.includes("outro");
         const isSolo = name.includes("solo"); 
-        const isBridge = name.includes("bridge");
+        const isBridge =
+name.includes("bridge");
         const stepTime = measureDur / 16;
 
         const {
@@ -67,7 +68,7 @@ const LeadLegacy = {
         } = params?.imageParams || {};
 
         // ============================================================
-        // LIBRARY
+        // LIBRARY (identica alla 76.1 - senza bridge separato)
         // ============================================================
         const library = {
             intro: [
@@ -99,35 +100,36 @@ const LeadLegacy = {
                 [0, 3, 8, 11],
                 [0, 6, 7, 8, 14]
             ],
-            solo: [
-                [0, 4, 8, 12, 16, 12, 8, 4],
-                [0, 3, 6, 9, 12, 15, 12, 9, 6, 3],
-                [0, 2, 4, 6, 8, 10, 12, 14, 16, 14, 12, 10, 8, 6, 4, 2],
-                [0, 5, 10, 15, 10, 5],
-                [0, 4, 8, 12, 16, 20, 16, 12, 8, 4],
-                [0, 6, 12, 18, 12, 6],
-                [0, 3, 7, 10, 14, 17, 14, 10, 7, 3],
-                [0, 4, 7, 11, 14, 17, 14, 11, 7, 4],
-                [0, 5, 8, 12, 16, 19, 16, 12, 8, 5]
-            ],
-            solo_fast: [
-                [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 18, 16, 14, 12, 10, 8, 6, 4, 2],
-                [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1],
-                [0, 3, 5, 7, 8, 10, 12, 14, 15, 17, 15, 14, 12, 10, 8, 7, 5, 3],
-                [0, 2, 5, 7, 9, 12, 14, 16, 18, 16, 14, 12, 9, 7, 5, 2]
-            ],
-            solo_slow: [
-                [0, 8, 12, 8, 0],
-                [0, 5, 10, 15, 10, 5],
-                [0, 4, 8, 12, 8, 4, 0],
-                [0, 7, 12, 17, 12, 7],
-                [0, 12, 19, 12],
-                [0, 8, 15, 22, 15, 8]
-            ]
+            // LIBRERIE PER L'ASSOLO (stesso sistema!)
+    solo: [
+        [0, 4, 8, 12, 16, 12, 8, 4],
+        [0, 3, 6, 9, 12, 15, 12, 9, 6, 3],
+        [0, 2, 4, 6, 8, 10, 12, 14, 16, 14, 12, 10, 8, 6, 4, 2],
+        [0, 5, 10, 15, 10, 5],
+        [0, 4, 8, 12, 16, 20, 16, 12, 8, 4],
+        [0, 6, 12, 18, 12, 6],
+        [0, 3, 7, 10, 14, 17, 14, 10, 7, 3],
+        [0, 4, 7, 11, 14, 17, 14, 11, 7, 4],
+        [0, 5, 8, 12, 16, 19, 16, 12, 8, 5]
+    ],
+    solo_fast: [
+        [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 18, 16, 14, 12, 10, 8, 6, 4, 2],
+        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1],
+        [0, 3, 5, 7, 8, 10, 12, 14, 15, 17, 15, 14, 12, 10, 8, 7, 5, 3],
+        [0, 2, 5, 7, 9, 12, 14, 16, 18, 16, 14, 12, 9, 7, 5, 2]
+    ],
+    solo_slow: [
+        [0, 8, 12, 8, 0],
+        [0, 5, 10, 15, 10, 5],
+        [0, 4, 8, 12, 8, 4, 0],
+        [0, 7, 12, 17, 12, 7],
+        [0, 12, 19, 12],
+        [0, 8, 15, 22, 15, 8]
+    ]
         };
 
         // ============================================================
-        // MELODIC LIBRARY
+        // MELODIC LIBRARY (identica alla 76.1)
         // ============================================================
         const melodicLibrary = {
             epic: [
@@ -158,61 +160,62 @@ const LeadLegacy = {
                 [0, 2, 3, 4, 5, 6, 7, 7], [0, 0, 2, 2, 4, 4, 6, 6],
                 [0, 4, 0, 5, 0, 6, 0, 7], [4, 5, 4, 5, 6, 7, 7, 7]
             ],
-            solo_epic: [
-                [0, 4, 7, 12, 14, 12, 7, 4, 0],
-                [0, 5, 7, 12, 15, 12, 7, 5],
-                [0, 7, 12, 14, 16, 14, 12, 7, 0],
-                [0, 4, 8, 12, 16, 12, 8, 4],
-                [0, 5, 8, 12, 17, 12, 8, 5],
-                [0, 7, 12, 19, 12, 7],
-                [0, 4, 7, 12, 19, 12, 7, 4],
-                [0, 5, 9, 12, 16, 12, 9, 5]
-            ],
-            solo_shred: [
-                [0, 2, 4, 5, 7, 9, 11, 12, 11, 9, 7, 5, 4, 2, 0],
-                [0, 2, 3, 5, 7, 8, 10, 12, 10, 8, 7, 5, 3, 2],
-                [0, 1, 3, 5, 7, 8, 10, 12, 14, 12, 10, 8, 7, 5, 3, 1],
-                [0, 2, 4, 6, 8, 10, 12, 14, 16, 14, 12, 10, 8, 6, 4, 2],
-                [0, 3, 5, 7, 9, 10, 12, 14, 15, 14, 12, 10, 9, 7, 5, 3],
-                [0, 2, 5, 7, 9, 12, 14, 16, 14, 12, 9, 7, 5, 2]
-            ],
-            solo_romantic: [
-                [0, 5, 3, 2, 3, 5, 7, 5, 3, 2, 0],
-                [0, 3, 5, 7, 9, 7, 5, 3, 2, 0],
-                [0, 4, 7, 5, 4, 2, 4, 5, 7, 9, 7, 5],
-                [0, 5, 7, 10, 12, 10, 7, 5],
-                [0, 3, 7, 10, 12, 10, 7, 3],
-                [0, 4, 7, 12, 14, 12, 7, 5, 4, 2]
-            ],
-            solo_evil: [
-                [0, 1, 3, 4, 6, 7, 8, 10, 12, 10, 8, 7, 6, 4, 3, 1],
-                [0, 1, 4, 3, 1, 0, 1, 3, 4, 6, 4, 3, 1],
-                [0, 3, 6, 8, 10, 12, 10, 8, 6, 3],
-                [0, 1, 4, 6, 8, 10, 12, 10, 8, 6, 4, 1],
-                [0, 7, 6, 5, 4, 3, 2, 1, 0, 1, 2, 3, 4, 5, 6, 7]
-            ],
-            solo_tapping: [
-                [0, 12, 0, 12, 7, 12, 7, 12],
-                [0, 12, 5, 12, 5, 12, 0, 12],
-                [0, 12, 8, 12, 8, 12, 5, 12, 5, 12],
-                [0, 12, 7, 14, 7, 12, 0],
-                [0, 12, 9, 14, 9, 12, 0],
-                [0, 12, 10, 15, 10, 12, 7, 12]
-            ],
-            solo_sweep: [
-                [0, 4, 7, 12, 7, 4, 0],
-                [0, 3, 7, 12, 7, 3, 0],
-                [0, 4, 8, 12, 8, 4, 0],
-                [0, 5, 8, 12, 8, 5, 0],
-                [0, 4, 7, 12, 16, 12, 7, 4],
-                [0, 3, 7, 12, 16, 12, 7, 3]
-            ],
-            solo_fast: [
-                [0, 2, 4, 5, 7, 9, 10, 12, 10, 9, 7, 5, 4, 2, 0],
-                [0, 1, 3, 4, 5, 7, 8, 10, 12, 10, 8, 7, 5, 4, 3, 1],
-                [0, 2, 3, 5, 7, 8, 10, 12, 14, 12, 10, 8, 7, 5, 3, 2],
-                [0, 2, 4, 5, 7, 8, 10, 12, 13, 15, 13, 12, 10, 8, 7, 5, 4, 2]
-            ]
+            // LIBRERIE PER L'ASSOLO (stesso sistema!)
+    solo_epic: [
+        [0, 4, 7, 12, 14, 12, 7, 4, 0],
+        [0, 5, 7, 12, 15, 12, 7, 5],
+        [0, 7, 12, 14, 16, 14, 12, 7, 0],
+        [0, 4, 8, 12, 16, 12, 8, 4],
+        [0, 5, 8, 12, 17, 12, 8, 5],
+        [0, 7, 12, 19, 12, 7],
+        [0, 4, 7, 12, 19, 12, 7, 4],
+        [0, 5, 9, 12, 16, 12, 9, 5]
+    ],
+    solo_shred: [
+        [0, 2, 4, 5, 7, 9, 11, 12, 11, 9, 7, 5, 4, 2, 0],
+        [0, 2, 3, 5, 7, 8, 10, 12, 10, 8, 7, 5, 3, 2],
+        [0, 1, 3, 5, 7, 8, 10, 12, 14, 12, 10, 8, 7, 5, 3, 1],
+        [0, 2, 4, 6, 8, 10, 12, 14, 16, 14, 12, 10, 8, 6, 4, 2],
+        [0, 3, 5, 7, 9, 10, 12, 14, 15, 14, 12, 10, 9, 7, 5, 3],
+        [0, 2, 5, 7, 9, 12, 14, 16, 14, 12, 9, 7, 5, 2]
+    ],
+    solo_romantic: [
+        [0, 5, 3, 2, 3, 5, 7, 5, 3, 2, 0],
+        [0, 3, 5, 7, 9, 7, 5, 3, 2, 0],
+        [0, 4, 7, 5, 4, 2, 4, 5, 7, 9, 7, 5],
+        [0, 5, 7, 10, 12, 10, 7, 5],
+        [0, 3, 7, 10, 12, 10, 7, 3],
+        [0, 4, 7, 12, 14, 12, 7, 5, 4, 2]
+    ],
+    solo_evil: [
+        [0, 1, 3, 4, 6, 7, 8, 10, 12, 10, 8, 7, 6, 4, 3, 1],
+        [0, 1, 4, 3, 1, 0, 1, 3, 4, 6, 4, 3, 1],
+        [0, 3, 6, 8, 10, 12, 10, 8, 6, 3],
+        [0, 1, 4, 6, 8, 10, 12, 10, 8, 6, 4, 1],
+        [0, 7, 6, 5, 4, 3, 2, 1, 0, 1, 2, 3, 4, 5, 6, 7]
+    ],
+    solo_tapping: [
+        [0, 12, 0, 12, 7, 12, 7, 12],
+        [0, 12, 5, 12, 5, 12, 0, 12],
+        [0, 12, 8, 12, 8, 12, 5, 12, 5, 12],
+        [0, 12, 7, 14, 7, 12, 0],
+        [0, 12, 9, 14, 9, 12, 0],
+        [0, 12, 10, 15, 10, 12, 7, 12]
+    ],
+    solo_sweep: [
+        [0, 4, 7, 12, 7, 4, 0],
+        [0, 3, 7, 12, 7, 3, 0],
+        [0, 4, 8, 12, 8, 4, 0],
+        [0, 5, 8, 12, 8, 5, 0],
+        [0, 4, 7, 12, 16, 12, 7, 4],
+        [0, 3, 7, 12, 16, 12, 7, 3]
+    ],
+    solo_fast: [
+        [0, 2, 4, 5, 7, 9, 10, 12, 10, 9, 7, 5, 4, 2, 0],
+        [0, 1, 3, 4, 5, 7, 8, 10, 12, 10, 8, 7, 5, 4, 3, 1],
+        [0, 2, 3, 5, 7, 8, 10, 12, 14, 12, 10, 8, 7, 5, 3, 2],
+        [0, 2, 4, 5, 7, 8, 10, 12, 13, 15, 13, 12, 10, 8, 7, 5, 4, 2]
+    ]
         };
 
         const getPattern = (type) => {
@@ -223,9 +226,10 @@ const LeadLegacy = {
         };
 
         // ============================================================
-        // getMelodyFamily
+        // getMelodyFamily PIÙ SEMPLICE (come nella 76.1)
         // ============================================================
         const getMelodyFamily = () => {
+        // PER L'ASSOLO E BRIDGE
             if (isSolo || isBridge) {
                 if (energy > 0.8 && complexity > 0.7) return { name: "SOLO SHRED ⚡", data: melodicLibrary.solo_shred };
                 if (energy > 0.7 && brightness > 0.6) return { name: "SOLO EPIC 🏰", data: melodicLibrary.solo_epic };
@@ -247,7 +251,7 @@ const LeadLegacy = {
             return { name: "EPIC 🏰", data: melodicLibrary.epic };
         };
 
-        // Seleziona il tipo di sezione per library
+                // Seleziona il tipo di sezione per library
         let sectionType;
         if (isSolo) {
             if (energy > 0.7) sectionType = "solo_fast";
@@ -262,111 +266,76 @@ const LeadLegacy = {
         } else {
             sectionType = "verse";
         }
-
+        
+        //const currentPattern = getPattern(sectionType);
+        //const mood = getMelodyFamily();
+        //const currentMelody = mood.data[Math.floor(energy * mood.data.length) % mood.data.length];
+        
         const getStrictScale = (root) => {
             const allNotes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
             let cleanRoot = root.split('/')[0].replace(/[0-9]/g, '').trim();
-            let isMinorLocal = root.includes('m') || (cleanRoot === cleanRoot.toLowerCase() && cleanRoot.length === 1);
+            let isMinor = root.includes('m') || (cleanRoot === cleanRoot.toLowerCase() && cleanRoot.length === 1);
             cleanRoot = cleanRoot.toUpperCase();
             const altNames = { "DB": "C#", "EB": "D#", "GB": "F#", "AB": "G#", "BB": "A#" };
             cleanRoot = altNames[cleanRoot] || cleanRoot;
             let rootIdx = allNotes.indexOf(cleanRoot);
             if (rootIdx === -1) rootIdx = 9;
-            const intervals = isMinorLocal ? [0, 2, 3, 5, 7, 8, 10] : [0, 2, 4, 5, 7, 9, 11];
+            const intervals = isMinor ? [0, 2, 3, 5, 7, 8, 10] : [0, 2, 4, 5, 7, 9, 11];
             return intervals.map(interval => allNotes[(rootIdx + interval) % 12]);
         };
 
-        // ============================================================
-        // ORNAMENTI (dalla 82.4)
-        // ============================================================
-        function applyOrnaments(noteName, idx, currentScale) {
-            let finalNote = noteName;
-            let bend = false;
-            let repeat = false;
-
-            // Passing tone cromatico (10%)
-            if (Math.random() < 0.10) {
-                const up = Math.random() < 0.5;
-                const newIdx = idx + (up ? 1 : -1);
-                if (newIdx >= 0 && newIdx < currentScale.length) {
-                    finalNote = normalizeNote(currentScale[newIdx], "guitarLead") + noteName.slice(-1);
-                }
-            }
-
-            // Slide (8%)
-            if (Math.random() < 0.08) {
-                const up = Math.random() < 0.5;
-                const newIdx = idx + (up ? 1 : -1);
-                if (newIdx >= 0 && newIdx < currentScale.length) {
-                    finalNote = normalizeNote(currentScale[newIdx], "guitarLead") + noteName.slice(-1);
-                }
-            }
-
-            // Mini-bend (6%)
-            if (Math.random() < 0.06) {
-                bend = true;
-            }
-
-            // Ripetizione veloce (5%)
-            if (Math.random() < 0.05) {
-                repeat = true;
-            }
-
-            return { note: finalNote, bend, repeat };
-        }
-
-        // ============================================================
-        // LOOP PRINCIPALE SEZIONE
-        // ============================================================
         for (let m = 0; m < section.measures; m++) {
-            const measureStartTime = section.startTime + (m * measureDur);
-            const half = Math.floor(section.measures / 2);
+    const measureStartTime = section.startTime + (m * measureDur);
 
-            let currentPattern;
-            let currentMelody;
-            let moodName;
+    // metà sezione
+    const half = Math.floor(section.measures / 2);
 
-            if (isSolo) {
-                if (m < half) {
-                    // PRIMA METÀ — più melodica
-                    currentPattern = getPattern("solo_slow");
-                    const moodA = melodicLibrary.solo_romantic;
-                    currentMelody = moodA[Math.floor(energy * moodA.length) % moodA.length];
-                    moodName = "SOLO PART A — Romantic 💕";
-                } else {
-                    // SECONDA METÀ — più tecnica
-                    currentPattern = getPattern("solo_fast");
-                    const moodB = melodicLibrary.solo_shred;
-                    currentMelody = moodB[Math.floor(energy * moodB.length) % moodB.length];
-                    moodName = "SOLO PART B — Shred ⚡";
-                }
-            } else {
-                currentPattern = getPattern(sectionType);
-                const mood = getMelodyFamily();
-                currentMelody = mood.data[Math.floor(energy * mood.data.length) % mood.data.length];
-                moodName = mood.name;
-            }
+    let currentPattern;
+    let currentMelody;
+    let moodName;
 
-            console.log(
-                `%c 🎸 LEAD DNA EXECUTION (measure ${m})\n` +
-                `%c > Mood: ${moodName}\n` +
-                `%c > Rhythm Mask: [${currentPattern.join(" - ")}]\n` +
-                `%c > Melody Steps: [${currentMelody.join(", ")}]`,
-                "color:#191970;font-weight:bold;font-size:12px;",
-                "color:#191970;",
-                "color:#191970;",
-                "color:#191970;"
-            );
+    if (isSolo) {
+        if (m < half) {
+            // PRIMA METÀ — più melodica
+            currentPattern = getPattern("solo_slow");
+            const moodA = melodicLibrary.solo_romantic;
+            currentMelody = moodA[Math.floor(energy * moodA.length) % moodA.length];
+            moodName = "SOLO PART A — Romantic 💕";
+        } else {
+            // SECONDA METÀ — più tecnica
+            currentPattern = getPattern("solo_fast");
+            const moodB = melodicLibrary.solo_shred;
+            currentMelody = moodB[Math.floor(energy * moodB.length) % moodB.length];
+            moodName = "SOLO PART B — Shred ⚡";
+        }
+    } else {
+        // comportamento normale
+        currentPattern = getPattern(sectionType);
+        const mood = getMelodyFamily();
+        currentMelody = mood.data[Math.floor(energy * mood.data.length) % mood.data.length];
+        moodName = mood.name;
+    }
 
-            let currentScale;
-            if (isSolo || isBridge) {
-                const fixedScaleRoot = rootNote + (isMinor ? "m" : "");
-                currentScale = getStrictScale(fixedScaleRoot);
-                console.log(`🎸 Scala fissa: ${fixedScaleRoot} → [${currentScale.join(", ")}]`);
-            } else {
-                currentScale = getStrictScale(progression[m % progression.length] || "A");
-            }
-
+    console.log(
+        `%c 🎸 LEAD DNA EXECUTION (measure ${m})\n` +
+        `%c > Mood: ${moodName}\n` +
+        `%c > Rhythm Mask: [${currentPattern.join(" - ")}]\n` +
+        `%c > Melody Steps: [${currentMelody.join(", ")}]`,
+        "color:#191970;font-weight:bold;font-size:12px;",
+        "color:#191970;",
+        "color:#191970;",
+        "color:#191970;"
+    );
+    
+    let currentScale;
+    if (isSolo || isBridge) {
+        // Scala fissa basata su tonalCenter e scaleType
+        const fixedScaleRoot = rootNote + (isMinor ? "m" : "");
+        currentScale = getStrictScale(fixedScaleRoot);
+        console.log(`🎸 ASSOLO scala fissa: ${fixedScaleRoot} → [${currentScale.join(", ")}]`);
+    } else {
+        currentScale = getStrictScale(progression[m % progression.length] || "A");
+    }
             const isTransitionMeasure = (m === section.measures - 1);
 
             currentPattern.forEach((s, i) => {
@@ -376,41 +345,12 @@ const LeadLegacy = {
                 const nextStep = (i < currentPattern.length - 1) ? currentPattern[i + 1] : 16;
                 const noteIdx = currentMelody[i % currentMelody.length];
                 const octave = isChorus ? 5 : 4;
-
-                const scaleIndex = ((noteIdx % currentScale.length) + currentScale.length) % currentScale.length;
-                let baseNote = normalizeNote(currentScale[scaleIndex], "guitarLead") + octave;
-
-                // Applica ornamenti
-                const ornament = applyOrnaments(baseNote, scaleIndex, currentScale);
-                const finalNote = ornament.note;
+                const noteName = normalizeNote(currentScale[noteIdx % 7], "guitarLead") + octave;
 
                 Tone.Transport.schedule(time => {
-                    // Mini-bend
-                    if (ornament.bend && guitarLead.playbackRate) {
-                        guitarLead.playbackRate.setValueAtTime(1.02, time);
-                        guitarLead.playbackRate.linearRampToValueAtTime(1.0, time + 0.12);
-                    }
-
-                    // Nota principale
-                    guitarLead.triggerAttackRelease(
-                        finalNote,
-                        (nextStep - s) * stepTime,
-                        time
-                    );
-
-                    // Ripetizione veloce
-                    if (ornament.repeat) {
-                        Tone.Transport.schedule(t2 => {
-                            guitarLead.triggerAttackRelease(
-                                finalNote,
-                                (nextStep - s) * stepTime * 0.5,
-                                t2
-                            );
-                        }, time + 0.06);
-                    }
-
+                    guitarLead.triggerAttackRelease(noteName, (nextStep - s) * stepTime, time);
                     Tone.Draw.schedule(() => {
-                        if (score) score.addNote("Lead", finalNote, section.name);
+                        if (score) score.addNote("Lead", noteName, section.name);
                     }, time);
                 }, absoluteTime);
             });
@@ -418,7 +358,7 @@ const LeadLegacy = {
     }
 };
 
-// ============================================================
+//================================================
 // SCHEDULE LEAD — PUNTO DI ENTRATA PRINCIPALE
 // ============================================================
 
@@ -426,9 +366,12 @@ export function scheduleLead(section, progression, instruments, params, rand, me
     const { guitarLead } = instruments || {};
     if (!guitarLead) return;
 
+    // Estrai tonalCenter e scaleType
     const tonalCenter = params?.tonalCenter || params?.imageParams?.tonalCenter || "A4";
     const scaleType = params?.scaleType || params?.imageParams?.scaleType || "naturalMinor";
-    const rootNote = tonalCenter.replace(/[0-9]/g, "");
+    const rootNote = tonalCenter.replace(/[0-9]/g, "");  // "A4" → "A"
+    
+    // Determina se è minore (naturalMinor o harmonicMinor)
     const isMinor = scaleType.includes("minor");
     
     console.log("🎸 tonalCenter:", tonalCenter, "→ root:", rootNote);
