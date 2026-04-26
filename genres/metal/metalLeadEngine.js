@@ -185,24 +185,6 @@ solo_bluesy: [
                 [0, 4, 0, 5, 0, 6, 0, 7], [4, 5, 4, 5, 6, 7, 7, 7]
             ],
             // LIBRERIE PER L'ASSOLO (stesso sistema!)
-    solo_epic: [
-        [0, 4, 7, 12, 14, 12, 7, 4, 0],
-        [0, 5, 7, 12, 15, 12, 7, 5],
-        [0, 7, 12, 14, 16, 14, 12, 7, 0],
-        [0, 4, 8, 12, 16, 12, 8, 4],
-        [0, 5, 8, 12, 17, 12, 8, 5],
-        [0, 7, 12, 19, 12, 7],
-        [0, 4, 7, 12, 19, 12, 7, 4],
-        [0, 5, 9, 12, 16, 12, 9, 5]
-    ],
-    solo_shred: [
-        [0, 2, 4, 5, 7, 9, 11, 12, 11, 9, 7, 5, 4, 2, 0],
-        [0, 2, 3, 5, 7, 8, 10, 12, 10, 8, 7, 5, 3, 2],
-        [0, 1, 3, 5, 7, 8, 10, 12, 14, 12, 10, 8, 7, 5, 3, 1],
-        [0, 2, 4, 6, 8, 10, 12, 14, 16, 14, 12, 10, 8, 6, 4, 2],
-        [0, 3, 5, 7, 9, 10, 12, 14, 15, 14, 12, 10, 9, 7, 5, 3],
-        [0, 2, 5, 7, 9, 12, 14, 16, 14, 12, 9, 7, 5, 2]
-    ],
     solo_romantic: [
         [0, 5, 3, 2, 3, 5, 7, 5, 3, 2, 0],
         [0, 3, 5, 7, 9, 7, 5, 3, 2, 0],
@@ -240,28 +222,64 @@ solo_bluesy: [
         [0, 2, 3, 5, 7, 8, 10, 12, 14, 12, 10, 8, 7, 5, 3, 2],
         [0, 2, 4, 5, 7, 8, 10, 12, 13, 15, 13, 12, 10, 8, 7, 5, 4, 2]
     ],
-    solo_power: [
-    [0, 4, 7, 12, 7, 4, 0],
-    [0, 5, 7, 12, 14, 12, 7, 5],
-    [0, 7, 12, 14, 16, 14, 12, 7, 0]
+    // LIBRERIE per MAGGIORE e NATURALE MINORE
+solo_epic: [
+    [0, 3, 7, 10, 7, 3, 0],
+    [0, 2, 5, 7, 10, 7, 5, 2, 0],
+    [0, 3, 5, 7, 8, 10, 7, 5, 3, 0],
+    [0, 5, 7, 10, 12, 10, 7, 5, 0]
 ],
-
+solo_shred: [
+    [0, 2, 3, 5, 7, 8, 10, 12, 10, 8, 7, 5, 3, 2, 0],
+    [0, 2, 3, 5, 7, 9, 10, 12, 10, 9, 7, 5, 3, 2, 0],
+    [0, 1, 3, 5, 7, 8, 10, 12, 10, 8, 7, 5, 3, 1, 0]
+],
+solo_power: [
+    [0, 3, 7, 12, 7, 3, 0],
+    [0, 5, 7, 12, 14, 12, 7, 5, 0],
+    [0, 7, 12, 14, 12, 7, 0]
+],
 solo_neoclassical: [
-    [0, 3, 7, 10, 14, 17, 14, 10, 7, 3],
-    [0, 4, 7, 11, 14, 18, 14, 11, 7, 4],
-    [0, 2, 5, 9, 12, 16, 19, 16, 12, 9, 5, 2]
+    [0, 3, 7, 10, 14, 10, 7, 3, 0],
+    [0, 2, 5, 9, 12, 9, 5, 2, 0],
+    [0, 3, 5, 8, 10, 12, 10, 8, 5, 3, 0]
 ],
-
 solo_modern: [
-    [0, 5, 9, 12, 16, 19, 23, 19, 16, 12, 9, 5],
-    [0, 7, 14, 19, 14, 7],
-    [0, 3, 8, 10, 15, 17, 20, 17, 15, 10, 8, 3]
+    [0, 5, 9, 12, 9, 5, 0],
+    [0, 7, 10, 12, 10, 7, 0],
+    [0, 4, 8, 12, 15, 12, 8, 4, 0]
 ],
-
 solo_bluesy: [
-    [0, 3, 5, 6, 7, 10, 12, 10, 7, 6, 5, 3],
-    [0, 4, 5, 7, 10, 12, 10, 7, 5, 4],
-    [0, 3, 5, 6, 7, 6, 5, 3]
+    [0, 3, 5, 6, 7, 10, 12, 10, 7, 6, 5, 3, 0],
+    [0, 3, 5, 7, 10, 12, 10, 7, 5, 3, 0],
+    [0, 4, 5, 7, 10, 12, 10, 7, 5, 4, 0]
+],
+// LIBRERIE per ARMONICA MINORE (con G#!)
+solo_epic_harmonic: [
+    [0, 3, 7, 11, 7, 3, 0],           // G# invece di G
+    [0, 2, 5, 7, 11, 7, 5, 2, 0],     // G# invece di G
+    [0, 3, 5, 7, 11, 7, 5, 3, 0],     // G# invece di G
+    [0, 5, 7, 11, 14, 11, 7, 5, 0]    // G# invece di G
+],
+solo_shred_harmonic: [
+    [0, 2, 3, 5, 7, 8, 11, 12, 11, 8, 7, 5, 3, 2, 0],
+    [0, 2, 3, 5, 7, 11, 12, 11, 7, 5, 3, 2, 0],
+    [0, 1, 3, 5, 7, 8, 11, 12, 11, 8, 7, 5, 3, 1, 0]
+],
+solo_power_harmonic: [
+    [0, 3, 7, 11, 7, 3, 0],
+    [0, 5, 7, 11, 14, 11, 7, 5, 0],
+    [0, 7, 11, 14, 11, 7, 0]
+],
+solo_neoclassical_harmonic: [
+    [0, 3, 7, 11, 14, 11, 7, 3, 0],
+    [0, 2, 5, 9, 12, 9, 5, 2, 0],
+    [0, 3, 5, 8, 11, 12, 11, 8, 5, 3, 0]
+],
+solo_tapping_harmonic: [
+    [0, 11, 0, 11, 7, 11, 7, 11],
+    [0, 11, 5, 11, 5, 11, 0, 11],
+    [0, 11, 8, 11, 8, 11, 5, 11]
 ]
         };
 
@@ -278,6 +296,19 @@ solo_bluesy: [
         const getMelodyFamily = () => {
         // PER L'ASSOLO E BRIDGE
             if (isSolo || isBridge) {
+            
+        // Controlla se è scala armonica minore
+        const isHarmonicMinor = scaleType === "harmonicMinor";
+        
+        if (isHarmonicMinor) {
+            // Usa librerie armoniche
+            if (energy > 0.8 && complexity > 0.7) return { name: "SOLO SHRED HARMONIC 🎸", data: melodicLibrary.solo_shred_harmonic };
+            if (energy > 0.7 && brightness > 0.6) return { name: "SOLO EPIC HARMONIC 🏰", data: melodicLibrary.solo_epic_harmonic };
+            if (complexity > 0.7) return { name: "SOLO TAPPING HARMONIC 🎸", data: melodicLibrary.solo_tapping_harmonic };
+            if (brightness > 0.7 && energy > 0.6) return { name: "SOLO POWER HARMONIC⚔️", data: melodicLibrary.solo_power_harmonic };
+            if (complexity > 0.8) return { name: "SOLO NEOCLASSICAL HARMONIC🎻", data: melodicLibrary.solo_neoclassical_harmonic };
+            // ... ecc.
+        } else {
                 if (energy > 0.8 && complexity > 0.7) return { name: "SOLO SHRED ⚡", data: melodicLibrary.solo_shred };
                 if (energy > 0.7 && brightness > 0.6) return { name: "SOLO EPIC 🏰", data: melodicLibrary.solo_epic };
                 if (complexity > 0.7) return { name: "SOLO TAPPING 🎸", data: melodicLibrary.solo_tapping };

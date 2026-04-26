@@ -1,4 +1,4 @@
-// metalEngine.js — ver. 013 (Score Integrated)
+// metalEngine.js — ver. 015 (con Bridge support)
 import * as Tone from "https://esm.sh/tone";
 import { buildPowerMetalParams } from "./powerMetalParams.js";
 import { buildSongStructure } from "../../utils/structureUtils.js";
@@ -9,16 +9,12 @@ import { scheduleRhythm } from "./metalRhythmEngine.js";
 import { scheduleLead } from "./metalLeadEngine.js"; 
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 014 loaded");
+console.log("metalEngine.js ver. 015 loaded");
 
 export async function waitMetalInstruments() {
     await waitForInstruments(4);
 }
 
-/**
- * @param {Object} params - Parametri estratti dall'immagine
- * @param {Object} score - Istanza della classe score (scorrUI.js)
- */
 export function createMetalEngine(params, score) {
     const rand = createSeededRandom(params.dna);
     const metalParams = buildPowerMetalParams(rand);
@@ -27,9 +23,9 @@ export function createMetalEngine(params, score) {
     Tone.Transport.cancel(); 
     Tone.Transport.bpm.value = metalParams.bpm;
 
-    // 1. 🧬 STRUTTURA INTELLIGENTE (DNA DRIVEN)
     const hasPreChorus = params.imageParams.energy > 0.3; 
     const preChorusWeight = hasPreChorus ? 4 : 0;
+    const hasBridge = params.imageParams.complexity > 0.4; // bridge se complessità > 0.4
 
     const rawStructure = [
         { name: "intro",     weight: 4 + (rand() * 4) }, 
@@ -39,7 +35,7 @@ export function createMetalEngine(params, score) {
         { name: "verse",     weight: 4 },
         { name: "chorus",    weight: 4 },
         { name: "solo",      weight: params.imageParams.complexity > 0.6 ? 16 : 0 },
-        { name: "bridge", weight: preChorusWeight },
+        { name: "bridge",    weight: hasBridge ? preChorusWeight : 0 },  // bridge solo se attivo
         { name: "chorus",    weight: 8 },
         { name: "outro",     weight: 4 }
     ];
@@ -59,6 +55,31 @@ export function createMetalEngine(params, score) {
 
     const structure = buildSongStructure(finalStructure, metalParams.bpm);
     const progressions = generateSongProgressions(structure, params.imageParams, metalParams.tonalCenter, rand);
+
+    // ============================================================
+    // FORZA PROGRESSIONE PER BRIDGE (usa la stessa del prechorus)
+    // ============================================================
+    const preChorusSection = structure.sections.find(s => s.name === "prechorus");
+    const bridgeSection = structure.sections.find(s => s.name === "bridge");
+    
+    if (bridgeSection && preChorusSection) {
+        // Usa la progressione del prechorus per il bridge
+        const preChorusProg = progressions["prechorus"];
+        if (preChorusProg) {
+            progressions["bridge"] = {
+                root: preChorusProg.root,
+                progression: preChorusProg.progression
+            };
+            console.log("🌉 BRIDGE: usa progressione del PRECHORUS →", preChorusProg.progression);
+        } else {
+            // Fallback: progressione classica
+            progressions["bridge"] = {
+                root: metalParams.tonalCenter[0] || "A",
+                progression: ["i", "iv", "v", "i", "i", "iv", "v", "i"]
+            };
+        }
+    }
+
     const measureDur = (60 / metalParams.bpm) * 4;
 
     const combinedParams = {
@@ -82,13 +103,13 @@ export function createMetalEngine(params, score) {
         const nextSec = structure.sections[index + 1];
         const nextSectionRoot = nextSec ? (progressions[nextSec.name]?.root || sectionRoot) : sectionRoot;
 
-        // Visual feedback e aggiornamento Sezione nello spartito
+        // Visual feedback
         Tone.Transport.schedule(() => {
-            console.log(`%c ▶ ${sec.name.toUpperCase()} | Mood: ${currentDnaMood(params.imageParams)}`, "color: #191970; font-weight: bold;");
+            const mood = sec.name === "bridge" ? "BRIDGE (solo lead!)" : currentDnaMood(params.imageParams);
+            console.log(`%c ▶ ${sec.name.toUpperCase()} | ${mood}`, "color: #191970; font-weight: bold;");
         }, sec.startTime);
 
-        // SCHEDULAZIONE MOTORI (Passiamo 'score' come ultimo parametro)
-        // Nota: Assicurati di aggiornare anche le firme di queste funzioni nei file lead/rhythm engine
+        // SCHEDULAZIONE
         scheduleRhythm(sec, realNotes, metalInstruments, combinedParams, rand, measureDur, nextSectionRoot, score);
         scheduleLead(sec, realNotes, metalInstruments, combinedParams, rand, measureDur, score); 
     });
