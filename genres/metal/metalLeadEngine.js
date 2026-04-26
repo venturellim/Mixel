@@ -3,7 +3,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote, leadBus } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 082 loaded");
+console.log("metalLeadEngine.js ver. 082.2 loaded");
 
 // ============================================================
 // UTILITY
@@ -43,7 +43,7 @@ const LeadFloyd = {
 };
 
 // ============================================================
-// LEGACY NON-SOLO (IDENTICO ALLA VERSIONE 76.1 CHE FUNZIONA)
+// LEGACY SOLO/NON-SOLO
 // ============================================================
 
 const LeadLegacy = {
@@ -55,7 +55,9 @@ const LeadLegacy = {
         const isChorus = name.includes("chorus") && !name.includes("pre");
         const isPreChorus = name.includes("pre");
         const isIntro = name.includes("intro") || name.includes("outro");
-        const isSolo = name.includes("solo");
+        const isSolo = name.includes("solo"); 
+        const isBridge =
+name.includes("bridge");
         const stepTime = measureDur / 16;
 
         const {
@@ -227,8 +229,8 @@ const LeadLegacy = {
         // getMelodyFamily PIÙ SEMPLICE (come nella 76.1)
         // ============================================================
         const getMelodyFamily = () => {
-        // PER L'ASSOLO
-            if (isSolo) {
+        // PER L'ASSOLO E BRIDGE
+            if (isSolo || isBridge) {
                 if (energy > 0.8 && complexity > 0.7) return { name: "SOLO SHRED ⚡", data: melodicLibrary.solo_shred };
                 if (energy > 0.7 && brightness > 0.6) return { name: "SOLO EPIC 🏰", data: melodicLibrary.solo_epic };
                 if (complexity > 0.7) return { name: "SOLO TAPPING 🎸", data: melodicLibrary.solo_tapping };
@@ -257,7 +259,7 @@ const LeadLegacy = {
             else sectionType = "solo";
         } else if (isIntro) {
             sectionType = "intro";
-        } else if (isPreChorus) {
+        } else if (isPreChorus || isBridge) {
             sectionType = "prechorus";
         } else if (isChorus) {
             sectionType = "chorus";
@@ -326,7 +328,7 @@ const LeadLegacy = {
     );
     
     let currentScale;
-    if (isSolo) {
+    if (isSolo || isBridge) {
         // Scala fissa basata su tonalCenter e scaleType
         const fixedScaleRoot = rootNote + (isMinor ? "m" : "");
         currentScale = getStrictScale(fixedScaleRoot);
