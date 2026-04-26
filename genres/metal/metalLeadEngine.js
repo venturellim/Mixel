@@ -3,7 +3,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote, leadBus } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 081.5 loaded");
+console.log("metalLeadEngine.js ver. 082 loaded");
 
 // ============================================================
 // UTILITY
@@ -265,23 +265,10 @@ const LeadLegacy = {
             sectionType = "verse";
         }
         
-        const currentPattern = getPattern(sectionType);
-        const mood = getMelodyFamily();
-        const currentMelody = mood.data[Math.floor(energy * mood.data.length) % mood.data.length];
-
-        console.log(
-            `%c 🎸 LEAD DNA EXECUTION \n` +
-            `%c > Section: ${name.toUpperCase()} \n` +
-            `%c > Mood: ${mood.name} \n` +
-            `%c > Rhythm Mask: [${currentPattern.join(" - ")}] \n` +
-            `%c > Melody Steps: [${currentMelody.join(", ")}]`,
-            "color: #191970; font-weight: bold; font-size: 12px;",
-            "color: #191970;",
-            "color: #eee; font-weight: bold;",
-            "color: #191970;",
-            "color: #191970;"
-        );
-
+        //const currentPattern = getPattern(sectionType);
+        //const mood = getMelodyFamily();
+        //const currentMelody = mood.data[Math.floor(energy * mood.data.length) % mood.data.length];
+        
         const getStrictScale = (root) => {
             const allNotes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
             let cleanRoot = root.split('/')[0].replace(/[0-9]/g, '').trim();
@@ -297,6 +284,46 @@ const LeadLegacy = {
 
         for (let m = 0; m < section.measures; m++) {
     const measureStartTime = section.startTime + (m * measureDur);
+
+    // metà sezione
+    const half = Math.floor(section.measures / 2);
+
+    let currentPattern;
+    let currentMelody;
+    let moodName;
+
+    if (isSolo) {
+        if (m < half) {
+            // PRIMA METÀ — più melodica
+            currentPattern = getPattern("solo_slow");
+            const moodA = melodicLibrary.solo_romantic;
+            currentMelody = moodA[Math.floor(energy * moodA.length) % moodA.length];
+            moodName = "SOLO PART A — Romantic 💕";
+        } else {
+            // SECONDA METÀ — più tecnica
+            currentPattern = getPattern("solo_fast");
+            const moodB = melodicLibrary.solo_shred;
+            currentMelody = moodB[Math.floor(energy * moodB.length) % moodB.length];
+            moodName = "SOLO PART B — Shred ⚡";
+        }
+    } else {
+        // comportamento normale
+        currentPattern = getPattern(sectionType);
+        const mood = getMelodyFamily();
+        currentMelody = mood.data[Math.floor(energy * mood.data.length) % mood.data.length];
+        moodName = mood.name;
+    }
+
+    console.log(
+        `%c 🎸 LEAD DNA EXECUTION (measure ${m})\n` +
+        `%c > Mood: ${moodName}\n` +
+        `%c > Rhythm Mask: [${currentPattern.join(" - ")}]\n` +
+        `%c > Melody Steps: [${currentMelody.join(", ")}]`,
+        "color:#191970;font-weight:bold;font-size:12px;",
+        "color:#191970;",
+        "color:#191970;",
+        "color:#191970;"
+    );
     
     let currentScale;
     if (isSolo) {
