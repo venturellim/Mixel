@@ -3,7 +3,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote, leadBus } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 082.2 loaded");
+console.log("metalLeadEngine.js ver. 082.3 loaded");
 
 // ============================================================
 // UTILITY
@@ -125,7 +125,31 @@ name.includes("bridge");
         [0, 7, 12, 17, 12, 7],
         [0, 12, 19, 12],
         [0, 8, 15, 22, 15, 8]
-    ]
+    ],
+    solo_power: [
+    [0, 3, 7, 10, 14, 17, 14, 10, 7, 3],
+    [0, 4, 8, 12, 16, 20, 16, 12, 8, 4],
+    [0, 2, 5, 7, 9, 12, 14, 16, 14, 12, 9, 7, 5, 2],
+    [0, 6, 12, 18, 12, 6]
+],
+
+solo_neoclassical: [
+    [0, 4, 7, 11, 14, 18, 14, 11, 7, 4],
+    [0, 3, 7, 10, 14, 17, 21, 17, 14, 10, 7, 3],
+    [0, 2, 5, 9, 12, 16, 19, 16, 12, 9, 5, 2]
+],
+
+solo_modern: [
+    [0, 5, 9, 12, 16, 19, 23, 19, 16, 12, 9, 5],
+    [0, 7, 14, 19, 14, 7],
+    [0, 3, 8, 10, 15, 17, 20, 17, 15, 10, 8, 3]
+],
+
+solo_bluesy: [
+    [0, 3, 5, 6, 7, 10, 12, 10, 7, 6, 5, 3],
+    [0, 4, 5, 7, 10, 12, 10, 7, 5, 4],
+    [0, 3, 5, 6, 7, 6, 5, 3]
+]
         };
 
         // ============================================================
@@ -215,7 +239,30 @@ name.includes("bridge");
         [0, 1, 3, 4, 5, 7, 8, 10, 12, 10, 8, 7, 5, 4, 3, 1],
         [0, 2, 3, 5, 7, 8, 10, 12, 14, 12, 10, 8, 7, 5, 3, 2],
         [0, 2, 4, 5, 7, 8, 10, 12, 13, 15, 13, 12, 10, 8, 7, 5, 4, 2]
-    ]
+    ],
+    solo_power: [
+    [0, 4, 7, 12, 7, 4, 0],
+    [0, 5, 7, 12, 14, 12, 7, 5],
+    [0, 7, 12, 14, 16, 14, 12, 7, 0]
+],
+
+solo_neoclassical: [
+    [0, 3, 7, 10, 14, 17, 14, 10, 7, 3],
+    [0, 4, 7, 11, 14, 18, 14, 11, 7, 4],
+    [0, 2, 5, 9, 12, 16, 19, 16, 12, 9, 5, 2]
+],
+
+solo_modern: [
+    [0, 5, 9, 12, 16, 19, 23, 19, 16, 12, 9, 5],
+    [0, 7, 14, 19, 14, 7],
+    [0, 3, 8, 10, 15, 17, 20, 17, 15, 10, 8, 3]
+],
+
+solo_bluesy: [
+    [0, 3, 5, 6, 7, 10, 12, 10, 7, 6, 5, 3],
+    [0, 4, 5, 7, 10, 12, 10, 7, 5, 4],
+    [0, 3, 5, 6, 7, 6, 5, 3]
+]
         };
 
         const getPattern = (type) => {
@@ -238,6 +285,10 @@ name.includes("bridge");
                 if (energy < 0.5) return { name: "SOLO ROMANTIC 💕", data: melodicLibrary.solo_romantic };
                 if (complexity > 0.5 && energy > 0.5) return { name: "SOLO FAST 🚀", data: melodicLibrary.solo_fast };
                 return { name: "SOLO EPIC 🏰", data: melodicLibrary.solo_epic };
+    if (brightness > 0.7 && energy > 0.6) return { name: "SOLO POWER ⚔️", data: melodicLibrary.solo_power };
+    if (complexity > 0.8) return { name: "SOLO NEOCLASSICAL 🎻", data: melodicLibrary.solo_neoclassical };
+    if (texture > 0.6) return { name: "SOLO MODERN 🔥", data: melodicLibrary.solo_modern };
+    if (brightness < 0.3) return { name: "SOLO BLUESY 🎷", data: melodicLibrary.solo_bluesy };
             }
             if (isPreChorus) return { name: "PRE-CHORUS 📈", data: melodicLibrary.prechorus };
             if (isChorus) {
@@ -253,13 +304,17 @@ name.includes("bridge");
 
                 // Seleziona il tipo di sezione per library
         let sectionType;
-        if (isSolo) {
+        if (isSolo || isBridge) {
             if (energy > 0.7) sectionType = "solo_fast";
             else if (energy < 0.4) sectionType = "solo_slow";
             else sectionType = "solo";
+    if (brightness > 0.7 && energy > 0.6) sectionType = "solo_power";
+    else if (complexity > 0.8) sectionType = "solo_neoclassical";
+    else if (texture > 0.6) sectionType = "solo_modern";
+    else if (brightness < 0.3) sectionType = "solo_bluesy";
         } else if (isIntro) {
             sectionType = "intro";
-        } else if (isPreChorus || isBridge) {
+        } else if (isPreChorus) {
             sectionType = "prechorus";
         } else if (isChorus) {
             sectionType = "chorus";
