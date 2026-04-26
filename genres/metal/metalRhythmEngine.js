@@ -2,7 +2,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
 
-console.log("metalRhythmEngine.js ver. 015 loaded");
+console.log("metalRhythmEngine.js ver. 015.1 loaded");
 
 export function scheduleRhythm(section, progression, instruments, params, rand, measureDur, nextSectionRoot, score) {
     const { drums, guitarPalm, guitarOpen, bass } = instruments;
@@ -11,7 +11,8 @@ export function scheduleRhythm(section, progression, instruments, params, rand, 
     const name = section?.name?.toLowerCase() || "";
     const isChorus = name.includes("chorus") ||
 name.includes("solo") && !name.includes("pre"); 
-    const isPreChorus = name.includes("pre");
+    const isPreChorus = name.includes("pre") ||
+name.includes("bridge");
     const isIntro = name.includes("intro") || name.includes("outro");
     const stepTime = measureDur / 16;
     const { energy = 0.5, brightness = 0.5, complexity = 0.5, texture = 0.5 } = params?.imageParams || {};
@@ -85,7 +86,23 @@ if (isChorus) {
                 const palmLen = texture < 0.3 ? "8n" : "16n";
 
                 Tone.Transport.schedule(t => {
-                    inst.triggerAttackRelease(gNote, sustain ? "1n" : palmLen, t);
+                
+// STOP PRECEDENTE NOTA (solo per guitarOpen)
+if (inst === guitarOpen) {
+    // Fermiamo la nota precedente 2 ms dopo l'attacco della nuova
+    Tone.Transport.schedule((stopTime) => {
+        try { inst.triggerRelease(stopTime); } catch(e) {}
+    }, t + 0.002);
+}
+
+// Suona la nuova nota
+inst.triggerAttackRelease(
+    gNote,
+    sustain ? "1n" : palmLen,
+    t
+);
+
+                    //inst.triggerAttackRelease(gNote, sustain ? "1n" : palmLen, t);
                     bass.triggerAttackRelease(bNote, sustain ? "1n" : "16n", t);
 
                     Tone.Draw.schedule(() => {

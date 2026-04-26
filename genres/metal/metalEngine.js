@@ -9,7 +9,7 @@ import { scheduleRhythm } from "./metalRhythmEngine.js";
 import { scheduleLead } from "./metalLeadEngine.js"; 
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 013 loaded");
+console.log("metalEngine.js ver. 014 loaded");
 
 export async function waitMetalInstruments() {
     await waitForInstruments(4);
@@ -36,10 +36,10 @@ export function createMetalEngine(params, score) {
         { name: "verse",     weight: 8 },
         { name: "prechorus", weight: preChorusWeight },
         { name: "chorus",    weight: 8 },
-        { name: "verse",     weight: 8 },
-        { name: "prechorus", weight: preChorusWeight },
-        { name: "chorus",    weight: 8 },
+        { name: "verse",     weight: 4 },
+        { name: "chorus",    weight: 4 },
         { name: "solo",      weight: params.imageParams.complexity > 0.6 ? 16 : 0 },
+        { name: "bridge", weight: preChorusWeight },
         { name: "chorus",    weight: 8 },
         { name: "outro",     weight: 4 }
     ];
