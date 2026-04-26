@@ -1,9 +1,9 @@
-// metalLeadEngine.js — ver. 085 FINAL (Solo con librerie dedicate, stesso sistema del non-solo)
+// metalLeadEngine.js — ver. 083 FINAL (unificato: ornamenti + assolo diviso)
 
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote, leadBus } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 082.4 loaded");
+console.log("metalLeadEngine.js ver. 083 loaded");
 
 // ============================================================
 // UTILITY
@@ -67,8 +67,8 @@ const LeadLegacy = {
         } = params?.imageParams || {};
 
         // ============================================================
-        // LIBRARY (identica alla 76.1 - con librerie solo)
-// ============================================================
+        // LIBRARY
+        // ============================================================
         const library = {
             intro: [
                 [0, 1, 2, 3, 4, 8, 12],
@@ -99,7 +99,6 @@ const LeadLegacy = {
                 [0, 3, 8, 11],
                 [0, 6, 7, 8, 14]
             ],
-            // SOLO
             solo: [
                 [0, 4, 8, 12, 16, 12, 8, 4],
                 [0, 3, 6, 9, 12, 15, 12, 9, 6, 3],
@@ -128,8 +127,8 @@ const LeadLegacy = {
         };
 
         // ============================================================
-        // MELODIC LIBRARY (identica alla 76.1 + solo)
-// ============================================================
+        // MELODIC LIBRARY
+        // ============================================================
         const melodicLibrary = {
             epic: [
                 [0, 4, 7, 4, 5, 4, 2, 0], [0, 0, 4, 4, 7, 7, 4, 4],
@@ -159,7 +158,6 @@ const LeadLegacy = {
                 [0, 2, 3, 4, 5, 6, 7, 7], [0, 0, 2, 2, 4, 4, 6, 6],
                 [0, 4, 0, 5, 0, 6, 0, 7], [4, 5, 4, 5, 6, 7, 7, 7]
             ],
-            // SOLO MELODIC LIBS
             solo_epic: [
                 [0, 4, 7, 12, 14, 12, 7, 4, 0],
                 [0, 5, 7, 12, 15, 12, 7, 5],
@@ -225,8 +223,8 @@ const LeadLegacy = {
         };
 
         // ============================================================
-        // getMelodyFamily (solo/bridge usano librerie solo)
-// ============================================================
+        // getMelodyFamily
+        // ============================================================
         const getMelodyFamily = () => {
             if (isSolo || isBridge) {
                 if (energy > 0.8 && complexity > 0.7) return { name: "SOLO SHRED ⚡", data: melodicLibrary.solo_shred };
@@ -279,14 +277,14 @@ const LeadLegacy = {
         };
 
         // ============================================================
-        // STEP2: ORNAMENTI
+        // ORNAMENTI (dalla 82.4)
         // ============================================================
         function applyOrnaments(noteName, idx, currentScale) {
             let finalNote = noteName;
             let bend = false;
             let repeat = false;
 
-            // 1) Passing tone cromatico (10%)
+            // Passing tone cromatico (10%)
             if (Math.random() < 0.10) {
                 const up = Math.random() < 0.5;
                 const newIdx = idx + (up ? 1 : -1);
@@ -295,7 +293,7 @@ const LeadLegacy = {
                 }
             }
 
-            // 2) Slide (8%)
+            // Slide (8%)
             if (Math.random() < 0.08) {
                 const up = Math.random() < 0.5;
                 const newIdx = idx + (up ? 1 : -1);
@@ -304,12 +302,12 @@ const LeadLegacy = {
                 }
             }
 
-            // 3) Mini-bend (6%)
+            // Mini-bend (6%)
             if (Math.random() < 0.06) {
                 bend = true;
             }
 
-            // 4) Ripetizione veloce (5%)
+            // Ripetizione veloce (5%)
             if (Math.random() < 0.05) {
                 repeat = true;
             }
@@ -322,8 +320,6 @@ const LeadLegacy = {
         // ============================================================
         for (let m = 0; m < section.measures; m++) {
             const measureStartTime = section.startTime + (m * measureDur);
-
-            // metà sezione
             const half = Math.floor(section.measures / 2);
 
             let currentPattern;
@@ -345,7 +341,6 @@ const LeadLegacy = {
                     moodName = "SOLO PART B — Shred ⚡";
                 }
             } else {
-                // comportamento normale
                 currentPattern = getPattern(sectionType);
                 const mood = getMelodyFamily();
                 currentMelody = mood.data[Math.floor(energy * mood.data.length) % mood.data.length];
@@ -365,10 +360,9 @@ const LeadLegacy = {
 
             let currentScale;
             if (isSolo || isBridge) {
-                // Scala fissa basata su tonalCenter e scaleType
                 const fixedScaleRoot = rootNote + (isMinor ? "m" : "");
                 currentScale = getStrictScale(fixedScaleRoot);
-                console.log(`🎸 ASSOLO scala fissa: ${fixedScaleRoot} → [${currentScale.join(", ")}]`);
+                console.log(`🎸 Scala fissa: ${fixedScaleRoot} → [${currentScale.join(", ")}]`);
             } else {
                 currentScale = getStrictScale(progression[m % progression.length] || "A");
             }
@@ -380,33 +374,31 @@ const LeadLegacy = {
 
                 const absoluteTime = measureStartTime + (s * stepTime);
                 const nextStep = (i < currentPattern.length - 1) ? currentPattern[i + 1] : 16;
-
                 const noteIdx = currentMelody[i % currentMelody.length];
                 const octave = isChorus ? 5 : 4;
 
-                // indice nella scala (mod lunghezza scala)
                 const scaleIndex = ((noteIdx % currentScale.length) + currentScale.length) % currentScale.length;
                 let baseNote = normalizeNote(currentScale[scaleIndex], "guitarLead") + octave;
 
-                // applica ornamenti (step2)
+                // Applica ornamenti
                 const ornament = applyOrnaments(baseNote, scaleIndex, currentScale);
                 const finalNote = ornament.note;
 
                 Tone.Transport.schedule(time => {
-                    // mini-bend
+                    // Mini-bend
                     if (ornament.bend && guitarLead.playbackRate) {
                         guitarLead.playbackRate.setValueAtTime(1.02, time);
                         guitarLead.playbackRate.linearRampToValueAtTime(1.0, time + 0.12);
                     }
 
-                    // nota principale
+                    // Nota principale
                     guitarLead.triggerAttackRelease(
                         finalNote,
                         (nextStep - s) * stepTime,
                         time
                     );
 
-                    // ripetizione veloce
+                    // Ripetizione veloce
                     if (ornament.repeat) {
                         Tone.Transport.schedule(t2 => {
                             guitarLead.triggerAttackRelease(
@@ -426,7 +418,7 @@ const LeadLegacy = {
     }
 };
 
-//================================================
+// ============================================================
 // SCHEDULE LEAD — PUNTO DI ENTRATA PRINCIPALE
 // ============================================================
 
@@ -434,12 +426,9 @@ export function scheduleLead(section, progression, instruments, params, rand, me
     const { guitarLead } = instruments || {};
     if (!guitarLead) return;
 
-    // Estrai tonalCenter e scaleType
     const tonalCenter = params?.tonalCenter || params?.imageParams?.tonalCenter || "A4";
     const scaleType = params?.scaleType || params?.imageParams?.scaleType || "naturalMinor";
-    const rootNote = tonalCenter.replace(/[0-9]/g, "");  // "A4" → "A"
-    
-    // Determina se è minore (naturalMinor o harmonicMinor)
+    const rootNote = tonalCenter.replace(/[0-9]/g, "");
     const isMinor = scaleType.includes("minor");
     
     console.log("🎸 tonalCenter:", tonalCenter, "→ root:", rootNote);
