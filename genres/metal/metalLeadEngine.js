@@ -307,7 +307,6 @@ solo_tapping_harmonic: [
             if (complexity > 0.7) return { name: "SOLO TAPPING HARMONIC 🎸", data: melodicLibrary.solo_tapping_harmonic };
             if (brightness > 0.7 && energy > 0.6) return { name: "SOLO POWER HARMONIC⚔️", data: melodicLibrary.solo_power_harmonic };
             if (complexity > 0.8) return { name: "SOLO NEOCLASSICAL HARMONIC🎻", data: melodicLibrary.solo_neoclassical_harmonic };
-            // ... ecc.
         } else {
                 if (energy > 0.8 && complexity > 0.7) return { name: "SOLO SHRED ⚡", data: melodicLibrary.solo_shred };
                 if (energy > 0.7 && brightness > 0.6) return { name: "SOLO EPIC 🏰", data: melodicLibrary.solo_epic };
@@ -321,6 +320,7 @@ solo_tapping_harmonic: [
     if (texture > 0.6) return { name: "SOLO MODERN 🔥", data: melodicLibrary.solo_modern };
     if (brightness < 0.3) return { name: "SOLO BLUESY 🎷", data: melodicLibrary.solo_bluesy };
             }
+         }
             if (isPreChorus) return { name: "PRE-CHORUS 📈", data: melodicLibrary.prechorus };
             if (isChorus) {
                 return brightness > 0.5
