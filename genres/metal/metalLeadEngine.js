@@ -1,9 +1,9 @@
-// metalLeadEngine.js — ver. 086 FINAL (Semplice, melodia, ancorato alla progressione reale)
+// metalLeadEngine.js — ver. 087 FINAL (Assolo con stessa logica delle sezioni normali)
 
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote, leadBus } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 086.1 loaded");
+console.log("metalLeadEngine.js ver. 086.2 loaded");
 
 // ============================================================
 // UTILITY
@@ -75,25 +75,14 @@ const library = {
         [0, 3, 8, 11],
         [0, 6, 7, 8, 14]
     ],
-    // LIBRARY PER L'ASSOLO (semplici, come le sezioni normali)
+    // LIBRARY PER L'ASSOLO (potenziate dalle sezioni normali)
     solo: [
-    // Derivata da verse: [0,8] → più movimento
-    [0, 4, 8, 12, 8, 4, 0],
-    
-    // Derivata da prechorus: [0,4,8,12] → scala completa
-    [0, 2, 4, 6, 8, 10, 12, 10, 8, 6, 4, 2, 0],
-    
-    // Derivata da chorus: [0,2,4,6,8,10,12,14] → con passaggi
-    [0, 2, 4, 5, 7, 8, 10, 12, 10, 8, 7, 5, 4, 2, 0],
-    
-    // Arpeggi naturali (sweep leggeri)
-    [0, 3, 6, 9, 12, 9, 6, 3, 0],
-    [0, 4, 7, 10, 12, 10, 7, 4, 0],
-    
-    // Pattern ritmici vari
-    [0, 4, 8, 12, 10, 8, 4, 0],
-    [0, 3, 5, 7, 8, 10, 12, 10, 8, 7, 5, 3, 0]
-]
+        [0, 4, 8, 12, 8, 4, 0],
+        [0, 2, 4, 6, 8, 10, 12, 10, 8, 6, 4, 2, 0],
+        [0, 2, 4, 5, 7, 8, 10, 12, 10, 8, 7, 5, 4, 2, 0],
+        [0, 3, 6, 9, 12, 9, 6, 3, 0],
+        [0, 4, 7, 10, 12, 10, 7, 4, 0]
+    ]
 };
 
 // ============================================================
@@ -147,47 +136,42 @@ const melodicLibrary = {
         [0, 4, 0, 5, 0, 6, 0, 7],
         [4, 5, 4, 5, 6, 7, 7, 7]
     ],
-    // MELODIC LIBRARY PER L'ASSOLO (orecchiabili, salgono e scendono gradualmente)
+    // MELODIC LIBRARY PER L'ASSOLO (orecchiabili, come le sezioni normali)
     solo: [
-    // Derivata da epic [0,4,7,4,5,4,2,0] → fluidificata
-    [0, 2, 4, 5, 7, 5, 4, 2, 0],
-    [0, 2, 4, 5, 7, 9, 7, 5, 4, 2, 0],
-    [0, 3, 5, 7, 8, 10, 12, 10, 8, 7, 5, 3, 0],
-    [0, 4, 5, 7, 8, 10, 12, 10, 8, 7, 5, 4, 0],
-    
-    // Collegamenti tra note distanti (scala che sale e scende)
-    [0, 4, 5, 6, 5, 4, 0],                    // 0→4→0
-    [0, 7, 5, 4, 2, 0],                       // 7→0 (discesa)
-    [0, 4, 7, 8, 7, 4, 0],                    // 0→7→0
-    [0, 3, 5, 7, 5, 3, 0],                    // 0→7→0 con terze
-    
-    // Derivata da active [0,1,2,3,4,5,6,7] → estesa
-    [0, 2, 4, 5, 7, 9, 10, 12, 10, 9, 7, 5, 4, 2, 0],
-    [0, 1, 3, 5, 7, 8, 10, 12, 10, 8, 7, 5, 3, 1, 0],
-    
-    // Derivata da emotional [0,6,5,4,2,3,2,0] → più movimento
-    [0, 6, 5, 4, 2, 3, 4, 5, 0],
-    [0, 5, 4, 2, 0, 2, 4, 5, 0],
-    
-    // Pattern fluidi generali
-    [0, 2, 3, 5, 7, 5, 3, 2, 0],              // A→B→C→D→E→D→C→B→A
-    [0, 2, 4, 6, 7, 6, 4, 2, 0],              // A→B→C#→D#→E→D#→C#→B→A
-    [0, 2, 5, 7, 9, 12, 9, 7, 5, 2, 0],       // salti di quinta
-    [0, 3, 7, 8, 12, 8, 7, 3, 0]              // arpeggio + ottava
-],
-
-solo_harmonic: [
-    // Per scala armonica minore (con G#/Ab)
-    [0, 2, 3, 5, 7, 8, 11, 12, 11, 8, 7, 5, 3, 2, 0],
-    [0, 3, 5, 7, 8, 11, 12, 14, 12, 11, 8, 7, 5, 3, 0],
-    [0, 2, 4, 5, 7, 8, 11, 12, 14, 15, 14, 12, 11, 8, 7, 5, 4, 2, 0],
-    [0, 4, 7, 8, 11, 12, 14, 16, 14, 12, 11, 8, 7, 4, 0],
-    
-    // Collegamenti con sensibile (G#)
-    [0, 7, 8, 11, 12, 11, 8, 7, 0],
-    [0, 4, 7, 8, 11, 12, 11, 8, 7, 4, 0],
-    [0, 3, 5, 7, 8, 11, 12, 11, 8, 7, 5, 3, 0]
-]
+        // Derivata da epic
+        [0, 2, 4, 5, 7, 5, 4, 2, 0],
+        [0, 2, 4, 5, 7, 9, 7, 5, 4, 2, 0],
+        [0, 3, 5, 7, 8, 10, 12, 10, 8, 7, 5, 3, 0],
+        [0, 4, 5, 7, 8, 10, 12, 10, 8, 7, 5, 4, 0],
+        
+        // Collegamenti fluidi
+        [0, 4, 5, 6, 5, 4, 0],
+        [0, 7, 5, 4, 2, 0],
+        [0, 4, 7, 8, 7, 4, 0],
+        [0, 3, 5, 7, 5, 3, 0],
+        
+        // Derivata da active
+        [0, 2, 4, 5, 7, 9, 10, 12, 10, 9, 7, 5, 4, 2, 0],
+        [0, 1, 3, 5, 7, 8, 10, 12, 10, 8, 7, 5, 3, 1, 0],
+        
+        // Derivata da emotional
+        [0, 6, 5, 4, 2, 3, 4, 5, 0],
+        [0, 5, 4, 2, 0, 2, 4, 5, 0],
+        
+        // Pattern fluidi generali
+        [0, 2, 3, 5, 7, 5, 3, 2, 0],
+        [0, 2, 4, 6, 7, 6, 4, 2, 0],
+        [0, 2, 5, 7, 9, 12, 9, 7, 5, 2, 0],
+        [0, 3, 7, 8, 12, 8, 7, 3, 0]
+    ],
+    solo_harmonic: [
+        [0, 2, 3, 5, 7, 8, 11, 12, 11, 8, 7, 5, 3, 2, 0],
+        [0, 3, 5, 7, 8, 11, 12, 14, 12, 11, 8, 7, 5, 3, 0],
+        [0, 2, 4, 5, 7, 8, 11, 12, 14, 15, 14, 12, 11, 8, 7, 5, 4, 2, 0],
+        [0, 4, 7, 8, 11, 12, 14, 16, 14, 12, 11, 8, 7, 4, 0],
+        [0, 7, 8, 11, 12, 11, 8, 7, 0],
+        [0, 4, 7, 8, 11, 12, 11, 8, 7, 4, 0]
+    ]
 };
 
 // ============================================================
@@ -203,7 +187,7 @@ const LeadLegacy = {
         const isChorus = name.includes("chorus") && !name.includes("pre");
         const isPreChorus = name.includes("pre");
         const isIntro = name.includes("intro") || name.includes("outro");
-        const isSolo = name.includes("solo");
+        const isSolo = name.includes("solo") || name.includes("solopt1") || name.includes("solopt2");
         const stepTime = measureDur / 16;
 
         const {
@@ -215,7 +199,7 @@ const LeadLegacy = {
 
         const isHarmonic = scaleType === "harmonicMinor";
 
-        // getPattern ORIGINALE (identico a prima)
+        // getPattern ORIGINALE (identico)
         const getPattern = (type) => {
             const family = library[type] || library.verse;
             const dnaScore = (energy * 400) + (brightness * 30) + (complexity * 2);
@@ -223,7 +207,7 @@ const LeadLegacy = {
             return family[index];
         };
 
-        // getMelodyFamily ORIGINALE (identico a prima)
+        // getMelodyFamily ORIGINALE (identico)
         const getMelodyFamily = () => {
             if (isPreChorus) return { name: "PRE-CHORUS 📈", data: melodicLibrary.prechorus };
             if (isChorus) {
@@ -273,18 +257,16 @@ const LeadLegacy = {
 
             if (isSolo) {
                 // ============================================================
-                // ASSOLO: semplice, come le sezioni normali
+                // ASSOLO: usa la STESSA logica delle sezioni normali!
                 // ============================================================
                 currentPattern = getPattern("solo");
                 const soloMelody = isHarmonic ? melodicLibrary.solo_harmonic : melodicLibrary.solo;
-                const melodyIndex = Math.floor(rand() * soloMelody.length);
+                // STESSA formula delle sezioni normali: basata su energy!
+                const melodyIndex = Math.floor(energy * soloMelody.length) % soloMelody.length;
                 currentMelody = soloMelody[melodyIndex];
                 moodName = `SOLO ${isHarmonic ? "HARMONIC" : ""} 🎸`;
-                
-                // NOTA: la scala usa la progressione REALE (non fissa!)
-                // cosi l'assolo è ancorato all'armonia vera
             } else {
-                // SEZIONI NORMALI
+                // SEZIONI NORMALI (identiche)
                 currentPattern = getPattern(sectionType);
                 const mood = getMelodyFamily();
                 const melodyIndex = Math.floor(energy * mood.data.length) % mood.data.length;
@@ -303,9 +285,7 @@ const LeadLegacy = {
                 "color:#191970;"
             );
             
-            // ============================================================
-            // SCALA: usa la progressione REALE per tutte le sezioni!
-            // ============================================================
+            // Scala: usa la progressione REALE per tutte le sezioni
             const currentScale = getStrictScale(progression[m % progression.length] || "A");
             
             const isTransitionMeasure = (m === section.measures - 1);
