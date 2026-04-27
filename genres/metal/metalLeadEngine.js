@@ -1,9 +1,9 @@
-// metalLeadEngine.js — ver. 084 FINAL (Solo unificato, sezioni normali IDENTICHE)
+// metalLeadEngine.js — ver. 084 FINAL (Assolo diviso in 2 semisezioni)
 
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote, leadBus } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 084.1 loaded");
+console.log("metalLeadEngine.js ver. 084.2 loaded");
 
 // ============================================================
 // UTILITY
@@ -43,7 +43,7 @@ const LeadFloyd = {
 };
 
 // ============================================================
-// LIBRARY (sezioni normali + assolo) - INVARIATA
+// LIBRARY (sezioni normali + assolo)
 // ============================================================
 
 const library = {
@@ -140,7 +140,7 @@ const library = {
 };
 
 // ============================================================
-// MELODIC LIBRARY (sezioni normali + assolo) - INVARIATA
+// MELODIC LIBRARY (sezioni normali + assolo)
 // ============================================================
 
 const melodicLibrary = {
@@ -299,13 +299,12 @@ const melodicLibrary = {
 };
 
 // ============================================================
-// FUNZIONE UNIFICATA PER L'ASSOLO (SOLO PER L'ASSOLO!)
+// FUNZIONE UNIFICATA PER L'ASSOLO
 // ============================================================
 
 const getSoloStyles = (energy, brightness, complexity, texture, isHarmonic) => {
     let style;
     
-    // Ordine gerarchico per la scelta dello stile
     if (complexity > 0.8) {
         style = "neoclassical";
     } else if (brightness > 0.7 && energy > 0.6) {
@@ -330,7 +329,6 @@ const getSoloStyles = (energy, brightness, complexity, texture, isHarmonic) => {
         style = "epic";
     }
     
-    // Costruisci i nomi delle library
     const rhythmName = `solo_${style}`;
     const melodyName = isHarmonic ? `solo_${style}_harmonic` : `solo_${style}`;
     
@@ -343,7 +341,7 @@ const getSoloStyles = (energy, brightness, complexity, texture, isHarmonic) => {
 };
 
 // ============================================================
-// LEGACY (sezioni normali - IDENTICO ALL'ORIGINALE!)
+// LEGACY (sezioni normali)
 // ============================================================
 
 const LeadLegacy = {
@@ -367,10 +365,9 @@ const LeadLegacy = {
         } = params?.imageParams || {};
 
         const isHarmonic = scaleType === "harmonicMinor";
+        const half = 0; // sarà calcolato dentro il loop
 
-        // ============================================================
-        // getPattern ORIGINALE (con dnaScore) - NON MODIFICATO!
-        // ============================================================
+        // getPattern ORIGINALE
         const getPattern = (type) => {
             const family = library[type] || library.verse;
             const dnaScore = (energy * 400) + (brightness * 30) + (complexity * 2);
@@ -378,9 +375,7 @@ const LeadLegacy = {
             return family[index];
         };
 
-        // ============================================================
-        // getMelodyFamily ORIGINALE (per sezioni normali) - NON MODIFICATO!
-        // ============================================================
+        // getMelodyFamily ORIGINALE
         const getMelodyFamily = () => {
             if (isPreChorus) return { name: "PRE-CHORUS 📈", data: melodicLibrary.prechorus };
             if (isChorus) {
@@ -394,11 +389,9 @@ const LeadLegacy = {
             return { name: "EPIC 🏰", data: melodicLibrary.epic };
         };
 
-        // Seleziona il tipo di sezione per library (SOLO PER SEZIONI NORMALI)
         let sectionType;
         if (isSolo || isBridge) {
-            // PER L'ASSOLO useremo getSoloStyles, quindi sectionType non serve
-            sectionType = null;
+            sectionType = null; // l'assolo usa getSoloStyles
         } else if (isIntro) {
             sectionType = "intro";
         } else if (isPreChorus) {
@@ -412,18 +405,19 @@ const LeadLegacy = {
         const getStrictScale = (root) => {
             const allNotes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
             let cleanRoot = root.split('/')[0].replace(/[0-9]/g, '').trim();
-            let isMinor = root.includes('m') || (cleanRoot === cleanRoot.toLowerCase() && cleanRoot.length === 1);
+            let isMinorLocal = root.includes('m') || (cleanRoot === cleanRoot.toLowerCase() && cleanRoot.length === 1);
             cleanRoot = cleanRoot.toUpperCase();
             const altNames = { "DB": "C#", "EB": "D#", "GB": "F#", "AB": "G#", "BB": "A#" };
             cleanRoot = altNames[cleanRoot] || cleanRoot;
             let rootIdx = allNotes.indexOf(cleanRoot);
             if (rootIdx === -1) rootIdx = 9;
-            const intervals = isMinor ? [0, 2, 3, 5, 7, 8, 10] : [0, 2, 4, 5, 7, 9, 11];
+            const intervals = isMinorLocal ? [0, 2, 3, 5, 7, 8, 10] : [0, 2, 4, 5, 7, 9, 11];
             return intervals.map(interval => allNotes[(rootIdx + interval) % 12]);
         };
 
         for (let m = 0; m < section.measures; m++) {
             const measureStartTime = section.startTime + (m * measureDur);
+            const measureHalf = Math.floor(section.measures / 2);
 
             let currentPattern;
             let currentMelody;
@@ -431,23 +425,35 @@ const LeadLegacy = {
 
             if (isSolo || isBridge) {
                 // ============================================================
-                // ASSOLO: usa la funzione unificata getSoloStyles
+                // ASSOLO: DIVISO IN 2 SEMISEZIONI
                 // ============================================================
                 const soloStyles = getSoloStyles(energy, brightness, complexity, texture, isHarmonic);
                 
-                // Scegli pattern random dalla library ritmica
-                const rhythmIndex = Math.floor(rand() * soloStyles.rhythmPatterns.length);
-                currentPattern = soloStyles.rhythmPatterns[rhythmIndex];
-                
-                // Scegli pattern random dalla melodic library
-                const melodyIndex = Math.floor(rand() * soloStyles.melodyPatterns.length);
-                currentMelody = soloStyles.melodyPatterns[melodyIndex];
-                
-                moodName = `SOLO ${soloStyles.styleName} ${isHarmonic ? "HARMONIC" : ""}`;
+                if (m < measureHalf) {
+                    // PRIMA META' (0 - metà) → stile romantic/slow
+                    const romanticRhythm = library.solo_romantic;
+                    const romanticMelody = isHarmonic ? melodicLibrary.solo_romantic_harmonic : melodicLibrary.solo_romantic;
+                    
+                    const rhythmIndex = Math.floor(rand() * romanticRhythm.length);
+                    const melodyIndex = Math.floor(rand() * romanticMelody.length);
+                    
+                    currentPattern = romanticRhythm[rhythmIndex];
+                    currentMelody = romanticMelody[melodyIndex];
+                    moodName = `SOLO PART A — Romantic ${isHarmonic ? "HARMONIC" : ""} 💕`;
+                } else {
+                    // SECONDA META' (metà - fine) → stile shred/fast
+                    const shredRhythm = library.solo_shred;
+                    const shredMelody = isHarmonic ? melodicLibrary.solo_shred_harmonic : melodicLibrary.solo_shred;
+                    
+                    const rhythmIndex = Math.floor(rand() * shredRhythm.length);
+                    const melodyIndex = Math.floor(rand() * shredMelody.length);
+                    
+                    currentPattern = shredRhythm[rhythmIndex];
+                    currentMelody = shredMelody[melodyIndex];
+                    moodName = `SOLO PART B — Shred ${isHarmonic ? "HARMONIC" : ""} ⚡`;
+                }
             } else {
-                // ============================================================
-                // SEZIONI NORMALI: usa la logica ORIGINALE (INALTERATA)
-                // ============================================================
+                // SEZIONI NORMALI
                 currentPattern = getPattern(sectionType);
                 const mood = getMelodyFamily();
                 const melodyIndex = Math.floor(energy * mood.data.length) % mood.data.length;
@@ -468,6 +474,7 @@ const LeadLegacy = {
             
             let currentScale;
             if (isSolo || isBridge) {
+                // PER L'ASSOLO: usa la scala fissa per la lead (non per la rhythm!)
                 const fixedScaleRoot = rootNote + (isMinor ? "m" : "");
                 currentScale = getStrictScale(fixedScaleRoot);
             } else {
@@ -497,7 +504,7 @@ const LeadLegacy = {
 };
 
 // ============================================================
-// SCHEDULE LEAD — PUNTO DI ENTRATA PRINCIPALE
+// SCHEDULE LEAD
 // ============================================================
 
 export function scheduleLead(section, progression, instruments, params, rand, measureDur, score) {
