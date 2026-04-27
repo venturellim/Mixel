@@ -9,7 +9,7 @@ import { scheduleRhythm } from "./metalRhythmEngine.js";
 import { scheduleLead } from "./metalLeadEngine.js"; 
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 016 loaded");
+console.log("metalEngine.js ver. 016.1 loaded");
 
 export async function waitMetalInstruments() {
     await waitForInstruments(4);
@@ -63,6 +63,8 @@ export function createMetalEngine(params, score) {
     // ============================================================
     const preChorusSection = structure.sections.find(s => s.name === "prechorus");
     const bridgeSection = structure.sections.find(s => s.name === "bridge");
+    const soloPt1Section = structure.sections.find(s => s.name === "soloPt1");
+const soloPt2Section = structure.sections.find(s => s.name === "soloPt2");
     
     if (bridgeSection && preChorusSection) {
         // Usa la progressione del prechorus per il bridge
@@ -81,6 +83,33 @@ export function createMetalEngine(params, score) {
             };
         }
     }
+
+// FORZA PROGRESSIONE PER LE PARTI DELL'ASSOLO (usa la stessa del chorus)
+// ============================================================
+if (soloPt1Section && chorusSection) {
+    const chorusProg = progressions["chorus"];
+    if (chorusProg) {
+        progressions["soloPt1"] = {
+            root: chorusProg.root,
+            progression: chorusProg.progression
+        };
+        progressions["soloPt2"] = {
+            root: chorusProg.root,
+            progression: chorusProg.progression
+        };
+        console.log("🎸 SOLO Pt1/Pt2: usa progressione del CHORUS →", chorusProg.progression);
+    } else {
+        const fallbackProg = ["i", "iv", "v", "vi", "i", "iv", "v", "i"];
+        progressions["soloPt1"] = {
+            root: metalParams.tonalCenter[0] || "A",
+            progression: fallbackProg
+        };
+        progressions["soloPt2"] = {
+            root: metalParams.tonalCenter[0] || "A",
+            progression: fallbackProg
+        };
+    }
+}
 
     const measureDur = (60 / metalParams.bpm) * 4;
 
