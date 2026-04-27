@@ -3,7 +3,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote, leadBus } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 087.2 loaded");
+console.log("metalLeadEngine.js ver. 087.3 loaded");
 
 // ============================================================
 // UTILITY
@@ -186,6 +186,31 @@ function enhanceMelodyLine(baseMelody) {
     return result;
 }
 
+function enhanceMelodyMicroVariation(melody) {
+    if (!Array.isArray(melody) || melody.length < 3) return melody;
+
+    const out = [...melody];
+
+    // 1. Scambia due note vicine (20%)
+    if (Math.random() < 0.20) {
+        const i = Math.floor(Math.random() * (out.length - 1));
+        const tmp = out[i];
+        out[i] = out[i + 1];
+        out[i + 1] = tmp;
+    }
+
+    // 2. Piccolo shift di 1 grado (15%)
+    if (Math.random() < 0.15) {
+        const i = Math.floor(Math.random() * out.length);
+        const dir = Math.random() < 0.5 ? -1 : 1;
+        const shifted = out[i] + dir;
+        if (shifted >= 0 && shifted <= 7) out[i] = shifted;
+    }
+
+    return out;
+}
+
+
 // Sceglie la famiglia melodica per l'assolo in base al DNA e alla parte (Pt1/Pt2)
 function getSoloMelodyFamily(isSoloPt2, energy, brightness, complexity, texture) {
     // Pt1: più melodico → epic/emotional
@@ -292,6 +317,7 @@ const LeadLegacy = {
                 const melodyIndex = Math.floor(energy * soloFamily.data.length) % soloFamily.data.length;
                 const baseMelody = soloFamily.data[melodyIndex];
                 currentMelody = enhanceMelodyLine(baseMelody);
+                currentMelody = enhanceMelodyMicroVariation(currentMelody);
 
                 moodName = soloFamily.name + (isHarmonic ? " (HARMONIC)" : "");
             } else {
