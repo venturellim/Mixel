@@ -3,7 +3,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote, leadBus } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 087 loaded");
+console.log("metalLeadEngine.js ver. 087.1 loaded");
 
 // ============================================================
 // UTILITY
@@ -212,7 +212,7 @@ const LeadLegacy = {
         const isChorus = name.includes("chorus") && !name.includes("pre");
         const isPreChorus = name.includes("pre");
         const isIntro = name.includes("intro") || name.includes("outro");
-        const isSolo = name.includes("solo");
+        const isSolo = name.includes("soloPt1") || name.includes("bridge");
         const isSoloPt2 = name.includes("solopt2");
         const stepTime = measureDur / 16;
 
