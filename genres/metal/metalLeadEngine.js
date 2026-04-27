@@ -1,9 +1,9 @@
-// metalLeadEngine.js — ver. 083 FINAL (Solo con nuove librerie dedicate, stesso sistema del non-solo)
+// metalLeadEngine.js — ver. 084 FINAL (Solo con funzione unificata)
 
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote, leadBus } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 083.1 loaded");
+console.log("metalLeadEngine.js ver. 084 loaded");
 
 // ============================================================
 // UTILITY
@@ -43,7 +43,307 @@ const LeadFloyd = {
 };
 
 // ============================================================
-// LEGACY SOLO/NON-SOLO
+// LIBRARY (sezioni normali + assolo)
+// ============================================================
+
+const library = {
+    intro: [
+        [0, 1, 2, 3, 4, 8, 12],
+        [0, 4, 8, 10, 11, 12, 13, 14],
+        [0, 2, 3, 4, 8, 10, 11, 12],
+        [0, 3, 4, 7, 8, 11, 12, 15],
+        [0, 1, 2, 3, 4, 5, 6, 7, 8]
+    ],
+    verse: [
+        [0, 8],
+        [0, 4, 8, 12],
+        [0, 6, 8, 14],
+        [0, 4, 10],
+        [2, 6, 10, 14],
+        [0, 2, 4, 8, 10, 12]
+    ],
+    prechorus: [
+        [0, 4, 8, 12],
+        [0, 2, 4, 6, 8, 10, 12, 14],
+        [0, 4, 7, 11, 12],
+        [0, 8, 12, 14],
+        [0, 2, 4, 8, 10, 12]
+    ],
+    chorus: [
+        [0, 2, 4, 6, 8, 10, 12, 14],
+        [0, 8, 12],
+        [0, 4, 8, 12],
+        [0, 3, 8, 11],
+        [0, 6, 7, 8, 14]
+    ],
+    // LIBRARY RITMICHE PER L'ASSOLO
+    solo_epic: [
+        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
+        [0, 2, 4, 6, 8, 10, 12, 14, 16, 14, 12, 10, 8, 6, 4, 2, 0],
+        [0, 1, 3, 5, 7, 9, 11, 13, 15, 13, 11, 9, 7, 5, 3, 1, 0],
+        [0, 3, 6, 9, 12, 15, 12, 9, 6, 3, 0, 3, 6, 9, 12, 15, 12, 9, 6, 3, 0]
+    ],
+    solo_shred: [
+        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0],
+        [0, 2, 3, 5, 6, 8, 9, 11, 12, 14, 15, 17, 18, 20, 21, 23, 21, 20, 18, 17, 15, 14, 12, 11, 9, 8, 6, 5, 3, 2, 0],
+        [0, 1, 3, 4, 6, 7, 9, 10, 12, 13, 15, 16, 18, 19, 21, 22, 21, 19, 18, 16, 15, 13, 12, 10, 9, 7, 6, 4, 3, 1, 0],
+        [0, 2, 4, 5, 7, 8, 10, 11, 12, 13, 15, 16, 18, 19, 21, 22, 24, 22, 21, 19, 18, 16, 15, 13, 12, 11, 10, 8, 7, 5, 4, 2, 0]
+    ],
+    solo_romantic: [
+        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0],
+        [0, 2, 3, 5, 7, 8, 10, 12, 10, 8, 7, 5, 3, 2, 0],
+        [0, 3, 5, 7, 9, 10, 12, 10, 9, 7, 5, 3, 0, 3, 5, 7, 9, 10, 12, 10, 9, 7, 5, 3, 0],
+        [0, 4, 7, 8, 10, 12, 14, 12, 10, 8, 7, 4, 0, 4, 7, 8, 10, 12, 14, 12, 10, 8, 7, 4, 0]
+    ],
+    solo_evil: [
+        [0, 1, 3, 4, 6, 8, 10, 11, 12, 11, 10, 8, 6, 4, 3, 1, 0],
+        [0, 1, 4, 6, 8, 10, 12, 10, 8, 6, 4, 1, 0, 1, 4, 6, 8, 10, 12, 10, 8, 6, 4, 1, 0],
+        [0, 3, 4, 6, 8, 10, 12, 13, 12, 10, 8, 6, 4, 3, 0],
+        [0, 1, 3, 5, 6, 8, 10, 12, 13, 12, 10, 8, 6, 5, 3, 1, 0]
+    ],
+    solo_tapping: [
+        [0, 12, 0, 12, 7, 12, 7, 12, 5, 12, 5, 12, 0, 12, 0],
+        [0, 12, 5, 12, 5, 12, 7, 12, 7, 12, 0, 12, 0, 12, 5, 12, 5, 12, 7, 12, 7, 12, 0],
+        [0, 12, 8, 12, 8, 12, 5, 12, 5, 12, 7, 12, 7, 12, 0],
+        [0, 12, 7, 14, 7, 12, 5, 12, 5, 14, 5, 12, 0, 12, 7, 14, 7, 12, 5, 12, 5, 14, 5, 12, 0]
+    ],
+    solo_sweep: [
+        [0, 3, 7, 12, 7, 3, 0, 3, 7, 12, 7, 3, 0],
+        [0, 2, 7, 12, 7, 2, 0, 2, 7, 12, 7, 2, 0],
+        [0, 3, 7, 12, 15, 12, 7, 3, 0, 3, 7, 12, 15, 12, 7, 3, 0],
+        [0, 4, 7, 12, 16, 12, 7, 4, 0, 4, 7, 12, 16, 12, 7, 4, 0]
+    ],
+    solo_power: [
+        [0, 7, 12, 14, 12, 7, 0, 7, 12, 14, 12, 7, 0],
+        [0, 5, 12, 14, 12, 5, 0, 5, 12, 14, 12, 5, 0],
+        [0, 7, 12, 19, 12, 7, 0, 7, 12, 19, 12, 7, 0],
+        [0, 5, 12, 19, 12, 5, 0, 5, 12, 19, 12, 5, 0]
+    ],
+    solo_neoclassical: [
+        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0],
+        [0, 2, 3, 5, 7, 8, 10, 12, 14, 15, 14, 12, 10, 8, 7, 5, 3, 2, 0, 2, 3, 5, 7, 8, 10, 12, 14, 15, 14, 12, 10, 8, 7, 5, 3, 2, 0],
+        [0, 1, 3, 5, 6, 8, 10, 12, 13, 15, 13, 12, 10, 8, 6, 5, 3, 1, 0],
+        [0, 3, 5, 7, 8, 11, 12, 14, 15, 17, 15, 14, 12, 11, 8, 7, 5, 3, 0]
+    ],
+    solo_modern: [
+        [0, 3, 5, 8, 10, 13, 15, 13, 10, 8, 5, 3, 0, 3, 5, 8, 10, 13, 15, 13, 10, 8, 5, 3, 0],
+        [0, 2, 5, 7, 9, 12, 14, 12, 9, 7, 5, 2, 0, 2, 5, 7, 9, 12, 14, 12, 9, 7, 5, 2, 0],
+        [0, 4, 6, 9, 11, 14, 16, 14, 11, 9, 6, 4, 0, 4, 6, 9, 11, 14, 16, 14, 11, 9, 6, 4, 0],
+        [0, 3, 6, 8, 11, 13, 16, 13, 11, 8, 6, 3, 0]
+    ],
+    solo_bluesy: [
+        [0, 3, 5, 6, 7, 10, 12, 10, 7, 6, 5, 3, 0, 3, 5, 6, 7, 10, 12, 10, 7, 6, 5, 3, 0],
+        [0, 3, 5, 7, 10, 12, 14, 12, 10, 7, 5, 3, 0, 3, 5, 7, 10, 12, 14, 12, 10, 7, 5, 3, 0],
+        [0, 4, 5, 7, 10, 12, 15, 12, 10, 7, 5, 4, 0, 4, 5, 7, 10, 12, 15, 12, 10, 7, 5, 4, 0],
+        [0, 3, 5, 6, 7, 6, 5, 3, 5, 6, 7, 10, 12, 10, 7, 6, 5, 3, 0]
+    ]
+};
+
+// ============================================================
+// MELODIC LIBRARY (sezioni normali + assolo)
+// ============================================================
+
+const melodicLibrary = {
+    epic: [
+        [0, 4, 7, 4, 5, 4, 2, 0], [0, 0, 4, 4, 7, 7, 4, 4],
+        [0, 4, 5, 7, 0, 4, 5, 7], [7, 4, 0, 4, 7, 4, 0, 0],
+        [0, 2, 4, 7, 5, 4, 2, 0], [0, 7, 4, 2, 0, 4, 2, 0],
+        [4, 0, 4, 5, 7, 5, 4, 0], [0, 3, 5, 0, 3, 5, 7, 0]
+    ],
+    evil: [
+        [0, 1, 0, 1, 4, 3, 1, 0], [0, 6, 5, 0, 6, 5, 1, 0],
+        [0, 1, 4, 1, 0, 1, 4, 1], [0, 3, 4, 0, 3, 4, 6, 0],
+        [1, 0, 1, 0, 3, 1, 0, 0], [0, 1, 3, 4, 6, 4, 3, 1],
+        [0, 4, 3, 1, 0, 1, 3, 4], [6, 5, 4, 3, 2, 1, 0, 0]
+    ],
+    active: [
+        [0, 1, 2, 3, 4, 5, 6, 7], [0, 2, 4, 2, 3, 5, 7, 5],
+        [0, 2, 0, 4, 0, 5, 0, 7], [4, 0, 5, 0, 7, 0, 5, 0],
+        [0, 2, 4, 5, 7, 5, 4, 2], [0, 3, 2, 5, 4, 7, 6, 0],
+        [7, 5, 4, 2, 7, 5, 4, 2], [0, 7, 6, 7, 0, 5, 4, 5]
+    ],
+    emotional: [
+        [0, 6, 5, 4, 2, 3, 2, 0], [2, 3, 2, 0, 4, 5, 4, 2],
+        [4, 2, 0, 6, 5, 4, 2, 2], [0, 4, 6, 7, 6, 4, 2, 0],
+        [5, 4, 2, 0, 5, 4, 2, 0], [0, 2, 4, 6, 0, 2, 4, 6],
+        [4, 5, 7, 4, 2, 3, 2, 0], [0, 0, 6, 6, 5, 5, 4, 4]
+    ],
+    prechorus: [
+        [0, 2, 3, 4, 5, 6, 7, 7], [0, 0, 2, 2, 4, 4, 6, 6],
+        [0, 4, 0, 5, 0, 6, 0, 7], [4, 5, 4, 5, 6, 7, 7, 7]
+    ],
+    // MELODIC LIBRARY PER L'ASSOLO (normali)
+    solo_epic: [
+        [0, 2, 3, 5, 7, 8, 10, 12, 10, 8, 7, 5, 3, 2, 0],
+        [0, 3, 5, 7, 9, 10, 12, 14, 12, 10, 9, 7, 5, 3, 0],
+        [0, 2, 5, 7, 8, 10, 12, 14, 15, 14, 12, 10, 8, 7, 5, 2, 0],
+        [0, 4, 7, 8, 10, 12, 14, 16, 14, 12, 10, 8, 7, 4, 0]
+    ],
+    solo_shred: [
+        [0, 2, 3, 5, 7, 8, 10, 12, 10, 8, 7, 5, 3, 2, 0, 2, 3, 5, 7, 8, 10, 12],
+        [0, 1, 3, 5, 6, 8, 10, 12, 10, 8, 6, 5, 3, 1, 0, 1, 3, 5, 6, 8, 10, 12],
+        [0, 2, 4, 5, 7, 9, 10, 12, 14, 12, 10, 9, 7, 5, 4, 2, 0, 2, 4, 5, 7, 9, 10, 12],
+        [0, 3, 4, 5, 7, 8, 10, 12, 14, 15, 14, 12, 10, 8, 7, 5, 4, 3, 0]
+    ],
+    solo_romantic: [
+        [0, 3, 5, 7, 5, 3, 2, 3, 5, 7, 5, 3, 0],
+        [0, 2, 3, 5, 7, 8, 7, 5, 3, 2, 3, 5, 7, 5, 3, 0],
+        [0, 3, 7, 8, 10, 8, 7, 5, 3, 5, 7, 8, 10, 8, 7, 3, 0],
+        [0, 5, 7, 9, 10, 12, 10, 9, 7, 5, 3, 2, 3, 5, 7, 5, 0]
+    ],
+    solo_evil: [
+        [0, 1, 3, 4, 6, 8, 10, 8, 6, 4, 3, 1, 0],
+        [0, 1, 4, 6, 8, 10, 12, 10, 8, 6, 4, 1, 0],
+        [0, 3, 4, 6, 8, 10, 12, 11, 10, 8, 6, 4, 3, 0],
+        [0, 1, 3, 5, 6, 8, 10, 12, 10, 8, 6, 5, 3, 1, 0]
+    ],
+    solo_tapping: [
+        [0, 12, 0, 12, 7, 12, 7, 12, 5, 12, 5, 12, 0],
+        [0, 12, 5, 12, 5, 12, 7, 12, 7, 12, 0, 12, 0],
+        [0, 12, 8, 12, 8, 12, 5, 12, 5, 12, 7, 12, 7, 12, 0],
+        [0, 12, 7, 14, 7, 12, 5, 12, 5, 14, 5, 12, 0]
+    ],
+    solo_sweep: [
+        [0, 3, 7, 12, 7, 3, 0],
+        [0, 2, 7, 12, 7, 2, 0],
+        [0, 3, 7, 12, 15, 12, 7, 3, 0],
+        [0, 4, 7, 12, 16, 12, 7, 4, 0],
+        [0, 3, 7, 12, 14, 12, 7, 3, 0, 3, 7, 12, 14, 12, 7, 3]
+    ],
+    solo_power: [
+        [0, 7, 12, 7, 0, 7, 12, 7, 5, 12, 5, 0],
+        [0, 5, 12, 5, 0, 5, 12, 7, 0, 7, 12, 7, 0],
+        [0, 7, 12, 14, 12, 7, 0, 5, 12, 14, 12, 5, 0],
+        [0, 5, 7, 12, 14, 16, 14, 12, 7, 5, 0]
+    ],
+    solo_neoclassical: [
+        [0, 2, 3, 5, 7, 8, 10, 12, 14, 12, 10, 8, 7, 5, 3, 2, 0],
+        [0, 1, 3, 4, 6, 8, 10, 12, 13, 12, 10, 8, 6, 4, 3, 1, 0],
+        [0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 14, 12, 11, 9, 7, 5, 4, 2, 0],
+        [0, 3, 5, 7, 9, 10, 12, 14, 15, 17, 15, 14, 12, 10, 9, 7, 5, 3, 0]
+    ],
+    solo_modern: [
+        [0, 5, 7, 12, 10, 7, 5, 3, 5, 7, 10, 12, 7, 5, 0],
+        [0, 4, 7, 10, 12, 10, 7, 5, 3, 5, 7, 10, 12, 9, 7, 4, 0],
+        [0, 3, 5, 8, 10, 12, 14, 12, 10, 8, 5, 3, 0, 3, 5, 8, 10, 12],
+        [0, 2, 5, 7, 9, 12, 14, 12, 9, 7, 5, 2, 0]
+    ],
+    solo_bluesy: [
+        [0, 3, 5, 6, 7, 10, 12, 10, 7, 6, 5, 3, 0],
+        [0, 3, 5, 7, 6, 7, 10, 12, 10, 7, 6, 5, 3, 0],
+        [0, 4, 5, 7, 6, 7, 10, 12, 14, 12, 10, 7, 6, 5, 4, 0],
+        [0, 3, 5, 6, 7, 6, 5, 3, 5, 6, 7, 10, 12, 10, 7, 6, 5, 3, 0]
+    ],
+    // MELODIC LIBRARY PER L'ASSOLO (armoniche minori)
+    solo_epic_harmonic: [
+        [0, 2, 3, 5, 7, 8, 11, 12, 11, 8, 7, 5, 3, 2, 0],
+        [0, 3, 5, 7, 8, 11, 12, 14, 12, 11, 8, 7, 5, 3, 0],
+        [0, 2, 5, 7, 8, 11, 12, 14, 15, 14, 12, 11, 8, 7, 5, 2, 0],
+        [0, 4, 7, 11, 12, 14, 16, 14, 12, 11, 7, 4, 0]
+    ],
+    solo_shred_harmonic: [
+        [0, 2, 3, 5, 7, 8, 11, 12, 11, 8, 7, 5, 3, 2, 0, 2, 3, 5, 7, 8, 11, 12],
+        [0, 1, 3, 5, 7, 8, 11, 12, 14, 12, 11, 8, 7, 5, 3, 1, 0, 1, 3, 5, 7, 8, 11, 12],
+        [0, 2, 4, 5, 7, 8, 11, 12, 14, 15, 14, 12, 11, 8, 7, 5, 4, 2, 0, 2, 4, 5, 7, 8, 11, 12],
+        [0, 3, 5, 7, 8, 11, 12, 14, 15, 17, 15, 14, 12, 11, 8, 7, 5, 3, 0]
+    ],
+    solo_romantic_harmonic: [
+        [0, 3, 5, 7, 8, 11, 8, 7, 5, 3, 2, 3, 5, 7, 8, 11, 8, 7, 5, 3, 0],
+        [0, 2, 3, 5, 7, 8, 11, 12, 11, 8, 7, 5, 3, 2, 3, 5, 7, 8, 11, 8, 7, 5, 3, 0],
+        [0, 3, 7, 8, 11, 12, 11, 8, 7, 5, 3, 5, 7, 8, 11, 12, 11, 8, 7, 3, 0],
+        [0, 5, 7, 8, 11, 12, 14, 12, 11, 8, 7, 5, 3, 2, 3, 5, 7, 8, 11, 8, 7, 5, 0]
+    ],
+    solo_evil_harmonic: [
+        [0, 1, 3, 4, 6, 8, 11, 12, 11, 8, 6, 4, 3, 1, 0],
+        [0, 1, 4, 6, 8, 11, 12, 14, 12, 11, 8, 6, 4, 1, 0],
+        [0, 3, 4, 6, 8, 11, 12, 13, 12, 11, 8, 6, 4, 3, 0],
+        [0, 1, 3, 5, 7, 8, 11, 12, 14, 12, 11, 8, 7, 5, 3, 1, 0]
+    ],
+    solo_tapping_harmonic: [
+        [0, 11, 0, 11, 7, 11, 7, 11, 5, 11, 5, 11, 0],
+        [0, 11, 5, 11, 5, 11, 7, 11, 7, 11, 0, 11, 0],
+        [0, 11, 8, 11, 8, 11, 5, 11, 5, 11, 7, 11, 7, 11, 0],
+        [0, 11, 7, 14, 7, 11, 5, 11, 5, 14, 5, 11, 0]
+    ],
+    solo_sweep_harmonic: [
+        [0, 3, 7, 11, 7, 3, 0],
+        [0, 2, 7, 11, 7, 2, 0],
+        [0, 3, 7, 11, 15, 11, 7, 3, 0],
+        [0, 4, 7, 11, 16, 11, 7, 4, 0],
+        [0, 3, 7, 11, 14, 11, 7, 3, 0, 3, 7, 11, 14, 11, 7, 3]
+    ],
+    solo_power_harmonic: [
+        [0, 7, 11, 7, 0, 7, 11, 7, 5, 11, 5, 0],
+        [0, 5, 11, 5, 0, 5, 11, 7, 0, 7, 11, 7, 0],
+        [0, 7, 11, 14, 11, 7, 0, 5, 11, 14, 11, 5, 0],
+        [0, 5, 7, 11, 14, 16, 14, 11, 7, 5, 0]
+    ],
+    solo_neoclassical_harmonic: [
+        [0, 2, 3, 5, 7, 8, 11, 12, 14, 12, 11, 8, 7, 5, 3, 2, 0],
+        [0, 1, 3, 5, 6, 8, 11, 12, 14, 15, 14, 12, 11, 8, 6, 5, 3, 1, 0],
+        [0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 14, 12, 11, 9, 7, 5, 4, 2, 0],
+        [0, 3, 5, 7, 8, 11, 12, 14, 15, 17, 15, 14, 12, 11, 8, 7, 5, 3, 0]
+    ],
+    solo_modern_harmonic: [
+        [0, 5, 7, 11, 12, 11, 7, 5, 3, 5, 7, 11, 12, 11, 7, 5, 0],
+        [0, 4, 7, 11, 12, 14, 12, 11, 7, 5, 3, 5, 7, 11, 12, 14, 12, 11, 7, 4, 0],
+        [0, 3, 5, 7, 8, 11, 12, 14, 16, 14, 12, 11, 8, 7, 5, 3, 0, 3, 5, 7, 8, 11, 12],
+        [0, 2, 5, 7, 8, 11, 12, 14, 12, 11, 8, 7, 5, 2, 0]
+    ],
+    solo_bluesy_harmonic: [
+        [0, 3, 5, 6, 7, 8, 11, 12, 11, 8, 7, 6, 5, 3, 0],
+        [0, 3, 5, 7, 6, 7, 8, 11, 12, 14, 12, 11, 8, 7, 6, 5, 3, 0],
+        [0, 4, 5, 7, 6, 7, 8, 11, 12, 14, 16, 14, 12, 11, 8, 7, 6, 5, 4, 0],
+        [0, 3, 5, 6, 7, 6, 5, 3, 5, 6, 7, 8, 11, 12, 14, 12, 11, 8, 7, 6, 5, 3, 0]
+    ]
+};
+
+// ============================================================
+// FUNZIONE UNIFICATA PER L'ASSOLO
+// ============================================================
+
+const getSoloStyles = (energy, brightness, complexity, texture, isHarmonic) => {
+    let style;
+    
+    // Ordine gerarchico per la scelta dello stile
+    if (complexity > 0.8) {
+        style = "neoclassical";
+    } else if (brightness > 0.7 && energy > 0.6) {
+        style = "power";
+    } else if (texture > 0.6) {
+        style = "modern";
+    } else if (brightness < 0.3) {
+        style = "bluesy";
+    } else if (energy > 0.8 && complexity > 0.6) {
+        style = "shred";
+    } else if (energy > 0.6 && brightness > 0.5) {
+        style = "tapping";
+    } else if (energy > 0.5 && complexity > 0.5) {
+        style = "sweep";
+    } else if (brightness < 0.4 && complexity > 0.4) {
+        style = "evil";
+    } else if (energy > 0.7) {
+        style = "shred";
+    } else if (energy < 0.4) {
+        style = "romantic";
+    } else {
+        style = "epic";
+    }
+    
+    // Costruisci i nomi delle library
+    const rhythmName = `solo_${style}`;
+    const melodyName = isHarmonic ? `solo_${style}_harmonic` : `solo_${style}`;
+    
+    return {
+        rhythmPatterns: library[rhythmName],
+        melodyPatterns: melodicLibrary[melodyName],
+        styleName: style.toUpperCase(),
+        isHarmonic: isHarmonic
+    };
+};
+
+// ============================================================
+// LEGACY (sezioni normali)
 // ============================================================
 
 const LeadLegacy = {
@@ -56,8 +356,7 @@ const LeadLegacy = {
         const isPreChorus = name.includes("pre");
         const isIntro = name.includes("intro") || name.includes("outro");
         const isSolo = name.includes("solo"); 
-        const isBridge =
-name.includes("bridge");
+        const isBridge = name.includes("bridge");
         const stepTime = measureDur / 16;
 
         const {
@@ -67,356 +366,17 @@ name.includes("bridge");
             complexity = 0.5
         } = params?.imageParams || {};
 
-        // ============================================================
-        // LIBRARY (identica alla 76.1 - senza bridge separato)
-        // ============================================================
-        const library = {
-            intro: [
-                [0, 1, 2, 3, 4, 8, 12],
-                [0, 4, 8, 10, 11, 12, 13, 14],
-                [0, 2, 3, 4, 8, 10, 11, 12],
-                [0, 3, 4, 7, 8, 11, 12, 15],
-                [0, 1, 2, 3, 4, 5, 6, 7, 8]
-            ],
-            verse: [
-                [0, 8],
-                [0, 4, 8, 12],
-                [0, 6, 8, 14],
-                [0, 4, 10],
-                [2, 6, 10, 14],
-                [0, 2, 4, 8, 10, 12]
-            ],
-            prechorus: [
-                [0, 4, 8, 12],
-                [0, 2, 4, 6, 8, 10, 12, 14],
-                [0, 4, 7, 11, 12],
-                [0, 8, 12, 14],
-                [0, 2, 4, 8, 10, 12]
-            ],
-            chorus: [
-                [0, 2, 4, 6, 8, 10, 12, 14],
-                [0, 8, 12],
-                [0, 4, 8, 12],
-                [0, 3, 8, 11],
-                [0, 6, 7, 8, 14]
-            ],
-            // LIBRARY RITMICHE PER L'ASSOLO (allineate con le nuove maschere)
+        const isHarmonic = scaleType === "harmonicMinor";
 
-solo: [
-    // Pattern base per melodie di media lunghezza (15-20 note)
-    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],  // scala completa
-    [0, 2, 4, 6, 8, 10, 12, 14, 12, 10, 8, 6, 4, 2, 0],      // sale e scende
-    [0, 1, 3, 5, 7, 9, 11, 13, 15, 13, 11, 9, 7, 5, 3, 1, 0], // con passaggi
-    [0, 3, 6, 9, 12, 15, 12, 9, 6, 3, 0],                     // terze
-    [0, 4, 8, 12, 15, 12, 8, 4, 0]                            // quarte
-],
-
-solo_fast: [
-    // Pattern densi per shred (20-30 note)
-    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0],
-    [0, 2, 3, 5, 6, 8, 9, 11, 12, 14, 15, 14, 12, 11, 9, 8, 6, 5, 3, 2, 0],
-    [0, 1, 3, 4, 6, 7, 9, 10, 12, 13, 15, 13, 12, 10, 9, 7, 6, 4, 3, 1, 0],
-    [0, 2, 4, 5, 7, 8, 10, 11, 12, 13, 15, 16, 15, 13, 12, 11, 10, 8, 7, 5, 4, 2, 0]
-],
-
-solo_slow: [
-    // Pattern larghi per frasi melodiche lente (10-15 note)
-    [0, 2, 4, 6, 8, 10, 12, 14, 12, 10, 8, 6, 4, 2, 0],
-    [0, 3, 6, 9, 12, 15, 12, 9, 6, 3, 0],
-    [0, 4, 8, 12, 16, 12, 8, 4, 0],
-    [0, 5, 10, 14, 10, 5, 0],
-    [0, 7, 12, 14, 12, 7, 0]
-],
-
-solo_power: [
-    // Pattern power metal (salti di quinta/ottava)
-    [0, 7, 12, 14, 12, 7, 0, 7, 12, 14, 12, 7, 0],
-    [0, 5, 12, 14, 12, 5, 0, 5, 12, 14, 12, 5, 0],
-    [0, 7, 12, 19, 12, 7, 0],
-    [0, 5, 12, 19, 12, 5, 0]
-],
-
-solo_sweep: [
-    // Pattern per sweep picking (arp eg gi fluidi)
-    [0, 3, 7, 12, 7, 3, 0],
-    [0, 2, 7, 12, 7, 2, 0],
-    [0, 3, 7, 12, 15, 12, 7, 3, 0],
-    [0, 4, 7, 12, 16, 12, 7, 4, 0]
-],
-
-solo_tapping: [
-    // Pattern per tapping (salti di ottava)
-    [0, 12, 0, 12, 7, 12, 7, 12, 0, 12, 0],
-    [0, 12, 5, 12, 5, 12, 7, 12, 7, 12, 0],
-    [0, 12, 8, 12, 8, 12, 5, 12, 5, 12, 7, 12, 7, 12, 0]
-],
-
-solo_modern: [
-    // Pattern moderni con sincopi
-    [0, 3, 5, 8, 10, 13, 15, 13, 10, 8, 5, 3, 0],
-    [0, 2, 5, 7, 9, 12, 14, 12, 9, 7, 5, 2, 0],
-    [0, 4, 6, 9, 11, 14, 16, 14, 11, 9, 6, 4, 0],
-    [0, 3, 6, 8, 11, 13, 16, 13, 11, 8, 6, 3, 0]
-],
-
-solo_bluesy: [
-    // Pattern blues (con blue note)
-    [0, 3, 5, 6, 7, 10, 12, 10, 7, 6, 5, 3, 0],
-    [0, 3, 5, 7, 10, 12, 14, 12, 10, 7, 5, 3, 0],
-    [0, 4, 5, 7, 10, 12, 15, 12, 10, 7, 5, 4, 0],
-    [0, 3, 5, 6, 7, 6, 5, 3, 5, 6, 7, 10, 12, 10, 7, 6, 5, 3, 0]
-]
-        };
-
-        // ============================================================
-        // MELODIC LIBRARY (identica alla 76.1)
-        // ============================================================
-        const melodicLibrary = {
-            epic: [
-                [0, 4, 7, 4, 5, 4, 2, 0], [0, 0, 4, 4, 7, 7, 4, 4],
-                [0, 4, 5, 7, 0, 4, 5, 7], [7, 4, 0, 4, 7, 4, 0, 0],
-                [0, 2, 4, 7, 5, 4, 2, 0], [0, 7, 4, 2, 0, 4, 2, 0],
-                [4, 0, 4, 5, 7, 5, 4, 0], [0, 3, 5, 0, 3, 5, 7, 0]
-            ],
-            evil: [
-                [0, 1, 0, 1, 4, 3, 1, 0], [0, 6, 5, 0, 6, 5, 1, 0],
-                [0, 1, 4, 1, 0, 1, 4, 1], [0, 3, 4, 0, 3, 4, 6, 0],
-                [1, 0, 1, 0, 3, 1, 0, 0], [0, 1, 3, 4, 6, 4, 3, 1],
-                [0, 4, 3, 1, 0, 1, 3, 4], [6, 5, 4, 3, 2, 1, 0, 0]
-            ],
-            active: [
-                [0, 1, 2, 3, 4, 5, 6, 7], [0, 2, 4, 2, 3, 5, 7, 5],
-                [0, 2, 0, 4, 0, 5, 0, 7], [4, 0, 5, 0, 7, 0, 5, 0],
-                [0, 2, 4, 5, 7, 5, 4, 2], [0, 3, 2, 5, 4, 7, 6, 0],
-                [7, 5, 4, 2, 7, 5, 4, 2], [0, 7, 6, 7, 0, 5, 4, 5]
-            ],
-            emotional: [
-                [0, 6, 5, 4, 2, 3, 2, 0], [2, 3, 2, 0, 4, 5, 4, 2],
-                [4, 2, 0, 6, 5, 4, 2, 2], [0, 4, 6, 7, 6, 4, 2, 0],
-                [5, 4, 2, 0, 5, 4, 2, 0], [0, 2, 4, 6, 0, 2, 4, 6],
-                [4, 5, 7, 4, 2, 3, 2, 0], [0, 0, 6, 6, 5, 5, 4, 4]
-            ],
-            prechorus: [
-                [0, 2, 3, 4, 5, 6, 7, 7], [0, 0, 2, 2, 4, 4, 6, 6],
-                [0, 4, 0, 5, 0, 6, 0, 7], [4, 5, 4, 5, 6, 7, 7, 7]
-            ],
-            // MELODIC LIBRARY PER L'ASSOLO - VERSIONE "ARCO MUSICALE"
-
-solo_epic: [
-    // Arco classico: sale lentamente, picco, scende lentamente
-    [0, 2, 3, 5, 7, 8, 10, 12, 10, 8, 7, 5, 3, 2, 0],  // 15 note
-    [0, 3, 5, 7, 9, 10, 12, 14, 12, 10, 9, 7, 5, 3, 0],
-    [0, 2, 5, 7, 8, 10, 12, 14, 15, 14, 12, 10, 8, 7, 5, 2, 0],
-    [0, 4, 7, 8, 10, 12, 14, 16, 14, 12, 10, 8, 7, 4, 0]
-],
-
-solo_shred: [
-    // Veloce con picchi multipli
-    [0, 2, 3, 5, 7, 8, 10, 12, 10, 8, 7, 5, 3, 2, 0, 2, 3, 5, 7, 8, 10, 12],
-    [0, 1, 3, 5, 6, 8, 10, 12, 10, 8, 6, 5, 3, 1, 0, 1, 3, 5, 6, 8, 10, 12],
-    [0, 2, 4, 5, 7, 9, 10, 12, 14, 12, 10, 9, 7, 5, 4, 2, 0, 2, 4, 5, 7, 9, 10, 12],
-    [0, 3, 4, 5, 7, 8, 10, 12, 14, 15, 14, 12, 10, 8, 7, 5, 4, 3, 0]
-],
-
-solo_romantic: [
-    // Melodico, cantabile, con respiro
-    [0, 3, 5, 7, 5, 3, 2, 3, 5, 7, 5, 3, 0],
-    [0, 2, 3, 5, 7, 8, 7, 5, 3, 2, 3, 5, 7, 5, 3, 0],
-    [0, 3, 7, 8, 10, 8, 7, 5, 3, 5, 7, 8, 10, 8, 7, 3, 0],
-    [0, 5, 7, 9, 10, 12, 10, 9, 7, 5, 3, 2, 3, 5, 7, 5, 0]
-],
-
-solo_evil: [
-    // Intervalli cupi, tritoni, discese drammatiche
-    [0, 1, 3, 4, 6, 8, 10, 8, 6, 4, 3, 1, 0],
-    [0, 1, 4, 6, 8, 10, 12, 10, 8, 6, 4, 1, 0],
-    [0, 3, 4, 6, 8, 10, 12, 11, 10, 8, 6, 4, 3, 0],
-    [0, 1, 3, 5, 6, 8, 10, 12, 10, 8, 6, 5, 3, 1, 0]
-],
-
-solo_tapping: [
-    // Note alternate, ottave, tapping classico
-    [0, 12, 0, 12, 7, 12, 7, 12, 5, 12, 5, 12, 0],
-    [0, 12, 5, 12, 5, 12, 7, 12, 7, 12, 0, 12, 0],
-    [0, 12, 8, 12, 8, 12, 5, 12, 5, 12, 7, 12, 7, 12, 0],
-    [0, 12, 7, 14, 7, 12, 5, 12, 5, 14, 5, 12, 0]
-],
-
-solo_sweep: [
-    // Arpeggi fluidi per sweep picking
-    [0, 3, 7, 12, 7, 3, 0],
-    [0, 2, 7, 12, 7, 2, 0],
-    [0, 3, 7, 12, 15, 12, 7, 3, 0],
-    [0, 4, 7, 12, 16, 12, 7, 4, 0],
-    [0, 3, 7, 12, 14, 12, 7, 3, 0, 3, 7, 12, 14, 12, 7, 3]  // sweep doppio
-],
-
-solo_fast: [
-    // Veloce, scale, picchi rapidi
-    [0, 2, 3, 5, 7, 8, 10, 12, 14, 12, 10, 8, 7, 5, 3, 2, 0],
-    [0, 1, 3, 5, 7, 8, 10, 12, 13, 15, 13, 12, 10, 8, 7, 5, 3, 1, 0],
-    [0, 2, 4, 5, 7, 9, 10, 12, 14, 16, 14, 12, 10, 9, 7, 5, 4, 2, 0],
-    [0, 3, 5, 7, 9, 10, 12, 14, 15, 17, 15, 14, 12, 10, 9, 7, 5, 3, 0]
-],
-
-solo_power: [
-    // Power metal epico, salti di quinta/ottava
-    [0, 7, 12, 7, 0, 7, 12, 7, 5, 12, 5, 0],
-    [0, 5, 12, 5, 0, 5, 12, 7, 0, 7, 12, 7, 0],
-    [0, 7, 12, 14, 12, 7, 0, 5, 12, 14, 12, 5, 0],
-    [0, 5, 7, 12, 14, 16, 14, 12, 7, 5, 0]
-],
-
-solo_neoclassical: [
-    // Stile Yngwie, scale ascendenti/descendenti
-    [0, 2, 3, 5, 7, 8, 10, 12, 14, 12, 10, 8, 7, 5, 3, 2, 0],
-    [0, 1, 3, 4, 6, 8, 10, 12, 13, 12, 10, 8, 6, 4, 3, 1, 0],
-    [0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 14, 12, 11, 9, 7, 5, 4, 2, 0],
-    [0, 3, 5, 7, 9, 10, 12, 14, 15, 17, 15, 14, 12, 10, 9, 7, 5, 3, 0]
-],
-
-solo_modern: [
-    // Metal moderno, sincopi, salti
-    [0, 5, 7, 12, 10, 7, 5, 3, 5, 7, 10, 12, 7, 5, 0],
-    [0, 4, 7, 10, 12, 10, 7, 5, 3, 5, 7, 10, 12, 9, 7, 4, 0],
-    [0, 3, 5, 8, 10, 12, 14, 12, 10, 8, 5, 3, 0, 3, 5, 8, 10, 12],
-    [0, 2, 5, 7, 9, 12, 14, 12, 9, 7, 5, 2, 0]
-],
-
-solo_bluesy: [
-    // Blues rock, blue note, espressivo
-    [0, 3, 5, 6, 7, 10, 12, 10, 7, 6, 5, 3, 0],
-    [0, 3, 5, 7, 6, 7, 10, 12, 10, 7, 6, 5, 3, 0],
-    [0, 4, 5, 7, 6, 7, 10, 12, 14, 12, 10, 7, 6, 5, 4, 0],
-    [0, 3, 5, 6, 7, 6, 5, 3, 5, 6, 7, 10, 12, 10, 7, 6, 5, 3, 0]
-],
-// MELODIC LIBRARY PER L'ASSOLO - SCALA ARMONICA MINORE (con G#)
-
-solo_epic_harmonic: [
-    // Arco classico con sensibile (G#)
-    [0, 2, 3, 5, 7, 8, 11, 12, 11, 8, 7, 5, 3, 2, 0],
-    [0, 3, 5, 7, 8, 11, 12, 14, 12, 11, 8, 7, 5, 3, 0],
-    [0, 2, 5, 7, 8, 11, 12, 14, 15, 14, 12, 11, 8, 7, 5, 2, 0],
-    [0, 4, 7, 11, 12, 14, 16, 14, 12, 11, 7, 4, 0]
-],
-
-solo_shred_harmonic: [
-    // Veloce con sensibile, tipico neoclassico
-    [0, 2, 3, 5, 7, 8, 11, 12, 11, 8, 7, 5, 3, 2, 0, 2, 3, 5, 7, 8, 11, 12],
-    [0, 1, 3, 5, 7, 8, 11, 12, 14, 12, 11, 8, 7, 5, 3, 1, 0, 1, 3, 5, 7, 8, 11, 12],
-    [0, 2, 4, 5, 7, 8, 11, 12, 14, 15, 14, 12, 11, 8, 7, 5, 4, 2, 0, 2, 4, 5, 7, 8, 11, 12],
-    [0, 3, 5, 7, 8, 11, 12, 14, 15, 17, 15, 14, 12, 11, 8, 7, 5, 3, 0]
-],
-
-solo_romantic_harmonic: [
-    // Melodico con tensione della sensibile
-    [0, 3, 5, 7, 8, 11, 8, 7, 5, 3, 2, 3, 5, 7, 8, 11, 8, 7, 5, 3, 0],
-    [0, 2, 3, 5, 7, 8, 11, 12, 11, 8, 7, 5, 3, 2, 3, 5, 7, 8, 11, 8, 7, 5, 3, 0],
-    [0, 3, 7, 8, 11, 12, 11, 8, 7, 5, 3, 5, 7, 8, 11, 12, 11, 8, 7, 3, 0],
-    [0, 5, 7, 8, 11, 12, 14, 12, 11, 8, 7, 5, 3, 2, 3, 5, 7, 8, 11, 8, 7, 5, 0]
-],
-
-solo_evil_harmonic: [
-    // Cupo, con intervalli aumentati (tipico armonica minore)
-    [0, 1, 3, 4, 6, 8, 11, 12, 11, 8, 6, 4, 3, 1, 0],
-    [0, 1, 4, 6, 8, 11, 12, 14, 12, 11, 8, 6, 4, 1, 0],
-    [0, 3, 4, 6, 8, 11, 12, 13, 12, 11, 8, 6, 4, 3, 0],
-    [0, 1, 3, 5, 7, 8, 11, 12, 14, 12, 11, 8, 7, 5, 3, 1, 0]
-],
-
-solo_tapping_harmonic: [
-    // Tapping con sensibile in risalto
-    [0, 11, 0, 11, 7, 11, 7, 11, 5, 11, 5, 11, 0],
-    [0, 11, 5, 11, 5, 11, 7, 11, 7, 11, 0, 11, 0],
-    [0, 11, 8, 11, 8, 11, 5, 11, 5, 11, 7, 11, 7, 11, 0],
-    [0, 11, 7, 14, 7, 11, 5, 11, 5, 14, 5, 11, 0]
-],
-
-solo_sweep_harmonic: [
-    // Sweep con arpeggio aumentato (tipico Yngwie)
-    [0, 3, 7, 11, 7, 3, 0],
-    [0, 2, 7, 11, 7, 2, 0],
-    [0, 3, 7, 11, 15, 11, 7, 3, 0],
-    [0, 4, 7, 11, 16, 11, 7, 4, 0],
-    [0, 3, 7, 11, 14, 11, 7, 3, 0, 3, 7, 11, 14, 11, 7, 3]
-],
-
-solo_fast_harmonic: [
-    // Scale veloci con sensibile
-    [0, 2, 3, 5, 7, 8, 11, 12, 14, 12, 11, 8, 7, 5, 3, 2, 0],
-    [0, 1, 3, 5, 7, 8, 11, 12, 14, 15, 14, 12, 11, 8, 7, 5, 3, 1, 0],
-    [0, 2, 4, 5, 7, 8, 11, 12, 14, 16, 14, 12, 11, 8, 7, 5, 4, 2, 0],
-    [0, 3, 5, 7, 8, 11, 12, 14, 15, 17, 15, 14, 12, 11, 8, 7, 5, 3, 0]
-],
-
-solo_power_harmonic: [
-    // Power metal con sensibile
-    [0, 7, 11, 7, 0, 7, 11, 7, 5, 11, 5, 0],
-    [0, 5, 11, 5, 0, 5, 11, 7, 0, 7, 11, 7, 0],
-    [0, 7, 11, 14, 11, 7, 0, 5, 11, 14, 11, 5, 0],
-    [0, 5, 7, 11, 14, 16, 14, 11, 7, 5, 0]
-],
-
-solo_neoclassical_harmonic: [
-    // Stile Yngwie (armonica minore per eccellenza!)
-    [0, 2, 3, 5, 7, 8, 11, 12, 14, 12, 11, 8, 7, 5, 3, 2, 0],
-    [0, 1, 3, 5, 6, 8, 11, 12, 14, 15, 14, 12, 11, 8, 6, 5, 3, 1, 0],
-    [0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 14, 12, 11, 9, 7, 5, 4, 2, 0],
-    [0, 3, 5, 7, 8, 11, 12, 14, 15, 17, 15, 14, 12, 11, 8, 7, 5, 3, 0]
-],
-
-solo_modern_harmonic: [
-    // Metal moderno con sensibile
-    [0, 5, 7, 11, 12, 11, 7, 5, 3, 5, 7, 11, 12, 11, 7, 5, 0],
-    [0, 4, 7, 11, 12, 14, 12, 11, 7, 5, 3, 5, 7, 11, 12, 14, 12, 11, 7, 4, 0],
-    [0, 3, 5, 7, 8, 11, 12, 14, 16, 14, 12, 11, 8, 7, 5, 3, 0, 3, 5, 7, 8, 11, 12],
-    [0, 2, 5, 7, 8, 11, 12, 14, 12, 11, 8, 7, 5, 2, 0]
-],
-
-solo_bluesy_harmonic: [
-    // Blues con sensibile (mix blues + armonica)
-    [0, 3, 5, 6, 7, 8, 11, 12, 11, 8, 7, 6, 5, 3, 0],
-    [0, 3, 5, 7, 6, 7, 8, 11, 12, 14, 12, 11, 8, 7, 6, 5, 3, 0],
-    [0, 4, 5, 7, 6, 7, 8, 11, 12, 14, 16, 14, 12, 11, 8, 7, 6, 5, 4, 0],
-    [0, 3, 5, 6, 7, 6, 5, 3, 5, 6, 7, 8, 11, 12, 14, 12, 11, 8, 7, 6, 5, 3, 0]
-]
-        };
-
+        // Funzione per ottenere pattern ritmico dalle library normali
         const getPattern = (type) => {
             const family = library[type] || library.verse;
-            const dnaScore = (energy * 400) + (brightness * 30) + (complexity * 2);
-            const index = Math.floor(Math.abs(dnaScore)) % family.length;
+            const index = Math.floor(rand() * family.length);
             return family[index];
         };
 
-        // ============================================================
-        // getMelodyFamily PIÙ SEMPLICE (come nella 76.1)
-        // ============================================================
+        // Funzione per ottenere melodic library per sezioni normali
         const getMelodyFamily = () => {
-    if (isSolo || isBridge) {
-        const isHarmonic = scaleType === "harmonicMinor";
-        
-        if (isHarmonic) {
-            if (energy > 0.8 && complexity > 0.7) return { name: "SOLO SHRED HARMONIC ⚡", data: melodicLibrary.solo_shred_harmonic };
-            if (energy > 0.7 && brightness > 0.6) return { name: "SOLO EPIC HARMONIC 🏰", data: melodicLibrary.solo_epic_harmonic };
-            if (complexity > 0.7) return { name: "SOLO TAPPING HARMONIC 🎸", data: melodicLibrary.solo_tapping_harmonic };
-            if (brightness < 0.4) return { name: "SOLO EVIL HARMONIC 😈", data: melodicLibrary.solo_evil_harmonic };
-            if (energy < 0.5) return { name: "SOLO ROMANTIC HARMONIC 💕", data: melodicLibrary.solo_romantic_harmonic };
-            if (complexity > 0.5 && energy > 0.5) return { name: "SOLO FAST HARMONIC 🚀", data: melodicLibrary.solo_fast_harmonic };
-            return { name: "SOLO EPIC HARMONIC 🏰", data: melodicLibrary.solo_epic_harmonic };
-        } else {  if (energy > 0.8 && complexity > 0.7) return { name: "SOLO SHRED ⚡", data: melodicLibrary.solo_shred };
-                if (energy > 0.7 && brightness > 0.6) return { name: "SOLO EPIC 🏰", data: melodicLibrary.solo_epic };
-                if (complexity > 0.7) return { name: "SOLO TAPPING 🎸", data: melodicLibrary.solo_tapping };
-                if (brightness < 0.4) return { name: "SOLO EVIL 😈", data: melodicLibrary.solo_evil };
-                if (energy < 0.5) return { name: "SOLO ROMANTIC 💕", data: melodicLibrary.solo_romantic };
-                if (complexity > 0.5 && energy > 0.5) return { name: "SOLO FAST 🚀", data: melodicLibrary.solo_fast };
-                return { name: "SOLO EPIC 🏰", data: melodicLibrary.solo_epic };
-    if (brightness > 0.7 && energy > 0.6) return { name: "SOLO POWER ⚔️", data: melodicLibrary.solo_power };
-    if (complexity > 0.8) return { name: "SOLO NEOCLASSICAL 🎻", data: melodicLibrary.solo_neoclassical };
-    if (texture > 0.6) return { name: "SOLO MODERN 🔥", data: melodicLibrary.solo_modern };
-    if (brightness < 0.3) return { name: "SOLO BLUESY 🎷", data: melodicLibrary.solo_bluesy };
-            }
-         }
             if (isPreChorus) return { name: "PRE-CHORUS 📈", data: melodicLibrary.prechorus };
             if (isChorus) {
                 return brightness > 0.5
@@ -429,17 +389,9 @@ solo_bluesy_harmonic: [
             return { name: "EPIC 🏰", data: melodicLibrary.epic };
         };
 
-                // Seleziona il tipo di sezione per library
+        // Seleziona il tipo di sezione per library normali
         let sectionType;
-        if (isSolo || isBridge) {
-            if (energy > 0.7) sectionType = "solo_fast";
-            else if (energy < 0.4) sectionType = "solo_slow";
-            else sectionType = "solo";
-    if (brightness > 0.7 && energy > 0.6) sectionType = "solo_power";
-    else if (complexity > 0.8) sectionType = "solo_neoclassical";
-    else if (texture > 0.6) sectionType = "solo_modern";
-    else if (brightness < 0.3) sectionType = "solo_bluesy";
-        } else if (isIntro) {
+        if (isIntro) {
             sectionType = "intro";
         } else if (isPreChorus) {
             sectionType = "prechorus";
@@ -448,76 +400,68 @@ solo_bluesy_harmonic: [
         } else {
             sectionType = "verse";
         }
-        
-        //const currentPattern = getPattern(sectionType);
-        //const mood = getMelodyFamily();
-        //const currentMelody = mood.data[Math.floor(energy * mood.data.length) % mood.data.length];
-        
+
         const getStrictScale = (root) => {
             const allNotes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
             let cleanRoot = root.split('/')[0].replace(/[0-9]/g, '').trim();
-            let isMinor = root.includes('m') || (cleanRoot === cleanRoot.toLowerCase() && cleanRoot.length === 1);
+            let isMinorLocal = root.includes('m') || (cleanRoot === cleanRoot.toLowerCase() && cleanRoot.length === 1);
             cleanRoot = cleanRoot.toUpperCase();
             const altNames = { "DB": "C#", "EB": "D#", "GB": "F#", "AB": "G#", "BB": "A#" };
             cleanRoot = altNames[cleanRoot] || cleanRoot;
             let rootIdx = allNotes.indexOf(cleanRoot);
             if (rootIdx === -1) rootIdx = 9;
-            const intervals = isMinor ? [0, 2, 3, 5, 7, 8, 10] : [0, 2, 4, 5, 7, 9, 11];
+            const intervals = isMinorLocal ? [0, 2, 3, 5, 7, 8, 10] : [0, 2, 4, 5, 7, 9, 11];
             return intervals.map(interval => allNotes[(rootIdx + interval) % 12]);
         };
 
         for (let m = 0; m < section.measures; m++) {
-    const measureStartTime = section.startTime + (m * measureDur);
+            const measureStartTime = section.startTime + (m * measureDur);
 
-    // metà sezione
-    const half = Math.floor(section.measures / 2);
+            let currentPattern;
+            let currentMelody;
+            let moodName;
 
-    let currentPattern;
-    let currentMelody;
-    let moodName;
+            if (isSolo || isBridge) {
+                // ASSOLO: usa la funzione unificata
+                const soloStyles = getSoloStyles(energy, brightness, complexity, texture, isHarmonic);
+                
+                // Scegli pattern random dalla library ritmica
+                const rhythmIndex = Math.floor(rand() * soloStyles.rhythmPatterns.length);
+                currentPattern = soloStyles.rhythmPatterns[rhythmIndex];
+                
+                // Scegli pattern random dalla melodic library
+                const melodyIndex = Math.floor(rand() * soloStyles.melodyPatterns.length);
+                currentMelody = soloStyles.melodyPatterns[melodyIndex];
+                
+                moodName = `SOLO ${soloStyles.styleName} ${isHarmonic ? "HARMONIC" : ""}`;
+            } else {
+                // SEZIONI NORMALI
+                currentPattern = getPattern(sectionType);
+                const mood = getMelodyFamily();
+                const melodyIndex = Math.floor(rand() * mood.data.length);
+                currentMelody = mood.data[melodyIndex];
+                moodName = mood.name;
+            }
 
-    if (isSolo) {
-        if (m < half) {
-            // PRIMA METÀ — più melodica
-            currentPattern = getPattern("solo_slow");
-            const moodA = melodicLibrary.solo_romantic;
-            currentMelody = moodA[Math.floor(energy * moodA.length) % moodA.length];
-            moodName = "SOLO PART A — Romantic 💕";
-        } else {
-            // SECONDA METÀ — più tecnica
-            currentPattern = getPattern("solo_fast");
-            const moodB = melodicLibrary.solo_shred;
-            currentMelody = moodB[Math.floor(energy * moodB.length) % moodB.length];
-            moodName = "SOLO PART B — Shred ⚡";
-        }
-    } else {
-        // comportamento normale
-        currentPattern = getPattern(sectionType);
-        const mood = getMelodyFamily();
-        currentMelody = mood.data[Math.floor(energy * mood.data.length) % mood.data.length];
-        moodName = mood.name;
-    }
-
-    console.log(
-        `%c 🎸 LEAD DNA EXECUTION (measure ${m})\n` +
-        `%c > Mood: ${moodName}\n` +
-        `%c > Rhythm Mask: [${currentPattern.join(" - ")}]\n` +
-        `%c > Melody Steps: [${currentMelody.join(", ")}]`,
-        "color:#191970;font-weight:bold;font-size:12px;",
-        "color:#191970;",
-        "color:#191970;",
-        "color:#191970;"
-    );
-    
-    let currentScale;
-    if (isSolo || isBridge) {
-        // Scala fissa basata su tonalCenter e scaleType
-        const fixedScaleRoot = rootNote + (isMinor ? "m" : "");
-        currentScale = getStrictScale(fixedScaleRoot);
-        console.log(`🎸 ASSOLO scala fissa: ${fixedScaleRoot} → [${currentScale.join(", ")}]`);
-    } else {
-        currentScale = getStrictScale(progression[m % progression.length] || "A");
-    }
+            console.log(
+                `%c 🎸 LEAD DNA EXECUTION (measure ${m})\n` +
+                `%c > Mood: ${moodName}\n` +
+                `%c > Rhythm Mask: [${currentPattern.join(" - ")}]\n` +
+                `%c > Melody Steps: [${currentMelody.join(", ")}]`,
+                "color:#191970;font-weight:bold;font-size:12px;",
+                "color:#191970;",
+                "color:#191970;",
+                "color:#191970;"
+            );
+            
+            let currentScale;
+            if (isSolo || isBridge) {
+                const fixedScaleRoot = rootNote + (isMinor ? "m" : "");
+                currentScale = getStrictScale(fixedScaleRoot);
+            } else {
+                currentScale = getStrictScale(progression[m % progression.length] || "A");
+            }
+            
             const isTransitionMeasure = (m === section.measures - 1);
 
             currentPattern.forEach((s, i) => {
@@ -540,7 +484,7 @@ solo_bluesy_harmonic: [
     }
 };
 
-//================================================
+// ============================================================
 // SCHEDULE LEAD — PUNTO DI ENTRATA PRINCIPALE
 // ============================================================
 
@@ -548,12 +492,9 @@ export function scheduleLead(section, progression, instruments, params, rand, me
     const { guitarLead } = instruments || {};
     if (!guitarLead) return;
 
-    // Estrai tonalCenter e scaleType
     const tonalCenter = params?.tonalCenter || params?.imageParams?.tonalCenter || "A4";
     const scaleType = params?.scaleType || params?.imageParams?.scaleType || "naturalMinor";
-    const rootNote = tonalCenter.replace(/[0-9]/g, "");  // "A4" → "A"
-    
-    // Determina se è minore (naturalMinor o harmonicMinor)
+    const rootNote = tonalCenter.replace(/[0-9]/g, "");
     const isMinor = scaleType.includes("minor");
     
     console.log("🎸 tonalCenter:", tonalCenter, "→ root:", rootNote);
