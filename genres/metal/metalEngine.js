@@ -9,7 +9,7 @@ import { scheduleRhythm } from "./metalRhythmEngine.js";
 import { scheduleLead } from "./metalLeadEngine.js"; 
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 016.1 loaded");
+console.log("metalEngine.js ver. 016.2 loaded");
 
 export async function waitMetalInstruments() {
     await waitForInstruments(4);
@@ -63,6 +63,7 @@ export function createMetalEngine(params, score) {
     // ============================================================
     const preChorusSection = structure.sections.find(s => s.name === "prechorus");
     const bridgeSection = structure.sections.find(s => s.name === "bridge");
+    const chorusSection = structure.sections.find(s => s.name === "chorus");
     const soloPt1Section = structure.sections.find(s => s.name === "soloPt1");
 const soloPt2Section = structure.sections.find(s => s.name === "soloPt2");
     
