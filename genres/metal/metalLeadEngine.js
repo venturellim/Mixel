@@ -1,9 +1,9 @@
-// metalLeadEngine.js — ver. 084 FINAL (Assolo diviso in 2 semisezioni)
+// metalLeadEngine.js — ver. 085 FINAL (Assolo con coppie dinamiche per le 2 semisezioni)
 
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote, leadBus } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 084.2 loaded");
+console.log("metalLeadEngine.js ver. 085 loaded");
 
 // ============================================================
 // UTILITY
@@ -299,44 +299,75 @@ const melodicLibrary = {
 };
 
 // ============================================================
-// FUNZIONE UNIFICATA PER L'ASSOLO
+// FUNZIONE PER SCEGLIERE 2 STILI DIVERSI PER LE 2 SEMISEZIONI
 // ============================================================
 
-const getSoloStyles = (energy, brightness, complexity, texture, isHarmonic) => {
-    let style;
+const getSoloStylesPair = (energy, brightness, complexity, texture, isHarmonic) => {
+    // Calcola uno score composito
+    const styleScore = (energy * 0.4) + (brightness * 0.3) + (complexity * 0.2) + (texture * 0.1);
     
-    if (complexity > 0.8) {
-        style = "neoclassical";
-    } else if (brightness > 0.7 && energy > 0.6) {
-        style = "power";
-    } else if (texture > 0.6) {
-        style = "modern";
-    } else if (brightness < 0.3) {
-        style = "bluesy";
-    } else if (energy > 0.8 && complexity > 0.6) {
-        style = "shred";
-    } else if (energy > 0.6 && brightness > 0.5) {
-        style = "tapping";
-    } else if (energy > 0.5 && complexity > 0.5) {
-        style = "sweep";
-    } else if (brightness < 0.4 && complexity > 0.4) {
-        style = "evil";
-    } else if (energy > 0.7) {
-        style = "shred";
-    } else if (energy < 0.4) {
-        style = "romantic";
-    } else {
-        style = "epic";
+    // Definisci le possibili coppie di stili (prima parte, seconda parte)
+    const stylePairs = [
+        { first: "romantic", second: "shred", energyReq: 0.6, condition: "high_energy" },
+        { first: "romantic", second: "power", minEnergy: 0.4, maxEnergy: 0.8, condition: "medium_energy" },
+        { first: "epic", second: "shred", minEnergy: 0.5, maxEnergy: 0.9, condition: "epic_shred" },
+        { first: "epic", second: "power", minEnergy: 0.3, maxEnergy: 0.7, condition: "epic_power" },
+        { first: "bluesy", second: "shred", brightnessReq: 0.3, energyReq: 0.4, condition: "blues_shred" },
+        { first: "evil", second: "shred", brightnessReq: 0.4, energyReq: 0.5, condition: "evil_shred" },
+        { first: "modern", second: "shred", energyReq: 0.6, condition: "modern_shred" },
+        { first: "romantic", second: "neoclassical", complexityReq: 0.7, condition: "romantic_neoclassical" },
+        { first: "epic", second: "neoclassical", complexityReq: 0.6, condition: "epic_neoclassical" },
+        { first: "sweep", second: "shred", complexityReq: 0.7, energyReq: 0.6, condition: "sweep_shred" },
+        { first: "tapping", second: "shred", brightnessReq: 0.6, energyReq: 0.5, condition: "tapping_shred" },
+        { first: "power", second: "shred", energyReq: 0.7, condition: "power_shred" },
+        { first: "romantic", second: "epic", energyReq: 0.3, maxEnergy: 0.6, condition: "romantic_epic" },
+        { first: "bluesy", second: "power", brightnessReq: 0.3, energyReq: 0.4, condition: "blues_power" },
+        { first: "evil", second: "power", brightnessReq: 0.4, complexityReq: 0.4, condition: "evil_power" }
+    ];
+    
+    // Filtra le coppie in base ai parametri
+    let availablePairs = stylePairs.filter(pair => {
+        if (pair.energyReq !== undefined && energy < pair.energyReq) return false;
+        if (pair.minEnergy !== undefined && energy < pair.minEnergy) return false;
+        if (pair.maxEnergy !== undefined && energy > pair.maxEnergy) return false;
+        if (pair.brightnessReq !== undefined && brightness < pair.brightnessReq) return false;
+        if (pair.complexityReq !== undefined && complexity < pair.complexityReq) return false;
+        return true;
+    });
+    
+    // Se non ci sono coppie disponibili, usa coppie di default
+    if (availablePairs.length === 0) {
+        availablePairs = [
+            { first: "romantic", second: "shred" },
+            { first: "epic", second: "shred" },
+            { first: "romantic", second: "power" }
+        ];
     }
     
-    const rhythmName = `solo_${style}`;
-    const melodyName = isHarmonic ? `solo_${style}_harmonic` : `solo_${style}`;
+    // Scegli una coppia in base allo score (deterministico)
+    const pairIndex = Math.floor(styleScore * availablePairs.length) % availablePairs.length;
+    const selectedPair = availablePairs[pairIndex];
+    
+    // Costruisci i nomi delle library per entrambi gli stili
+    const getStyleData = (styleName) => {
+        const rhythmName = `solo_${styleName}`;
+        const melodyName = isHarmonic ? `solo_${styleName}_harmonic` : `solo_${styleName}`;
+        return {
+            rhythmPatterns: library[rhythmName],
+            melodyPatterns: melodicLibrary[melodyName],
+            styleName: styleName.toUpperCase()
+        };
+    };
+    
+    const firstStyle = getStyleData(selectedPair.first);
+    const secondStyle = getStyleData(selectedPair.second);
+    
+    console.log(`🎸 SOLO STYLE PAIR: ${firstStyle.styleName} → ${secondStyle.styleName} (${selectedPair.condition || "default"})`);
     
     return {
-        rhythmPatterns: library[rhythmName],
-        melodyPatterns: melodicLibrary[melodyName],
-        styleName: style.toUpperCase(),
-        isHarmonic: isHarmonic
+        first: firstStyle,
+        second: secondStyle,
+        pairCondition: selectedPair.condition || "default"
     };
 };
 
@@ -365,7 +396,6 @@ const LeadLegacy = {
         } = params?.imageParams || {};
 
         const isHarmonic = scaleType === "harmonicMinor";
-        const half = 0; // sarà calcolato dentro il loop
 
         // getPattern ORIGINALE
         const getPattern = (type) => {
@@ -391,7 +421,7 @@ const LeadLegacy = {
 
         let sectionType;
         if (isSolo || isBridge) {
-            sectionType = null; // l'assolo usa getSoloStyles
+            sectionType = null; // l'assolo usa getSoloStylesPair
         } else if (isIntro) {
             sectionType = "intro";
         } else if (isPreChorus) {
@@ -415,6 +445,9 @@ const LeadLegacy = {
             return intervals.map(interval => allNotes[(rootIdx + interval) % 12]);
         };
 
+        // Calcola la coppia di stili UNA VOLTA SOLA (fuori dal loop)
+        const soloStylePair = (isSolo || isBridge) ? getSoloStylesPair(energy, brightness, complexity, texture, isHarmonic) : null;
+
         for (let m = 0; m < section.measures; m++) {
             const measureStartTime = section.startTime + (m * measureDur);
             const measureHalf = Math.floor(section.measures / 2);
@@ -425,33 +458,20 @@ const LeadLegacy = {
 
             if (isSolo || isBridge) {
                 // ============================================================
-                // ASSOLO: DIVISO IN 2 SEMISEZIONI
+                // ASSOLO: USO LE COPPIE DINAMICHE
                 // ============================================================
-                const soloStyles = getSoloStyles(energy, brightness, complexity, texture, isHarmonic);
+                const isFirstHalf = (m < measureHalf);
+                const currentStyle = isFirstHalf ? soloStylePair.first : soloStylePair.second;
                 
-                if (m < measureHalf) {
-                    // PRIMA META' (0 - metà) → stile romantic/slow
-                    const romanticRhythm = library.solo_romantic;
-                    const romanticMelody = isHarmonic ? melodicLibrary.solo_romantic_harmonic : melodicLibrary.solo_romantic;
-                    
-                    const rhythmIndex = Math.floor(rand() * romanticRhythm.length);
-                    const melodyIndex = Math.floor(rand() * romanticMelody.length);
-                    
-                    currentPattern = romanticRhythm[rhythmIndex];
-                    currentMelody = romanticMelody[melodyIndex];
-                    moodName = `SOLO PART A — Romantic ${isHarmonic ? "HARMONIC" : ""} 💕`;
-                } else {
-                    // SECONDA META' (metà - fine) → stile shred/fast
-                    const shredRhythm = library.solo_shred;
-                    const shredMelody = isHarmonic ? melodicLibrary.solo_shred_harmonic : melodicLibrary.solo_shred;
-                    
-                    const rhythmIndex = Math.floor(rand() * shredRhythm.length);
-                    const melodyIndex = Math.floor(rand() * shredMelody.length);
-                    
-                    currentPattern = shredRhythm[rhythmIndex];
-                    currentMelody = shredMelody[melodyIndex];
-                    moodName = `SOLO PART B — Shred ${isHarmonic ? "HARMONIC" : ""} ⚡`;
-                }
+                // Scegli pattern random dalla library ritmica dello stile
+                const rhythmIndex = Math.floor(rand() * currentStyle.rhythmPatterns.length);
+                currentPattern = currentStyle.rhythmPatterns[rhythmIndex];
+                
+                // Scegli pattern random dalla melodic library dello stile
+                const melodyIndex = Math.floor(rand() * currentStyle.melodyPatterns.length);
+                currentMelody = currentStyle.melodyPatterns[melodyIndex];
+                
+                moodName = `SOLO ${isFirstHalf ? "FIRST" : "SECOND"} HALF — ${currentStyle.styleName} ${isHarmonic ? "HARMONIC" : ""}`;
             } else {
                 // SEZIONI NORMALI
                 currentPattern = getPattern(sectionType);
@@ -474,7 +494,6 @@ const LeadLegacy = {
             
             let currentScale;
             if (isSolo || isBridge) {
-                // PER L'ASSOLO: usa la scala fissa per la lead (non per la rhythm!)
                 const fixedScaleRoot = rootNote + (isMinor ? "m" : "");
                 currentScale = getStrictScale(fixedScaleRoot);
             } else {
