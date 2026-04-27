@@ -1,9 +1,9 @@
-// metalLeadEngine.js — ver. 087 FINAL (Assolo con stessa logica delle sezioni normali)
+// metalLeadEngine.js — ver. 087 (Solo = sezioni normali potenziate)
 
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote, leadBus } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 086.3 loaded");
+console.log("metalLeadEngine.js ver. 087 loaded");
 
 // ============================================================
 // UTILITY
@@ -42,7 +42,7 @@ const LeadFloyd = {
 };
 
 // ============================================================
-// LIBRARY (sezioni normali + assolo)
+// LIBRARY (sezioni normali — INVARIATE)
 // ============================================================
 
 const library = {
@@ -74,28 +74,11 @@ const library = {
         [0, 4, 8, 12],
         [0, 3, 8, 11],
         [0, 6, 7, 8, 14]
-    ],
-    // LIBRARY PER L'ASSOLO (potenziate dalle sezioni normali)
-    solo: [
-    // Chorus potenziato
-    [0, 2, 4, 6, 8, 10, 12, 14],
-
-    // Variante più melodica
-    [0, 3, 5, 7, 9, 11, 13, 15],
-
-    // Variante più “cantabile”
-    [0, 2, 5, 7, 10, 12, 14],
-
-    // Variante più fluida
-    [0, 1, 3, 5, 7, 9, 11, 13],
-
-    // Variante più larga (ma non shred)
-    [0, 4, 6, 8, 10, 12, 14]
-]
+    ]
 };
 
 // ============================================================
-// MELODIC LIBRARY (sezioni normali + assolo)
+// MELODIC LIBRARY (sezioni normali — INVARIATE)
 // ============================================================
 
 const melodicLibrary = {
@@ -144,33 +127,80 @@ const melodicLibrary = {
         [0, 0, 2, 2, 4, 4, 6, 6],
         [0, 4, 0, 5, 0, 6, 0, 7],
         [4, 5, 4, 5, 6, 7, 7, 7]
-    ],
-    // MELODIC LIBRARY PER L'ASSOLO (orecchiabili, come le sezioni normali)
-    solo: [
-    // EPIC — cantabile, power metal
-    [0, 2, 4, 7, 9, 7, 5, 4, 2, 0],
-    [0, 4, 5, 7, 9, 12, 9, 7, 5, 4, 0],
-    [0, 2, 5, 7, 9, 7, 5, 2, 0],
-
-    // EMOTIONAL — fluido, melodico
-    [0, 3, 5, 7, 5, 3, 2, 0],
-    [0, 5, 4, 2, 0, 2, 4, 5, 0],
-    [0, 6, 5, 4, 2, 3, 4, 5, 0],
-
-    // ACTIVE — più movimento, ma non shred
-    [0, 2, 4, 5, 7, 5, 4, 2, 0],
-    [0, 1, 3, 5, 7, 5, 3, 1, 0],
-    [0, 2, 4, 7, 9, 7, 4, 2, 0],
-
-    // EVIL — leggermente più scuro, ma musicale
-    [0, 1, 3, 5, 7, 5, 3, 1, 0],
-    [0, 3, 4, 6, 7, 6, 4, 3, 0],
-    [0, 1, 4, 6, 7, 6, 4, 1, 0]
-]
+    ]
 };
 
 // ============================================================
-// LEGACY (sezioni normali + assolo)
+// ENHANCER PER L'ASSOLO (usa le librerie normali potenziate)
+// ============================================================
+
+// Potenzia leggermente il pattern ritmico (più movimento, ma niente shred)
+function enhanceRhythmPattern(basePattern) {
+    if (!Array.isArray(basePattern) || basePattern.length === 0) return basePattern;
+    const result = [...basePattern];
+
+    // Aggiungi 1–2 step intermedi se c'è spazio
+    for (let i = 0; i < basePattern.length - 1; i++) {
+        const a = basePattern[i];
+        const b = basePattern[i + 1];
+        const gap = b - a;
+        if (gap >= 4 && LeadUtils.rand() < 0.5) {
+            const mid = a + Math.floor(gap / 2);
+            if (!result.includes(mid) && mid >= 0 && mid <= 15) {
+                result.push(mid);
+            }
+        }
+    }
+
+    // Ordina e rimuovi duplicati
+    const unique = Array.from(new Set(result)).sort((x, y) => x - y);
+    return unique;
+}
+
+// Potenzia leggermente la melodia (passing tones, piccole ripetizioni)
+function enhanceMelodyLine(baseMelody) {
+    if (!Array.isArray(baseMelody) || baseMelody.length === 0) return baseMelody;
+    const result = [];
+
+    for (let i = 0; i < baseMelody.length; i++) {
+        const curr = baseMelody[i];
+        const next = baseMelody[i + 1];
+
+        result.push(curr);
+
+        // Piccola ripetizione
+        if (LeadUtils.rand() < 0.25) {
+            result.push(curr);
+        }
+
+        // Passing tone diatonico se salto di 2
+        if (next !== undefined) {
+            const diff = next - curr;
+            if (Math.abs(diff) === 2 && LeadUtils.rand() < 0.5) {
+                const passing = curr + (diff > 0 ? 1 : -1);
+                result.push(passing);
+            }
+        }
+    }
+
+    return result;
+}
+
+// Sceglie la famiglia melodica per l'assolo in base al DNA e alla parte (Pt1/Pt2)
+function getSoloMelodyFamily(isSoloPt2, energy, brightness, complexity, texture) {
+    // Pt1: più melodico → epic/emotional
+    // Pt2: più intenso → active/evil
+    if (!isSoloPt2) {
+        if (brightness > 0.5) return { name: "SOLO EPIC 🏰", data: melodicLibrary.epic };
+        return { name: "SOLO EMOTIONAL 💧", data: melodicLibrary.emotional };
+    } else {
+        if (complexity > 0.6 || energy > 0.7) return { name: "SOLO ACTIVE ⚡", data: melodicLibrary.active };
+        return { name: "SOLO EVIL 😈", data: melodicLibrary.evil };
+    }
+}
+
+// ============================================================
+// LEGACY (sezioni normali + assolo potenziato)
 // ============================================================
 
 const LeadLegacy = {
@@ -182,7 +212,8 @@ const LeadLegacy = {
         const isChorus = name.includes("chorus") && !name.includes("pre");
         const isPreChorus = name.includes("pre");
         const isIntro = name.includes("intro") || name.includes("outro");
-        const isSolo = name.includes("solo") || name.includes("solopt1") || name.includes("solopt2");
+        const isSolo = name.includes("solo");
+        const isSoloPt2 = name.includes("solopt2");
         const stepTime = measureDur / 16;
 
         const {
@@ -194,7 +225,7 @@ const LeadLegacy = {
 
         const isHarmonic = scaleType === "harmonicMinor";
 
-        // getPattern ORIGINALE (identico)
+        // getPattern ORIGINALE (identico per le sezioni normali)
         const getPattern = (type) => {
             const family = library[type] || library.verse;
             const dnaScore = (energy * 400) + (brightness * 30) + (complexity * 2);
@@ -202,7 +233,7 @@ const LeadLegacy = {
             return family[index];
         };
 
-        // getMelodyFamily ORIGINALE (identico)
+        // getMelodyFamily ORIGINALE (identico per le sezioni normali)
         const getMelodyFamily = () => {
             if (isPreChorus) return { name: "PRE-CHORUS 📈", data: melodicLibrary.prechorus };
             if (isChorus) {
@@ -216,11 +247,9 @@ const LeadLegacy = {
             return { name: "EPIC 🏰", data: melodicLibrary.epic };
         };
 
-        // Seleziona il tipo di sezione
+        // Seleziona il tipo di sezione (per le librerie ritmiche normali)
         let sectionType;
-        if (isSolo) {
-            sectionType = "solo";
-        } else if (isIntro) {
+        if (isIntro) {
             sectionType = "intro";
         } else if (isPreChorus) {
             sectionType = "prechorus";
@@ -252,16 +281,21 @@ const LeadLegacy = {
 
             if (isSolo) {
                 // ============================================================
-                // ASSOLO: usa la STESSA logica delle sezioni normali!
+                // ASSOLO: usa le STESSE librerie, ma potenziate
+                // Ritmica: base chorus potenziata
+                // Melodia: epic/emotional (Pt1) o active/evil (Pt2) + enhancer
                 // ============================================================
-                currentPattern = getPattern("solo");
-                const soloMelody = isHarmonic ? melodicLibrary.solo_harmonic : melodicLibrary.solo;
-                // STESSA formula delle sezioni normali: basata su energy!
-                const melodyIndex = Math.floor(energy * soloMelody.length) % soloMelody.length;
-                currentMelody = soloMelody[melodyIndex];
-                moodName = `SOLO ${isHarmonic ? "HARMONIC" : ""} 🎸`;
+                const basePattern = getPattern("chorus");
+                currentPattern = enhanceRhythmPattern(basePattern);
+
+                const soloFamily = getSoloMelodyFamily(isSoloPt2, energy, brightness, complexity, texture);
+                const melodyIndex = Math.floor(energy * soloFamily.data.length) % soloFamily.data.length;
+                const baseMelody = soloFamily.data[melodyIndex];
+                currentMelody = enhanceMelodyLine(baseMelody);
+
+                moodName = soloFamily.name + (isHarmonic ? " (HARMONIC)" : "");
             } else {
-                // SEZIONI NORMALI (identiche)
+                // SEZIONI NORMALI (identiche alla 087)
                 currentPattern = getPattern(sectionType);
                 const mood = getMelodyFamily();
                 const melodyIndex = Math.floor(energy * mood.data.length) % mood.data.length;
@@ -291,7 +325,7 @@ const LeadLegacy = {
                 const absoluteTime = measureStartTime + (s * stepTime);
                 const nextStep = (i < currentPattern.length - 1) ? currentPattern[i + 1] : 16;
                 const noteIdx = currentMelody[i % currentMelody.length];
-                const octave = isChorus ? 5 : 4;
+                const octave = isChorus || isSolo ? 5 : 4;
                 const noteName = normalizeNote(currentScale[noteIdx % 7], "guitarLead") + octave;
 
                 Tone.Transport.schedule(time => {
