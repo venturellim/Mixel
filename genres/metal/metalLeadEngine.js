@@ -3,7 +3,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote, leadBus } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 087.3 loaded");
+console.log("metalLeadEngine.js ver. 087.4 loaded");
 
 // ============================================================
 // UTILITY
@@ -210,6 +210,28 @@ function enhanceMelodyMicroVariation(melody) {
     return out;
 }
 
+function enhanceRhythmGhostSteps(pattern) {
+    if (!Array.isArray(pattern) || pattern.length < 2) return pattern;
+
+    const out = [...pattern];
+
+    // 1. Anticipo leggero (20%)
+    if (Math.random() < 0.20) {
+        const i = Math.floor(Math.random() * out.length);
+        const ghost = out[i] - 1;
+        if (ghost >= 0 && !out.includes(ghost)) out.push(ghost);
+    }
+
+    // 2. Ritardo leggero (20%)
+    if (Math.random() < 0.20) {
+        const i = Math.floor(Math.random() * out.length);
+        const ghost = out[i] + 1;
+        if (ghost <= 15 && !out.includes(ghost)) out.push(ghost);
+    }
+
+    return Array.from(new Set(out)).sort((a, b) => a - b);
+}
+
 
 // Sceglie la famiglia melodica per l'assolo in base al DNA e alla parte (Pt1/Pt2)
 function getSoloMelodyFamily(isSoloPt2, energy, brightness, complexity, texture) {
@@ -312,6 +334,8 @@ const LeadLegacy = {
                 // ============================================================
                 const basePattern = getPattern("chorus");
                 currentPattern = enhanceRhythmPattern(basePattern);
+                currentPattern = enhanceRhythmGhostSteps(currentPattern);
+
 
                 const soloFamily = getSoloMelodyFamily(isSoloPt2, energy, brightness, complexity, texture);
                 const melodyIndex = Math.floor(energy * soloFamily.data.length) % soloFamily.data.length;
