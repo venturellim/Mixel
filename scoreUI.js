@@ -49,8 +49,8 @@ export class scoreVisualizer {
             },
             orchestra: { 
                 "Lead": "VIOLINO", "LeadXtra": "VIOLA", 
-                "Rhythm": "CLAVICEMBALO", "RhythmXtra": "",
-                "Bass": "CONTRABBASSO", "BassXtra": "VIOLONCELLO",
+                "Rhythm": "VIOLONCELLO", "RhythmXtra": "",
+                "Bass": "CONTRABBASSO", "BassXtra": "",
                 "Drums": "PERCUSSIONI" 
             },
             piano: { 
@@ -172,7 +172,8 @@ export class scoreVisualizer {
 
                     ctx.font = "bold 12px 'Courier New', monospace";
                     const isEvenZig = Math.floor(n.index / 100) % 2 === 0;
-                    const labelY = (hasPartner && isXtra) ? finalY + 22 : (isEvenZig ? finalY - 18 : finalY - 28);
+                    //const labelY = (hasPartner && isXtra) ? finalY + 22 : (isEvenZig ? finalY - 18 : finalY - 28);
+                    const labelY = (hasPartner && isXtra) ? finalY + 22 : (isEvenZig ? finalY - 18 : finalY - 18);
                     ctx.fillText(n.label, n.x, labelY);
                 }
             }
