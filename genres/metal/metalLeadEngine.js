@@ -1,9 +1,9 @@
-// metalLeadEngine.js — ver. 087 (Solo = sezioni normali potenziate)
+// metalLeadEngine.js — ver. 088 FINAL (Con tutti gli enhancer)
 
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote, leadBus } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 087.4 loaded");
+console.log("metalLeadEngine.js ver. 088 FINAL loaded");
 
 // ============================================================
 // UTILITY
@@ -131,15 +131,13 @@ const melodicLibrary = {
 };
 
 // ============================================================
-// ENHANCER PER L'ASSOLO (usa le librerie normali potenziate)
+// ENHANCER PER RITMICA
 // ============================================================
 
-// Potenzia leggermente il pattern ritmico (più movimento, ma niente shred)
 function enhanceRhythmPattern(basePattern) {
     if (!Array.isArray(basePattern) || basePattern.length === 0) return basePattern;
     const result = [...basePattern];
 
-    // Aggiungi 1–2 step intermedi se c'è spazio
     for (let i = 0; i < basePattern.length - 1; i++) {
         const a = basePattern[i];
         const b = basePattern[i + 1];
@@ -152,12 +150,62 @@ function enhanceRhythmPattern(basePattern) {
         }
     }
 
-    // Ordina e rimuovi duplicati
     const unique = Array.from(new Set(result)).sort((x, y) => x - y);
     return unique;
 }
 
-// Potenzia leggermente la melodia (passing tones, piccole ripetizioni)
+function enhanceRhythmGhostSteps(pattern) {
+    if (!Array.isArray(pattern) || pattern.length < 2) return pattern;
+    const out = [...pattern];
+
+    if (Math.random() < 0.20) {
+        const i = Math.floor(Math.random() * out.length);
+        const ghost = out[i] - 1;
+        if (ghost >= 0 && !out.includes(ghost)) out.push(ghost);
+    }
+
+    if (Math.random() < 0.20) {
+        const i = Math.floor(Math.random() * out.length);
+        const ghost = out[i] + 1;
+        if (ghost <= 15 && !out.includes(ghost)) out.push(ghost);
+    }
+
+    return Array.from(new Set(out)).sort((a, b) => a - b);
+}
+
+function addAnticipation(rhythmPattern, energy) {
+    if (!Array.isArray(rhythmPattern) || rhythmPattern.length < 2) return rhythmPattern;
+    if (energy < 0.5) return rhythmPattern;
+    
+    const out = [...rhythmPattern];
+    if (Math.random() < 0.25 && out.length > 1) {
+        const last = out[out.length - 1];
+        const secondLast = out[out.length - 2];
+        const anticipation = Math.floor((last + secondLast) / 2);
+        if (!out.includes(anticipation) && anticipation >= 0 && anticipation <= 15) {
+            out.push(anticipation);
+            out.sort((a, b) => a - b);
+        }
+    }
+    return out;
+}
+
+function addStrategicPause(rhythmPattern, energy) {
+    if (!Array.isArray(rhythmPattern) || rhythmPattern.length < 3) return rhythmPattern;
+    if (energy > 0.7) return rhythmPattern;
+    
+    const out = [...rhythmPattern];
+    if (Math.random() < 0.20 && out.length > 3) {
+        const removeIdx = Math.floor(out.length / 2);
+        out.splice(removeIdx, 1);
+    }
+    return out;
+}
+
+// ============================================================
+// ENHANCER PER MELODIA
+// ============================================================
+
 function enhanceMelodyLine(baseMelody) {
     if (!Array.isArray(baseMelody) || baseMelody.length === 0) return baseMelody;
     const result = [];
@@ -165,15 +213,8 @@ function enhanceMelodyLine(baseMelody) {
     for (let i = 0; i < baseMelody.length; i++) {
         const curr = baseMelody[i];
         const next = baseMelody[i + 1];
-
         result.push(curr);
-
-        // Piccola ripetizione
-        if (LeadUtils.rand() < 0.25) {
-            result.push(curr);
-        }
-
-        // Passing tone diatonico se salto di 2
+        if (LeadUtils.rand() < 0.25) result.push(curr);
         if (next !== undefined) {
             const diff = next - curr;
             if (Math.abs(diff) === 2 && LeadUtils.rand() < 0.5) {
@@ -182,16 +223,13 @@ function enhanceMelodyLine(baseMelody) {
             }
         }
     }
-
     return result;
 }
 
 function enhanceMelodyMicroVariation(melody) {
     if (!Array.isArray(melody) || melody.length < 3) return melody;
-
     const out = [...melody];
 
-    // 1. Scambia due note vicine (20%)
     if (Math.random() < 0.20) {
         const i = Math.floor(Math.random() * (out.length - 1));
         const tmp = out[i];
@@ -199,7 +237,6 @@ function enhanceMelodyMicroVariation(melody) {
         out[i + 1] = tmp;
     }
 
-    // 2. Piccolo shift di 1 grado (15%)
     if (Math.random() < 0.15) {
         const i = Math.floor(Math.random() * out.length);
         const dir = Math.random() < 0.5 ? -1 : 1;
@@ -210,33 +247,93 @@ function enhanceMelodyMicroVariation(melody) {
     return out;
 }
 
-function enhanceRhythmGhostSteps(pattern) {
-    if (!Array.isArray(pattern) || pattern.length < 2) return pattern;
-
-    const out = [...pattern];
-
-    // 1. Anticipo leggero (20%)
-    if (Math.random() < 0.20) {
-        const i = Math.floor(Math.random() * out.length);
-        const ghost = out[i] - 1;
-        if (ghost >= 0 && !out.includes(ghost)) out.push(ghost);
+function enhanceChromaticPassing(melody, energy) {
+    if (!Array.isArray(melody) || melody.length < 2) return melody;
+    if (energy < 0.6) return melody;
+    
+    const out = [];
+    for (let i = 0; i < melody.length; i++) {
+        out.push(melody[i]);
+        const next = melody[i + 1];
+        if (next !== undefined && Math.abs(next - melody[i]) === 2 && Math.random() < 0.3) {
+            const chromatic = melody[i] + (next > melody[i] ? 1 : -1);
+            out.push(chromatic);
+        }
     }
-
-    // 2. Ritardo leggero (20%)
-    if (Math.random() < 0.20) {
-        const i = Math.floor(Math.random() * out.length);
-        const ghost = out[i] + 1;
-        if (ghost <= 15 && !out.includes(ghost)) out.push(ghost);
-    }
-
-    return Array.from(new Set(out)).sort((a, b) => a - b);
+    return out;
 }
 
+function addTrills(melody, complexity) {
+    if (!Array.isArray(melody) || melody.length < 2) return melody;
+    if (complexity < 0.6) return melody;
+    
+    const out = [];
+    for (let i = 0; i < melody.length; i++) {
+        out.push(melody[i]);
+        if (Math.random() < 0.15 && i < melody.length - 1) {
+            const next = melody[i + 1];
+            if (Math.abs(next - melody[i]) <= 2) {
+                out.push(next);
+                out.push(melody[i]);
+                out.push(next);
+            }
+        }
+    }
+    return out;
+}
 
-// Sceglie la famiglia melodica per l'assolo in base al DNA e alla parte (Pt1/Pt2)
+function addBendEffect(melody, brightness) {
+    if (!Array.isArray(melody) || melody.length < 2) return melody;
+    if (brightness < 0.5) return melody;
+    
+    const out = [];
+    for (let i = 0; i < melody.length; i++) {
+        out.push(melody[i]);
+        if (Math.random() < 0.10 && melody[i] < 7) {
+            out.push(melody[i] + 1);
+            out.push(melody[i]);
+        }
+    }
+    return out;
+}
+
+function addSlideEffect(melody, texture) {
+    if (!Array.isArray(melody) || melody.length < 2) return melody;
+    if (texture < 0.5) return melody;
+    
+    const out = [];
+    for (let i = 0; i < melody.length; i++) {
+        out.push(melody[i]);
+        const next = melody[i + 1];
+        if (next !== undefined && Math.abs(next - melody[i]) >= 3 && Math.random() < 0.2) {
+            const step = next > melody[i] ? 1 : -1;
+            for (let n = melody[i] + step; n !== next; n += step) {
+                out.push(n);
+            }
+        }
+    }
+    return out;
+}
+
+function addOctaveDoubling(melody, brightness) {
+    if (!Array.isArray(melody) || melody.length < 2) return melody;
+    if (brightness < 0.6) return melody;
+    
+    const out = [];
+    for (let i = 0; i < melody.length; i++) {
+        out.push(melody[i]);
+        if (Math.random() < 0.15 && melody[i] + 7 <= 12) {
+            out.push(melody[i] + 7);
+        }
+    }
+    return out;
+}
+
+// ============================================================
+// SELEZIONE FAMIGLIA MELODICA PER L'ASSOLO
+// ============================================================
+
 function getSoloMelodyFamily(isSoloPt2, energy, brightness, complexity, texture) {
-    // Pt1: più melodico → epic/emotional
-    // Pt2: più intenso → active/evil
     if (!isSoloPt2) {
         if (brightness > 0.5) return { name: "SOLO EPIC 🏰", data: melodicLibrary.epic };
         return { name: "SOLO EMOTIONAL 💧", data: melodicLibrary.emotional };
@@ -272,7 +369,6 @@ const LeadLegacy = {
 
         const isHarmonic = scaleType === "harmonicMinor";
 
-        // getPattern ORIGINALE (identico per le sezioni normali)
         const getPattern = (type) => {
             const family = library[type] || library.verse;
             const dnaScore = (energy * 400) + (brightness * 30) + (complexity * 2);
@@ -280,7 +376,6 @@ const LeadLegacy = {
             return family[index];
         };
 
-        // getMelodyFamily ORIGINALE (identico per le sezioni normali)
         const getMelodyFamily = () => {
             if (isPreChorus) return { name: "PRE-CHORUS 📈", data: melodicLibrary.prechorus };
             if (isChorus) {
@@ -294,7 +389,6 @@ const LeadLegacy = {
             return { name: "EPIC 🏰", data: melodicLibrary.epic };
         };
 
-        // Seleziona il tipo di sezione (per le librerie ritmiche normali)
         let sectionType;
         if (isIntro) {
             sectionType = "intro";
@@ -328,24 +422,28 @@ const LeadLegacy = {
 
             if (isSolo) {
                 // ============================================================
-                // ASSOLO: usa le STESSE librerie, ma potenziate
-                // Ritmica: base chorus potenziata
-                // Melodia: epic/emotional (Pt1) o active/evil (Pt2) + enhancer
+                // ASSOLO: applica TUTTI gli enhancer in base ai parametri
                 // ============================================================
                 const basePattern = getPattern("chorus");
                 currentPattern = enhanceRhythmPattern(basePattern);
                 currentPattern = enhanceRhythmGhostSteps(currentPattern);
-
+                currentPattern = addAnticipation(currentPattern, energy);
+                currentPattern = addStrategicPause(currentPattern, energy);
 
                 const soloFamily = getSoloMelodyFamily(isSoloPt2, energy, brightness, complexity, texture);
                 const melodyIndex = Math.floor(energy * soloFamily.data.length) % soloFamily.data.length;
                 const baseMelody = soloFamily.data[melodyIndex];
+                
                 currentMelody = enhanceMelodyLine(baseMelody);
                 currentMelody = enhanceMelodyMicroVariation(currentMelody);
+                currentMelody = enhanceChromaticPassing(currentMelody, energy);
+                currentMelody = addTrills(currentMelody, complexity);
+                currentMelody = addBendEffect(currentMelody, brightness);
+                currentMelody = addSlideEffect(currentMelody, texture);
+                currentMelody = addOctaveDoubling(currentMelody, brightness);
 
                 moodName = soloFamily.name + (isHarmonic ? " (HARMONIC)" : "");
             } else {
-                // SEZIONI NORMALI (identiche alla 087)
                 currentPattern = getPattern(sectionType);
                 const mood = getMelodyFamily();
                 const melodyIndex = Math.floor(energy * mood.data.length) % mood.data.length;
@@ -364,9 +462,7 @@ const LeadLegacy = {
                 "color:#191970;"
             );
             
-            // Scala: usa la progressione REALE per tutte le sezioni
             const currentScale = getStrictScale(progression[m % progression.length] || "A");
-            
             const isTransitionMeasure = (m === section.measures - 1);
 
             currentPattern.forEach((s, i) => {
