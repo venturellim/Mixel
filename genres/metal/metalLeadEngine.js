@@ -7,13 +7,13 @@ import { normalizeNote } from "./metalInstruments.js";
 import {
     leadRhythmLibrary,
     leadMelodicLibrary
-} from "../utils/leadLibraries.js";
+} from "../../utils/leadLibraries.js";
 
 import {
     applyLeadEnhancer,
     computeLeadVelocity,
     shapeBridgeSolo
-} from "../utils/leadEnhancers.js";
+} from "../../utils/leadEnhancers.js";
 
 console.log("metalLeadEngine.js ver. 089 loaded");
 
