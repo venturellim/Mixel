@@ -1,6 +1,5 @@
-// orchestraLeadEngine.js — ver. 002 (Violin Lead + Viola Lead Support)
+// orchestraLeadEngine.js — ver. 003 (Violin Lead + Viola Lead Support)
 import * as Tone from "https://esm.sh/tone";
-import { normalizeNote } from "./orchestraInstruments.js";
 
 import {
     leadRhythmLibrary,
@@ -9,11 +8,11 @@ import {
 
 import {
     applyLeadEnhancer,
-    computeLeadVelocity,      // useremo una versione più morbida
-    shapeBridgeSolo           // useremo una versione orchestrale
+    computeLeadVelocity,
+    shapeBridgeSolo
 } from "../../utils/leadEnhancers.js";
 
-console.log("orchestraLeadEngine.js ver. 002 loaded");
+console.log("orchestraLeadEngine.js ver. 003 loaded");
 
 // ============================================================
 // VIBRATO NATURALE (solo violino)
@@ -27,7 +26,7 @@ function applyNaturalVibrato(violin, time, duration) {
 
     for (let i = 0; i < 4; i++) {
         const t = time + i * speed;
-        const val = 1 + (i % 2 === 0 ? depth : -depth);
+        const val = i % 2 === 0 ? 1 + depth : 1 - depth;
         pr.setValueAtTime(val, t);
     }
     pr.setValueAtTime(1, time + duration);
@@ -53,8 +52,8 @@ function computeOrchestraVelocity(noteIdx, duration, isSolo, isBridge) {
 // ============================================================
 
 function violaSupport(melody, i) {
-    if (i % 4 === 0) return melody[i] - 2; // terza sotto
-    if (Math.random() < 0.15) return melody[i] + 2; // terza sopra
+    if (i % 4 === 0) return melody[i] - 2;
+    if (Math.random() < 0.15) return melody[i] + 2;
     return null;
 }
 
@@ -167,7 +166,6 @@ export function scheduleOrchestraLead(section, progression, instruments, params,
     let violaMelody = [...baseMelody];
 
     if (isSolo) {
-        // Viola: enhancer orchestrali morbidi
         violaMelody = applyLeadEnhancer(violaMelody, "enhanceMelodyMicroVariation", enhancerContext);
         violaMelody = applyLeadEnhancer(violaMelody, "addTrills", enhancerContext);
         violaMelody = applyLeadEnhancer(violaMelody, "addEchoEffect", enhancerContext);
@@ -183,11 +181,9 @@ export function scheduleOrchestraLead(section, progression, instruments, params,
     let violinMelody = [...baseMelody];
 
     if (!isSolo) {
-        // Sezioni normali → movimento leggero
         violinMelody = applyLeadEnhancer(violinMelody, "enhanceMelodyMicroVariation", enhancerContext);
         violinMelody = applyLeadEnhancer(violinMelody, "enhanceChromaticPassing", enhancerContext);
     } else {
-        // Assolo → inseguimento
         violinMelody = applyLeadEnhancer(violinMelody, "addScaleRunBetweenPeaks", enhancerContext);
         violinMelody = applyLeadEnhancer(violinMelody, "addMirrorInversion", enhancerContext);
         violinMelody = applyLeadEnhancer(violinMelody, "enhanceChromaticPassing", enhancerContext);
@@ -214,8 +210,12 @@ export function scheduleOrchestraLead(section, progression, instruments, params,
 
             const duration = (nextStep - s) * stepTime;
 
-            const violaNote = normalizeNote(currentRoot, "viola") + (isSolo ? "4" : "3");
-            const violinNote = normalizeNote(currentRoot, "violin") + (isSolo ? "6" : "5");
+            // 🎻 OTTAVE REALISTICHE
+            const violaOct = isSolo ? "5" : "4";
+            const violinOct = isSolo ? "6" : "5";
+
+            const violaNote = currentRoot + violaOct;
+            const violinNote = currentRoot + violinOct;
 
             const velViola = computeOrchestraVelocity(violaIdx, duration, isSolo, isBridge);
             const velViolin = computeOrchestraVelocity(violinIdx, duration, isSolo, isBridge);
@@ -237,7 +237,7 @@ export function scheduleOrchestraLead(section, progression, instruments, params,
             if (!isSolo) {
                 const supportIdx = violaSupport(violaMelody, i);
                 if (supportIdx !== null) {
-                    const supportNote = normalizeNote(currentRoot, "viola") + "3";
+                    const supportNote = currentRoot + "3";
                     Tone.Transport.schedule(time => {
                         viola.triggerAttackRelease(supportNote, duration * 0.8, time + 0.01, velViola * 0.8);
                         if (score) score.addNote("Viola-Support", supportNote, section.name);
