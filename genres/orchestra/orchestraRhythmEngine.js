@@ -1,19 +1,32 @@
-// orchestraRhythmEngine.js — ver. 002 (Cello + DoubleBass + Timpani)
+// orchestraRhythmEngine.js — ver. C (Cello + DoubleBass + Timpani, Safe Pipeline)
 import * as Tone from "https://esm.sh/tone";
+import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 
-console.log("orchestraRhythmEngine.js ver. 003 loaded");
+console.log("orchestraRhythmEngine.js ver. C loaded");
 
-function getRootPitch(root) {
-    if (!root || typeof root !== "string") return "A";
-
-    // Prende lettera + eventuale #/b, ignora il resto (m, maj7, ecc.)
-    const match = root.toUpperCase().match(/^([A-G](#|B)?)/);
-    if (!match) return "A";
-
-    return match[1]; // es: "A", "C#", "F", "G#"
+// ------------------------------------------------------------
+// SAFE NOTE (identico a orchestraEngine originale)
+// ------------------------------------------------------------
+function safeNote(note, defaultOctave = "3") {
+    if (!note || typeof note !== "string") return null;
+    const validated = /\d/.test(note) ? note : `${note}${defaultOctave}`;
+    return isNaN(Tone.Frequency(validated).toMidi()) ? null : validated;
 }
 
+// ------------------------------------------------------------
+// ROOT PITCH (estrae solo la nota, ignora accordi)
+// ------------------------------------------------------------
+function getRootPitch(root) {
+    if (!root || typeof root !== "string") return "A";
+    const match = root.toUpperCase().match(/^([A-G](#|B)?)/);
+    return match ? match[1] : "A";
+}
+
+// ------------------------------------------------------------
+// RHYTHM ENGINE — VERSIONE C
+// ------------------------------------------------------------
 export function scheduleOrchestraRhythm(section, progression, instruments, params, rand, measureDur, nextSectionRoot, score) {
+
     const { cello, doubleBass, percussion } = instruments;
     if (!cello || !doubleBass || !percussion) return;
 
@@ -24,12 +37,11 @@ export function scheduleOrchestraRhythm(section, progression, instruments, param
     const isSolo = name.includes("solo");
 
     const stepTime = measureDur / 16;
-    const { energy = 0.5, brightness = 0.5, complexity = 0.5 } = params?.imageParams || {};
+    const { energy = 0.5, complexity = 0.5 } = params?.imageParams || {};
 
-    // ============================================================
-    // GROOVE ORCHESTRALE
-    // ============================================================
-
+    // ------------------------------------------------------------
+    // GROOVE MAP (identico)
+    // ------------------------------------------------------------
     const grooveMap = {
         intro: "long_sustain",
         verse: energy > 0.6 ? "ostinato_fast" : "ostinato_slow",
@@ -46,34 +58,32 @@ export function scheduleOrchestraRhythm(section, progression, instruments, param
         isSolo ? grooveMap.solo :
         grooveMap.verse;
 
-    // ============================================================
+    // ------------------------------------------------------------
     // LOOP MISURE
-    // ============================================================
-
+    // ------------------------------------------------------------
     for (let m = 0; m < section.measures; m++) {
-        const measureStartTime = section.startTime + (m * measureDur);
-        //const currentRoot = progression[m % progression.length];
+
+        const measureStartTime = section.startTime + m * measureDur;
+
         const rawRoot = progression[m % progression.length];
-const nextRawRoot = progression[(m + 1) % progression.length] || nextSectionRoot;
+        const pitchRoot = getRootPitch(rawRoot);
 
-const currentRoot = getRootPitch(rawRoot);
-const nextRoot = getRootPitch(nextRawRoot);
-
-        
-        //const nextRoot = progression[(m + 1) % progression.length] || nextSectionRoot;
+        // Scala armonica minore (come orchestraEngine)
+        const scale = buildScaleFromTonic(pitchRoot + "2", "harmonicMinor");
+        const rootIdx = 0;
 
         for (let s = 0; s < 16; s++) {
-            const absoluteTime = measureStartTime + (s * stepTime);
+
+            const absoluteTime = measureStartTime + s * stepTime;
 
             let playCello = false;
             let playBass = false;
             let playTimpani = false;
             let sustain = false;
 
-            // ============================================================
-            // LOGICA GROOVE ORCHESTRALE
-            // ============================================================
-
+            // ------------------------------------------------------------
+            // LOGICA GROOVE
+            // ------------------------------------------------------------
             switch (grooveType) {
 
                 case "long_sustain":
@@ -117,35 +127,40 @@ const nextRoot = getRootPitch(nextRawRoot);
                     break;
             }
 
-            // ============================================================
-            // SCHEDULAZIONE NOTE (senza normalizeNote)
-            // ============================================================
+            // ------------------------------------------------------------
+            // NOTE SICURE (Versione C)
+            // ------------------------------------------------------------
 
-            //const celloNote = currentRoot + "3";       // Cello range
-            const celloNote = currentRoot + "3";
-const bassNote = currentRoot + "1";
-            
-            //const bassNote = currentRoot + "1";        // Double bass range
+            // Cello: grado 0 della scala
+            const celloName = getScaleDegree(scale, rootIdx);
+            const safeCello = safeNote(celloName, "3");
 
-            if (playCello) {
+            // Double bass: grado -2 (quinta sotto)
+            const bassName = getScaleDegree(scale, rootIdx - 2);
+            const safeBass = safeNote(bassName, "1");
+
+            // ------------------------------------------------------------
+            // TRIGGER
+            // ------------------------------------------------------------
+            if (playCello && safeCello) {
                 Tone.Transport.schedule(t => {
                     cello.triggerAttackRelease(
-                        celloNote,
+                        safeCello,
                         sustain ? "1n" : "8n",
                         t
                     );
-                    if (score) score.addNote("Cello", celloNote, section.name);
+                    if (score) score.addNote("Cello", safeCello, section.name);
                 }, absoluteTime);
             }
 
-            if (playBass) {
+            if (playBass && safeBass) {
                 Tone.Transport.schedule(t => {
                     doubleBass.triggerAttackRelease(
-                        bassNote,
+                        safeBass,
                         sustain ? "1n" : "8n",
                         t
                     );
-                    if (score) score.addNote("DoubleBass", bassNote, section.name);
+                    if (score) score.addNote("DoubleBass", safeBass, section.name);
                 }, absoluteTime);
             }
 
