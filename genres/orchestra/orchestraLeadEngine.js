@@ -12,7 +12,7 @@ import {
     shapeBridgeSolo
 } from "../../utils/leadEnhancers.js";
 
-console.log("orchestraLeadEngine.js ver. 004 loaded");
+console.log("orchestraLeadEngine.js ver. 004.1 loaded");
 
 function getRootPitch(root) {
     if (!root || typeof root !== "string") return "A";
@@ -211,7 +211,7 @@ export function scheduleOrchestraLead(section, progression, instruments, params,
         //const currentRoot = progression[m % progression.length];
         
         const rawRoot = progression[m % progression.length];
-const pitchRoot = getRootPitch(rawRoot);
+const currentRoot = getRootPitch(rawRoot);
 
         violinPattern.forEach((s, i) => {
 
@@ -227,8 +227,8 @@ const pitchRoot = getRootPitch(rawRoot);
             const violaOct = isSolo ? "5" : "4";
 const violinOct = isSolo ? "6" : "5";
 
-const violaNote = pitchRoot + violaOct;
-const violinNote = pitchRoot + violinOct;
+const violaNote = currentRoot + violaOct;
+const violinNote = currentRoot + violinOct;
 
             const velViola = computeOrchestraVelocity(violaIdx, duration, isSolo, isBridge);
             const velViolin = computeOrchestraVelocity(violinIdx, duration, isSolo, isBridge);
