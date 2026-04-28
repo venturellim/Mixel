@@ -3,7 +3,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote, leadBus } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 088.2 loaded");
+console.log("metalLeadEngine.js ver. 088.3 loaded");
 
 // ============================================================
 // UTILITY
@@ -421,6 +421,31 @@ function addScaleRunBetweenPeaks(melody, energy) {
     return out;
 }
 
+function computeLeadVelocity(noteIdx, duration, isSolo, isBridge) {
+    let vel = 0.75; // base
+
+    // 1. Note lunghe → più forti
+    if (duration > 0.30) vel += 0.10;
+
+    // 2. Note veloci → più leggere
+    if (duration < 0.15) vel -= 0.10;
+
+    // 3. Note alte → più intense
+    if (noteIdx >= 5) vel += 0.05;
+
+    // 4. Note di passaggio (run, cromatismi) → più morbide
+    if (noteIdx > 7) vel -= 0.10;
+
+    // 5. Bridge → rilascio dinamico
+    if (isBridge) vel -= 0.05;
+
+    // 6. Solo Pt2 → leggero boost
+    if (isSolo && !isBridge) vel += 0.05;
+
+    // Clamp
+    return Math.min(1.0, Math.max(0.3, vel));
+}
+
 function shapeBridgeSolo(melody, pattern) {
     if (!Array.isArray(melody) || melody.length < 4) return { melody, pattern };
 
@@ -610,7 +635,12 @@ if (name.includes("bridge")) {
                 const noteName = normalizeNote(currentScale[noteIdx % 7], "guitarLead") + octave;
 
                 Tone.Transport.schedule(time => {
-                    guitarLead.triggerAttackRelease(noteName, (nextStep - s) * stepTime, time);
+                    
+const duration = (nextStep - s) * stepTime;
+const velocity = computeLeadVelocity(noteIdx, duration, isSolo, name.includes("bridge"));
+
+guitarLead.triggerAttackRelease(noteName, duration, time, velocity);
+
                     Tone.Draw.schedule(() => {
                         if (score) score.addNote("Lead", noteName, section.name);
                     }, time);
