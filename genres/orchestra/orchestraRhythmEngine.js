@@ -1,8 +1,7 @@
-// orchestraRhythmEngine.js — ver. 001 (Cello + DoubleBass + Timpani)
+// orchestraRhythmEngine.js — ver. 002 (Cello + DoubleBass + Timpani)
 import * as Tone from "https://esm.sh/tone";
-import { normalizeNote } from "./orchestraInstruments.js";
 
-console.log("orchestraRhythmEngine.js ver. 001 loaded");
+console.log("orchestraRhythmEngine.js ver. 002 loaded");
 
 export function scheduleOrchestraRhythm(section, progression, instruments, params, rand, measureDur, nextSectionRoot, score) {
     const { cello, doubleBass, percussion } = instruments;
@@ -18,7 +17,7 @@ export function scheduleOrchestraRhythm(section, progression, instruments, param
     const { energy = 0.5, brightness = 0.5, complexity = 0.5 } = params?.imageParams || {};
 
     // ============================================================
-    // GROOVE ORCHESTRALE (traduzione dei groove metal)
+    // GROOVE ORCHESTRALE
     // ============================================================
 
     const grooveMap = {
@@ -102,11 +101,11 @@ export function scheduleOrchestraRhythm(section, progression, instruments, param
             }
 
             // ============================================================
-            // SCHEDULAZIONE NOTE
+            // SCHEDULAZIONE NOTE (senza normalizeNote)
             // ============================================================
 
-            const celloNote = normalizeNote(currentRoot, "cello") + "3";
-            const bassNote = normalizeNote(currentRoot, "doubleBass") + "1";
+            const celloNote = currentRoot + "3";       // Cello range
+            const bassNote = currentRoot + "1";        // Double bass range
 
             if (playCello) {
                 Tone.Transport.schedule(t => {
