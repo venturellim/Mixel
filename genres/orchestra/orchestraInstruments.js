@@ -15,7 +15,6 @@ export const violinBus = new Tone.Gain(1);
 export const violaBus = new Tone.Gain(1);
 export const celloBus = new Tone.Gain(1);
 export const doubleBassBus = new Tone.Gain(1);
-export const harpsichordBus = new Tone.Gain(1);
 export const percussionBus = new Tone.Gain(1);
 
 const violinEQ = new Tone.EQ3({ low: -4, mid: 2, high: 3 });
@@ -23,7 +22,6 @@ const violaEQ = new Tone.EQ3({ low: -4, mid: 2, high: 3 });
 const doubleBassEQ   = new Tone.EQ3({ low: 4, mid: -2, high: -4 });
 const percussionEQ   = new Tone.EQ3({ low: 2, mid: 1, high: 3 });
 const celloEQ   = new Tone.EQ3({ low: -3, mid: 2, high: 6 });
-const harpsichordEQ   = new Tone.EQ3({ low: -3, mid: 2, high: 6 });
 
 // Routing bus → EQ → master
 violinBus.connect(violinEQ).connect(hallReverb).connect(masterEQ);
@@ -31,7 +29,6 @@ violaBus.connect(violaEQ).connect(hallReverb).connect(masterEQ);
 doubleBassBus.connect(doubleBassEQ).connect(hallReverb).connect(masterEQ);
 percussionBus.connect(percussionEQ).connect(hallReverb).connect(masterEQ);
 celloBus.connect(celloEQ).connect(hallReverb).connect(masterEQ);
-harpsichordBus.connect(harpsichordEQ).connect(hallReverb).connect(masterEQ);
 
 // --- VIOLIN ---
 export const violin = new Tone.Sampler({
@@ -113,35 +110,6 @@ export const doubleBass = new Tone.Sampler({
 onload: () => registerInstrumentLoaded()
 }).connect(doubleBassBus);
 
-// --- HARPSICHORD ---
-export const harpsichord = new Tone.Sampler({
-    urls: { 
-   A2: "Samples/Harpsichord/A2.mp3",
-   A4: "Samples/Harpsichord/A4.mp3",
-   A6: "Samples/Harpsichord/A6.mp3",
-   B1: "Samples/Harpsichord/B1.mp3",
-   B3: "Samples/Harpsichord/B3.mp3",
-   B5: "Samples/Harpsichord/B5.mp3",
-   B6: "Samples/Harpsichord/B6.mp3",
-   C3: "Samples/Harpsichord/C3.mp3",
-   C5: "Samples/Harpsichord/C5.mp3",
-   D2: "Samples/Harpsichord/D2.mp3",
-   D4: "Samples/Harpsichord/D4.mp3",
-   D6: "Samples/Harpsichord/D6.mp3",
-   E1: "Samples/Harpsichord/E1.mp3",
-   E3: "Samples/Harpsichord/E3.mp3",
-   E5: "Samples/Harpsichord/E5.mp3",
-   F2: "Samples/Harpsichord/F2.mp3",
-   F4: "Samples/Harpsichord/F4.mp3",
-   F6: "Samples/Harpsichord/F6.mp3",
-   F7: "Samples/Harpsichord/F7.mp3",
-   G1: "Samples/Harpsichord/G1.mp3",
-   G3: "Samples/Harpsichord/G3.mp3",
-   G5: "Samples/Harpsichord/G5.mp3",
-    },
-onload: () => registerInstrumentLoaded()
-}).connect(harpsichordBus);
-
 // --- TIMPANI (The Thunder) ---
 export const percussion = new Tone.Players({
     urls: { 
@@ -157,7 +125,7 @@ export const percussion = new Tone.Players({
 }).connect(percussionBus);
 
 export function setVolume(busName, dbValue) {
-    const mixer = { violin: violinBus, viola: violaBus, doubleBass: doubleBassBus, percussion: percussionBus, cello: celloBus, harpsichord: harpsichordBus };
+    const mixer = { violin: violinBus, viola: violaBus, doubleBass: doubleBassBus, percussion: percussionBus, cello: celloBus};
     const bus = mixer[busName];
     if (bus) bus.gain.value = Tone.dbToGain(dbValue);
 }
@@ -166,7 +134,6 @@ setVolume("violin", +8);
 setVolume("viola", +2);
 setVolume("cello", -6);
 setVolume("doubleBass", +2);
-setVolume("harpsichord", -6);
 setVolume("percussion", +6);
 
 export const orchestraInstruments = {
@@ -174,13 +141,11 @@ export const orchestraInstruments = {
     viola,
     cello,
     doubleBass,
-    harpsichord,
     percussion,
     violinBus,
     violaBus,
     celloBus,
     doubleBassBus,
-    harpsichordBus,
     percussionBus,
     setVolume
 };
@@ -190,8 +155,7 @@ export const orchestraVolumeMap = {
     viola: "Viola",
     doubleBass: "Contrabbasso",
     percussion: "Percussioni",
-    cello: "Violoncello",
-    harpsichord: "Clavicembalo"
+    cello: "Violoncello"
 };
 
 export { hallReverb };
