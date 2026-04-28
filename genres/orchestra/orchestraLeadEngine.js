@@ -5,13 +5,13 @@ import { normalizeNote } from "./orchestraInstruments.js";
 import {
     leadRhythmLibrary,
     leadMelodicLibrary
-} from "../utils/leadLibraries.js";
+} from "../../utils/leadLibraries.js";
 
 import {
     applyLeadEnhancer,
     computeLeadVelocity,      // useremo una versione più morbida
     shapeBridgeSolo           // useremo una versione orchestrale
-} from "../utils/leadEnhancers.js";
+} from "../../utils/leadEnhancers.js";
 
 console.log("orchestraLeadEngine.js ver. 002 loaded");
 
