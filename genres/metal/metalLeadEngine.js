@@ -3,7 +3,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote, leadBus } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 088.1 loaded");
+console.log("metalLeadEngine.js ver. 088.2 loaded");
 
 // ============================================================
 // UTILITY
@@ -421,6 +421,37 @@ function addScaleRunBetweenPeaks(melody, energy) {
     return out;
 }
 
+function shapeBridgeSolo(melody, pattern) {
+    if (!Array.isArray(melody) || melody.length < 4) return { melody, pattern };
+
+    let outMelody = [...melody];
+    let outPattern = [...pattern];
+
+    // 1. Riduci densità melodica (taglia 20%)
+    outMelody = outMelody.filter((_, i) => i % 5 !== 0);
+
+    // 2. Riduci abbellimenti aggressivi
+    outMelody = outMelody.map(n => Math.min(n, 7)); // niente octave doubling
+    outMelody = outMelody.filter((n, i, arr) => !(i > 0 && Math.abs(n - arr[i-1]) > 3));
+
+    // 3. Abbassa l’ottava se troppo alta
+    const max = Math.max(...outMelody);
+    if (max > 7) {
+        outMelody = outMelody.map(n => n - 7);
+    }
+
+    // 4. Stabilizza la ritmica (rimuovi ghost steps)
+    outPattern = outPattern.filter(step => Number.isInteger(step));
+
+    // 5. Aggiungi un piccolo hook finale
+    const last = outMelody[outMelody.length - 1];
+    outMelody.push(last);
+    outMelody.push(last - 1 >= 0 ? last - 1 : last);
+    outMelody.push(last);
+
+    return { melody: outMelody, pattern: outPattern };
+}
+
 // ============================================================
 // SELEZIONE FAMIGLIA MELODICA PER L'ASSOLO
 // ============================================================
@@ -539,6 +570,12 @@ const LeadLegacy = {
                 currentMelody = addMirrorInversion(currentMelody, complexity);
                 currentMelody = addEchoEffect(currentMelody, texture);
                 currentMelody = addScaleRunBetweenPeaks(currentMelody, energy);
+
+if (name.includes("bridge")) {
+    const shaped = shapeBridgeSolo(currentMelody, currentPattern);
+    currentMelody = shaped.melody;
+    currentPattern = shaped.pattern;
+}
 
                 moodName = soloFamily.name + (isHarmonic ? " (HARMONIC)" : "");
             } else {
