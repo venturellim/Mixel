@@ -1,7 +1,17 @@
 // orchestraRhythmEngine.js — ver. 002 (Cello + DoubleBass + Timpani)
 import * as Tone from "https://esm.sh/tone";
 
-console.log("orchestraRhythmEngine.js ver. 002 loaded");
+console.log("orchestraRhythmEngine.js ver. 003 loaded");
+
+function getRootPitch(root) {
+    if (!root || typeof root !== "string") return "A";
+
+    // Prende lettera + eventuale #/b, ignora il resto (m, maj7, ecc.)
+    const match = root.toUpperCase().match(/^([A-G](#|B)?)/);
+    if (!match) return "A";
+
+    return match[1]; // es: "A", "C#", "F", "G#"
+}
 
 export function scheduleOrchestraRhythm(section, progression, instruments, params, rand, measureDur, nextSectionRoot, score) {
     const { cello, doubleBass, percussion } = instruments;
@@ -42,8 +52,15 @@ export function scheduleOrchestraRhythm(section, progression, instruments, param
 
     for (let m = 0; m < section.measures; m++) {
         const measureStartTime = section.startTime + (m * measureDur);
-        const currentRoot = progression[m % progression.length];
-        const nextRoot = progression[(m + 1) % progression.length] || nextSectionRoot;
+        //const currentRoot = progression[m % progression.length];
+        const rawRoot = progression[m % progression.length];
+const nextRawRoot = progression[(m + 1) % progression.length] || nextSectionRoot;
+
+const currentRoot = getRootPitch(rawRoot);
+const nextRoot = getRootPitch(nextRawRoot);
+
+        
+        //const nextRoot = progression[(m + 1) % progression.length] || nextSectionRoot;
 
         for (let s = 0; s < 16; s++) {
             const absoluteTime = measureStartTime + (s * stepTime);
@@ -104,8 +121,11 @@ export function scheduleOrchestraRhythm(section, progression, instruments, param
             // SCHEDULAZIONE NOTE (senza normalizeNote)
             // ============================================================
 
-            const celloNote = currentRoot + "3";       // Cello range
-            const bassNote = currentRoot + "1";        // Double bass range
+            //const celloNote = currentRoot + "3";       // Cello range
+            const celloNote = currentRoot + "3";
+const bassNote = currentRoot + "1";
+            
+            //const bassNote = currentRoot + "1";        // Double bass range
 
             if (playCello) {
                 Tone.Transport.schedule(t => {

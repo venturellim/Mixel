@@ -12,7 +12,17 @@ import {
     shapeBridgeSolo
 } from "../../utils/leadEnhancers.js";
 
-console.log("orchestraLeadEngine.js ver. 003 loaded");
+console.log("orchestraLeadEngine.js ver. 004 loaded");
+
+function getRootPitch(root) {
+    if (!root || typeof root !== "string") return "A";
+
+    // Prende lettera + eventuale #/b, ignora il resto (m, maj7, ecc.)
+    const match = root.toUpperCase().match(/^([A-G](#|B)?)/);
+    if (!match) return "A";
+
+    return match[1]; // es: "A", "C#", "F", "G#"
+}
 
 // ============================================================
 // VIBRATO NATURALE (solo violino)
@@ -198,7 +208,10 @@ export function scheduleOrchestraLead(section, progression, instruments, params,
     for (let m = 0; m < section.measures; m++) {
 
         const measureStartTime = section.startTime + m * measureDur;
-        const currentRoot = progression[m % progression.length];
+        //const currentRoot = progression[m % progression.length];
+        
+        const rawRoot = progression[m % progression.length];
+const pitchRoot = getRootPitch(rawRoot);
 
         violinPattern.forEach((s, i) => {
 
@@ -212,10 +225,10 @@ export function scheduleOrchestraLead(section, progression, instruments, params,
 
             // 🎻 OTTAVE REALISTICHE
             const violaOct = isSolo ? "5" : "4";
-            const violinOct = isSolo ? "6" : "5";
+const violinOct = isSolo ? "6" : "5";
 
-            const violaNote = currentRoot + violaOct;
-            const violinNote = currentRoot + violinOct;
+const violaNote = pitchRoot + violaOct;
+const violinNote = pitchRoot + violinOct;
 
             const velViola = computeOrchestraVelocity(violaIdx, duration, isSolo, isBridge);
             const velViolin = computeOrchestraVelocity(violinIdx, duration, isSolo, isBridge);
