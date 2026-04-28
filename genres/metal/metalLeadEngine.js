@@ -1,9 +1,9 @@
-// metalLeadEngine.js — ver. 088 FINAL (Con tutti gli enhancer)
+// metalLeadEngine.js — ver. 088.1 FINAL (Con tutti gli enhancer)
 
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote, leadBus } from "./metalInstruments.js";
 
-console.log("metalLeadEngine.js ver. 088 FINAL loaded");
+console.log("metalLeadEngine.js ver. 088.1 loaded");
 
 // ============================================================
 // UTILITY
@@ -202,6 +202,47 @@ function addStrategicPause(rhythmPattern, energy) {
     return out;
 }
 
+// NUOVI ENHANCER PER RITMICA
+function addPolyrhythmHint(pattern, complexity) {
+    if (!Array.isArray(pattern) || pattern.length < 4) return pattern;
+    if (complexity < 0.7) return pattern;
+    
+    const out = [...pattern];
+    if (!out.includes(2) && Math.random() < 0.3) out.push(2);
+    if (!out.includes(6) && Math.random() < 0.3) out.push(6);
+    if (!out.includes(10) && Math.random() < 0.3) out.push(10);
+    return out.sort((a, b) => a - b);
+}
+
+function addGentleSwing(pattern, texture) {
+    if (!Array.isArray(pattern) || pattern.length < 2) return pattern;
+    if (texture < 0.5) return pattern;
+    
+    const out = [];
+    for (let step of pattern) {
+        if (step % 2 === 0 && Math.random() < 0.4) {
+            out.push(step - 0.5);
+        } else {
+            out.push(step);
+        }
+    }
+    return out.sort((a, b) => a - b);
+}
+
+function addGhostAccent(pattern, energy) {
+    if (!Array.isArray(pattern) || pattern.length < 3) return pattern;
+    if (energy < 0.6) return pattern;
+    
+    const out = [...pattern];
+    const ghostSteps = [1, 3, 5, 7, 9, 11, 13];
+    for (let g of ghostSteps) {
+        if (Math.random() < 0.15 && !out.includes(g)) {
+            out.push(g);
+        }
+    }
+    return out.sort((a, b) => a - b);
+}
+
 // ============================================================
 // ENHANCER PER MELODIA
 // ============================================================
@@ -329,6 +370,57 @@ function addOctaveDoubling(melody, brightness) {
     return out;
 }
 
+// NUOVI ENHANCER PER MELODIA
+function addMirrorInversion(melody, complexity) {
+    if (!Array.isArray(melody) || melody.length < 3) return melody;
+    if (complexity < 0.8) return melody;
+    
+    const maxNote = Math.max(...melody);
+    const minNote = Math.min(...melody);
+    const range = maxNote - minNote;
+    if (range === 0) return melody;
+    
+    const out = [];
+    for (let i = 0; i < melody.length; i++) {
+        const mirrored = minNote + (maxNote - melody[i]);
+        out.push(mirrored);
+    }
+    return out;
+}
+
+function addEchoEffect(melody, texture) {
+    if (!Array.isArray(melody) || melody.length < 2) return melody;
+    if (texture < 0.6) return melody;
+    
+    const out = [...melody];
+    const echoLength = Math.min(3, Math.floor(melody.length / 3));
+    for (let i = 0; i < echoLength; i++) {
+        out.push(melody[i]);
+    }
+    return out;
+}
+
+function addScaleRunBetweenPeaks(melody, energy) {
+    if (!Array.isArray(melody) || melody.length < 4) return melody;
+    if (energy < 0.7) return melody;
+    
+    const out = [];
+    for (let i = 0; i < melody.length - 1; i++) {
+        out.push(melody[i]);
+        const curr = melody[i];
+        const next = melody[i + 1];
+        const diff = next - curr;
+        if (Math.abs(diff) > 2 && Math.random() < 0.3) {
+            const step = diff > 0 ? 1 : -1;
+            for (let n = curr + step; n !== next; n += step) {
+                out.push(n);
+            }
+        }
+    }
+    out.push(melody[melody.length - 1]);
+    return out;
+}
+
 // ============================================================
 // SELEZIONE FAMIGLIA MELODICA PER L'ASSOLO
 // ============================================================
@@ -429,6 +521,9 @@ const LeadLegacy = {
                 currentPattern = enhanceRhythmGhostSteps(currentPattern);
                 currentPattern = addAnticipation(currentPattern, energy);
                 currentPattern = addStrategicPause(currentPattern, energy);
+                currentPattern = addPolyrhythmHint(currentPattern, complexity);
+                currentPattern = addGentleSwing(currentPattern, texture);
+                currentPattern = addGhostAccent(currentPattern, energy);
 
                 const soloFamily = getSoloMelodyFamily(isSoloPt2, energy, brightness, complexity, texture);
                 const melodyIndex = Math.floor(energy * soloFamily.data.length) % soloFamily.data.length;
@@ -441,6 +536,9 @@ const LeadLegacy = {
                 currentMelody = addBendEffect(currentMelody, brightness);
                 currentMelody = addSlideEffect(currentMelody, texture);
                 currentMelody = addOctaveDoubling(currentMelody, brightness);
+                currentMelody = addMirrorInversion(currentMelody, complexity);
+                currentMelody = addEchoEffect(currentMelody, texture);
+                currentMelody = addScaleRunBetweenPeaks(currentMelody, energy);
 
                 moodName = soloFamily.name + (isHarmonic ? " (HARMONIC)" : "");
             } else {
