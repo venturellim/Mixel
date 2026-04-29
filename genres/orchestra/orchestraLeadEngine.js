@@ -16,7 +16,7 @@ import {
     getScaleDegree
 } from "../../utils/scaleUtils.js";
 
-console.log("orchestraLeadEngine.js ver. C loaded");
+console.log("orchestraLeadEngine.js ver. 002 loaded");
 
 // ------------------------------------------------------------
 // SAFE NOTE (stessa filosofia di orchestraEngine)
@@ -256,7 +256,7 @@ export function scheduleOrchestraLead(section, progression, instruments, params,
             if (violaNote) {
                 Tone.Transport.schedule(time => {
                     viola.triggerAttackRelease(violaNote, duration, time, velViola);
-                    if (score) score.addNote("Viola", violaNote, section.name);
+                    if (score) score.addNote("LeadXtra", violaNote, section.name);
                 }, absoluteTime);
             }
 
@@ -265,7 +265,7 @@ export function scheduleOrchestraLead(section, progression, instruments, params,
                 Tone.Transport.schedule(time => {
                     violin.triggerAttackRelease(violinNote, duration, time, velViolin);
                     applyNaturalVibrato(violin, time, duration);
-                    if (score) score.addNote("Violin", violinNote, section.name);
+                    if (score) score.addNote("Lead", violinNote, section.name);
                 }, absoluteTime);
             }
 

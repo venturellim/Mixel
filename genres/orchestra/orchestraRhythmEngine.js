@@ -2,7 +2,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 
-console.log("orchestraRhythmEngine.js ver. C loaded");
+console.log("orchestraRhythmEngine.js ver. 002 loaded");
 
 // ------------------------------------------------------------
 // SAFE NOTE (identico a orchestraEngine originale)
@@ -149,7 +149,7 @@ export function scheduleOrchestraRhythm(section, progression, instruments, param
                         sustain ? "1n" : "8n",
                         t
                     );
-                    if (score) score.addNote("Cello", safeCello, section.name);
+                    if (score) score.addNote("Rhythm", safeCello, section.name);
                 }, absoluteTime);
             }
 
@@ -160,14 +160,14 @@ export function scheduleOrchestraRhythm(section, progression, instruments, param
                         sustain ? "1n" : "8n",
                         t
                     );
-                    if (score) score.addNote("DoubleBass", safeBass, section.name);
+                    if (score) score.addNote("Bass", safeBass, section.name);
                 }, absoluteTime);
             }
 
             if (playTimpani) {
                 Tone.Transport.schedule(t => {
                     percussion.player("timpano1").start(t);
-                    if (score) score.addNote("Percussion", "Timpani", section.name);
+                    if (score) score.addNote("Drums", "Kick", section.name);
                 }, absoluteTime);
             }
         }
