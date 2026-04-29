@@ -7,7 +7,6 @@ import { generateSongProgressions, degreeToRoot } from "../../utils/musicTheory.
 import { piano, lhBus, rhBus, pianoInstruments, pianoVolumeMap } from "./pianoInstruments.js";
 import { schedulePianoRhythm } from "./pianoRhythmEngine.js";
 import { schedulePianoLead } from "./pianoLeadEngine.js";
-import { schedulePianoHarmony } from "./pianoHarmonyEngine.js";
 import { waitForInstruments } from "../../common.js";
 
 console.log("pianoEngine.js ver. 001 loaded");
