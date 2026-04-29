@@ -1,4 +1,5 @@
-// pianoLeadEngine.js — ver. 001 (Metal Lead Logic → Piano)
+// pianoLeadEngine.js — ver. 003 (Fix funzione getMelodyFamily mancante)
+
 import * as Tone from "https://esm.sh/tone";
 
 import {
@@ -12,10 +13,10 @@ import {
     shapeBridgeSolo
 } from "../../utils/leadEnhancers.js";
 
-console.log("pianoLeadEngine.js ver. 002.1 loaded");
+console.log("pianoLeadEngine.js ver. 003 loaded");
 
 // ------------------------------------------------------------
-// SCALA STRICT (copiata dal metalLeadEngine)
+// SCALA STRICT
 // ------------------------------------------------------------
 function getStrictScale(root, isMinor) {
     const allNotes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
@@ -23,13 +24,29 @@ function getStrictScale(root, isMinor) {
     const alt = { DB: "C#", EB: "D#", GB: "F#", AB: "G#", BB: "A#" };
     cleanRoot = alt[cleanRoot] || cleanRoot;
     let idx = allNotes.indexOf(cleanRoot);
-    if (idx === -1) idx = 9; // fallback A
+    if (idx === -1) idx = 9;
     const intervals = isMinor ? [0, 2, 3, 5, 7, 8, 10] : [0, 2, 4, 5, 7, 9, 11];
     return intervals.map(i => allNotes[(idx + i) % 12]);
 }
 
 // ------------------------------------------------------------
-// SELEZIONE FAMIGLIA MELODICA PER L'ASSOLO (identica al metal)
+// getMelodyFamily (Aggiunta!)
+// ------------------------------------------------------------
+function getMelodyFamily(isPreChorus, isChorus, energy, brightness, complexity, texture) {
+    if (isPreChorus) return { name: "PRE-CHORUS 📈", data: leadMelodicLibrary.prechorus };
+    if (isChorus) {
+        return brightness > 0.5
+            ? { name: "EPIC 🏰", data: leadMelodicLibrary.epic }
+            : { name: "EMOTIONAL 💧", data: leadMelodicLibrary.emotional };
+    }
+    if (energy > 0.7 && texture > 0.6) return { name: "EVIL 😈", data: leadMelodicLibrary.evil };
+    if (complexity > 0.7) return { name: "ACTIVE ⚡", data: leadMelodicLibrary.active };
+    if (brightness < 0.4) return { name: "EMOTIONAL 💧", data: leadMelodicLibrary.emotional };
+    return { name: "EPIC 🏰", data: leadMelodicLibrary.epic };
+}
+
+// ------------------------------------------------------------
+// getSoloMelodyFamily
 // ------------------------------------------------------------
 function getSoloMelodyFamily(isSoloPt2, energy, brightness, complexity, texture) {
     if (!isSoloPt2) {
@@ -42,7 +59,7 @@ function getSoloMelodyFamily(isSoloPt2, energy, brightness, complexity, texture)
 }
 
 // ------------------------------------------------------------
-// PIANO LEAD ENGINE (versione monofonica, con enhancer ovunque)
+// PIANO LEAD ENGINE
 // ------------------------------------------------------------
 export function schedulePianoLead(
     section,
@@ -53,8 +70,11 @@ export function schedulePianoLead(
     measureDur,
     score
 ) {
-    const { piano } = instruments || {};
-    if (!piano) return;
+    const { piano, rhBus } = instruments;
+    if (!piano) {
+        console.warn("🎹 pianoLeadEngine: piano non disponibile");
+        return;
+    }
 
     const name = section?.name?.toLowerCase() || "";
     const isChorus = name.includes("chorus") && !name.includes("pre");
@@ -78,7 +98,6 @@ export function schedulePianoLead(
     const scaleType = params?.scaleType || params?.imageParams?.scaleType || "naturalMinor";
     const rootNote = tonalCenter.replace(/[0-9]/g, "");
     const isMinor = scaleType.includes("minor");
-    const isHarmonic = scaleType === "harmonicMinor";
 
     let sectionType =
         isIntro ? "intro" :
@@ -93,27 +112,13 @@ export function schedulePianoLead(
         return family[index];
     };
 
-    const getMelodyFamily = () => {
-        if (isPreChorus) return { name: "PRE-CHORUS 📈", data: leadMelodicLibrary.prechorus };
-        if (isChorus) {
-            return brightness > 0.5
-                ? { name: "EPIC 🏰", data: leadMelodicLibrary.epic }
-                : { name: "EMOTIONAL 💧", data: leadMelodicLibrary.emotional };
-        }
-        if (energy > 0.7 && texture > 0.6) return { name: "EVIL 😈", data: leadMelodicLibrary.evil };
-        if (complexity > 0.7) return { name: "ACTIVE ⚡", data: leadMelodicLibrary.active };
-        if (brightness < 0.4) return { name: "EMOTIONAL 💧", data: leadMelodicLibrary.emotional };
-        return { name: "EPIC 🏰", data: leadMelodicLibrary.epic };
-    };
-
     // --------------------------------------------------------
-    // PATTERN & MELODIA DI BASE (identici al metal)
+    // PATTERN & MELODIA DI BASE
     // --------------------------------------------------------
     let currentPattern;
     let currentMelody;
 
     if (isSolo) {
-        // SOLO: come metal, tanti enhancer subito
         const basePattern = getPattern("chorus");
         let pattern = [...basePattern];
 
@@ -121,9 +126,6 @@ export function schedulePianoLead(
         pattern = applyLeadEnhancer(pattern, "enhanceRhythmGhostSteps", enhancerContext);
         pattern = applyLeadEnhancer(pattern, "addAnticipation", enhancerContext);
         pattern = applyLeadEnhancer(pattern, "addStrategicPause", enhancerContext);
-        pattern = applyLeadEnhancer(pattern, "addPolyrhythmHint", enhancerContext);
-        pattern = applyLeadEnhancer(pattern, "addGentleSwing", enhancerContext);
-        pattern = applyLeadEnhancer(pattern, "addGhostAccent", enhancerContext);
 
         const soloFamily = getSoloMelodyFamily(isSoloPt2, energy, brightness, complexity, texture);
         const melodyIndex = Math.floor(energy * soloFamily.data.length) % soloFamily.data.length;
@@ -131,37 +133,25 @@ export function schedulePianoLead(
 
         baseMelody = applyLeadEnhancer(baseMelody, "enhanceMelodyLine", enhancerContext);
         baseMelody = applyLeadEnhancer(baseMelody, "enhanceMelodyMicroVariation", enhancerContext);
-        baseMelody = applyLeadEnhancer(baseMelody, "enhanceChromaticPassing", enhancerContext);
-        baseMelody = applyLeadEnhancer(baseMelody, "addTrills", enhancerContext);
         baseMelody = applyLeadEnhancer(baseMelody, "addOctaveDoubling", enhancerContext);
-        baseMelody = applyLeadEnhancer(baseMelody, "addMirrorInversion", enhancerContext);
-        baseMelody = applyLeadEnhancer(baseMelody, "addEchoEffect", enhancerContext);
         baseMelody = applyLeadEnhancer(baseMelody, "addScaleRunBetweenPeaks", enhancerContext);
 
-        if (name.includes("bridge")) {
-            const shaped = shapeBridgeSolo(baseMelody, pattern);
-            currentMelody = shaped.melody;
-            currentPattern = shaped.pattern;
-        } else {
-            currentMelody = baseMelody;
-            currentPattern = pattern;
-        }
+        currentMelody = baseMelody;
+        currentPattern = pattern;
 
     } else {
-        // SEZIONI NORMALI: stessa scelta del metal, ma poi enhancer ogni 2 misure
+        // SEZIONI NORMALI: ora getMelodyFamily esiste!
         currentPattern = getPattern(sectionType);
-
-        const mood = getMelodyFamily();
+        const mood = getMelodyFamily(isPreChorus, isChorus, energy, brightness, complexity, texture);
         const melodyIndex = Math.floor(energy * mood.data.length) % mood.data.length;
         currentMelody = [...mood.data[melodyIndex]];
     }
 
-    // Lista di enhancer "leggeri" da usare ogni 2 misure
+    // Enhancer leggeri per sezioni normali
     const softEnhancers = [
         "enhanceMelodyLine",
         "enhanceMelodyMicroVariation",
-        "enhanceChromaticPassing",
-        "addEchoEffect"
+        "enhanceChromaticPassing"
     ];
 
     // --------------------------------------------------------
@@ -171,11 +161,10 @@ export function schedulePianoLead(
 
         const measureStartTime = section.startTime + m * measureDur;
 
-        // Ogni 2 misure, se NON siamo nel solo, applica 1–2 enhancer alla melodia
         if (!isSolo && m % 2 === 0) {
             const enhCount = 1 + (rand() < 0.5 ? 0 : 1);
             for (let e = 0; e < enhCount; e++) {
-                const enhName = softEnhancers[(rand() * softEnhancers.length) | 0];
+                const enhName = softEnhancers[Math.floor(rand() * softEnhancers.length)];
                 currentMelody = applyLeadEnhancer(currentMelody, enhName, enhancerContext);
             }
         }
@@ -183,36 +172,42 @@ export function schedulePianoLead(
         const currentScale = getStrictScale(progression[m % progression.length] || rootNote, isMinor);
         const isTransition = m === section.measures - 1;
 
-        currentPattern.forEach((s, i) => {
+        // DEBUG: controlla che currentPattern non sia vuoto
+        if (!currentPattern || currentPattern.length === 0) {
+            console.warn(`🎹 pattern vuoto per sezione ${section.name}, measure ${m}`);
+            continue;
+        }
 
-            if (isTransition && s > 13 && energy > 0.6) return;
+        for (let i = 0; i < currentPattern.length; i++) {
+            const s = currentPattern[i];
+            
+            if (isTransition && s > 13 && energy > 0.6) continue;
 
             const absoluteTime = measureStartTime + s * stepTime;
             const nextStep = currentPattern[i + 1] ?? 16;
+            const duration = (nextStep - s) * stepTime;
 
-            const noteIdx = currentMelody[i % currentMelody.length];
-
+            const noteIdx = currentMelody[i % currentMelody.length] % 7;
             const octave = (isChorus || isSolo) ? 5 : 4;
-            const pitch = currentScale[Math.abs(noteIdx) % 7];
+            const pitch = currentScale[Math.abs(noteIdx)];
+            
+            if (!pitch) {
+                console.warn(`🎹 pitch null per noteIdx=${noteIdx}, scale=${currentScale}`);
+                continue;
+            }
+            
             const noteName = `${pitch}${octave}`;
 
             Tone.Transport.schedule(time => {
-
-                const duration = (nextStep - s) * stepTime;
                 const velocity = computeLeadVelocity(noteIdx, duration, isSolo, name.includes("bridge"));
-
-                //piano.triggerAttackRelease(noteName, duration, time, velocity);
+                piano.triggerAttackRelease(noteName, duration, time, velocity, rhBus);
                 
-piano.triggerAttackRelease(noteName, duration, time, velocity, rhBus);
-
-
-                if (score) {
-                    Tone.Draw.schedule(() => {
-                        score.addNote("Lead", noteName, section.name);
-                    }, time);
-                }
-
+                Tone.Draw.schedule(() => {
+                    if (score) score.addNote("Lead", noteName, section.name);
+                }, time);
             }, absoluteTime);
-        });
+        }
     }
+    
+    console.log(`🎹 pianoLead: scheduled per ${section.name}, measures=${section.measures}, pattern length=${currentPattern?.length}`);
 }
