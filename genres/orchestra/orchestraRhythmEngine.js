@@ -120,7 +120,8 @@ export function scheduleOrchestraRhythm(section, progression, instruments, param
 
 // FILL DI TIMPANI ALL’ULTIMA MISURA DELLA SEZIONE
 // Fill solo se esiste davvero una sezione successiva
-if (isLastMeasure && s === 0 && nextSectionRoot && nextSectionRoot !== null) {
+// FILL DI TIMPANI: ultimi 4 step della sezione
+if (isLastMeasure && s === 12 && nextSectionRoot) {
 
     const prevScale = buildScaleFromTonic(pitchRoot + "2", "harmonicMinor");
     const nextScale = buildScaleFromTonic(getRootPitch(nextSectionRoot) + "2", "harmonicMinor");
@@ -132,7 +133,7 @@ if (isLastMeasure && s === 0 && nextSectionRoot && nextSectionRoot !== null) {
     const nextMidi = Tone.Frequency(nextNote).toMidi();
 
     smartTimpaniRoll(
-        absoluteTime - 0.4,
+        absoluteTime,
         percussion,
         score,
         prevMidi,
