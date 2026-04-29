@@ -16,7 +16,7 @@ import {
     getScaleDegree
 } from "../../utils/scaleUtils.js";
 
-console.log("orchestraLeadEngine.js ver. 002 loaded");
+console.log("orchestraLeadEngine.js ver. 002.1 loaded");
 
 // ------------------------------------------------------------
 // SAFE NOTE (stessa filosofia di orchestraEngine)
@@ -230,7 +230,9 @@ export function scheduleOrchestraLead(section, progression, instruments, params,
             // CONVERSIONE GRADO → NOTA DI SCALA → SAFE NOTE
             // ----------------------------------------------------
             const violaDegree = rootIdx + violaIdx;
-            const violinDegree = rootIdx + violinIdx + 2; // violino un po' più alto
+            const violinDegree = rootIdx + ((violinIdx + 2) % scale.length);
+
+            //const violinDegree = rootIdx + violinIdx + 2; // violino un po' più alto
 
             const violaName = getScaleDegree(scale, violaDegree);
             const violinNameBase = getScaleDegree(scale, violinDegree);
