@@ -2,7 +2,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 
-console.log("pianoRhythmEngine.js ver. 002 loaded");
+console.log("pianoRhythmEngine.js ver. 002.1 loaded");
 
 // ------------------------------------------------------------
 // SAFE NOTE
@@ -245,8 +245,11 @@ export function schedulePianoRhythm(
                 triadIndex++;
 
                 Tone.Transport.schedule(t => {
-                    piano.triggerAttackRelease(note, "8n", t, 0.55);
-                    if (score) score.addNote("PianoLH", note, section.name);
+                    //piano.triggerAttackRelease(note, "8n", t, 0.55);
+piano.triggerAttackRelease(note, "8n", t, 0.55, lhBus);
+
+                    
+                    if (score) score.addNote("Rhythm", note, section.name);
                 }, absoluteTime);
             }
         }

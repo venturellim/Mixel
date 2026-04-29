@@ -12,7 +12,7 @@ import {
     shapeBridgeSolo
 } from "../../utils/leadEnhancers.js";
 
-console.log("pianoLeadEngine.js ver. 002 loaded");
+console.log("pianoLeadEngine.js ver. 002.1 loaded");
 
 // ------------------------------------------------------------
 // SCALA STRICT (copiata dal metalLeadEngine)
@@ -201,11 +201,14 @@ export function schedulePianoLead(
                 const duration = (nextStep - s) * stepTime;
                 const velocity = computeLeadVelocity(noteIdx, duration, isSolo, name.includes("bridge"));
 
-                piano.triggerAttackRelease(noteName, duration, time, velocity);
+                //piano.triggerAttackRelease(noteName, duration, time, velocity);
+                
+piano.triggerAttackRelease(noteN ad me, duration, time, velocity, rhBus);
+
 
                 if (score) {
                     Tone.Draw.schedule(() => {
-                        score.addNote("PianoRH", noteName, section.name);
+                        score.addNote("Lead", noteName, section.name);
                     }, time);
                 }
 
