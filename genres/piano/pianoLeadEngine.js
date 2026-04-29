@@ -1,4 +1,4 @@
-// pianoLeadEngine.js — ver. 003 (Fix funzione getMelodyFamily mancante)
+// pianoLeadEngine.js — ver. 007 (Convertito da metalLeadEngine, ottimizzato per piano)
 
 import * as Tone from "https://esm.sh/tone";
 
@@ -13,11 +13,11 @@ import {
     shapeBridgeSolo
 } from "../../utils/leadEnhancers.js";
 
-console.log("pianoLeadEngine.js ver. 003 loaded");
+console.log("pianoLeadEngine.js ver. 007 loaded");
 
-// ------------------------------------------------------------
+// ============================================================
 // SCALA STRICT
-// ------------------------------------------------------------
+// ============================================================
 function getStrictScale(root, isMinor) {
     const allNotes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
     let cleanRoot = root.replace(/[0-9]/g, "").toUpperCase();
@@ -29,9 +29,9 @@ function getStrictScale(root, isMinor) {
     return intervals.map(i => allNotes[(idx + i) % 12]);
 }
 
-// ------------------------------------------------------------
-// getMelodyFamily (Aggiunta!)
-// ------------------------------------------------------------
+// ============================================================
+// SELEZIONE FAMIGLIE MELODICHE
+// ============================================================
 function getMelodyFamily(isPreChorus, isChorus, energy, brightness, complexity, texture) {
     if (isPreChorus) return { name: "PRE-CHORUS 📈", data: leadMelodicLibrary.prechorus };
     if (isChorus) {
@@ -45,9 +45,6 @@ function getMelodyFamily(isPreChorus, isChorus, energy, brightness, complexity, 
     return { name: "EPIC 🏰", data: leadMelodicLibrary.epic };
 }
 
-// ------------------------------------------------------------
-// getSoloMelodyFamily
-// ------------------------------------------------------------
 function getSoloMelodyFamily(isSoloPt2, energy, brightness, complexity, texture) {
     if (!isSoloPt2) {
         if (brightness > 0.5) return { name: "SOLO EPIC 🏰", data: leadMelodicLibrary.epic };
@@ -58,9 +55,40 @@ function getSoloMelodyFamily(isSoloPt2, energy, brightness, complexity, texture)
     }
 }
 
-// ------------------------------------------------------------
+// ============================================================
+// ENHANCER PER PIANO (selezione ridotta e più melodica)
+// ============================================================
+
+// Enhancer di base per tutte le sezioni (2 fissi)
+const BASE_ENHANCERS = [
+    "enhanceMelodyLine",           // aggiunge passing tones
+    "enhanceMelodyMicroVariation"  // piccole variazioni
+];
+
+// Enhancer rotanti (ogni 2 misure, sostituisci i base con 2 di questi)
+const ROTATING_ENHANCERS = [
+    "enhanceChromaticPassing",
+    "addOctaveDoubling",
+    "addEchoEffect",
+    "addScaleRunBetweenPeaks",
+    "addSlideEffect"
+];
+
+// Enhancer per l'assolo (meno del metal, più musicali)
+const SOLO_ENHANCERS = [
+    "enhanceMelodyLine",
+    "enhanceMelodyMicroVariation",
+    "enhanceChromaticPassing",
+    "addOctaveDoubling",
+    "addScaleRunBetweenPeaks",
+    "addEchoEffect"
+    // escludo: addTrills (troppo meccanico), addBendEffect (non da piano), 
+    // addMirrorInversion (troppo artefatto), addSlideEffect (non serve)
+];
+
+// ============================================================
 // PIANO LEAD ENGINE
-// ------------------------------------------------------------
+// ============================================================
 export function schedulePianoLead(
     section,
     progression,
@@ -71,10 +99,7 @@ export function schedulePianoLead(
     score
 ) {
     const { piano, rhBus } = instruments;
-    if (!piano) {
-        console.warn("🎹 pianoLeadEngine: piano non disponibile");
-        return;
-    }
+    if (!piano) return;
 
     const name = section?.name?.toLowerCase() || "";
     const isChorus = name.includes("chorus") && !name.includes("pre");
@@ -109,74 +134,89 @@ export function schedulePianoLead(
         const family = leadRhythmLibrary[type] || leadRhythmLibrary.verse;
         const dnaScore = (energy * 400) + (brightness * 30) + (complexity * 2);
         const index = Math.floor(Math.abs(dnaScore)) % family.length;
-        return family[index];
+        return [...family[index]]; // copia
     };
 
-    // --------------------------------------------------------
+    // ============================================================
     // PATTERN & MELODIA DI BASE
-    // --------------------------------------------------------
+    // ============================================================
     let currentPattern;
     let currentMelody;
+    let currentEnhancers = [...BASE_ENHANCERS]; // inizia con i base
 
     if (isSolo) {
-        const basePattern = getPattern("chorus");
-        let pattern = [...basePattern];
-
+        // ASSOLO: pattern dal chorus potenziato
+        let pattern = getPattern("chorus");
+        
+        // Solo 2 enhancer ritmici leggeri
         pattern = applyLeadEnhancer(pattern, "enhanceRhythmPattern", enhancerContext);
-        pattern = applyLeadEnhancer(pattern, "enhanceRhythmGhostSteps", enhancerContext);
         pattern = applyLeadEnhancer(pattern, "addAnticipation", enhancerContext);
-        pattern = applyLeadEnhancer(pattern, "addStrategicPause", enhancerContext);
+        
+        currentPattern = pattern;
 
         const soloFamily = getSoloMelodyFamily(isSoloPt2, energy, brightness, complexity, texture);
         const melodyIndex = Math.floor(energy * soloFamily.data.length) % soloFamily.data.length;
         let baseMelody = soloFamily.data[melodyIndex];
 
-        baseMelody = applyLeadEnhancer(baseMelody, "enhanceMelodyLine", enhancerContext);
-        baseMelody = applyLeadEnhancer(baseMelody, "enhanceMelodyMicroVariation", enhancerContext);
-        baseMelody = applyLeadEnhancer(baseMelody, "addOctaveDoubling", enhancerContext);
-        baseMelody = applyLeadEnhancer(baseMelody, "addScaleRunBetweenPeaks", enhancerContext);
-
+        // Applica SOLO_ENHANCERS alla melodia
+        for (let enh of SOLO_ENHANCERS) {
+            if (Math.random() < 0.6) { // 60% di probabilità per ogni enhancer
+                baseMelody = applyLeadEnhancer(baseMelody, enh, enhancerContext);
+            }
+        }
+        
         currentMelody = baseMelody;
-        currentPattern = pattern;
 
     } else {
-        // SEZIONI NORMALI: ora getMelodyFamily esiste!
+        // SEZIONI NORMALI
         currentPattern = getPattern(sectionType);
         const mood = getMelodyFamily(isPreChorus, isChorus, energy, brightness, complexity, texture);
         const melodyIndex = Math.floor(energy * mood.data.length) % mood.data.length;
         currentMelody = [...mood.data[melodyIndex]];
+
+        // Espandi pattern se troppo corto
+        if (currentPattern.length < currentMelody.length && currentPattern.length > 0) {
+            const originalPattern = [...currentPattern];
+            while (currentPattern.length < currentMelody.length) {
+                for (let step of originalPattern) {
+                    currentPattern.push(step);
+                    if (currentPattern.length >= currentMelody.length) break;
+                }
+            }
+            currentPattern.sort((a, b) => a - b);
+            currentPattern = currentPattern.filter((step, idx, arr) => idx === 0 || step !== arr[idx - 1]);
+        }
     }
 
-    // Enhancer leggeri per sezioni normali
-    const softEnhancers = [
-        "enhanceMelodyLine",
-        "enhanceMelodyMicroVariation",
-        "enhanceChromaticPassing"
-    ];
-
-    // --------------------------------------------------------
+    // ============================================================
     // LOOP MISURE
-    // --------------------------------------------------------
+    // ============================================================
     for (let m = 0; m < section.measures; m++) {
 
         const measureStartTime = section.startTime + m * measureDur;
 
-        if (!isSolo && m % 2 === 0) {
-            const enhCount = 1 + (rand() < 0.5 ? 0 : 1);
-            for (let e = 0; e < enhCount; e++) {
-                const enhName = softEnhancers[Math.floor(rand() * softEnhancers.length)];
-                currentMelody = applyLeadEnhancer(currentMelody, enhName, enhancerContext);
+        // Ogni 2 misure, RUOTA gli enhancer (solo per sezioni normali)
+        if (!isSolo && m % 2 === 0 && m > 0) {
+            // Sostituisci i 2 enhancer base con 2 nuovi dalla lista rotante
+            const newEnhancers = [];
+            const shuffled = [...ROTATING_ENHANCERS];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            for (let i = 0; i < Math.min(2, shuffled.length); i++) {
+                newEnhancers.push(shuffled[i]);
+            }
+            currentEnhancers = newEnhancers;
+            
+            // Applica i nuovi enhancer alla melodia corrente
+            for (let enh of currentEnhancers) {
+                currentMelody = applyLeadEnhancer(currentMelody, enh, enhancerContext);
             }
         }
 
         const currentScale = getStrictScale(progression[m % progression.length] || rootNote, isMinor);
         const isTransition = m === section.measures - 1;
-
-        // DEBUG: controlla che currentPattern non sia vuoto
-        if (!currentPattern || currentPattern.length === 0) {
-            console.warn(`🎹 pattern vuoto per sezione ${section.name}, measure ${m}`);
-            continue;
-        }
 
         for (let i = 0; i < currentPattern.length; i++) {
             const s = currentPattern[i];
@@ -187,12 +227,13 @@ export function schedulePianoLead(
             const nextStep = currentPattern[i + 1] ?? 16;
             const duration = (nextStep - s) * stepTime;
 
-            const noteIdx = currentMelody[i % currentMelody.length] % 7;
+            const noteIdxRaw = currentMelody[i % currentMelody.length];
+            const noteIdx = ((noteIdxRaw % 7) + 7) % 7;
             const octave = (isChorus || isSolo) ? 5 : 4;
-            const pitch = currentScale[Math.abs(noteIdx)];
+            const pitch = currentScale[noteIdx];
             
             if (!pitch) {
-                console.warn(`🎹 pitch null per noteIdx=${noteIdx}, scale=${currentScale}`);
+                console.warn(`🎹 pitch null per noteIdx=${noteIdx}`);
                 continue;
             }
             
@@ -209,5 +250,5 @@ export function schedulePianoLead(
         }
     }
     
-    console.log(`🎹 pianoLead: scheduled per ${section.name}, measures=${section.measures}, pattern length=${currentPattern?.length}`);
+    console.log(`🎹 pianoLead: ${section.name} | pattern len=${currentPattern.length} | melody len=${currentMelody.length}`);
 }
