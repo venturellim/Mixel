@@ -257,7 +257,7 @@ export function scheduleOrchestraLead(section, progression, instruments, params,
             if (violaNote) {
                 Tone.Transport.schedule(time => {
                     viola.triggerAttackRelease(violaNote, duration, time, velViola);
-                    if (score) score.addNote("LeadXtra", violaNote, section.name);
+                    if (score) score.addNote("Rhythm", violaNote, section.name);
                 }, absoluteTime);
             } else {
                 console.warn(`🎻 violaNote null per degree=${violaDegree}, idx=${violaIdx}`);

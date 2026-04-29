@@ -149,7 +149,7 @@ export function scheduleOrchestraRhythm(section, progression, instruments, param
                         sustain ? "1n" : "8n",
                         t
                     );
-                    if (score) score.addNote("Rhythm", safeCello, section.name);
+                    if (score) score.addNote("BassXtra", safeCello, section.name);
                 }, absoluteTime);
             }
 
