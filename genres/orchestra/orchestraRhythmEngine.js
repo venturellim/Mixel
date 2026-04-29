@@ -2,7 +2,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 
-console.log("orchestraRhythmEngine.js ver. 002 loaded");
+console.log("orchestraRhythmEngine.js ver. 002.1 loaded");
 
 // ------------------------------------------------------------
 // SAFE NOTE (identico a orchestraEngine originale)
@@ -21,6 +21,40 @@ function getRootPitch(root) {
     const match = root.toUpperCase().match(/^([A-G](#|B)?)/);
     return match ? match[1] : "A";
 }
+
+function smartTimpaniRoll(startTime, percussion, score, lastMidi, nextMidi, rand, sectionName) {
+    if (!percussion || !percussion.player) return;
+
+    let sequence;
+
+    if (lastMidi < nextMidi) {
+        sequence = ["timpano1", "timpano2", "timpano3", "timpano4", "timpano5"];
+    } else if (lastMidi > nextMidi) {
+        sequence = ["timpano5", "timpano4", "timpano3", "timpano2", "timpano1"];
+    } else {
+        sequence = ["timpano3", "timpano4", "timpano3", "timpano4"];
+    }
+
+    const interval = 0.12;
+
+    sequence.forEach((key, idx) => {
+        Tone.Transport.schedule(t => {
+            percussion.player(key).start(t);
+            if (score) score.addNote("Percussion", "Timpani", sectionName);
+        }, startTime + idx * interval);
+    });
+
+    const lastHitTime = startTime + (sequence.length - 1) * interval;
+
+    Tone.Transport.schedule(t => {
+        const gong = percussion.player("gong");
+        if (gong) {
+            gong.start(t);
+            if (score) score.addNote("Percussion", "Gong", sectionName);
+        }
+    }, lastHitTime);
+}
+
 
 // ------------------------------------------------------------
 // RHYTHM ENGINE — VERSIONE C
@@ -62,6 +96,9 @@ export function scheduleOrchestraRhythm(section, progression, instruments, param
     // LOOP MISURE
     // ------------------------------------------------------------
     for (let m = 0; m < section.measures; m++) {
+    
+    const isLastMeasure = (m === section.measures - 1);
+
 
         const measureStartTime = section.startTime + m * measureDur;
 
@@ -80,6 +117,30 @@ export function scheduleOrchestraRhythm(section, progression, instruments, param
             let playBass = false;
             let playTimpani = false;
             let sustain = false;
+
+// FILL DI TIMPANI ALL’ULTIMA MISURA DELLA SEZIONE
+// Fill solo se esiste davvero una sezione successiva
+if (isLastMeasure && s === 0 && nextSectionRoot && nextSectionRoot !== null) {
+
+    const prevScale = buildScaleFromTonic(pitchRoot + "2", "harmonicMinor");
+    const nextScale = buildScaleFromTonic(getRootPitch(nextSectionRoot) + "2", "harmonicMinor");
+
+    const prevNote = getScaleDegree(prevScale, 0);
+    const nextNote = getScaleDegree(nextScale, 0);
+
+    const prevMidi = Tone.Frequency(prevNote).toMidi();
+    const nextMidi = Tone.Frequency(nextNote).toMidi();
+
+    smartTimpaniRoll(
+        absoluteTime - 0.4,
+        percussion,
+        score,
+        prevMidi,
+        nextMidi,
+        rand,
+        section.name
+    );
+}
 
             // ------------------------------------------------------------
             // LOGICA GROOVE
@@ -136,8 +197,10 @@ export function scheduleOrchestraRhythm(section, progression, instruments, param
             const safeCello = safeNote(celloName, "3");
 
             // Double bass: grado -2 (quinta sotto)
-            const bassName = getScaleDegree(scale, rootIdx - 2);
-            const safeBass = safeNote(bassName, "1");
+            // Double bass: grado -2 (wrap ciclico)
+const bassDegree = (rootIdx - 2 + scale.length) % scale.length;
+const bassName = getScaleDegree(scale, bassDegree);
+const safeBass = safeNote(bassName, "1");
 
             // ------------------------------------------------------------
             // TRIGGER
@@ -166,7 +229,7 @@ export function scheduleOrchestraRhythm(section, progression, instruments, param
 
             if (playTimpani) {
                 Tone.Transport.schedule(t => {
-                    percussion.player("timpano1").start(t);
+                    percussion.player("timpano3").start(t);
                     if (score) score.addNote("Drums", "Kick", section.name);
                 }, absoluteTime);
             }
