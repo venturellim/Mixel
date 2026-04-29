@@ -48,9 +48,9 @@ export class scoreVisualizer {
                 "Drums": "BATTERIA" 
             },
             orchestra: { 
-                "Lead": "VIOLINO", "LeadXtra": "VIOLA", 
-                "Rhythm": "VIOLONCELLO", "RhythmXtra": "",
-                "Bass": "CONTRABBASSO", "BassXtra": "",
+                "Lead": "VIOLINO", "LeadXtra": "", 
+                "Rhythm": "VIOLA", "RhythmXtra": "",
+                "Bass": "CONTRABBASSO", "BassXtra": "VIOLONCELLO",
                 "Drums": "PERCUSSIONI" 
             },
             piano: { 
@@ -121,7 +121,7 @@ export class scoreVisualizer {
             const label = currentLabels[t];
             if (label && label !== "") {
                 const y = canvas.height * tracksY[t];
-                ctx.fillStyle = t.includes("Xtra") ? "#000080" : "#444";
+                ctx.fillStyle = t.includes("Xtra") ? "#ff0000" : "#444";
                 const yOff = t.includes("Xtra") ? y - 22 : y - 8;
                 ctx.fillText(label, playheadX + 15, yOff);
             }
