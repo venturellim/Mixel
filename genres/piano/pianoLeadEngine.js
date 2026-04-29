@@ -4,7 +4,7 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 import { leadRhythmLibrary, leadMelodicLibrary } from "../../utils/leadLibraries.js";
 import { applyLeadEnhancer } from "../../utils/leadEnhancers.js";
 
-console.log("pianoLeadEngine.js ver. A loaded");
+console.log("pianoLeadEngine.js ver. 001 loaded");
 
 // ------------------------------------------------------------
 // SAFE NOTE
@@ -115,7 +115,7 @@ export function schedulePianoLead(
 
             Tone.Transport.schedule(t => {
                 piano.triggerAttackRelease(note, "8n", t, vel);
-                if (score) score.addNote("PianoRH", note, section.name);
+                if (score) score.addNote("Lead", note, section.name);
             }, absoluteTime);
         });
     }

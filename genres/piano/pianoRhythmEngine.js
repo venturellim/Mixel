@@ -2,7 +2,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 
-console.log("pianoRhythmEngine.js ver. A loaded");
+console.log("pianoRhythmEngine.js ver. 001 loaded");
 
 // ------------------------------------------------------------
 // SAFE NOTE
@@ -71,9 +71,9 @@ export function schedulePianoRhythm(
                     0.75
                 );
                 if (score) {
-                    score.addNote("PianoLH", rootNote, section.name);
-                    score.addNote("PianoLH", thirdNote, section.name);
-                    score.addNote("PianoLH", fifthNote, section.name);
+                    score.addNote("Rhythm", rootNote, section.name);
+                    score.addNote("Rhythm", thirdNote, section.name);
+                    score.addNote("Rhythm", fifthNote, section.name);
                 }
             }, measureStart);
             continue;
@@ -93,7 +93,7 @@ export function schedulePianoRhythm(
             const time = measureStart + ev.step * stepTime;
             Tone.Transport.schedule(t => {
                 piano.triggerAttackRelease(ev.note, "8n", t, 0.55);
-                if (score) score.addNote("PianoLH", ev.note, section.name);
+                if (score) score.addNote("Rhythm", ev.note, section.name);
             }, time);
         });
     }

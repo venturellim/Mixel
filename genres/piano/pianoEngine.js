@@ -9,7 +9,7 @@ import { schedulePianoRhythm } from "./pianoRhythmEngine.js";
 import { schedulePianoLead } from "./pianoLeadEngine.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("pianoEngine.js ver. 001 loaded");
+console.log("pianoEngine.js ver. 001.1 loaded");
 
 export async function waitPianoInstruments() {
     await waitForInstruments(1); // solo piano
@@ -85,7 +85,6 @@ export function createPianoEngine(params, score) {
         // Tre motori paralleli come orchestra/metal
         schedulePianoRhythm(sec, realNotes, { piano, lhBus, rhBus }, combinedParams, rand, measureDur, nextSectionRoot, score);
         schedulePianoLead(sec, realNotes, { piano, lhBus, rhBus }, combinedParams, rand, measureDur, score);
-        schedulePianoHarmony(sec, realNotes, { piano, lhBus, rhBus }, combinedParams, rand, measureDur, score);
     });
 
     return {
