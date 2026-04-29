@@ -203,7 +203,7 @@ export function schedulePianoLead(
 
                 //piano.triggerAttackRelease(noteName, duration, time, velocity);
                 
-piano.triggerAttackRelease(noteN ad me, duration, time, velocity, rhBus);
+piano.triggerAttackRelease(noteName, duration, time, velocity, rhBus);
 
 
                 if (score) {
