@@ -2,7 +2,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 
-console.log("orchestraRhythmEngine.js ver. 002.1 loaded");
+console.log("orchestraRhythmEngine.js ver. 002.2 loaded");
 
 // ------------------------------------------------------------
 // SAFE NOTE (identico a orchestraEngine originale)
@@ -50,7 +50,7 @@ function smartTimpaniRoll(startTime, percussion, score, lastMidi, nextMidi, rand
         const gong = percussion.player("gong");
         if (gong) {
             gong.start(t);
-            if (score) score.addNote("Percussion", "Gong", sectionName);
+            if (score) score.addNote("Drums", "Crash", sectionName);
         }
     }, lastHitTime);
 }
@@ -121,7 +121,11 @@ export function scheduleOrchestraRhythm(section, progression, instruments, param
 // FILL DI TIMPANI ALL’ULTIMA MISURA DELLA SEZIONE
 // Fill solo se esiste davvero una sezione successiva
 // FILL DI TIMPANI: ultimi 4 step della sezione
-if (isLastMeasure && s === 12 && nextSectionRoot) {
+if (
+    isLastMeasure &&
+    s === 12 &&
+    section.name.toLowerCase() !== "outro"
+) {
 
     const prevScale = buildScaleFromTonic(pitchRoot + "2", "harmonicMinor");
     const nextScale = buildScaleFromTonic(getRootPitch(nextSectionRoot) + "2", "harmonicMinor");
