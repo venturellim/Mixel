@@ -1,4 +1,5 @@
-// orchestraLeadEngine.js — ver. C (Metal Logic + Orchestral Safe Pipeline)
+// orchestraLeadEngine.js — ver. 002.2 (FIX Violino che smette di suonare)
+
 import * as Tone from "https://esm.sh/tone";
 
 import {
@@ -16,10 +17,10 @@ import {
     getScaleDegree
 } from "../../utils/scaleUtils.js";
 
-console.log("orchestraLeadEngine.js ver. 002.1 loaded");
+console.log("orchestraLeadEngine.js ver. 002.2 loaded");
 
 // ------------------------------------------------------------
-// SAFE NOTE (stessa filosofia di orchestraEngine)
+// SAFE NOTE
 // ------------------------------------------------------------
 function safeNote(note, defaultOctave = "4") {
     if (!note || typeof note !== "string") return null;
@@ -28,7 +29,7 @@ function safeNote(note, defaultOctave = "4") {
 }
 
 // ------------------------------------------------------------
-// ROOT PITCH (estrae solo la nota, ignora accordi)
+// ROOT PITCH
 // ------------------------------------------------------------
 function getRootPitch(root) {
     if (!root || typeof root !== "string") return "A";
@@ -38,47 +39,46 @@ function getRootPitch(root) {
 }
 
 // ============================================================
-// VIBRATO NATURALE (solo violino)
+// VIBRATO NATURALE
 // ============================================================
 function applyNaturalVibrato(violin, time, duration) {
     if (!violin || duration < 0.25) return;
     const pr = violin.playbackRate;
+    if (!pr) return;
     const depth = 0.01;
     const speed = 0.12;
 
     for (let i = 0; i < 4; i++) {
         const t = time + i * speed;
         const val = i % 2 === 0 ? 1 + depth : 1 - depth;
-        pr.setValueAtTime(val, t);
+        try { pr.setValueAtTime(val, t); } catch(e) {}
     }
-    pr.setValueAtTime(1, time + duration);
+    try { pr.setValueAtTime(1, time + duration); } catch(e) {}
 }
 
 // ============================================================
-// VELOCITY ORCHESTRALE (più morbido del metal)
+// VELOCITY ORCHESTRALE
 // ============================================================
 function computeOrchestraVelocity(noteIdx, duration, isSolo, isBridge) {
     let vel = 0.7;
-
     if (duration > 0.3) vel += 0.1;
     if (duration < 0.15) vel -= 0.1;
     if (noteIdx >= 5) vel += 0.05;
     if (isBridge) vel -= 0.05;
-
     return Math.min(1, Math.max(0.3, vel));
 }
 
 // ============================================================
-// SUPPORTO VIOLA (solo sezioni normali)
+// SUPPORTO VIOLA
 // ============================================================
 function violaSupport(melody, i) {
-    if (i % 4 === 0) return melody[i] - 2; // terza sotto
-    if (Math.random() < 0.15) return melody[i] + 2; // terza sopra
+    if (i % 4 === 0) return melody[i] - 2;
+    if (Math.random() < 0.15) return melody[i] + 2;
     return null;
 }
 
 // ============================================================
-// BRIDGE ORCHESTRALE (più dolce del metal)
+// BRIDGE ORCHESTRALE
 // ============================================================
 function shapeOrchestraBridge(melody) {
     let out = [...melody];
@@ -88,26 +88,23 @@ function shapeOrchestraBridge(melody) {
 }
 
 // ============================================================
-// SELEZIONE FAMIGLIA MELODICA (identica al metal)
+// SELEZIONE FAMIGLIA MELODICA
 // ============================================================
 function getMelodyFamily(isPreChorus, isChorus, energy, brightness, complexity, texture) {
     if (isPreChorus) return { name: "PRE-CHORUS 📈", data: leadMelodicLibrary.prechorus };
-
     if (isChorus) {
         return brightness > 0.5
             ? { name: "EPIC 🏰", data: leadMelodicLibrary.epic }
             : { name: "EMOTIONAL 💧", data: leadMelodicLibrary.emotional };
     }
-
     if (energy > 0.7 && texture > 0.6) return { name: "EVIL 😈", data: leadMelodicLibrary.evil };
     if (complexity > 0.7) return { name: "ACTIVE ⚡", data: leadMelodicLibrary.active };
     if (brightness < 0.4) return { name: "EMOTIONAL 💧", data: leadMelodicLibrary.emotional };
-
     return { name: "EPIC 🏰", data: leadMelodicLibrary.epic };
 }
 
 // ============================================================
-// SELEZIONE FAMIGLIA ASSOLO (identica al metal)
+// SELEZIONE FAMIGLIA ASSOLO
 // ============================================================
 function getSoloMelodyFamily(isSoloPt2, energy, brightness, complexity, texture) {
     if (!isSoloPt2) {
@@ -120,7 +117,7 @@ function getSoloMelodyFamily(isSoloPt2, energy, brightness, complexity, texture)
 }
 
 // ============================================================
-// ORCHESTRA LEAD ENGINE — VERSIONE C
+// ORCHESTRA LEAD ENGINE
 // ============================================================
 export function scheduleOrchestraLead(section, progression, instruments, params, rand, measureDur, score) {
 
@@ -146,9 +143,9 @@ export function scheduleOrchestraLead(section, progression, instruments, params,
 
     const enhancerContext = { energy, brightness, texture, complexity };
 
-    // ------------------------------------------------------------
-    // 1) SCELTA LIBRARY (identica al metal)
-    // ------------------------------------------------------------
+    // ============================================================
+    // SELEZIONE PATTERN RITMICO
+    // ============================================================
     let sectionType =
         isIntro ? "intro" :
         isPreChorus ? "prechorus" :
@@ -162,9 +159,9 @@ export function scheduleOrchestraLead(section, progression, instruments, params,
         return family[index];
     };
 
-    // ------------------------------------------------------------
-    // 2) SCELTA MELODIA BASE (identica al metal)
-    // ------------------------------------------------------------
+    // ============================================================
+    // SELEZIONE MELODIA BASE
+    // ============================================================
     let melodyFamily = isSolo
         ? getSoloMelodyFamily(isSoloPt2, energy, brightness, complexity, texture)
         : getMelodyFamily(isPreChorus, isChorus, energy, brightness, complexity, texture);
@@ -172,25 +169,29 @@ export function scheduleOrchestraLead(section, progression, instruments, params,
     const melodyIndex = Math.floor(energy * melodyFamily.data.length) % melodyFamily.data.length;
     const baseMelody = melodyFamily.data[melodyIndex];
 
-    // ------------------------------------------------------------
-    // 3) VIOLA = LEAD PRINCIPALE (melodia + enhancer)
-    // ------------------------------------------------------------
-    let violaPattern = getPattern(sectionType);
+    // ============================================================
+    // PATTERN RITMICO BASE
+    // ============================================================
+    const basePattern = getPattern(sectionType);
+
+    // ============================================================
+    // VIOLA (LEAD PRINCIPALE) - pattern e melodia
+    // ============================================================
+    let violaPattern = [...basePattern];
     let violaMelody = [...baseMelody];
 
     if (isSolo) {
         violaMelody = applyLeadEnhancer(violaMelody, "enhanceMelodyMicroVariation", enhancerContext);
         violaMelody = applyLeadEnhancer(violaMelody, "addTrills", enhancerContext);
         violaMelody = applyLeadEnhancer(violaMelody, "addEchoEffect", enhancerContext);
-
         if (isBridge) violaMelody = shapeOrchestraBridge(violaMelody);
     }
 
-    // ------------------------------------------------------------
-    // 4) VIOLINO = LEAD ORNAMENTALE (melodia + enhancer)
-    // ------------------------------------------------------------
-    let violinPattern = [...violaPattern];
-    let violinMelody = [...baseMelody];
+    // ============================================================
+    // VIOLINO (LEAD ORNAMENTALE) - pattern e melodia SEPARATI
+    // ============================================================
+    let violinPattern = [...basePattern];  // usa lo stesso pattern ritmico di base
+    let violinMelody = [...baseMelody];    // parte dalla stessa melodia base
 
     if (!isSolo) {
         violinMelody = applyLeadEnhancer(violinMelody, "enhanceMelodyMicroVariation", enhancerContext);
@@ -199,13 +200,15 @@ export function scheduleOrchestraLead(section, progression, instruments, params,
         violinMelody = applyLeadEnhancer(violinMelody, "addScaleRunBetweenPeaks", enhancerContext);
         violinMelody = applyLeadEnhancer(violinMelody, "addMirrorInversion", enhancerContext);
         violinMelody = applyLeadEnhancer(violinMelody, "enhanceChromaticPassing", enhancerContext);
-
         if (isBridge) violinMelody = shapeOrchestraBridge(violinMelody);
     }
 
-    // ------------------------------------------------------------
-    // 5) SCHEDULAZIONE NOTE (pipeline orchestrale sicura)
-    // ------------------------------------------------------------
+    // DEBUG: verifica che violino abbia pattern e melodia validi
+    console.log(`🎻 ${section.name}: violaMelody length=${violaMelody.length}, violinMelody length=${violinMelody.length}, pattern length=${violaPattern.length}`);
+
+    // ============================================================
+    // SCHEDULAZIONE
+    // ============================================================
     for (let m = 0; m < section.measures; m++) {
 
         const measureStartTime = section.startTime + m * measureDur;
@@ -213,43 +216,39 @@ export function scheduleOrchestraLead(section, progression, instruments, params,
         const rawRoot = progression[m % progression.length];
         const pitchRoot = getRootPitch(rawRoot);
 
-        // Scala armonica minore come orchestraEngine
         const scale = buildScaleFromTonic(pitchRoot + "3", "harmonicMinor");
         const rootIdx = 0;
 
-        violinPattern.forEach((s, i) => {
+        // Usa violaPattern (o violinPattern, sono uguali per lunghezza)
+        const patternToUse = violaPattern;
 
+        for (let i = 0; i < patternToUse.length; i++) {
+            const s = patternToUse[i];
             const absoluteTime = measureStartTime + s * stepTime;
-            const nextStep = violinPattern[i + 1] ?? 16;
+            const nextStep = patternToUse[i + 1] ?? 16;
             const duration = (nextStep - s) * stepTime;
 
+            // Indici melodia (con modulo per evitare out-of-range)
             const violaIdx = violaMelody[i % violaMelody.length];
             const violinIdx = violinMelody[i % violinMelody.length];
 
-            // ----------------------------------------------------
-            // CONVERSIONE GRADO → NOTA DI SCALA → SAFE NOTE
-            // ----------------------------------------------------
+            // CONVERSIONE GRADO → NOTA DI SCALA
             const violaDegree = rootIdx + violaIdx;
             const violinDegree = rootIdx + ((violinIdx + 2) % scale.length);
-
-            //const violinDegree = rootIdx + violinIdx + 2; // violino un po' più alto
 
             const violaName = getScaleDegree(scale, violaDegree);
             const violinNameBase = getScaleDegree(scale, violinDegree);
 
-            // Viola: range medio-alto
-            const violaNote = safeNote(violaName, isSolo ? "5" : "4");
+            // Viola: range medio
+            const violaOctave = isSolo ? 5 : 4;
+            const violaNote = safeNote(violaName, violaOctave);
 
-            // Violino: un'ottava sopra la scala base
-            let violinNoteRaw = violinNameBase;
-            try {
-                const midi = Tone.Frequency(violinNameBase).toMidi();
-                violinNoteRaw = Tone.Frequency(midi + (isSolo ? 12 : 7), "midi").toNote();
-            } catch (e) {
-                // fallback: usa direttamente la nota di scala
-                violinNoteRaw = violinNameBase;
+            // Violino: un'ottava sopra la viola
+            let violinNote = safeNote(violinNameBase, violaOctave + 1);
+            if (!violinNote && violinNameBase) {
+                // fallback: prova con ottava diversa
+                violinNote = safeNote(violinNameBase, violaOctave + 2);
             }
-            const violinNote = safeNote(violinNoteRaw, isSolo ? "6" : "5");
 
             const velViola = computeOrchestraVelocity(violaIdx, duration, isSolo, isBridge);
             const velViolin = computeOrchestraVelocity(violinIdx, duration, isSolo, isBridge);
@@ -260,15 +259,19 @@ export function scheduleOrchestraLead(section, progression, instruments, params,
                     viola.triggerAttackRelease(violaNote, duration, time, velViola);
                     if (score) score.addNote("LeadXtra", violaNote, section.name);
                 }, absoluteTime);
+            } else {
+                console.warn(`🎻 violaNote null per degree=${violaDegree}, idx=${violaIdx}`);
             }
 
-            // VIOLINO (lead ornamentale)
+            // VIOLINO (lead ornamentale) - schedulato SEMPRE, indipendentemente dalla viola
             if (violinNote) {
                 Tone.Transport.schedule(time => {
                     violin.triggerAttackRelease(violinNote, duration, time, velViolin);
                     applyNaturalVibrato(violin, time, duration);
                     if (score) score.addNote("Lead", violinNote, section.name);
                 }, absoluteTime);
+            } else {
+                console.warn(`🎻 violinNote null per degree=${violinDegree}, idx=${violinIdx}`);
             }
 
             // SUPPORTO VIOLA (solo sezioni normali)
@@ -278,7 +281,6 @@ export function scheduleOrchestraLead(section, progression, instruments, params,
                     const supportDegree = rootIdx + supportIdx;
                     const supportName = getScaleDegree(scale, supportDegree);
                     const supportNote = safeNote(supportName, "3");
-
                     if (supportNote) {
                         Tone.Transport.schedule(time => {
                             viola.triggerAttackRelease(
@@ -292,6 +294,6 @@ export function scheduleOrchestraLead(section, progression, instruments, params,
                     }
                 }
             }
-        });
+        }
     }
 }
