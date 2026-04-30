@@ -13,7 +13,7 @@ import {
     shapeBridgeSolo
 } from "../../utils/leadEnhancers.js";
 
-console.log("pianoLeadEngine.js ver. 011 loaded");
+console.log("pianoLeadEngine.js ver. 011.1 loaded");
 
 // ============================================================
 // SCALA STRICT
@@ -194,24 +194,27 @@ export function schedulePianoLead(
         currentMelody = baseMelody;
         currentPattern = expandPatternToMatchMelody(pattern, currentMelody.length);
 
-    } else {
-        // SEZIONI NORMALI
-        currentPattern = getPattern(sectionType);
-        const mood = getMelodyFamily(isPreChorus, isChorus, energy, brightness, complexity, texture);
-        const melodyIndex = Math.floor(energy * mood.data.length) % mood.data.length;
-        let baseMelody = mood.data[melodyIndex];
+    } } else {
+    // SEZIONI NORMALI
+    currentPattern = getPattern(sectionType);
+    const mood = getMelodyFamily(isPreChorus, isChorus, energy, brightness, complexity, texture);
+    const melodyIndex = Math.floor(energy * mood.data.length) % mood.data.length;
+    let baseMelody = mood.data[melodyIndex];
 
-        // Applica enhancer in base all'energia
-        const enhancersToApply = getEnhancersForEnergy(energy);
-        for (let enh of enhancersToApply) {
-            baseMelody = applyLeadEnhancer(baseMelody, enh, enhancerContext);
-        }
-        
-        currentMelody = baseMelody;
-        
-        // **FIX CRITICO**: espandi il pattern alla lunghezza della melodia
-        currentPattern = expandPatternToMatchMelody(currentPattern, currentMelody.length);
+    // DEBUG: controlla i valori
+    console.log(`🔍 DEBUG ${section.name}: pattern=${JSON.stringify(currentPattern)} | melody=${JSON.stringify(baseMelody)} | energy=${energy}`);
+
+    // Applica enhancer in base all'energia
+    const enhancersToApply = getEnhancersForEnergy(energy);
+    for (let enh of enhancersToApply) {
+        baseMelody = applyLeadEnhancer(baseMelody, enh, enhancerContext);
     }
+    
+    currentMelody = baseMelody;
+    currentPattern = expandPatternToMatchMelody(currentPattern, currentMelody.length);
+    
+    console.log(`🔍 DOPO ESPANSIONE: pattern=${JSON.stringify(currentPattern)} | melody=${JSON.stringify(currentMelody)}`);
+}
 
     // ============================================================
     // LOOP MISURE
