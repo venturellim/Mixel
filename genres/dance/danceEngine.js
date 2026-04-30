@@ -22,7 +22,7 @@ console.log("danceEngine.js ver. 001 loaded");
 // CARICAMENTO STRUMENTI
 // ------------------------------------------------------------
 export async function waitDanceInstruments() {
-    await waitForInstruments(1); // tutti gli strumenti dance
+    await waitForInstruments(10); // tutti gli strumenti dance
 }
 
 // ------------------------------------------------------------
