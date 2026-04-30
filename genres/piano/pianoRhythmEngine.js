@@ -1,9 +1,9 @@
-// pianoRhythmEngine.js — ver. 005 (Variazioni ritmiche in base all'energia)
+// pianoRhythmEngine.js — ver. 006 (con fill LH al cambio sezione)
 
 import * as Tone from "https://esm.sh/tone";
 import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 
-console.log("pianoRhythmEngine.js ver. 005 loaded");
+console.log("pianoRhythmEngine.js ver. 006 loaded");
 
 // ------------------------------------------------------------
 // SAFE NOTE
@@ -35,6 +35,36 @@ function buildTriad(root, scaleType = "harmonicMinor") {
 }
 
 // ------------------------------------------------------------
+// FILL DI CAMBIO SEZIONE (mano sinistra)
+// ------------------------------------------------------------
+function playSectionTransitionFill(absoluteTime, currentRoot, nextRoot, piano, lhBus, score, sectionName) {
+    if (!piano || !currentRoot || !nextRoot) return;
+    
+    const pitchCurrent = getRootPitch(currentRoot);
+    const pitchNext = getRootPitch(nextRoot);
+    
+    const { triadPattern: patternCurrent } = buildTriad(pitchCurrent, "harmonicMinor");
+    const { triadPattern: patternNext } = buildTriad(pitchNext, "harmonicMinor");
+    
+    // Fill di 4 note (scala ascendente dalla root corrente alla prossima)
+    const fillNotes = [
+        patternCurrent[0],  // root corrente
+        patternCurrent[2],  // quinta corrente
+        patternNext[1],     // terza prossima
+        patternNext[0]      // root prossima
+    ];
+    
+    const stepTime = 0.1; // 100ms tra una nota e l'altra
+    
+    fillNotes.forEach((note, idx) => {
+        Tone.Transport.schedule(t => {
+            piano.triggerAttackRelease(note, "8n", t, 0.7, lhBus);
+            if (score) score.addNote("Rhythm", note, sectionName);
+        }, absoluteTime + idx * stepTime);
+    });
+}
+
+// ------------------------------------------------------------
 // APPLICA VARIAZIONI RITMICHE IN BASE ALL'ENERGIA
 // ------------------------------------------------------------
 function applyRhythmVariations(originalSteps, energy) {
@@ -45,27 +75,23 @@ function applyRhythmVariations(originalSteps, energy) {
     const newSteps = [...steps];
     
     if (energy >= 0.3 && energy < 0.5) {
-        // Aggiungi qualche step extra ogni 8 sedicesimi
         for (let beat = 0; beat < 16; beat += 8) {
             if (!newSteps.includes(beat + 2)) newSteps.push(beat + 2);
             if (!newSteps.includes(beat + 6)) newSteps.push(beat + 6);
         }
     } 
     else if (energy >= 0.5 && energy < 0.7) {
-        // Aggiungi step extra ogni 4 sedicesimi
         for (let beat = 0; beat < 16; beat += 4) {
             if (!newSteps.includes(beat + 1)) newSteps.push(beat + 1);
             if (!newSteps.includes(beat + 3)) newSteps.push(beat + 3);
         }
     }
     else if (energy >= 0.7 && energy < 0.9) {
-        // Pattern più denso (quasi tutti gli step dispari)
         for (let s = 0; s < 16; s++) {
             if (s % 2 === 1 && !newSteps.includes(s)) newSteps.push(s);
         }
     }
     else if (energy >= 0.9) {
-        // Pattern quasi continuo (tutti gli step)
         for (let s = 0; s < 16; s++) {
             if (!newSteps.includes(s)) newSteps.push(s);
         }
@@ -184,6 +210,12 @@ export function schedulePianoRhythm(
         const nextRoot = progression[(m + 1) % progression.length] || nextSectionRoot;
         const isLastMeasure = (m === section.measures - 1);
 
+        // FILL DI CAMBIO SEZIONE (solo all'ultima misura, PRIMA della nuova sezione)
+        if (isLastMeasure && nextRoot && nextRoot !== currentRoot) {
+            const fillStartTime = measureStartTime + measureDur - 0.4; // poco prima della fine
+            playSectionTransitionFill(fillStartTime, currentRoot, nextRoot, piano, lhBus, score, section.name);
+        }
+
         const pitchRoot = getRootPitch(currentRoot);
         const { rootNote, thirdNote, fifthNote, triadPattern } = buildTriad(pitchRoot, "harmonicMinor");
         let triadIndex = 0;
@@ -235,7 +267,6 @@ export function schedulePianoRhythm(
             } else {
                 const note = triadPattern[triadIndex % triadPattern.length];
                 const duration = "8n";
-                // Velocità in base all'energia (più energia = più forte)
                 const velocity = 0.45 + (energy * 0.3);
                 
                 Tone.Transport.schedule(t => {
