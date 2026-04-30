@@ -1,102 +1,68 @@
-// danceBassEngine.js — ver. 001 (Gigi D’Agostino / Gabry Ponte)
+// danceBassEngine.js — ver. 002
 import * as Tone from "https://esm.sh/tone";
 
-console.log("danceBassEngine.js ver. 001.1 loaded");
+console.log("danceBassEngine.js ver. 002 loaded");
 
-// ------------------------------------------------------------
-// BASS ENGINE (Eurodance 1995–2005)
-// ------------------------------------------------------------
-export function scheduleDanceBass(
-    section,
-    progression,
-    instruments,
-    params,
-    rand,
-    measureDur,
-    score
-) {
+function getMajorScale(root) {
+    const notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+    const match = root.toUpperCase().match(/^([A-G](#|B)?)/);
+    let note = match ? match[1] : "C";
+    if (note === "C#") note = "C#";
+    if (note === "D#") note = "D#";
+    if (note === "F#") note = "F#";
+    if (note === "G#") note = "G#";
+    if (note === "A#") note = "A#";
+    let idx = notes.indexOf(note);
+    if (idx === -1) idx = 0;
+    const intervals = [0, 2, 4, 5, 7, 9, 11];
+    return intervals.map(i => notes[(idx + i) % 12]);
+}
+
+export function scheduleDanceBass(section, progression, instruments, params, rand, measureDur, score) {
     const { bass } = instruments;
     if (!bass) return;
 
     const name = section?.name?.toLowerCase() || "";
-    const isIntro = name.includes("intro");
-    const isBuild = name.includes("build");
-    const isDrop  = name.includes("drop");
-    const isRiff  = name.includes("riff");
-    const isBreak = name.includes("break");
-    const isOutro = name.includes("outro");
-
+    const isChorus = name.includes("chorus");
     const stepTime = measureDur / 16;
+    const { energy = 0.5, complexity = 0.5 } = params?.imageParams || {};
 
-    const { energy = 0.5, brightness = 0.5, complexity = 0.5 } = params?.imageParams || {};
-
-    // --------------------------------------------------------
-    // SELEZIONE PATTERN BASSO
-    // --------------------------------------------------------
-    let patternType = "offbeat";
-
-    if (isDrop || isRiff) {
-        if (energy > 0.6 && brightness > 0.5) patternType = "octave";
-        else if (complexity > 0.5) patternType = "rolling";
-        else patternType = "offbeat";
-    }
-
-    if (isBreak) patternType = "rolling";
-    if (isIntro) patternType = "offbeat";
-
-    // --------------------------------------------------------
-    // DEFINIZIONE PATTERN
-    // --------------------------------------------------------
-    const offbeatPattern = Array(16).fill(false).map((_, i) => i % 4 === 2);
-    const rollingPattern = [true, false, true, false, true, false, true, false,
-                            true, false, true, false, true, false, true, false];
-    const octavePattern  = [true, false, true, false, true, false, true, false,
-                            true, false, true, false, true, false, true, false];
-
-    let activePattern = offbeatPattern;
-    if (patternType === "rolling") activePattern = rollingPattern;
-    if (patternType === "octave")  activePattern = octavePattern;
-
-    // --------------------------------------------------------
-    // LOOP MISURE
-    // --------------------------------------------------------
     for (let m = 0; m < section.measures; m++) {
-
         const measureStart = section.startTime + m * measureDur;
-
-        const rawRoot = progression[m % progression.length] || "A";
-const pitchRoot = String(rawRoot).toUpperCase().match(/^([A-G](#|B)?)/)?.[1] || "A";
-
-const rootNote   = `${pitchRoot}2`;
-const fifthNote  = Tone.Frequency(rootNote).transpose(7).toNote();
-const octaveNote = Tone.Frequency(rootNote).transpose(12).toNote();
-
-        // ----------------------------------------------------
-        // LOOP STEP (0–15)
-        // ----------------------------------------------------
+        const rootChord = progression[m % progression.length];
+        const scale = getMajorScale(rootChord);
+        
+        // Scegli nota basso (root o quinta)
+        const rootNote = scale[0] + "2";
+        const fifthNote = scale[4] + "2";
+        
         for (let s = 0; s < 16; s++) {
-
-            const absoluteTime = measureStart + s * stepTime;
-
-            if (!activePattern[s]) continue;
-
+            let play = false;
             let note = rootNote;
-
-            if (patternType === "rolling") {
-                note = (s % 4 === 2) ? fifthNote : rootNote;
+            
+            // Pattern off-beat (tipico dance)
+            if (s % 4 === 1) {
+                play = true;
+                note = rootNote;
             }
-
-            if (patternType === "octave") {
-                note = (s % 4 === 2) ? octaveNote : rootNote;
+            if (s % 4 === 3 && energy > 0.6) {
+                play = true;
+                note = fifthNote;
             }
-
-            // BREAK → basso più morbido
-            const velocity = isBreak ? 0.4 : 0.8;
-
-            Tone.Transport.schedule(t => {
-                bass.triggerAttackRelease(note, "8n", t, velocity);
-                if (score) score.addNote("Bass", note, section.name);
-            }, absoluteTime);
+            // Ottave per chorus
+            if (isChorus && s % 8 === 0) {
+                play = true;
+                note = scale[0] + "3";
+            }
+            
+            if (play) {
+                const time = measureStart + s * stepTime;
+                const vel = isChorus ? 0.7 : 0.5;
+                Tone.Transport.schedule(t => {
+                    bass.triggerAttackRelease(note, "8n", t, vel);
+                    if (score) score.addNote("Bass", note, section.name);
+                }, time);
+            }
         }
     }
 }

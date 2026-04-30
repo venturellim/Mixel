@@ -1,34 +1,19 @@
-// danceParams.js — ver. 001 (Eurodance 1995–2005)
-import { createSeededRandom } from "../../utils/randomUtils.js";
-
-console.log("danceParams.js ver. 001 loaded");
+// danceParams.js — ver. 002
+console.log("danceParams.js ver. 002 loaded");
 
 export function buildDanceParams(rand) {
-
-    // --------------------------------------------------------
-    // BPM TIPICO EURODANCE (Gabry Ponte / Prezioso / Eiffel 65)
-    // --------------------------------------------------------
-    const bpm = 120 + rand() * 25; // 120–145 BPM
-
-    // --------------------------------------------------------
-    // TONALITÀ TIPICHE EURODANCE
-    // --------------------------------------------------------
+    const bpm = 120 + rand() * 30; // 120-150 BPM
     const tonalCenters = ["C", "D", "E", "F", "G", "A"];
-    const tonalCenter = tonalCenters[(rand() * tonalCenters.length) | 0];
-
-    // --------------------------------------------------------
-    // PARAMETRI IMMAGINE (come orchestra/metal/piano)
-    // --------------------------------------------------------
-    const imageParams = {
-        energy: rand(),      // influenza bass/lead
-        brightness: rand(),  // influenza lead/chords
-        complexity: rand(),  // influenza bass pattern
-        texture: rand()      // influenza pad/FX
-    };
-
+    const tonalCenter = tonalCenters[Math.floor(rand() * tonalCenters.length)];
+    
     return {
         bpm,
         tonalCenter,
-        imageParams
+        imageParams: {
+            energy: rand(),
+            brightness: rand(),
+            complexity: rand(),
+            texture: rand()
+        }
     };
 }
