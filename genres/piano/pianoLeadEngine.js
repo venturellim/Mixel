@@ -1,4 +1,4 @@
-// pianoLeadEngine.js — ver. 007 (Convertito da metalLeadEngine, ottimizzato per piano)
+// pianoLeadEngine.js — ver. 010 (Enhancer scalabili in base all'energia)
 
 import * as Tone from "https://esm.sh/tone";
 
@@ -13,7 +13,7 @@ import {
     shapeBridgeSolo
 } from "../../utils/leadEnhancers.js";
 
-console.log("pianoLeadEngine.js ver. 007 loaded");
+console.log("pianoLeadEngine.js ver. 010 loaded");
 
 // ============================================================
 // SCALA STRICT
@@ -56,35 +56,52 @@ function getSoloMelodyFamily(isSoloPt2, energy, brightness, complexity, texture)
 }
 
 // ============================================================
-// ENHANCER PER PIANO (selezione ridotta e più melodica)
+// ENHANCER PER PIANO (suddivisi per intensità)
 // ============================================================
 
-// Enhancer di base per tutte le sezioni (2 fissi)
-const BASE_ENHANCERS = [
-    "enhanceMelodyLine",           // aggiunge passing tones
-    "enhanceMelodyMicroVariation"  // piccole variazioni
-];
-
-// Enhancer rotanti (ogni 2 misure, sostituisci i base con 2 di questi)
-const ROTATING_ENHANCERS = [
-    "enhanceChromaticPassing",
-    "addOctaveDoubling",
-    "addEchoEffect",
-    "addScaleRunBetweenPeaks",
-    "addSlideEffect"
-];
-
-// Enhancer per l'assolo (meno del metal, più musicali)
-const SOLO_ENHANCERS = [
-    "enhanceMelodyLine",
+// Enhancer leggeri (micro-variazioni, non alterano la melodia)
+const LIGHT_ENHANCERS = [
     "enhanceMelodyMicroVariation",
-    "enhanceChromaticPassing",
-    "addOctaveDoubling",
-    "addScaleRunBetweenPeaks",
-    "addEchoEffect"
-    // escludo: addTrills (troppo meccanico), addBendEffect (non da piano), 
-    // addMirrorInversion (troppo artefatto), addSlideEffect (non serve)
+    "enhanceMelodyLine"
 ];
+
+// Enhancer medi (aggiungono note di passaggio)
+const MEDIUM_ENHANCERS = [
+    "enhanceChromaticPassing",
+    "addEchoEffect"
+];
+
+// Enhancer pesanti (cambiano la struttura, solo per energia alta)
+const HEAVY_ENHANCERS = [
+    "addOctaveDoubling",
+    "addScaleRunBetweenPeaks"
+];
+
+// Determina quanti e quali enhancer applicare in base all'energia
+function getEnhancersForEnergy(energy) {
+    const enhancers = [];
+    
+    if (energy < 0.3) {
+        return enhancers; // nessuno
+    } else if (energy < 0.5) {
+        // 1 leggero
+        enhancers.push(LIGHT_ENHANCERS[0]);
+    } else if (energy < 0.7) {
+        // 2 leggeri
+        enhancers.push(...LIGHT_ENHANCERS);
+    } else if (energy < 0.9) {
+        // 2 leggeri + 1 medio
+        enhancers.push(...LIGHT_ENHANCERS);
+        enhancers.push(MEDIUM_ENHANCERS[Math.floor(Math.random() * MEDIUM_ENHANCERS.length)]);
+    } else {
+        // 2 leggeri + 1 medio + 1 pesante
+        enhancers.push(...LIGHT_ENHANCERS);
+        enhancers.push(MEDIUM_ENHANCERS[Math.floor(Math.random() * MEDIUM_ENHANCERS.length)]);
+        enhancers.push(HEAVY_ENHANCERS[Math.floor(Math.random() * HEAVY_ENHANCERS.length)]);
+    }
+    
+    return enhancers;
+}
 
 // ============================================================
 // PIANO LEAD ENGINE
@@ -134,7 +151,7 @@ export function schedulePianoLead(
         const family = leadRhythmLibrary[type] || leadRhythmLibrary.verse;
         const dnaScore = (energy * 400) + (brightness * 30) + (complexity * 2);
         const index = Math.floor(Math.abs(dnaScore)) % family.length;
-        return [...family[index]]; // copia
+        return [...family[index]];
     };
 
     // ============================================================
@@ -142,50 +159,41 @@ export function schedulePianoLead(
     // ============================================================
     let currentPattern;
     let currentMelody;
-    let currentEnhancers = [...BASE_ENHANCERS]; // inizia con i base
 
     if (isSolo) {
-        // ASSOLO: pattern dal chorus potenziato
+        // ASSOLO: pattern potenziato
         let pattern = getPattern("chorus");
-        
-        // Solo 2 enhancer ritmici leggeri
         pattern = applyLeadEnhancer(pattern, "enhanceRhythmPattern", enhancerContext);
         pattern = applyLeadEnhancer(pattern, "addAnticipation", enhancerContext);
-        
         currentPattern = pattern;
 
         const soloFamily = getSoloMelodyFamily(isSoloPt2, energy, brightness, complexity, texture);
         const melodyIndex = Math.floor(energy * soloFamily.data.length) % soloFamily.data.length;
         let baseMelody = soloFamily.data[melodyIndex];
 
-        // Applica SOLO_ENHANCERS alla melodia
-        for (let enh of SOLO_ENHANCERS) {
-            if (Math.random() < 0.6) { // 60% di probabilità per ogni enhancer
+        // Assolo: usa enhancer pesanti (più movimento)
+        const soloEnhancers = [...LIGHT_ENHANCERS, ...MEDIUM_ENHANCERS, ...HEAVY_ENHANCERS];
+        for (let enh of soloEnhancers) {
+            if (Math.random() < 0.5) {
                 baseMelody = applyLeadEnhancer(baseMelody, enh, enhancerContext);
             }
         }
-        
         currentMelody = baseMelody;
 
     } else {
-        // SEZIONI NORMALI
+        // SEZIONI NORMALI: pattern originale
         currentPattern = getPattern(sectionType);
         const mood = getMelodyFamily(isPreChorus, isChorus, energy, brightness, complexity, texture);
         const melodyIndex = Math.floor(energy * mood.data.length) % mood.data.length;
-        currentMelody = [...mood.data[melodyIndex]];
+        let baseMelody = mood.data[melodyIndex];
 
-        // Espandi pattern se troppo corto
-        if (currentPattern.length < currentMelody.length && currentPattern.length > 0) {
-            const originalPattern = [...currentPattern];
-            while (currentPattern.length < currentMelody.length) {
-                for (let step of originalPattern) {
-                    currentPattern.push(step);
-                    if (currentPattern.length >= currentMelody.length) break;
-                }
-            }
-            currentPattern.sort((a, b) => a - b);
-            currentPattern = currentPattern.filter((step, idx, arr) => idx === 0 || step !== arr[idx - 1]);
+        // Applica enhancer in base all'energia (scalabile!)
+        const enhancersToApply = getEnhancersForEnergy(energy);
+        for (let enh of enhancersToApply) {
+            baseMelody = applyLeadEnhancer(baseMelody, enh, enhancerContext);
         }
+        
+        currentMelody = baseMelody;
     }
 
     // ============================================================
@@ -194,26 +202,6 @@ export function schedulePianoLead(
     for (let m = 0; m < section.measures; m++) {
 
         const measureStartTime = section.startTime + m * measureDur;
-
-        // Ogni 2 misure, RUOTA gli enhancer (solo per sezioni normali)
-        if (!isSolo && m % 2 === 0 && m > 0) {
-            // Sostituisci i 2 enhancer base con 2 nuovi dalla lista rotante
-            const newEnhancers = [];
-            const shuffled = [...ROTATING_ENHANCERS];
-            for (let i = shuffled.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-            }
-            for (let i = 0; i < Math.min(2, shuffled.length); i++) {
-                newEnhancers.push(shuffled[i]);
-            }
-            currentEnhancers = newEnhancers;
-            
-            // Applica i nuovi enhancer alla melodia corrente
-            for (let enh of currentEnhancers) {
-                currentMelody = applyLeadEnhancer(currentMelody, enh, enhancerContext);
-            }
-        }
 
         const currentScale = getStrictScale(progression[m % progression.length] || rootNote, isMinor);
         const isTransition = m === section.measures - 1;
@@ -250,5 +238,6 @@ export function schedulePianoLead(
         }
     }
     
-    console.log(`🎹 pianoLead: ${section.name} | pattern len=${currentPattern.length} | melody len=${currentMelody.length}`);
+    const enhancerCount = isSolo ? "solo" : getEnhancersForEnergy(energy).length;
+    console.log(`🎹 pianoLead: ${section.name} | energy=${energy.toFixed(2)} | enhancers=${enhancerCount} | pattern=${currentPattern.length} | melody=${currentMelody.length}`);
 }

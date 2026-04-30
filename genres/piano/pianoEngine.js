@@ -9,7 +9,7 @@ import { schedulePianoRhythm } from "./pianoRhythmEngine.js";
 import { schedulePianoLead } from "./pianoLeadEngine.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("pianoEngine.js ver. 001.1 loaded");
+console.log("pianoEngine.js ver. 001.2 loaded");
 
 export async function waitPianoInstruments() {
     await waitForInstruments(1); // solo piano
@@ -30,7 +30,7 @@ export function createPianoEngine(params, score) {
         { name: "verse",     weight: 8 },
         { name: "prechorus", weight: params.imageParams.energy > 0.3 ? 4 : 0 },
         { name: "chorus",    weight: 8 },
-        { name: "solo",      weight: params.imageParams.complexity > 0.5 ? 6 : 0 },
+        { name: "solo",      weight: params.imageParams.complexity > 0.5 ? 8 : 0 },
         { name: "bridge",    weight: params.imageParams.texture > 0.4 ? 4 : 0 },
         { name: "chorus",    weight: 6 },
         { name: "outro",     weight: 4 }

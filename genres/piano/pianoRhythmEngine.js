@@ -1,8 +1,9 @@
-// pianoRhythmEngine.js — ver. 004 (Convertito da metalRhythmEngine)
+// pianoRhythmEngine.js — ver. 005 (Variazioni ritmiche in base all'energia)
+
 import * as Tone from "https://esm.sh/tone";
 import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 
-console.log("pianoRhythmEngine.js ver. 004 loaded");
+console.log("pianoRhythmEngine.js ver. 005 loaded");
 
 // ------------------------------------------------------------
 // SAFE NOTE
@@ -34,7 +35,47 @@ function buildTriad(root, scaleType = "harmonicMinor") {
 }
 
 // ------------------------------------------------------------
-// PIANO RHYTHM ENGINE (IDENTICO AL METAL)
+// APPLICA VARIAZIONI RITMICHE IN BASE ALL'ENERGIA
+// ------------------------------------------------------------
+function applyRhythmVariations(originalSteps, energy) {
+    if (!originalSteps || originalSteps.length === 0) return [0, 4, 8, 12];
+    if (energy < 0.3) return [...originalSteps];
+    
+    const steps = [...originalSteps];
+    const newSteps = [...steps];
+    
+    if (energy >= 0.3 && energy < 0.5) {
+        // Aggiungi qualche step extra ogni 8 sedicesimi
+        for (let beat = 0; beat < 16; beat += 8) {
+            if (!newSteps.includes(beat + 2)) newSteps.push(beat + 2);
+            if (!newSteps.includes(beat + 6)) newSteps.push(beat + 6);
+        }
+    } 
+    else if (energy >= 0.5 && energy < 0.7) {
+        // Aggiungi step extra ogni 4 sedicesimi
+        for (let beat = 0; beat < 16; beat += 4) {
+            if (!newSteps.includes(beat + 1)) newSteps.push(beat + 1);
+            if (!newSteps.includes(beat + 3)) newSteps.push(beat + 3);
+        }
+    }
+    else if (energy >= 0.7 && energy < 0.9) {
+        // Pattern più denso (quasi tutti gli step dispari)
+        for (let s = 0; s < 16; s++) {
+            if (s % 2 === 1 && !newSteps.includes(s)) newSteps.push(s);
+        }
+    }
+    else if (energy >= 0.9) {
+        // Pattern quasi continuo (tutti gli step)
+        for (let s = 0; s < 16; s++) {
+            if (!newSteps.includes(s)) newSteps.push(s);
+        }
+    }
+    
+    return newSteps.sort((a, b) => a - b);
+}
+
+// ------------------------------------------------------------
+// PIANO RHYTHM ENGINE
 // ------------------------------------------------------------
 export function schedulePianoRhythm(
     section,
@@ -132,7 +173,7 @@ export function schedulePianoRhythm(
         isIntro ? "intro" : (isPreChorus ? "prechorus" : (isChorus ? "chorus" : "verse"))
     );
 
-    console.log(`🎹 [${section.name}] Piano Rhythm Groove: ${currentGroove}`);
+    console.log(`🎹 [${section.name}] Piano Rhythm Groove: ${currentGroove} | energy=${energy.toFixed(2)}`);
 
     // ============================================================
     // LOOP MISURE
@@ -143,210 +184,66 @@ export function schedulePianoRhythm(
         const nextRoot = progression[(m + 1) % progression.length] || nextSectionRoot;
         const isLastMeasure = (m === section.measures - 1);
 
-        // Costruisci triade per la root corrente
         const pitchRoot = getRootPitch(currentRoot);
         const { rootNote, thirdNote, fifthNote, triadPattern } = buildTriad(pitchRoot, "harmonicMinor");
         let triadIndex = 0;
 
-        for (let s = 0; s < 16; s++) {
-            const absoluteTime = measureStartTime + (s * stepTime);
-            let playPiano = false;
-            let sustain = false;
+        // Ottieni i pattern base dal groove
+        let baseSteps = [];
+        switch (currentGroove) {
+            case "intro_ambient": baseSteps = [0]; break;
+            case "stratovarius_intro": baseSteps = [0, 2, 4]; break;
+            case "doom_slow": baseSteps = [0, 8]; break;
+            case "gallop_classic": baseSteps = [0, 2, 3, 4, 6, 7, 8, 10, 11, 12, 14, 15]; break;
+            case "palm_mute_chug": baseSteps = Array.from({length: 16}, (_, i) => i); break;
+            case "motorhead_drive": baseSteps = Array.from({length: 16}, (_, i) => i); break;
+            case "technical_sync": baseSteps = [0, 3, 5, 8, 11, 13]; break;
+            case "thrash_diamond": baseSteps = [0, 2, 4, 6]; break;
+            case "pre_build_up": baseSteps = Array.from({length: 16}, (_, i) => i % 2 === 0 ? i : null).filter(v => v !== null); break;
+            case "driving_eights": baseSteps = Array.from({length: 16}, (_, i) => i); break;
+            case "march_to_war": baseSteps = [0, 2, 4, 6, 8, 10, 12, 14]; break;
+            case "suspended_tension": baseSteps = [0, 8]; break;
+            case "helloween_speed": baseSteps = [0, 4, 8, 12]; break;
+            case "chorus_pure_sustain": baseSteps = [0]; break;
+            case "chorus_sustain_hit": baseSteps = [0, 14]; break;
+            case "power_ride_groove": baseSteps = Array.from({length: 16}, (_, i) => i); break;
+            default: baseSteps = Array.from({length: 16}, (_, i) => i % 2 === 0 ? i : null).filter(v => v !== null); break;
+        }
+
+        // Applica variazioni ritmiche in base all'energia
+        let currentSteps = applyRhythmVariations(baseSteps, energy);
+
+        for (let s of currentSteps) {
+            const absoluteTime = measureStartTime + s * stepTime;
             let isFullChord = false;
 
-            // ============================================================
-            // LOGICA GROOVE (IDENTICA AL METAL, ma senza kick/snare)
-            // ============================================================
-            switch (currentGroove) {
-                // INTRO
-                case "intro_ambient":
-                    if (s === 0) { playPiano = true; sustain = true; }
-                    break;
-                case "intro_heavy_strikes":
-                    if ([0, 4, 8, 12].includes(s)) { playPiano = true; }
-                    break;
-                case "stratovarius_intro":
-                    if (s === 0 || s === 2) { playPiano = true; }
-                    if (s === 4) { playPiano = true; sustain = true; }
-                    break;
-                case "cinematic_buildup":
-                    if (s === 0) { playPiano = true; sustain = true; }
-                    break;
-                case "industrial_static":
-                    if (s % 4 === 0) { playPiano = true; }
-                    if (s === 8) { playPiano = true; sustain = true; }
-                    break;
-                case "doom_slow":
-                    if (s === 0 || s === 8) { playPiano = true; sustain = true; }
-                    break;
-                case "stoner_doom":
-                    if (s === 0 || s === 8) { playPiano = true; sustain = true; }
-                    break;
-                case "power_ballad":
-                    if (s === 0 || s === 8) { playPiano = true; sustain = true; }
-                    break;
-
-                // VERSE
-                case "gallop_classic":
-                    if (s % 4 !== 1) { playPiano = true; }
-                    break;
-                case "gallop_triplet":
-                    const tripletBeat = Math.floor(s / 2.666);
-                    if (tripletBeat % 3 !== 0) { playPiano = true; }
-                    break;
-                case "power_gallop":
-                    if (s % 4 !== 1) { playPiano = true; }
-                    break;
-                case "thrash_diamond":
-                    if ([0, 2, 6].includes(s)) { playPiano = true; }
-                    if (s === 4) { playPiano = true; sustain = true; }
-                    break;
-                case "palm_mute_chug":
-                    playPiano = true;
-                    break;
-                case "motorhead_drive":
-                    playPiano = true;
-                    if (s === 0 || s === 8) { sustain = true; }
-                    break;
-                case "technical_sync":
-                    playPiano = ([0, 3, 5, 8, 11, 13].includes(s));
-                    break;
-                case "meshuggah_ish":
-                    playPiano = ([0, 3, 6, 8, 11, 14].includes(s));
-                    break;
-                case "breakdown_heavy":
-                    if ([0, 8, 14].includes(s)) { playPiano = true; sustain = true; }
-                    break;
-                case "jump_groove":
-                    playPiano = ([0, 3, 8, 11].includes(s));
-                    break;
-                case "double_time_punk":
-                    playPiano = (s % 2 === 0);
-                    break;
-                case "groove_metal":
-                    playPiano = ([0, 3, 5, 8, 10, 13].includes(s));
-                    break;
-                case "black_tremolo":
-                    playPiano = true;
-                    break;
-                case "speed_metal":
-                    playPiano = true;
-                    if (s % 4 === 0) { sustain = true; }
-                    break;
-                case "death_roll":
-                    playPiano = (s % 2 === 0);
-                    if (s % 8 === 0) { sustain = true; }
-                    break;
-                case "thrash_skank":
-                    playPiano = true;
-                    break;
-
-                // PRECHORUS / BRIDGE
-                case "pre_build_up":
-                    playPiano = (s % 2 === 0);
-                    break;
-                case "driving_eights":
-                    playPiano = true;
-                    break;
-                case "march_to_war":
-                    playPiano = ([0, 2, 4, 6, 8, 10, 12, 14].includes(s));
-                    if (s === 0 || s === 8) { sustain = true; }
-                    break;
-                case "suspended_tension":
-                    if (s === 0 || s === 8) { playPiano = true; sustain = true; }
-                    break;
-                case "epic_buildup":
-                    if (s === 0) { playPiano = true; sustain = true; }
-                    if (Math.floor(s / 4) > 1 && s % 4 === 0) { playPiano = true; sustain = true; }
-                    break;
-                case "prog_odd":
-                    playPiano = ([0, 2, 4, 6, 9, 11, 13].includes(s));
-                    break;
-                case "metalcore_breakdown":
-                    if ([0, 4, 8, 12].includes(s)) { playPiano = true; sustain = true; }
-                    break;
-
-                // CHORUS
-                case "helloween_speed":
-                    playPiano = (s % 4 === 0);
-                    if (playPiano) { sustain = true; }
-                    break;
-                case "chorus_pure_sustain":
-                    if (s === 0) { playPiano = true; sustain = true; }
-                    break;
-                case "chorus_sustain_hit":
-                    if (s === 0) { playPiano = true; sustain = true; }
-                    if (s === 14) { playPiano = true; }
-                    break;
-                case "anthem_half_time":
-                    if (s === 0 || s === 8) { playPiano = true; sustain = true; }
-                    break;
-                case "power_ride_groove":
-                    playPiano = true;
-                    break;
-                case "double_kick_wall":
-                    playPiano = true;
-                    break;
-                case "blast_beat_light":
-                    playPiano = true;
-                    break;
-                case "epic_waltz_feel":
-                    if (s % 3 === 0) { playPiano = true; }
-                    break;
-                case "symphonic_blast":
-                    playPiano = (s % 4 === 0);
-                    if (playPiano) { sustain = true; }
-                    break;
-                case "folk_hop":
-                    playPiano = ([0, 4, 8, 12].includes(s));
-                    break;
-                case "djent":
-                    playPiano = ([0, 3, 5, 8, 11, 13].includes(s));
-                    break;
-
-                default:
-                    if (s % 2 === 0) { playPiano = true; }
-                    break;
-            }
-
-            // FILL ZONE (ultimi 4 step dell'ultima misura)
-            const isFillZone = isLastMeasure && s >= 12;
-            if (isFillZone && complexity > 0.4) {
-                playPiano = true;
-                sustain = false;
-            }
-
             // ULTIMA MISURA DELLA SEZIONE: accordo pieno al primo step
-            if (isLastMeasure && s === 0) {
+            if (isLastMeasure && s === currentSteps[0]) {
                 isFullChord = true;
-                playPiano = true;
-                sustain = true;
             }
 
-            if (playPiano) {
-                if (isFullChord) {
-                    // Accordo pieno (triade suonata insieme)
-                    Tone.Transport.schedule(t => {
-                        piano.triggerAttackRelease([rootNote, thirdNote, fifthNote], "1n", t, 0.7, lhBus);
-                        if (score) {
-                            score.addNote("PianoLH", rootNote, section.name);
-                            score.addNote("PianoLH", thirdNote, section.name);
-                            score.addNote("PianoLH", fifthNote, section.name);
-                        }
-                    }, absoluteTime);
-                } else {
-                    // Pattern ad arpeggio (triade + terza)
-                    const note = triadPattern[triadIndex % triadPattern.length];
-                    const duration = sustain ? "1n" : "8n";
-                    const velocity = isFillZone ? 0.65 : 0.55;
-                    
-                    Tone.Transport.schedule(t => {
-                        piano.triggerAttackRelease(note, duration, t, velocity, lhBus);
-                        if (score) score.addNote("Rhythm", note, section.name);
-                    }, absoluteTime);
-                    
-                    triadIndex++;
-                }
+            if (isFullChord) {
+                Tone.Transport.schedule(t => {
+                    const velocity = 0.6 + (energy * 0.3);
+                    piano.triggerAttackRelease([rootNote, thirdNote, fifthNote], "1n", t, velocity, lhBus);
+                    if (score) {
+                        score.addNote("Rhythm", rootNote, section.name);
+                        score.addNote("Rhythm", thirdNote, section.name);
+                        score.addNote("Rhythm", fifthNote, section.name);
+                    }
+                }, absoluteTime);
+            } else {
+                const note = triadPattern[triadIndex % triadPattern.length];
+                const duration = "8n";
+                // Velocità in base all'energia (più energia = più forte)
+                const velocity = 0.45 + (energy * 0.3);
+                
+                Tone.Transport.schedule(t => {
+                    piano.triggerAttackRelease(note, duration, t, velocity, lhBus);
+                    if (score) score.addNote("Rhythm", note, section.name);
+                }, absoluteTime);
+                
+                triadIndex++;
             }
         }
     }
