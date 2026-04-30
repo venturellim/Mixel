@@ -2,7 +2,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded } from "../../common.js";
 
-console.log("danceInstruments.js ver. 001 loaded");
+console.log("danceInstruments.js ver. 001.1 loaded");
 
 // ------------------------------------------------------------
 // BUS PRINCIPALI
@@ -56,12 +56,12 @@ export const danceBass = new Tone.MonoSynth({
 // ------------------------------------------------------------
 // LEAD — Supersaw (Eiffel 65 / Gabry Ponte)
 // ------------------------------------------------------------
-export const danceLead = new Tone.PolySynth(Tone.Synth, {
+export const danceLead = new Tone.PolySynth(Tone.FatSynth, {
     oscillator: {
-        type: "sawtooth",
-        count: 6,
-        spread: 40
+        type: "sawtooth"
     },
+    count: 6,
+    spread: 40,
     envelope: {
         attack: 0.01,
         decay: 0.2,
