@@ -1,4 +1,4 @@
-// pianoLeadEngine.js — ver. 010 (Enhancer scalabili in base all'energia)
+// pianoLeadEngine.js — ver. 011 (Fix verse: espansione pattern)
 
 import * as Tone from "https://esm.sh/tone";
 
@@ -13,7 +13,7 @@ import {
     shapeBridgeSolo
 } from "../../utils/leadEnhancers.js";
 
-console.log("pianoLeadEngine.js ver. 010 loaded");
+console.log("pianoLeadEngine.js ver. 011 loaded");
 
 // ============================================================
 // SCALA STRICT
@@ -27,6 +27,28 @@ function getStrictScale(root, isMinor) {
     if (idx === -1) idx = 9;
     const intervals = isMinor ? [0, 2, 3, 5, 7, 8, 10] : [0, 2, 4, 5, 7, 9, 11];
     return intervals.map(i => allNotes[(idx + i) % 12]);
+}
+
+// ============================================================
+// FUNZIONE PER ESPANDERE IL PATTERN ALLA LUNGHEZZA DELLA MELODIA
+// ============================================================
+function expandPatternToMatchMelody(pattern, melodyLength) {
+    if (!pattern || pattern.length === 0) return [0, 4, 8, 12];
+    if (pattern.length >= melodyLength) return pattern;
+    
+    const originalPattern = [...pattern];
+    const expanded = [...originalPattern];
+    
+    while (expanded.length < melodyLength) {
+        for (let step of originalPattern) {
+            expanded.push(step);
+            if (expanded.length >= melodyLength) break;
+        }
+    }
+    
+    // Ordina e rimuovi duplicati consecutivi
+    expanded.sort((a, b) => a - b);
+    return expanded.filter((step, idx, arr) => idx === 0 || step !== arr[idx - 1]);
 }
 
 // ============================================================
@@ -56,45 +78,37 @@ function getSoloMelodyFamily(isSoloPt2, energy, brightness, complexity, texture)
 }
 
 // ============================================================
-// ENHANCER PER PIANO (suddivisi per intensità)
+// ENHANCER PER PIANO
 // ============================================================
 
-// Enhancer leggeri (micro-variazioni, non alterano la melodia)
 const LIGHT_ENHANCERS = [
     "enhanceMelodyMicroVariation",
     "enhanceMelodyLine"
 ];
 
-// Enhancer medi (aggiungono note di passaggio)
 const MEDIUM_ENHANCERS = [
     "enhanceChromaticPassing",
     "addEchoEffect"
 ];
 
-// Enhancer pesanti (cambiano la struttura, solo per energia alta)
 const HEAVY_ENHANCERS = [
     "addOctaveDoubling",
     "addScaleRunBetweenPeaks"
 ];
 
-// Determina quanti e quali enhancer applicare in base all'energia
 function getEnhancersForEnergy(energy) {
     const enhancers = [];
     
     if (energy < 0.3) {
-        return enhancers; // nessuno
+        return enhancers;
     } else if (energy < 0.5) {
-        // 1 leggero
         enhancers.push(LIGHT_ENHANCERS[0]);
     } else if (energy < 0.7) {
-        // 2 leggeri
         enhancers.push(...LIGHT_ENHANCERS);
     } else if (energy < 0.9) {
-        // 2 leggeri + 1 medio
         enhancers.push(...LIGHT_ENHANCERS);
         enhancers.push(MEDIUM_ENHANCERS[Math.floor(Math.random() * MEDIUM_ENHANCERS.length)]);
     } else {
-        // 2 leggeri + 1 medio + 1 pesante
         enhancers.push(...LIGHT_ENHANCERS);
         enhancers.push(MEDIUM_ENHANCERS[Math.floor(Math.random() * MEDIUM_ENHANCERS.length)]);
         enhancers.push(HEAVY_ENHANCERS[Math.floor(Math.random() * HEAVY_ENHANCERS.length)]);
@@ -165,35 +179,38 @@ export function schedulePianoLead(
         let pattern = getPattern("chorus");
         pattern = applyLeadEnhancer(pattern, "enhanceRhythmPattern", enhancerContext);
         pattern = applyLeadEnhancer(pattern, "addAnticipation", enhancerContext);
-        currentPattern = pattern;
-
+        
         const soloFamily = getSoloMelodyFamily(isSoloPt2, energy, brightness, complexity, texture);
         const melodyIndex = Math.floor(energy * soloFamily.data.length) % soloFamily.data.length;
         let baseMelody = soloFamily.data[melodyIndex];
 
-        // Assolo: usa enhancer pesanti (più movimento)
         const soloEnhancers = [...LIGHT_ENHANCERS, ...MEDIUM_ENHANCERS, ...HEAVY_ENHANCERS];
         for (let enh of soloEnhancers) {
             if (Math.random() < 0.5) {
                 baseMelody = applyLeadEnhancer(baseMelody, enh, enhancerContext);
             }
         }
+        
         currentMelody = baseMelody;
+        currentPattern = expandPatternToMatchMelody(pattern, currentMelody.length);
 
     } else {
-        // SEZIONI NORMALI: pattern originale
+        // SEZIONI NORMALI
         currentPattern = getPattern(sectionType);
         const mood = getMelodyFamily(isPreChorus, isChorus, energy, brightness, complexity, texture);
         const melodyIndex = Math.floor(energy * mood.data.length) % mood.data.length;
         let baseMelody = mood.data[melodyIndex];
 
-        // Applica enhancer in base all'energia (scalabile!)
+        // Applica enhancer in base all'energia
         const enhancersToApply = getEnhancersForEnergy(energy);
         for (let enh of enhancersToApply) {
             baseMelody = applyLeadEnhancer(baseMelody, enh, enhancerContext);
         }
         
         currentMelody = baseMelody;
+        
+        // **FIX CRITICO**: espandi il pattern alla lunghezza della melodia
+        currentPattern = expandPatternToMatchMelody(currentPattern, currentMelody.length);
     }
 
     // ============================================================
