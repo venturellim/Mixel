@@ -14,6 +14,7 @@ import { photoToMusicParams } from "./photoToMusicParams.js";
 import { createPianoEngine, waitPianoInstruments } from "./genres/piano/pianoEngine.js";
 import { createMetalEngine, waitMetalInstruments } from "./genres/metal/metalEngine.js";
 import { createOrchestraEngine, waitOrchestraInstruments } from "./genres/orchestra/orchestraEngine.js";
+import { createDanceEngine, waitDanceInstruments } from "./genres/dance/danceEngine.js";
 import { scoreVisualizer } from "./scoreUI.js";
 
 console.log("main.js ver. 006.3 loaded");
@@ -178,6 +179,14 @@ async function selectGenre(genre) {
     const params = photoToMusicParams(analysis);
 
     // 3) Creazione engine del genere
+    if (genre === "dance") {
+    
+   if ( firstStart === 1 ) {
+   await waitMetalInstruments();   // <-- strumenti pronti
+   }
+        currentEngine = await createDanceEngine(params, scoreUI);
+ 
+    }
     if (genre === "metal") {
     
    if ( firstStart === 1 ) {
