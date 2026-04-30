@@ -1,7 +1,7 @@
 // danceBassEngine.js — ver. 001 (Gigi D’Agostino / Gabry Ponte)
 import * as Tone from "https://esm.sh/tone";
 
-console.log("danceBassEngine.js ver. 001 loaded");
+console.log("danceBassEngine.js ver. 001.1 loaded");
 
 // ------------------------------------------------------------
 // BASS ENGINE (Eurodance 1995–2005)
@@ -64,10 +64,12 @@ export function scheduleDanceBass(
 
         const measureStart = section.startTime + m * measureDur;
 
-        const root = progression[m % progression.length];
-        const rootNote = `${root}2`;
-        const fifthNote = `${Tone.Frequency(rootNote).transpose(7).toNote()}`;
-        const octaveNote = `${Tone.Frequency(rootNote).transpose(12).toNote()}`;
+        const rawRoot = progression[m % progression.length] || "A";
+const pitchRoot = String(rawRoot).toUpperCase().match(/^([A-G](#|B)?)/)?.[1] || "A";
+
+const rootNote   = `${pitchRoot}2`;
+const fifthNote  = Tone.Frequency(rootNote).transpose(7).toNote();
+const octaveNote = Tone.Frequency(rootNote).transpose(12).toNote();
 
         // ----------------------------------------------------
         // LOOP STEP (0–15)

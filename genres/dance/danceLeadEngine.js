@@ -1,7 +1,7 @@
 // danceLeadEngine.js — ver. 001 (Supersaw Eurodance Lead)
 import * as Tone from "https://esm.sh/tone";
 
-console.log("danceLeadEngine.js ver. 001 loaded");
+console.log("danceLeadEngine.js ver. 001.1 loaded");
 
 // ------------------------------------------------------------
 // LEAD MELODIES (Eurodance 1995–2005)
@@ -69,8 +69,13 @@ export function scheduleDanceLead(
 
         const measureStart = section.startTime + m * measureDur;
 
-        const root = progression[m % progression.length];
-        const scale = buildMajorScale(root);
+        function buildMajorScale(root) {
+    const notes = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+    const pitchRoot = String(root).toUpperCase().match(/^([A-G](#|B)?)/)?.[1] || "C";
+    const idx = notes.indexOf(pitchRoot);
+    const intervals = [0,2,4,5,7,9,11];
+    return intervals.map(i => notes[(idx + i) % 12]);
+}
 
         // Ottava diversa per sezione
         const octave = isDrop ? 5 : 4;
@@ -82,6 +87,8 @@ export function scheduleDanceLead(
 
             const step = i * 2; // 8th notes
             const absoluteTime = measureStart + step * stepTime;
+const rawRoot = progression[m % progression.length] || "A";
+const scale = buildMajorScale(rawRoot);
 
             const pitch = scale[(degree % 7 + 7) % 7];
             const note = `${pitch}${octave}`;
@@ -95,16 +102,4 @@ export function scheduleDanceLead(
             }, absoluteTime);
         });
     }
-}
-
-// ------------------------------------------------------------
-// COSTRUZIONE SCALA MAGGIORE (Eurodance = quasi sempre maggiore)
-// ------------------------------------------------------------
-function buildMajorScale(root) {
-    const notes = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
-    const idx = notes.indexOf(root.toUpperCase());
-    if (idx < 0) return ["C","D","E","F","G","A","B"];
-
-    const intervals = [0,2,4,5,7,9,11];
-    return intervals.map(i => notes[(idx + i) % 12]);
 }

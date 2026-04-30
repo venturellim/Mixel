@@ -1,7 +1,7 @@
 // danceChordEngine.js — ver. 001 (Eurodance Chords)
 import * as Tone from "https://esm.sh/tone";
 
-console.log("danceChordEngine.js ver. 001 loaded");
+console.log("danceChordEngine.js ver. 001.1 loaded");
 
 // ------------------------------------------------------------
 // CHORD ENGINE (Eurodance 1995–2005)
@@ -53,15 +53,13 @@ export function scheduleDanceChords(
 
         const measureStart = section.startTime + m * measureDur;
 
-        const root = progression[m % progression.length];
+        const rawRoot = progression[m % progression.length] || "A";
+const pitchRoot = String(rawRoot).toUpperCase().match(/^([A-G](#|B)?)/)?.[1] || "A";
 
-        // ----------------------------------------------------
-        // COSTRUZIONE ACCORDO EURODANCE
-        // ----------------------------------------------------
-        const rootNote   = `${root}3`;
-        const thirdNote  = `${Tone.Frequency(rootNote).transpose(3).toNote()}`;
-        const fifthNote  = `${Tone.Frequency(rootNote).transpose(7).toNote()}`;
-        const octaveNote = `${Tone.Frequency(rootNote).transpose(12).toNote()}`;
+const rootNote   = `${pitchRoot}3`;
+const thirdNote  = Tone.Frequency(rootNote).transpose(3).toNote();
+const fifthNote  = Tone.Frequency(rootNote).transpose(7).toNote();
+const octaveNote = Tone.Frequency(rootNote).transpose(12).toNote();
 
         const chord = [rootNote, thirdNote, fifthNote, octaveNote];
 
