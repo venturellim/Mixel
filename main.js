@@ -17,7 +17,7 @@ import { createOrchestraEngine, waitOrchestraInstruments } from "./genres/orches
 import { createDanceEngine, waitDanceInstruments } from "./genres/dance/danceEngine.js";
 import { scoreVisualizer } from "./scoreUI.js";
 
-console.log("main.js ver. 006.3 loaded");
+console.log("main.js ver. 007 loaded");
 
 
 let currentEngine = null;
@@ -182,7 +182,7 @@ async function selectGenre(genre) {
     if (genre === "dance") {
     
    if ( firstStart === 1 ) {
-   await waitMetalInstruments();   // <-- strumenti pronti
+   await waitDanceInstruments();   // <-- strumenti pronti
    }
         currentEngine = await createDanceEngine(params, scoreUI);
  
