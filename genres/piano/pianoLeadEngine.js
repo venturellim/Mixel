@@ -194,7 +194,7 @@ export function schedulePianoLead(
         currentMelody = baseMelody;
         currentPattern = expandPatternToMatchMelody(pattern, currentMelody.length);
 
-    } } else {
+    } else {
     // SEZIONI NORMALI
     currentPattern = getPattern(sectionType);
     const mood = getMelodyFamily(isPreChorus, isChorus, energy, brightness, complexity, texture);
