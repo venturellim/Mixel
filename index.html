@@ -2,161 +2,157 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Mixel - Ascolta le tue foto!</title>
-
-    <link rel="stylesheet" href="style.css">
-
-    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-    <script>
-        eruda.init();
-        console.log("🟦 Eruda inizializzato");
-    </script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            background: #000;
+            color: #fff;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+        }
+        
+        #loader-container {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+        
+        .loader-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: #00ff00;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .loader-text {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        
+        .orientation-badge {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #00ff00;
+        }
+        
+        #orientation-status {
+            font-weight: bold;
+            color: #ffa500;
+        }
+    </style>
 </head>
-
 <body>
-
-<div id="loadingOverlay" style="
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.85);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    z-index: 9999;
-    color: white;
-    font-family: sans-serif;
-">
-    <div id="loadingText" style="margin-bottom: 12px;">
-        Caricamento strumenti in corso…
-    </div>
-
-    <div style="width: 80%; height: 10px; background: #333; border-radius: 4px; overflow: hidden;">
-        <div id="loadingBar" style="height: 10px; width: 0%; background: #4caf50;"></div>
-    </div>
-</div>
-
-<!-- OVERLAY ORIENTAMENTO -->
-<div id="rotateOverlay" class="rotate-overlay hidden">
-    <div class="rotate-box">
-        <div class="rotate-icon">🔄</div>
-        <p>Ruota il dispositivo in verticale<br>per usare l'app</p>
-    </div>
-</div>
-
-<div class="app-container">
-
-    <!-- HEADER SUPERIORE CON LOGO E CARICAMENTO -->
-    <header class="app-header">
-        <div class="logo-box">
-            <img src="Mixel.jpg" alt="Logo">
+    <div id="loader-container">
+        <div class="loader-spinner"></div>
+        <div class="loader-text">Caricamento Mixel...</div>
+        <div class="orientation-badge">
+            Orientamento rilevato: <span id="orientation-status">...</span>
         </div>
+        <div class="orientation-badge" style="font-size: 10px; margin-top: 10px;">
+            🔄 Ruota il dispositivo se necessario
+        </div>
+    </div>
+
+    <script>
+        // Funzione per rilevare l'orientamento
+        function getOrientation() {
+            const isPortrait = window.matchMedia("(orientation: portrait)").matches || 
+                              (window.innerHeight > window.innerWidth);
+            return isPortrait ? 'portrait' : 'landscape';
+        }
         
-        <div class="upload-area">
-            <input type="file" id="fileInput" accept="image/*" capture="environment">
-            <label for="fileInput" class="upload-btn">📸 Carica foto</label>
-        </div>
+        // Funzione per caricare la versione appropriata
+        function loadVersion(orientation) {
+            const statusSpan = document.getElementById('orientation-status');
+            const loaderContainer = document.getElementById('loader-container');
+            
+            if (orientation === 'portrait') {
+                statusSpan.textContent = 'PORTRAIT (Verticale)';
+                console.log('📱 Caricamento versione VERTICALE');
+                
+                // Carica i file della versione verticale
+                loadStylesheet('style-vertical.css');
+                loadScript('main-vertical.js');
+            } else {
+                statusSpan.textContent = 'LANDSCAPE (Orizzontale)';
+                console.log('📱 Caricamento versione ORIZZONTALE');
+                
+                // Carica i file della versione orizzontale
+                loadStylesheet('style-horizontal.css');
+                loadScript('main-horizontal.js');
+            }
+            
+            // Nascondi il loader dopo 1 secondo (o quando i file sono caricati)
+            setTimeout(() => {
+                loaderContainer.style.opacity = '0';
+                setTimeout(() => {
+                    loaderContainer.style.display = 'none';
+                }, 500);
+            }, 1000);
+        }
         
-        <button id="btnElabora" class="elabora-btn hidden">
-            ✨ Elabora foto
-        </button>
-    </header>
-
-    <!-- CONTENUTO PRINCIPALE SCROLLABILE -->
-    <main class="content">
+        // Helper per caricare CSS
+        function loadStylesheet(href) {
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = href;
+            document.head.appendChild(link);
+        }
         
-        <!-- Video On-Air (in alto a destra) -->
-        <div class="video-mini-wrapper">
-            <video autoplay muted loop playsinline>
-                <source src="onair.mp4" type="video/mp4">
-            </video>
-        </div>
-
-        <!-- Logo Hero iniziale -->
-        <div id="heroLogoContainer" class="hero-container">
-            <div class="hero-logo-box">
-                <img src="Mixel.jpg" alt="Logo">
-            </div>
-        </div>
-
-        <!-- Immagine Preview -->
-        <img id="previewImage" class="preview hidden" alt="MIXEL - Ascolta le tue foto!">
-
-        <!-- Analizzatore di spettro -->
-        <div id="spectrumPanel" class="spectrum-panel hidden">
-            <canvas id="spectrumCanvas"></canvas>
-        </div>
-
-        <!-- Player Panel -->
-        <div id="playerPanel" class="player-panel hidden">
-            <div class="player-ui">
-                <div class="player-controls">
-                    <button id="btnPlay">▶️ Play</button>
-                    <button id="btnPause">⏸️ Pause</button>
-                    <button id="btnStop">⏹️ Stop</button>
-                    <button id="btnFxPanel">🎛️ FX</button>
-                    <button id="btnSpartito" class="spartito-btn hidden">🎼 Spartito</button>
-                </div>
-
-                <div class="player-seek">
-                    <input type="range" id="seekBar" min="0" max="100" value="0">
-                </div>
-
-                <div class="player-time">
-                    <span id="currentTime">0:00</span> /
-                    <span id="totalTime">0:00</span>
-                </div>
-            </div>
-        </div>
-
-    </main>
-</div>
-
-<!-- GENRE PANEL (SCENDE DALL'ALTO) -->
-<div id="genrePanel" class="genre-panel">
-    <div class="panel-header">
-        <h2>Scegli il genere musicale</h2>
-        <button id="closeGenrePanel" class="close-panel-btn">✖</button>
-    </div>
-    <div class="genre-buttons">
-        <button class="genre-btn" data-genre="dance">🎧 Dance '90</button>
-        <button class="genre-btn" data-genre="metal">🤘 Metal</button>
-        <button class="genre-btn" data-genre="orchestra">🎻 Orchestra</button>
-        <button class="genre-btn" data-genre="piano">🎹 Piano</button>
-    </div>
-</div>
-
-<!-- FX PANEL (SCENDE DALL'ALTO) -->
-<div id="fxPanel" class="fx-panel">
-    <div class="panel-header">
-        <h2>Controlli Audio</h2>
-        <button id="closeFxPanel" class="close-panel-btn">✖</button>
-    </div>
-
-    <div class="fx-section">
-        <h3>Equalizzatore Master</h3>
-        <div class="fx-control">
-            <label for="eqLow">Bassi</label>
-            <input type="range" id="eqLow" min="-12" max="12" value="0">
-        </div>
-        <div class="fx-control">
-            <label for="eqMid">Medi</label>
-            <input type="range" id="eqMid" min="-12" max="12" value="0">
-        </div>
-        <div class="fx-control">
-            <label for="eqHigh">Alti</label>
-            <input type="range" id="eqHigh" min="-12" max="12" value="0">
-        </div>
-    </div>
-
-    <div id="volumeControls" class="fx-section">
-        <h3>Volumi Strumenti</h3>
-        <!-- I volumi verranno aggiunti dinamicamente -->
-    </div>
-</div>
-
-<script type="module" src="main.js"></script>
-
+        // Helper per caricare JS
+        function loadScript(src) {
+            const script = document.createElement('script');
+            script.type = 'module';
+            script.src = src;
+            document.body.appendChild(script);
+        }
+        
+        // Rileva l'orientamento iniziale
+        let currentOrientation = getOrientation();
+        loadVersion(currentOrientation);
+        
+        // Ascolta i cambi di orientamento DOPO il caricamento
+        window.addEventListener('resize', () => {
+            const newOrientation = getOrientation();
+            if (newOrientation !== currentOrientation) {
+                currentOrientation = newOrientation;
+                // Ricarica la pagina per applicare la versione corretta
+                location.reload();
+            }
+        });
+        
+        // Usa anche orientationchange per compatibilità
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => {
+                const newOrientation = getOrientation();
+                if (newOrientation !== currentOrientation) {
+                    currentOrientation = newOrientation;
+                    location.reload();
+                }
+            }, 100);
+        });
+    </script>
 </body>
 </html>

@@ -1,0 +1,452 @@
+
+        /* ==========================================
+   1. RESET E IMPOSTAZIONI DI BASE
+   ========================================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(to bottom, #000, #222);
+    color: #fff;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden; /* Blocca scroll fuori posto */
+}
+
+/* Contenitore principale */
+.app-container {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+}
+
+/* ==========================================
+   2. SIDEBAR (SINISTRA)
+   ========================================== */
+.sidebar {
+    width: 260px;
+    background: rgba(30, 30, 30, 0.9);
+    backdrop-filter: blur(10px);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    border-right: 1px solid #444;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+    z-index: 100;
+}
+
+ .sidebar-logo-box {
+    width: 90px;
+    height: 60px;
+    margin: 0 auto;
+    background: #333;
+    border-radius: 6px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0.7;
+    object-fit: contain;
+    margin: 20px auto;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(255,255,255,0.2);
+        }
+
+.file-input {
+    background: #111;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #555;
+    color: #ccc;
+    font-size: 13px;
+    cursor: pointer;
+    width: 100%;
+}
+
+.side-btn {
+    width: 100%;
+    padding: 12px;
+    background: #333;
+    border: none;
+    border-radius: 6px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+.side-btn:hover {
+    background: #00ff00;
+    color: #000;
+    box-shadow: 0 0 15px #00ff00;
+}
+
+.hidden { display: none !important; }
+
+/* ==========================================
+   3. AREA CONTENUTO (MAIN)
+   ========================================== */
+.content {
+    flex: 1;
+    position: relative;
+    padding: 20px;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Video On-Air (Alto a destra, ritagliato) */
+.video-mini-wrapper {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 130px;
+    height: 65px;
+    overflow: hidden;
+    z-index: 1001;
+    background: #000;
+    pointer-events: none;
+}
+
+.video-mini-wrapper video {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    display: block;
+}
+
+/* Logo Hero (iniziale) */
+ .hero-logo-box {
+    display: block;
+    width: 250px;
+    height: 170px;
+    object-fit: contain;
+    margin: 20px auto;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(255,255,255,0.2);
+        }
+
+/* Immagine Preview (La Foto) */
+#previewImage {
+    position: absolute;
+    left: 50%;
+    top: 35%; /* Alzata per lasciare spazio al player */
+    transform: translate(-50%, -50%);
+    max-width: 85%;
+    max-height: 50vh; /* Non tocca mai il player basso */
+    object-fit: contain;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(255,255,255,0.2);
+    transition: all 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Spostamento a sinistra quando parte l'analisi */
+#previewImage.shift-left {
+    left: 25%;
+    transform: translate(-50%, -50%) scale(0.9);
+    max-width: 45%;
+}
+
+/* ==========================================
+   4. ANALIZZATORE DI SPETTRO
+   ========================================== */
+#spectrumPanel {
+    position: absolute;
+    top: -300px; /* Nascosto sopra */
+    left: 55%;
+    width: 40%;
+    height: 30vh;
+    background: rgba(15, 15, 15, 0.7);
+    border: 1px solid rgba(0, 255, 0, 0.3);
+    backdrop-filter: blur(5px);
+    transition: top 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+    z-index: 900;
+}
+
+#spectrumPanel.active {
+    top: 20vh; /* Allineato alla foto */
+}
+
+#spectrumCanvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* ==========================================
+   5. PLAYER (SLIDE-UP)
+   ========================================== */
+#playerPanel {
+    position: absolute;
+    left: 0;
+    bottom: -160px; /* Nascosto */
+    width: 100%;
+    height: 150px;
+    background: rgba(20, 20, 20, 0.95);
+    border-top: 1px solid #444;
+    padding: 15px;
+    transition: bottom 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    z-index: 1000;
+}
+
+#playerPanel.open {
+    bottom: 0;
+}
+
+.player-ui {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.player-controls {
+    display: flex;
+    gap: 15px;
+}
+
+.player-controls button {
+    padding: 8px 16px;
+    background: #222;
+    border: 1px solid #555;
+    border-radius: 6px;
+    color: #fff;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.player-controls button:hover {
+    background: #00ff00;
+    color: #000;
+}
+
+#seekBar {
+    width: 70%;
+    cursor: pointer;
+}
+
+.player-time {
+    font-size: 12px;
+    opacity: 0.7;
+}
+
+/* ==========================================
+   6. PANNELLO FX (CONTROLLI AUDIO)
+   ========================================== */
+   
+.fx-panel {
+    position: fixed;
+    top: 0;
+    left: -100%;
+    width: 320px;       
+    height: 100vh;      
+    background: rgba(10, 10, 10, 0.95);
+    padding: 15px;
+    overflow-y: auto;
+    z-index: 9999;
+    transition: left 0.3s ease;
+    border-right: 1px solid #0f0; 
+}
+
+.fx-panel.open {
+    left: 0;
+}
+
+.fx-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.close-fx-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+/* Separatori tra sezioni */
+.fx-panel h3 {
+    margin-top: 25px;
+    padding-top: 15px;
+    border-top: 1px solid #444;
+}
+
+/* Allineamento controlli */
+.fx-panel label {
+    display: block;
+    margin-top: 12px;
+    font-size: 14px;
+}
+
+.fx-panel input[type="range"] {
+    width: 100%;
+    margin-top: 4px;
+}
+
+.fx-row {
+    display: flex;
+    flex-direction: row; 
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 10px;
+    padding: 5px 8px;
+    background: rgba(255,255,255,0.03);
+}
+
+.fx-row label {
+    flex: 0 0 80px;
+    font-size: 12px;
+    margin-bottom: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.fx-row input[type="range"] {
+    flex: 1;
+    height: 20px;
+}
+
+.fx-btn {
+    padding: 4px 8px;
+    font-size: 11px;
+}
+
+/* ==========================================
+   7. GENRE PANEL
+   ========================================== */
+.genre-panel {
+     position: fixed;
+     top: 0;
+     right: -300px;
+     width: 300px;
+     height: 100vh;
+     background: linear-gradient(to bottom, #000, #444);
+     border-left: 1px solid #555;
+     padding: 20px;
+     display: flex;
+     flex-direction: column;
+     gap: 15px;
+     transition: right 0.4s ease;
+     z-index: 2000;
+}
+
+.genre-panel.show {
+     right: 0;
+}
+
+.genre-panel h2 {
+     text-align: center;
+     margin-bottom: 10px;
+}
+
+.genre-btn {
+      padding: 12px;
+      background: #222;
+      border: none;
+      border-radius: 6px;
+      color: #fff;
+      cursor: pointer;
+      transition: 0.3s ease;
+}
+
+.genre-btn:hover {
+       background: #ffa500;
+       box-shadow: 0 0 10px #ffa500;
+}
+
+.close-panel-btn {
+       margin-top: auto;
+       padding: 10px;
+       background: #555;
+       border: none;
+       border-radius: 6px;
+       color: #fff;
+       cursor: pointer;
+}
+
+.close-panel-btn:hover {
+       background: #ff4444;
+       box-shadow: 0 0 10px #ff4444;
+}
+
+/* ==========================================
+   8. OVERLAY ORIENTAMENTO E LOADING
+   ========================================== */
+.rotate-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.95);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.rotate-icon { font-size: 50px; margin-bottom: 15px; }
+
+#loadingOverlay {
+    z-index: 10000;
+}
+
+/* Stile del Foglio Bianco (Spartito) */
+#scoreCanvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    /*background-color: #fdfdf5; /* Carta avorio */
+    z-index: 1100; /* Sopra al player, sotto Eruda */
+    display: none;
+    cursor: pointer; /* Clicca ovunque per chiudere */
+}
+
+/* Animazione per il tasto spartito */
+#btnSpartito.show-flex {
+    display: block !important;
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Stile per il tasto chiusura Spartito */
+.close-score-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10001; /* Sopra tutto */
+    background: #ff4444;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.close-score-btn:hover {
+    background: #cc0000;
+    transform: scale(1.1);
+}
+
+
