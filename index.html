@@ -20,7 +20,6 @@
             position: fixed;
         }
         
-        /* Loader iniziale */
         #loader-container {
             position: fixed;
             inset: 0;
@@ -66,11 +65,6 @@
             height: 100%;
             position: relative;
         }
-        
-        /* Stili di base per evitare flash bianco */
-        .app-container, .sidebar, .content, .genre-panel, .fx-panel {
-            display: none;
-        }
     </style>
 </head>
 <body>
@@ -85,17 +79,14 @@
     <div id="app-root"></div>
 
     <script>
-        // Funzione per rilevare l'orientamento
         function getOrientation() {
             var isPortrait = window.matchMedia("(orientation: portrait)").matches || 
                               (window.innerHeight > window.innerWidth);
             return isPortrait ? 'portrait' : 'landscape';
         }
         
-        // Funzione per caricare CSS dinamicamente
         function loadCSS(href) {
             return new Promise(function(resolve, reject) {
-                // Rimuovi eventuali CSS precedenti della stessa versione
                 var existing = document.querySelector('link[href="' + href + '"]');
                 if (existing) {
                     resolve();
@@ -110,7 +101,6 @@
             });
         }
         
-        // Funzione per caricare JS dinamicamente
         function loadJS(src) {
             return new Promise(function(resolve, reject) {
                 var existing = document.querySelector('script[src="' + src + '"]');
@@ -127,58 +117,192 @@
             });
         }
         
-        // Funzione per caricare HTML da file
-        function loadHTML(url) {
-            return fetch(url)
-                .then(function(response) {
-                    if (!response.ok) {
-                        throw new Error('HTTP error ' + response.status);
-                    }
-                    return response.text();
-                })
-                .then(function(html) {
-                    // Estrae solo il contenuto del body
-                    var parser = new DOMParser();
-                    var doc = parser.parseFromString(html, 'text/html');
-                    return doc.body.innerHTML;
-                });
-        }
-        
         var currentOrientation = getOrientation();
         var versionSpan = document.getElementById('version-status');
         var appRoot = document.getElementById('app-root');
+        
+        // HTML VERTICALE COMPLETO (copiato dal tuo index-vertical.html)
+        function getVerticalHTML() {
+            return '<div id="loadingOverlay" style="position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; flex-direction: column; z-index: 9999; color: white; font-family: sans-serif;">' +
+                '<div id="loadingText" style="margin-bottom: 12px;">Caricamento strumenti in corso…</div>' +
+                '<div style="width: 80%; height: 10px; background: #333; border-radius: 4px; overflow: hidden;">' +
+                '<div id="loadingBar" style="height: 10px; width: 0%; background: #4caf50;"></div>' +
+                '</div></div>' +
+                '<div id="rotateOverlay" class="rotate-overlay hidden">' +
+                '<div class="rotate-box">' +
+                '<div class="rotate-icon">🔄</div>' +
+                '<p>Ruota il dispositivo in verticale<br>per usare l\'app</p>' +
+                '</div></div>' +
+                '<div class="app-container">' +
+                '<header class="app-header">' +
+                '<div class="logo-box">' +
+                '<img src="Mixel.jpg" alt="Logo">' +
+                '</div>' +
+                '<div class="upload-area">' +
+                '<input type="file" id="fileInput" accept="image/*" capture="environment">' +
+                '<label for="fileInput" class="upload-btn">📸 Carica foto</label>' +
+                '</div>' +
+                '<button id="btnElabora" class="elabora-btn hidden">✨ Elabora foto</button>' +
+                '</header>' +
+                '<main class="content">' +
+                '<div class="video-mini-wrapper">' +
+                '<video autoplay muted loop playsinline>' +
+                '<source src="onair.mp4" type="video/mp4">' +
+                '</video></div>' +
+                '<div id="heroLogoContainer" class="hero-container">' +
+                '<div class="hero-logo-box">' +
+                '<img src="Mixel.jpg" alt="Logo">' +
+                '</div></div>' +
+                '<img id="previewImage" class="preview hidden" alt="MIXEL - Ascolta le tue foto!">' +
+                '<div id="spectrumPanel" class="spectrum-panel hidden">' +
+                '<canvas id="spectrumCanvas"></canvas>' +
+                '</div>' +
+                '<div id="playerPanel" class="player-panel hidden">' +
+                '<div class="player-ui">' +
+                '<div class="player-controls">' +
+                '<button id="btnPlay">▶️ Play</button>' +
+                '<button id="btnPause">⏸️ Pause</button>' +
+                '<button id="btnStop">⏹️ Stop</button>' +
+                '<button id="btnFxPanel">🎛️ FX</button>' +
+                '<button id="btnSpartito" class="spartito-btn hidden">🎼 Spartito</button>' +
+                '</div>' +
+                '<div class="player-seek">' +
+                '<input type="range" id="seekBar" min="0" max="100" value="0">' +
+                '</div>' +
+                '<div class="player-time">' +
+                '<span id="currentTime">0:00</span> / <span id="totalTime">0:00</span>' +
+                '</div></div></div></main></div>' +
+                '<div id="genrePanel" class="genre-panel">' +
+                '<div class="panel-header">' +
+                '<h2>Scegli il genere musicale</h2>' +
+                '<button id="closeGenrePanel" class="close-panel-btn">✖</button>' +
+                '</div>' +
+                '<div class="genre-buttons">' +
+                '<button class="genre-btn" data-genre="dance">🎧 Dance \'90</button>' +
+                '<button class="genre-btn" data-genre="metal">🤘 Metal</button>' +
+                '<button class="genre-btn" data-genre="orchestra">🎻 Orchestra</button>' +
+                '<button class="genre-btn" data-genre="piano">🎹 Piano</button>' +
+                '</div></div>' +
+                '<div id="fxPanel" class="fx-panel">' +
+                '<div class="panel-header">' +
+                '<h2>Controlli Audio</h2>' +
+                '<button id="closeFxPanel" class="close-panel-btn">✖</button>' +
+                '</div>' +
+                '<div class="fx-section">' +
+                '<h3>Equalizzatore Master</h3>' +
+                '<div class="fx-control">' +
+                '<label for="eqLow">Bassi</label>' +
+                '<input type="range" id="eqLow" min="-12" max="12" value="0">' +
+                '</div>' +
+                '<div class="fx-control">' +
+                '<label for="eqMid">Medi</label>' +
+                '<input type="range" id="eqMid" min="-12" max="12" value="0">' +
+                '</div>' +
+                '<div class="fx-control">' +
+                '<label for="eqHigh">Alti</label>' +
+                '<input type="range" id="eqHigh" min="-12" max="12" value="0">' +
+                '</div></div>' +
+                '<div id="volumeControls" class="fx-section">' +
+                '<h3>Volumi Strumenti</h3>' +
+                '</div></div>';
+        }
+        
+        // HTML ORIZZONTALE COMPLETO (copiato dal tuo index-horizontal.html)
+        function getHorizontalHTML() {
+            return '<div id="loadingOverlay" style="position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; flex-direction: column; z-index: 9999; color: white; font-family: sans-serif;">' +
+                '<div id="loadingText" style="margin-bottom: 12px;">Caricamento strumenti in corso…</div>' +
+                '<div style="width: 80%; height: 10px; background: #333; border-radius: 4px; overflow: hidden;">' +
+                '<div id="loadingBar" style="height: 10px; width: 0%; background: #4caf50;"></div>' +
+                '</div></div>' +
+                '<div id="rotateOverlay" class="rotate-overlay hidden">' +
+                '<div class="rotate-box">' +
+                '<div class="rotate-icon">🔄</div>' +
+                '<p>Ruota il dispositivo per usare l\'app</p>' +
+                '</div></div>' +
+                '<div class="app-container">' +
+                '<aside class="sidebar">' +
+                '<div id="sidebarLogo" class="sidebar-logo-box">' +
+                '<img src="Mixel.jpg" alt="Logo" style="width: 100%; height: 100%; object-fit: contain;">' +
+                '</div>' +
+                '<input type="file" id="fileInput" class="file-input">' +
+                '<button id="btnElabora" class="side-btn hidden">✨ Elabora foto</button>' +
+                '<button id="btnSpartito" class="side-btn hidden" style="background: #fff; color: #000; margin-top: 5px;">🎼 Spartito</button>' +
+                '<button id="btnConsigliato" class="side-btn hidden"></button>' +
+                '</aside>' +
+                '<main class="content">' +
+                '<div class="video-mini-wrapper">' +
+                '<video autoplay muted loop playsinline>' +
+                '<source src="onair.mp4" type="video/mp4">' +
+                '</video></div>' +
+                '<div id="heroLogoContainer">' +
+                '<div id="heroLogo" class="hero-logo-box">' +
+                '<img src="Mixel.jpg" alt="Logo" style="width: 100%; height: 100%; object-fit: contain;">' +
+                '</div></div>' +
+                '<img id="previewImage" class="preview hidden" alt="MIXEL - Ascolta le tue foto!">' +
+                '<div id="genrePanel" class="genre-panel hidden">' +
+                '<h2>Scegli il genere musicale</h2>' +
+                '<button class="genre-btn" data-genre="metal">🤘 Metal</button>' +
+                '<button class="genre-btn" data-genre="orchestra">🎻 Orchestra</button>' +
+                '<button class="genre-btn" data-genre="piano">🎹 Piano</button>' +
+                '<button id="closeGenrePanel" class="close-panel-btn">Chiudi</button>' +
+                '</div>' +
+                '<div id="playerPanel" class="player-slideup">' +
+                '<div id="Player" class="player-ui">' +
+                '<div class="player-controls">' +
+                '<button id="btnPlay">▶️ Play</button>' +
+                '<button id="btnPause">⏸️ Pause</button>' +
+                '<button id="btnStop">⏹️ Stop</button>' +
+                '<button id="btnFxPanel">🎛️ Controlli</button>' +
+                '</div>' +
+                '<div class="player-seek">' +
+                '<input type="range" id="seekBar" min="0" max="100" value="0">' +
+                '</div>' +
+                '<div class="player-time">' +
+                '<span id="currentTime">0:00</span> / <span id="totalTime">0:00</span>' +
+                '</div></div></div>' +
+                '<div id="spectrumPanel">' +
+                '<canvas id="spectrumCanvas" width="300" height="200"></canvas>' +
+                '</div></main></div>' +
+                '<div id="fxPanel" class="fx-panel">' +
+                '<div class="fx-header">' +
+                '<h2>Controlli Audio</h2>' +
+                '<button id="closeFxPanel" class="close-fx-btn">✖</button>' +
+                '</div>' +
+                '<h3>Equalizzatore Master</h3>' +
+                '<label for="eqLow">Bassi</label>' +
+                '<input type="range" id="eqLow" min="-12" max="12" value="0">' +
+                '<label for="eqMid">Medi</label>' +
+                '<input type="range" id="eqMid" min="-12" max="12" value="0">' +
+                '<label for="eqHigh">Alti</label>' +
+                '<input type="range" id="eqHigh" min="-12" max="12" value="0">' +
+                '</div>';
+        }
         
         async function loadApp() {
             var orientation = getOrientation();
             currentOrientation = orientation;
             
-            try {
-                if (orientation === 'portrait') {
-                    versionSpan.textContent = 'VERTICALE';
-                    console.log('📱 Caricamento versione VERTICALE');
-                    
-                    // Carica l'HTML dal file verticale
-                    var verticalHTML = await loadHTML('index-vertical.html');
-                    appRoot.innerHTML = verticalHTML;
-                    
-                    // Carica CSS e JS
-                    await loadCSS('style-vertical.css');
-                    await loadJS('main-vertical.js');
-                    
-                } else {
-                    versionSpan.textContent = 'ORIZZONTALE';
-                    console.log('📱 Caricamento versione ORIZZONTALE');
-                    
-                    // Carica l'HTML dal file orizzontale
-                    var horizontalHTML = await loadHTML('index-horizontal.html');
-                    appRoot.innerHTML = horizontalHTML;
-                    
-                    // Carica CSS e JS
-                    await loadCSS('style-horizontal.css');
-                    await loadJS('main-horizontal.js');
-                }
+            if (orientation === 'portrait') {
+                versionSpan.textContent = 'VERTICALE';
+                console.log('📱 Caricamento versione VERTICALE');
+                appRoot.innerHTML = getVerticalHTML();
                 
-                // Nascondi loader
+                // Carica CSS e JS
+                await loadCSS('style-vertical.css');
+                await loadJS('main-vertical.js');
+                
+            } else {
+                versionSpan.textContent = 'ORIZZONTALE';
+                console.log('📱 Caricamento versione ORIZZONTALE');
+                appRoot.innerHTML = getHorizontalHTML();
+                
+                // Carica CSS e JS
+                await loadCSS('style-horizontal.css');
+                await loadJS('main-horizontal.js');
+            }
+            
+            // Attendi che il DOM sia stabile prima di nascondere il loader
+            setTimeout(function() {
                 var loader = document.getElementById('loader-container');
                 if (loader) {
                     loader.style.opacity = '0';
@@ -186,22 +310,16 @@
                         loader.style.display = 'none';
                     }, 500);
                 }
-                
-            } catch (error) {
-                console.error('Errore nel caricamento:', error);
-                versionSpan.textContent = 'ERRORE: ' + error.message;
-            }
+            }, 200);
         }
         
-        // Gestione cambio orientamento
         var reloadTimeout = null;
         
         function handleOrientationChange() {
             var newOrientation = getOrientation();
             
             if (newOrientation !== currentOrientation) {
-                console.log('🔄 Orientamento cambiato: ' + currentOrientation + ' → ' + newOrientation);
-                
+                console.log('🔄 Orientamento cambiato, ricaricamento...');
                 if (reloadTimeout) clearTimeout(reloadTimeout);
                 reloadTimeout = setTimeout(function() {
                     location.reload();
@@ -209,11 +327,9 @@
             }
         }
         
-        // Ascolta cambi di orientamento
         window.addEventListener('resize', handleOrientationChange);
         window.addEventListener('orientationchange', handleOrientationChange);
         
-        // Avvia l'app
         loadApp();
     </script>
 </body>
