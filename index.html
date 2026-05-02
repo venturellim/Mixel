@@ -2,6 +2,7 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
     <title>Mixel - Ascolta le tue foto!</title>
 
     <link rel="stylesheet" href="style.css">
@@ -36,140 +37,123 @@
     </div>
 </div>
 
-
 <!-- OVERLAY ORIENTAMENTO -->
 <div id="rotateOverlay" class="rotate-overlay hidden">
     <div class="rotate-box">
         <div class="rotate-icon">🔄</div>
-        <p>Ruota il dispositivo per usare l'app</p>
+        <p>Ruota il dispositivo in verticale<br>per usare l'app</p>
     </div>
 </div>
 
 <div class="app-container">
 
-    <!-- SIDEBAR -->
-    <aside class="sidebar">
+    <!-- HEADER SUPERIORE CON LOGO E CARICAMENTO -->
+    <header class="app-header">
+        <div class="logo-box">
+            <img src="Mixel.jpg" alt="Logo">
+        </div>
+        
+        <div class="upload-area">
+            <input type="file" id="fileInput" accept="image/*" capture="environment">
+            <label for="fileInput" class="upload-btn">📸 Carica foto</label>
+        </div>
+        
+        <button id="btnElabora" class="elabora-btn hidden">
+            ✨ Elabora foto
+        </button>
+    </header>
 
-        <div id="sidebarLogo" class="sidebar-logo-box">
-            <img src="Mixel.jpg"
-                 alt="Logo"
-                 style="width: 100%; height: 100%; object-fit: contain;">
+    <!-- CONTENUTO PRINCIPALE SCROLLABILE -->
+    <main class="content">
+        
+        <!-- Video On-Air (in alto a destra) -->
+        <div class="video-mini-wrapper">
+            <video autoplay muted loop playsinline>
+                <source src="onair.mp4" type="video/mp4">
+            </video>
         </div>
 
-        <input type="file" id="fileInput" class="file-input">
-
-        <button id="btnElabora" class="side-btn hidden">
-    ✨
- Elabora foto
-</button>
-
-<button id="btnSpartito" class="side-btn hidden" style="background: #fff; color: #000; margin-top: 5px;">
-    🎼 Spartito
-</button>
-
-
-        <button id="btnConsigliato" class="side-btn hidden">
-        </button>
-
-    </aside>
-
-    <!-- CONTENT -->
-    <main class="content">
-    <div class="video-mini-wrapper">
-    <video autoplay muted loop playsinline>
-        <source src="onair.mp4" type="video/mp4">
-    </video>
-</div>
-        <div id="heroLogoContainer">
-            <div id="heroLogo" class="hero-logo-box">
-                <img src="Mixel.jpg"
-                     alt="Logo"
-                     style="width: 100%; height: 100%; object-fit: contain;">
+        <!-- Logo Hero iniziale -->
+        <div id="heroLogoContainer" class="hero-container">
+            <div class="hero-logo-box">
+                <img src="Mixel.jpg" alt="Logo">
             </div>
         </div>
 
-        <img id="previewImage"
-             class="preview hidden"
-             alt="MIXEL - Ascolta le tue foto!">
+        <!-- Immagine Preview -->
+        <img id="previewImage" class="preview hidden" alt="MIXEL - Ascolta le tue foto!">
 
-        <!-- GENRE PANEL -->
-        <div id="genrePanel" class="genre-panel hidden">
-
-            <h2>Scegli il genere musicale</h2>
-
-        <!--    <button class="genre-btn" data-genre="ambient">Ambient</button>
-            <button class="genre-btn" data-genre="chiptune">Chiptune</button> -->
-            <button class="genre-btn" data-genre="dance">🎧 Dance '90</button>
-            <button class="genre-btn" data-genre="metal">🤘 Metal</button>
-            <button class="genre-btn" data-genre="orchestra">🎻 
-Orchestra</button>
-              <button class="genre-btn" data-genre="piano">🎹
- Piano</button>
-
-            <button id="closeGenrePanel" class="close-panel-btn">
-                Chiudi
-            </button>
-
+        <!-- Analizzatore di spettro -->
+        <div id="spectrumPanel" class="spectrum-panel hidden">
+            <canvas id="spectrumCanvas"></canvas>
         </div>
 
-        <!-- PLAYER SLIDE-UP -->
-        <div id="playerPanel" class="player-slideup">
-
-            <div id="Player" class="player-ui">
-
+        <!-- Player Panel -->
+        <div id="playerPanel" class="player-panel hidden">
+            <div class="player-ui">
                 <div class="player-controls">
                     <button id="btnPlay">▶️ Play</button>
                     <button id="btnPause">⏸️ Pause</button>
                     <button id="btnStop">⏹️ Stop</button>
-                    <button id="btnFxPanel">🎛️ Controlli</button>
+                    <button id="btnFxPanel">🎛️ FX</button>
+                    <button id="btnSpartito" class="spartito-btn hidden">🎼 Spartito</button>
                 </div>
 
                 <div class="player-seek">
-                    <input type="range"
-                           id="seekBar"
-                           min="0"
-                           max="100"
-                           value="0">
+                    <input type="range" id="seekBar" min="0" max="100" value="0">
                 </div>
 
                 <div class="player-time">
                     <span id="currentTime">0:00</span> /
                     <span id="totalTime">0:00</span>
                 </div>
-
             </div>
-        </div>
-
-        <!-- NUOVO: ANALIZZATORE SEPARATO -->
-        <div id="spectrumPanel">
-            <canvas id="spectrumCanvas"
-                    width="300"
-                    height="200">
-            </canvas>
         </div>
 
     </main>
 </div>
 
-<!-- FX PANEL (FUORI DAL MAIN) -->
-<div id="fxPanel" class="fx-panel">
+<!-- GENRE PANEL (SCENDE DALL'ALTO) -->
+<div id="genrePanel" class="genre-panel">
+    <div class="panel-header">
+        <h2>Scegli il genere musicale</h2>
+        <button id="closeGenrePanel" class="close-panel-btn">✖</button>
+    </div>
+    <div class="genre-buttons">
+        <button class="genre-btn" data-genre="dance">🎧 Dance '90</button>
+        <button class="genre-btn" data-genre="metal">🤘 Metal</button>
+        <button class="genre-btn" data-genre="orchestra">🎻 Orchestra</button>
+        <button class="genre-btn" data-genre="piano">🎹 Piano</button>
+    </div>
+</div>
 
-    <div class="fx-header">
+<!-- FX PANEL (SCENDE DALL'ALTO) -->
+<div id="fxPanel" class="fx-panel">
+    <div class="panel-header">
         <h2>Controlli Audio</h2>
-        <button id="closeFxPanel" class="close-fx-btn">✖</button>
+        <button id="closeFxPanel" class="close-panel-btn">✖</button>
     </div>
 
-    <h3>Equalizzatore Master</h3>
+    <div class="fx-section">
+        <h3>Equalizzatore Master</h3>
+        <div class="fx-control">
+            <label for="eqLow">Bassi</label>
+            <input type="range" id="eqLow" min="-12" max="12" value="0">
+        </div>
+        <div class="fx-control">
+            <label for="eqMid">Medi</label>
+            <input type="range" id="eqMid" min="-12" max="12" value="0">
+        </div>
+        <div class="fx-control">
+            <label for="eqHigh">Alti</label>
+            <input type="range" id="eqHigh" min="-12" max="12" value="0">
+        </div>
+    </div>
 
-    <label for="eqLow">Bassi</label>
-    <input type="range" id="eqLow" min="-12" max="12" value="0">
-
-    <label for="eqMid">Medi</label>
-    <input type="range" id="eqMid" min="-12" max="12" value="0">
-
-    <label for="eqHigh">Alti</label>
-    <input type="range" id="eqHigh" min="-12" max="12" value="0">
-
+    <div id="volumeControls" class="fx-section">
+        <h3>Volumi Strumenti</h3>
+        <!-- I volumi verranno aggiunti dinamicamente -->
+    </div>
 </div>
 
 <script type="module" src="main.js"></script>

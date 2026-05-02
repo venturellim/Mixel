@@ -1,8 +1,7 @@
 //
-// main.js
+// main.js - Versione VERTICALE
 // Router centrale dell’app: UI, caricamento immagine, analisi, parametri,
 // selezione genere, player, spectrum, FX panel.
-// Nessuna logica musicale. Nessuna logica di genere.
 // Tutto il resto vive nei moduli dei generi.
 //
 
@@ -17,13 +16,14 @@ import { createOrchestraEngine, waitOrchestraInstruments } from "./genres/orches
 import { createDanceEngine, waitDanceInstruments } from "./genres/dance/danceEngine.js";
 import { scoreVisualizer } from "./scoreUI.js";
 
-console.log("main.js ver. 007 loaded");
+console.log("main.js VERTICALE ver. 008 loaded");
 
 
 let currentEngine = null;
 let currentGenre = null;
 let firstStart = 1;
 let scoreUI = null;
+let currentOrientation = 'portrait';
 const miniVideo = document.querySelector('.video-mini-wrapper video'); 
 
 
@@ -45,53 +45,57 @@ window.addEventListener("DOMContentLoaded", () => {
     initGenrePanel();
     if (!scoreUI) {
         scoreUI = new scoreVisualizer();
-        }
+    }
+    resizeCanvas();
 });
 
 // -------------------------------------------------------------
-// Orientamento
+// Orientamento - VERSIONE VERTICALE
 // -------------------------------------------------------------
 function initOrientation() {
     const rotateOverlay = document.getElementById("rotateOverlay");
 
     function checkOrientation() {
-        // Controllo universale
         const isPortrait = window.matchMedia("(orientation: portrait)").matches || 
                           (window.innerHeight > window.innerWidth);
         
-        if (isPortrait) {
+        currentOrientation = isPortrait ? 'portrait' : 'landscape';
+        
+        if (!isPortrait) {
             rotateOverlay.style.display = "flex";
             rotateOverlay.classList.remove("hidden");
+            
+            if (currentEngine) {
+                currentEngine.pause();
+            }
         } else {
             rotateOverlay.style.display = "none";
             rotateOverlay.classList.add("hidden");
         }
     }
 
-    // Ascolto moderno (Android Chrome / iOS Safari 14+)
     const mql = window.matchMedia("(orientation: portrait)");
     if (mql.addEventListener) {
         mql.addEventListener("change", checkOrientation);
     } else {
-        // Vecchio metodo per Android molto datati
         window.addEventListener("orientationchange", checkOrientation);
     }
 
-    // Backup per ridimensionamenti finestra
     window.addEventListener("resize", checkOrientation);
-
     checkOrientation();
 }
 
 
 // -------------------------------------------------------------
-// File Loader + Preview
+// File Loader + Preview - VERSIONE VERTICALE
 // -------------------------------------------------------------
 function initFileLoader() {
     const fileInput = document.getElementById("fileInput");
     const previewImage = document.getElementById("previewImage");
     const heroLogoContainer = document.getElementById("heroLogoContainer");
     const btnElabora = document.getElementById("btnElabora");
+    const spectrumPanel = document.getElementById("spectrumPanel");
+    const playerPanel = document.getElementById("playerPanel");
 
     fileInput.addEventListener("change", function () {
         const file = this.files[0];
@@ -105,24 +109,18 @@ function initFileLoader() {
         img.src = URL.createObjectURL(file);
 
         img.onload = () => {
-            const containerHeight = window.innerHeight;
-
-            if (img.width > img.height) {
-                previewImage.style.height = (containerHeight * 0.45) + "px";
-                previewImage.style.width = "auto";
-            } else {
-                previewImage.style.height = (containerHeight * 0.70) + "px";
-                previewImage.style.width = "auto";
-            }
-
             previewImage.src = img.src;
             previewImage.classList.remove("hidden");
             heroLogoContainer.style.display = "none";
             btnElabora.classList.remove("hidden");
+            
+            spectrumPanel.classList.add("hidden");
+            playerPanel.classList.add("hidden");
+            
             if (miniVideo) {
-        miniVideo.pause();
-        miniVideo.currentTime = 0; 
-    }
+                miniVideo.pause();
+                miniVideo.currentTime = 0; 
+            }
 
             resetAppState();
         };
@@ -130,7 +128,7 @@ function initFileLoader() {
 }
 
 // -------------------------------------------------------------
-// Pannello generi
+// Pannello generi - VERSIONE VERTICALE (scende dall'alto)
 // -------------------------------------------------------------
 function initGenrePanel() {
     const btnElabora = document.getElementById("btnElabora");
@@ -138,16 +136,17 @@ function initGenrePanel() {
     const closeGenrePanel = document.getElementById("closeGenrePanel");
 
     btnElabora.addEventListener("click", () => {
-    closeMixelUI();
-    miniVideo?.play().catch(e => console.log("Autoplay video bloccato:", e));
-    requestWakeLock()
-    if ( firstStart !== 1 ) {
-    resetAudio();
-    firstStart = 0;
-    }
-    genrePanel.classList.add("show");
-
-genrePanel.classList.remove("hidden");
+        closeMixelUI();
+        miniVideo?.play().catch(e => console.log("Autoplay video bloccato:", e));
+        requestWakeLock();
+        
+        if (firstStart !== 1) {
+            resetAudio();
+            firstStart = 0;
+        }
+        
+        genrePanel.classList.add("show");
+        genrePanel.classList.remove("hidden");
     });
 
     closeGenrePanel.addEventListener("click", () => {
@@ -167,74 +166,76 @@ genrePanel.classList.remove("hidden");
 // -------------------------------------------------------------
 async function selectGenre(genre) {
     currentGenre = genre;
-    // Comunica il genere allo spartito
     if (scoreUI) scoreUI.setTheme(genre);
 
     const previewImage = document.getElementById("previewImage");
 
-    // 1) Analisi immagine
-        const analysis = await analyzeImage(previewImage);
-
-    // 2) Parametri musicali astratti
+    const analysis = await analyzeImage(previewImage);
     const params = photoToMusicParams(analysis);
 
-    // 3) Creazione engine del genere
     if (genre === "dance") {
-    
-   if ( firstStart === 1 ) {
-   await waitDanceInstruments();   // <-- strumenti pronti
-   }
+        if (firstStart === 1) {
+            await waitDanceInstruments();
+        }
         currentEngine = await createDanceEngine(params, scoreUI);
- 
     }
     if (genre === "metal") {
-    
-   if ( firstStart === 1 ) {
-   await waitMetalInstruments();   // <-- strumenti pronti
-   }
+        if (firstStart === 1) {
+            await waitMetalInstruments();
+        }
         currentEngine = await createMetalEngine(params, scoreUI);
- 
     }
     if (genre === "orchestra") {
-    if ( firstStart === 1 ) {
-   await waitOrchestraInstruments();   // <-- strumenti pronti
-   }
+        if (firstStart === 1) {
+            await waitOrchestraInstruments();
+        }
         currentEngine = await createOrchestraEngine(params, scoreUI);
- 
     }
-if (genre === "piano") {
-if ( firstStart === 1 ) {
-    await waitPianoInstruments(); // Carica i campioni se non presenti
+    if (genre === "piano") {
+        if (firstStart === 1) {
+            await waitPianoInstruments();
+        }
+        currentEngine = await createPianoEngine(params, scoreUI);
     }
-    currentEngine = await createPianoEngine(params, scoreUI); // Passa entrambi
-}
 
     if (!currentEngine) {
         console.error("❌ Engine non creato!");
         return;
     }
 
-    // 4) UI del genere
     initPlayerUI();
     drawSpectrum();
     initFxPanel(currentEngine.mixerData);
 
     document.getElementById("genrePanel").classList.remove("show");
+    setTimeout(() => document.getElementById("genrePanel").classList.add("hidden"), 400);
 }
 
 // -------------------------------------------------------------
-// Player UI
+// Player UI - VERSIONE VERTICALE
 // -------------------------------------------------------------
 function initPlayerUI() {
-    openMixelUI();
+    const spectrumPanel = document.getElementById("spectrumPanel");
+    const playerPanel = document.getElementById("playerPanel");
+    const btnSpartito = document.getElementById("btnSpartito");
+    const previewImage = document.getElementById("previewImage");
+    
+    spectrumPanel.classList.remove("hidden");
+    playerPanel.classList.remove("hidden");
+    btnSpartito.classList.remove("hidden");
+    
+    setTimeout(() => {
+        previewImage.classList.add("moved-up");
+        resizeCanvas();
+    }, 100);
 
     const playBtn = document.getElementById("btnPlay");
     const pauseBtn = document.getElementById("btnPause");
     const stopBtn = document.getElementById("btnStop");
     const seekBar = document.getElementById("seekBar");
-    const btnSpartito = document.getElementById("btnSpartito");
 
     function formatTime(sec) {
+        if (isNaN(sec)) return "0:00";
         const m = Math.floor(sec / 60);
         const s = Math.floor(sec % 60).toString().padStart(2, "0");
         return `${m}:${s}`;
@@ -250,42 +251,33 @@ function initPlayerUI() {
         overlay.style.display = "none";
         
         currentEngine.play();
-        btnSpartito.classList.remove("hidden");
-            btnSpartito.classList.add("show-flex");
     };
 
     pauseBtn.onclick = () => currentEngine?.pause();
-    // --- PULSANTE STOP ---
-// --- All'interno di initPlayerUI ---
-
-// Gestione STOP
-stopBtn.onclick = () => {
-    currentEngine?.stop();
-    // Usiamo scoreUI globale per sicurezza
-    if (scoreUI) scoreUI.hide();
     
-    btnSpartito.classList.add("hidden");
-    btnSpartito.classList.remove("show-flex");
-};
-
-// Gestione SPARTITO (Indipendente e pulito)
-btnSpartito.onclick = () => {
-    console.log("Pulsante spartito cliccato"); // Debug per vedere se risponde
-    if (scoreUI) {
-        scoreUI.show();
-    } else {
-        console.error("scoreUI non inizializzato!");
-    }
-};
-
+    stopBtn.onclick = () => {
+        currentEngine?.stop();
+        if (scoreUI) scoreUI.hide();
+    };
+    
+    btnSpartito.onclick = () => {
+        if (scoreUI) {
+            scoreUI.show();
+        } else {
+            console.error("scoreUI non inizializzato!");
+        }
+    };
 
     const currentTimeEl = document.getElementById("currentTime");
     const totalTimeEl = document.getElementById("totalTime");
-    totalTimeEl.textContent = formatTime(currentEngine.totalDuration);
+    
+    if (currentEngine && currentEngine.totalDuration) {
+        totalTimeEl.textContent = formatTime(currentEngine.totalDuration);
+    }
 
     Tone.Transport.scheduleRepeat(() => {
         const now = Tone.Transport.seconds;
-        const duration = currentEngine.totalDuration;
+        const duration = currentEngine?.totalDuration || 1;
         seekBar.value = (now / duration) * 100;
         currentTimeEl.textContent = formatTime(now);
     }, 0.1);
@@ -297,90 +289,95 @@ btnSpartito.onclick = () => {
 }
 
 // -------------------------------------------------------------
-// Spectrum Analyzer
+// Spectrum Analyzer - OTTIMIZZATO PER VERTICALE
 // -------------------------------------------------------------
 const fft = new Tone.Analyser("fft", 256);
 Tone.Destination.connect(fft);
 
 const canvas = document.getElementById("spectrumCanvas");
-const ctx = canvas.getContext("2d");
-const W = canvas.width;
-const H = canvas.height;
+let ctx = null;
 let peaks = new Array(256).fill(0);
+let animationId = null;
 
-function drawSpectrum() {
-    requestAnimationFrame(drawSpectrum);
-    
-    // Recuperiamo le dimensioni REALI del canvas in quel momento
-    const rect = canvas.getBoundingClientRect();
-    
-    // Se le dimensioni interne del canvas non corrispondono a quelle CSS, le aggiorniamo
-    if (canvas.width !== canvas.clientWidth || canvas.height !== canvas.clientHeight) {
-        canvas.width = canvas.clientWidth;
-        canvas.height = canvas.clientHeight;
-    }
-
-    const W = canvas.width;
-    const H = canvas.height;
-    
-    const values = fft.getValue();
-    ctx.clearRect(0, 0, W, H);
-
-    // Se non ci sono dati o il pannello è chiuso, usciamo
-    if (W === 0) return;
-
-    const barWidth = W / values.length;
-
-    for (let i = 0; i < values.length; i++) {
-        const v = values[i];
-        
-        // Normalizzazione: -140 è il silenzio quasi totale, 0 è il massimo.
-        // Usiamo 120 per renderlo un po' più "reattivo" visivamente
-        const magnitude = (v + 120) / 120; 
-        const barHeight = Math.max(0, magnitude * H);
-
-        // Colori: manteniamo i tuoi HSL ma li rendiamo più vibranti
-        const startHue = 320; // Viola/Fucsia
-        const endHue = 220;   // Blu/Azzurro
-        const hue = startHue + (endHue - startHue) * magnitude;
-        ctx.fillStyle = `hsl(${hue}, 100%, 60%)`;
-
-        const x = i * barWidth;
-        const y = H - barHeight;
-        
-        // Disegniamo la barra (togliamo 1 pixel per distanziarle bene)
-        ctx.fillRect(x, y, Math.max(1, barWidth - 1), barHeight);
-
-        // Gestione dei PICCHI (Peak Meter)
-        if (barHeight > peaks[i]) {
-            peaks[i] = barHeight;
-        } else {
-            // Caduta fluida dei picchi
-            peaks[i] *= 0.97; 
-        }
-
-        ctx.fillStyle = "#FFFFFF";
-        const peakY = H - peaks[i];
-        // Disegna il trattino del picco leggermente sopra la barra
-        ctx.fillRect(x, peakY - 2, Math.max(1, barWidth - 1), 2);
+function resizeCanvas() {
+    if (!canvas) return;
+    const container = canvas.parentElement;
+    if (container && container.clientWidth > 0 && container.clientHeight > 0) {
+        canvas.width = container.clientWidth;
+        canvas.height = container.clientHeight;
+        ctx = canvas.getContext("2d");
     }
 }
 
-// -------------------------------------------------------------
-// FX Panel
-// -------------------------------------------------------------
+function drawSpectrum() {
+    if (animationId) {
+        cancelAnimationFrame(animationId);
+    }
+    
+    function draw() {
+        animationId = requestAnimationFrame(draw);
+        
+        if (!canvas || !ctx) {
+            if (canvas) ctx = canvas.getContext("2d");
+            if (!ctx) return;
+        }
+        
+        const rect = canvas.getBoundingClientRect();
+        if (canvas.width !== rect.width || canvas.height !== rect.height) {
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            ctx = canvas.getContext("2d");
+        }
+        
+        const W = canvas.width;
+        const H = canvas.height;
+        
+        if (W === 0 || H === 0) return;
+        
+        const values = fft.getValue();
+        ctx.clearRect(0, 0, W, H);
+        
+        const barWidth = W / values.length;
+        
+        for (let i = 0; i < values.length; i++) {
+            const v = values[i];
+            const magnitude = Math.max(0, Math.min(1, (v + 120) / 120));
+            const barHeight = magnitude * H;
+            
+            const startHue = 320;
+            const endHue = 220;
+            const hue = startHue + (endHue - startHue) * magnitude;
+            ctx.fillStyle = `hsl(${hue}, 100%, 60%)`;
+            
+            const x = i * barWidth;
+            const y = H - barHeight;
+            ctx.fillRect(x, y, Math.max(1, barWidth - 1), barHeight);
+            
+            if (barHeight > peaks[i]) {
+                peaks[i] = barHeight;
+            } else {
+                peaks[i] *= 0.97;
+            }
+            
+            ctx.fillStyle = "#FFFFFF";
+            const peakY = H - peaks[i];
+            ctx.fillRect(x, peakY - 2, Math.max(1, barWidth - 1), 2);
+        }
+    }
+    
+    draw();
+}
 
+// -------------------------------------------------------------
+// FX Panel - VERSIONE VERTICALE (scende dall'alto)
+// -------------------------------------------------------------
 function initFxPanel(mixerData) {
     const fxPanel = document.getElementById("fxPanel");
     const btnFxPanel = document.getElementById("btnFxPanel");
     const closeFxPanel = document.getElementById("closeFxPanel");
 
-    btnFxPanel.onclick = () => fxPanel.classList.add("open");
-    closeFxPanel.onclick = () => fxPanel.classList.remove("open");
-
-    // ============================================================
-    // MASTER EQ CONTROLS
-    // ============================================================
+    btnFxPanel.onclick = () => fxPanel.classList.add("show");
+    closeFxPanel.onclick = () => fxPanel.classList.remove("show");
 
     const eqLow = document.getElementById("eqLow");
     const eqMid = document.getElementById("eqMid");
@@ -398,21 +395,14 @@ function initFxPanel(mixerData) {
         masterEQ.high.value = Tone.dbToGain(Number(e.target.value));
     });
 
-    // ============================================================
-    // VOLUME CONTROLS (DINAMICI)
-    // ============================================================
-
-    const volumeContainer = document.createElement("div");
-    volumeContainer.classList.add("volume-controls");
-
-    const title = document.createElement("h3");
-    title.textContent = "Volumi Strumenti";
-    volumeContainer.appendChild(title);
+    const volumeContainer = document.getElementById("volumeControls");
+    if (!volumeContainer) return;
+    
+    volumeContainer.innerHTML = "";
 
     Object.entries(mixerData.volumeMap).forEach(([busName, label]) => {
-
         const row = document.createElement("div");
-        row.classList.add("fx-row");
+        row.classList.add("volume-row");
 
         const lbl = document.createElement("label");
         lbl.textContent = label;
@@ -428,11 +418,8 @@ function initFxPanel(mixerData) {
             mixerData.instruments.setVolume(busName, Number(e.target.value));
         });
 
-        // --- SOLO ---
         const btnSolo = document.createElement("button");
         btnSolo.textContent = "Solo";
-        btnSolo.classList.add("fx-btn");
-
         btnSolo.addEventListener("click", () => {
             Object.keys(mixerData.volumeMap).forEach(otherBus => {
                 const otherSlider = volumeContainer.querySelector(`input[data-bus="${otherBus}"]`);
@@ -446,11 +433,8 @@ function initFxPanel(mixerData) {
             });
         });
 
-        // --- MUTE ---
         const btnMute = document.createElement("button");
         btnMute.textContent = "Mute";
-        btnMute.classList.add("fx-btn");
-
         btnMute.addEventListener("click", () => {
             mixerData.instruments.setVolume(busName, -99);
             slider.value = -24;
@@ -460,21 +444,16 @@ function initFxPanel(mixerData) {
         row.appendChild(slider);
         row.appendChild(btnSolo);
         row.appendChild(btnMute);
-
         volumeContainer.appendChild(row);
     });
-
-    fxPanel.appendChild(volumeContainer);
 }
 
-
-
-// reset audio
-
+// -------------------------------------------------------------
+// Reset audio
+// -------------------------------------------------------------
 async function resetAudio() {
     const ctx = Tone.getContext();
 
-    // Se il contesto non è mai stato avviato, NON chiudere nulla
     if (ctx.state === "suspended") {
         console.log("AudioContext non avviato: skip reset");
         return;
@@ -492,15 +471,12 @@ async function resetAudio() {
         console.warn("Errore durante la chiusura AudioContext:", e);
     }
 
-    // Riattiva per iOS
     await Tone.start();
     console.log("AudioContext riavviato");
 }
 
-
-
 // -------------------------------------------------------------
-// Reset App
+// Reset App - VERSIONE VERTICALE
 // -------------------------------------------------------------
 function resetAppState() {
     currentEngine?.stop();
@@ -512,44 +488,38 @@ function resetAppState() {
         miniVideo.currentTime = 0; 
     }
     releaseWakeLock();
-    if ( firstStart !== 1 ) {
-    resetAudio();
-    firstStart = 0;
+    if (firstStart !== 1) {
+        resetAudio();
+        firstStart = 0;
     }
 }
 
 // -------------------------------------------------------------
-// UI animazioni generiche (non legate al metal)
+// UI animazioni - VERSIONE VERTICALE
 // -------------------------------------------------------------
-function openMixelUI() {
-    const player = document.getElementById("playerPanel");
-    const preview = document.getElementById("previewImage");
-    const spectrum = document.getElementById("spectrumPanel");
-
-    preview.classList.add("shift-left");
-    player.classList.add("open");
-
-    setTimeout(() => {
-        spectrum.classList.add("active");
-    }, 250);
-}
-
 function closeMixelUI() {
-    document.getElementById("spectrumPanel").classList.remove("active");
-    document.getElementById("previewImage").classList.remove("shift-left");
-    document.getElementById("playerPanel").classList.remove("open");
+    const spectrumPanel = document.getElementById("spectrumPanel");
+    const playerPanel = document.getElementById("playerPanel");
+    const previewImage = document.getElementById("previewImage");
+    const btnSpartito = document.getElementById("btnSpartito");
+    
+    if (spectrumPanel) spectrumPanel.classList.add("hidden");
+    if (playerPanel) playerPanel.classList.add("hidden");
+    if (btnSpartito) btnSpartito.classList.add("hidden");
+    if (previewImage) previewImage.classList.remove("moved-up");
 }
 
+// -------------------------------------------------------------
+// Wake Lock per schermo sempre acceso
+// -------------------------------------------------------------
 let wakeLock = null;
 
 async function requestWakeLock() {
     try {
-        // Questa è l'API moderna per tenere lo schermo acceso
         if ('wakeLock' in navigator) {
             wakeLock = await navigator.wakeLock.request('screen');
             console.log("✅ Schermo bloccato: non si spegnerà.");
             
-            // Se l'utente minimizza il browser e poi torna, dobbiamo riattivarlo
             wakeLock.addEventListener('release', () => {
                 console.log("Wake Lock rilasciato.");
             });
@@ -567,3 +537,43 @@ function releaseWakeLock() {
     }
 }
 
+// -------------------------------------------------------------
+// Event listener per resize (canvas responsive)
+// -------------------------------------------------------------
+window.addEventListener('resize', () => {
+    resizeCanvas();
+    if (currentEngine) {
+        const previewImage = document.getElementById("previewImage");
+        if (previewImage && !previewImage.classList.contains('hidden')) {
+            previewImage.classList.add("moved-up");
+        }
+    }
+});
+
+// Observer per ridimensionare canvas quando diventa visibile
+const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+        if (mutation.target.id === 'spectrumPanel' && 
+            mutation.type === 'attributes' && 
+            mutation.attributeName === 'class') {
+            if (!mutation.target.classList.contains('hidden')) {
+                setTimeout(resizeCanvas, 100);
+            }
+        }
+    });
+});
+
+const spectrumPanelElement = document.getElementById("spectrumPanel");
+if (spectrumPanelElement) {
+    observer.observe(spectrumPanelElement, { attributes: true });
+}
+
+// -------------------------------------------------------------
+// Pulisci animation frame alla chiusura
+// -------------------------------------------------------------
+window.addEventListener('beforeunload', () => {
+    if (animationId) {
+        cancelAnimationFrame(animationId);
+    }
+    releaseWakeLock();
+});
