@@ -1,6 +1,6 @@
 
         /* ==========================================
-   1. RESET E IMPOSTAZIONI DI BASE
+   STILE VERSIONE VERTICALE
    ========================================== */
 * {
     margin: 0;
@@ -23,9 +23,7 @@ body {
     width: 100%;
 }
 
-/* ==========================================
-   2. HEADER SUPERIORE
-   ========================================== */
+/* HEADER SUPERIORE */
 .app-header {
     position: sticky;
     top: 0;
@@ -97,9 +95,7 @@ body {
     box-shadow: 0 5px 20px rgba(245,87,108,0.4);
 }
 
-/* ==========================================
-   3. CONTENUTO PRINCIPALE
-   ========================================== */
+/* CONTENUTO PRINCIPALE */
 .content {
     flex: 1;
     padding: 20px;
@@ -131,7 +127,7 @@ body {
     object-fit: cover;
 }
 
-/* Hero Logo iniziale */
+/* Hero Logo */
 .hero-container {
     flex: 1;
     display: flex;
@@ -160,7 +156,7 @@ body {
     50% { transform: scale(1.05); opacity: 0.9; }
 }
 
-/* Immagine Preview */
+/* Preview Image */
 #previewImage {
     width: 85%;
     max-width: 400px;
@@ -247,40 +243,7 @@ body {
     color: #000 !important;
 }
 
-.spartito-btn:hover {
-    background: #ffcc00 !important;
-}
-
-.player-seek {
-    width: 100%;
-}
-
-#seekBar {
-    width: 100%;
-    height: 6px;
-    border-radius: 3px;
-    background: #333;
-    -webkit-appearance: none;
-}
-
-#seekBar::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: #00ff00;
-    cursor: pointer;
-}
-
-.player-time {
-    text-align: center;
-    font-size: 12px;
-    opacity: 0.7;
-}
-
-/* ==========================================
-   4. PANNELLI CHE SCENDONO DALL'ALTO
-   ========================================== */
+/* Panels che scendono dall'alto */
 .genre-panel, .fx-panel {
     position: fixed;
     top: -100%;
@@ -295,7 +258,6 @@ body {
     z-index: 1000;
     max-height: 80vh;
     overflow-y: auto;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
 
 .genre-panel.show, .fx-panel.show {
@@ -320,12 +282,6 @@ body {
     color: white;
     font-size: 18px;
     cursor: pointer;
-    transition: all 0.2s;
-}
-
-.close-panel-btn:hover {
-    background: #ff4444;
-    transform: rotate(90deg);
 }
 
 .genre-buttons {
@@ -343,53 +299,9 @@ body {
     font-size: 16px;
     font-weight: bold;
     cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.genre-btn:hover {
-    transform: translateX(5px);
-    box-shadow: 0 5px 20px rgba(102,126,234,0.4);
-}
-
-/* FX Panel Controls */
-.fx-section {
-    margin-bottom: 25px;
-}
-
-.fx-section h3 {
-    margin-bottom: 15px;
-    font-size: 16px;
-    color: #00ff00;
-}
-
-.fx-control {
-    margin-bottom: 15px;
-}
-
-.fx-control label {
-    display: block;
-    margin-bottom: 8px;
-    font-size: 13px;
-    opacity: 0.8;
-}
-
-.fx-control input[type="range"] {
-    width: 100%;
-    height: 6px;
-    border-radius: 3px;
-    background: #333;
-    -webkit-appearance: none;
-}
-
-.fx-control input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: #00ff00;
-    cursor: pointer;
-}
-
+/* Volume controls */
 .volume-row {
     display: flex;
     align-items: center;
@@ -405,120 +317,22 @@ body {
     font-size: 12px;
 }
 
-.volume-row input[type="range"] {
+.volume-row input {
     flex: 1;
 }
 
-.volume-row button {
-    padding: 5px 10px;
-    font-size: 11px;
-    background: rgba(255,255,255,0.1);
-    border: none;
-    border-radius: 5px;
-    color: white;
-    cursor: pointer;
-}
-
-.volume-row button:hover {
-    background: #00ff00;
-    color: #000;
-}
-
-/* ==========================================
-   5. OVERLAY ORIENTAMENTO
-   ========================================== */
-.rotate-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.95);
-    z-index: 9999;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    flex-direction: column;
-}
-
-.rotate-overlay.hidden {
-    display: none;
-}
-
-.rotate-icon {
-    font-size: 60px;
-    margin-bottom: 20px;
-    animation: rotate 1.5s infinite;
-}
-
-@keyframes rotate {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(90deg); }
-}
-
-/* ==========================================
-   6. SPARTITO STYLE
-   ========================================== */
-#scoreCanvas {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: #fdfdf5;
-    z-index: 1100;
-    display: none;
-    cursor: pointer;
-}
-
-/* ==========================================
-   7. LOADING OVERLAY
-   ========================================== */
-#loadingOverlay {
-    z-index: 10000;
-}
-
-/* ==========================================
-   8. RESPONSIVE
-   ========================================== */
+/* Responsive */
 @media (max-width: 600px) {
     .app-header {
         padding: 10px 15px;
     }
-    
     .upload-btn, .elabora-btn {
         padding: 8px 16px;
         font-size: 12px;
     }
-    
     .logo-box {
         width: 40px;
         height: 40px;
     }
-    
-    .hero-logo-box {
-        width: 150px;
-        height: 150px;
-    }
-    
-    .player-controls button {
-        padding: 8px 14px;
-        font-size: 12px;
-    }
-}
-
-/* Animazioni */
-@keyframes slideDown {
-    from {
-        opacity: 0;
-        transform: translateY(-30px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
 }
 
