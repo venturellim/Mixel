@@ -23,7 +23,6 @@ let currentEngine = null;
 let currentGenre = null;
 let firstStart = 1;
 let scoreUI = null;
-let currentOrientation = 'portrait';
 const miniVideo = document.querySelector('.video-mini-wrapper video'); 
 
 
@@ -47,7 +46,6 @@ window.addEventListener("DOMContentLoaded", () => {
     }
     resizeCanvas();
 });
-
 
 // -------------------------------------------------------------
 // File Loader + Preview - VERSIONE VERTICALE
