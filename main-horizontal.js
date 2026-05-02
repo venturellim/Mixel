@@ -1,0 +1,569 @@
+//
+// main.js
+// Router centrale dell’app: UI, caricamento immagine, analisi, parametri,
+// selezione genere, player, spectrum, FX panel.
+// Nessuna logica musicale. Nessuna logica di genere.
+// Tutto il resto vive nei moduli dei generi.
+//
+
+import * as Tone from "https://esm.sh/tone";
+
+import { masterEQ, } from "./common.js";
+import { analyzeImage } from "./imageAnalysis.js";
+import { photoToMusicParams } from "./photoToMusicParams.js";
+import { createPianoEngine, waitPianoInstruments } from "./genres/piano/pianoEngine.js";
+import { createMetalEngine, waitMetalInstruments } from "./genres/metal/metalEngine.js";
+import { createOrchestraEngine, waitOrchestraInstruments } from "./genres/orchestra/orchestraEngine.js";
+import { createDanceEngine, waitDanceInstruments } from "./genres/dance/danceEngine.js";
+import { scoreVisualizer } from "./scoreUI.js";
+
+console.log("main.js ver. 007 loaded");
+
+
+let currentEngine = null;
+let currentGenre = null;
+let firstStart = 1;
+let scoreUI = null;
+const miniVideo = document.querySelector('.video-mini-wrapper video'); 
+
+
+// -------------------------------------------------------------
+// Error handler globale
+// -------------------------------------------------------------
+window.onerror = function (msg, url, line, col, error) {
+    console.log("🔥 ERRORE:", msg, " @", url, ":", line, ":", col);
+    console.log("STACK:", error?.stack);
+};
+
+
+// -------------------------------------------------------------
+// Inizializzazione UI
+// -------------------------------------------------------------
+window.addEventListener("DOMContentLoaded", () => {
+    initOrientation();
+    initFileLoader();
+    initGenrePanel();
+    if (!scoreUI) {
+        scoreUI = new scoreVisualizer();
+        }
+});
+
+// -------------------------------------------------------------
+// Orientamento
+// -------------------------------------------------------------
+function initOrientation() {
+    const rotateOverlay = document.getElementById("rotateOverlay");
+
+    function checkOrientation() {
+        // Controllo universale
+        const isPortrait = window.matchMedia("(orientation: portrait)").matches || 
+                          (window.innerHeight > window.innerWidth);
+        
+        if (isPortrait) {
+            rotateOverlay.style.display = "flex";
+            rotateOverlay.classList.remove("hidden");
+        } else {
+            rotateOverlay.style.display = "none";
+            rotateOverlay.classList.add("hidden");
+        }
+    }
+
+    // Ascolto moderno (Android Chrome / iOS Safari 14+)
+    const mql = window.matchMedia("(orientation: portrait)");
+    if (mql.addEventListener) {
+        mql.addEventListener("change", checkOrientation);
+    } else {
+        // Vecchio metodo per Android molto datati
+        window.addEventListener("orientationchange", checkOrientation);
+    }
+
+    // Backup per ridimensionamenti finestra
+    window.addEventListener("resize", checkOrientation);
+
+    checkOrientation();
+}
+
+
+// -------------------------------------------------------------
+// File Loader + Preview
+// -------------------------------------------------------------
+function initFileLoader() {
+    const fileInput = document.getElementById("fileInput");
+    const previewImage = document.getElementById("previewImage");
+    const heroLogoContainer = document.getElementById("heroLogoContainer");
+    const btnElabora = document.getElementById("btnElabora");
+
+    fileInput.addEventListener("change", function () {
+        const file = this.files[0];
+        if (!file) return;
+        if (!file.type.startsWith("image/")) {
+            alert("Carica solo immagini.");
+            return;
+        }
+
+        const img = new Image();
+        img.src = URL.createObjectURL(file);
+
+        img.onload = () => {
+            const containerHeight = window.innerHeight;
+
+            if (img.width > img.height) {
+                previewImage.style.height = (containerHeight * 0.45) + "px";
+                previewImage.style.width = "auto";
+            } else {
+                previewImage.style.height = (containerHeight * 0.70) + "px";
+                previewImage.style.width = "auto";
+            }
+
+            previewImage.src = img.src;
+            previewImage.classList.remove("hidden");
+            heroLogoContainer.style.display = "none";
+            btnElabora.classList.remove("hidden");
+            if (miniVideo) {
+        miniVideo.pause();
+        miniVideo.currentTime = 0; 
+    }
+
+            resetAppState();
+        };
+    });
+}
+
+// -------------------------------------------------------------
+// Pannello generi
+// -------------------------------------------------------------
+function initGenrePanel() {
+    const btnElabora = document.getElementById("btnElabora");
+    const genrePanel = document.getElementById("genrePanel");
+    const closeGenrePanel = document.getElementById("closeGenrePanel");
+
+    btnElabora.addEventListener("click", () => {
+    closeMixelUI();
+    miniVideo?.play().catch(e => console.log("Autoplay video bloccato:", e));
+    requestWakeLock()
+    if ( firstStart !== 1 ) {
+    resetAudio();
+    firstStart = 0;
+    }
+    genrePanel.classList.add("show");
+
+genrePanel.classList.remove("hidden");
+    });
+
+    closeGenrePanel.addEventListener("click", () => {
+        genrePanel.classList.remove("show");
+        setTimeout(() => genrePanel.classList.add("hidden"), 400);
+    });
+
+    document.querySelectorAll(".genre-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            selectGenre(btn.dataset.genre);
+        });
+    });
+}
+
+// -------------------------------------------------------------
+// Selezione genere
+// -------------------------------------------------------------
+async function selectGenre(genre) {
+    currentGenre = genre;
+    // Comunica il genere allo spartito
+    if (scoreUI) scoreUI.setTheme(genre);
+
+    const previewImage = document.getElementById("previewImage");
+
+    // 1) Analisi immagine
+        const analysis = await analyzeImage(previewImage);
+
+    // 2) Parametri musicali astratti
+    const params = photoToMusicParams(analysis);
+
+    // 3) Creazione engine del genere
+    if (genre === "dance") {
+    
+   if ( firstStart === 1 ) {
+   await waitDanceInstruments();   // <-- strumenti pronti
+   }
+        currentEngine = await createDanceEngine(params, scoreUI);
+ 
+    }
+    if (genre === "metal") {
+    
+   if ( firstStart === 1 ) {
+   await waitMetalInstruments();   // <-- strumenti pronti
+   }
+        currentEngine = await createMetalEngine(params, scoreUI);
+ 
+    }
+    if (genre === "orchestra") {
+    if ( firstStart === 1 ) {
+   await waitOrchestraInstruments();   // <-- strumenti pronti
+   }
+        currentEngine = await createOrchestraEngine(params, scoreUI);
+ 
+    }
+if (genre === "piano") {
+if ( firstStart === 1 ) {
+    await waitPianoInstruments(); // Carica i campioni se non presenti
+    }
+    currentEngine = await createPianoEngine(params, scoreUI); // Passa entrambi
+}
+
+    if (!currentEngine) {
+        console.error("❌ Engine non creato!");
+        return;
+    }
+
+    // 4) UI del genere
+    initPlayerUI();
+    drawSpectrum();
+    initFxPanel(currentEngine.mixerData);
+
+    document.getElementById("genrePanel").classList.remove("show");
+}
+
+// -------------------------------------------------------------
+// Player UI
+// -------------------------------------------------------------
+function initPlayerUI() {
+    openMixelUI();
+
+    const playBtn = document.getElementById("btnPlay");
+    const pauseBtn = document.getElementById("btnPause");
+    const stopBtn = document.getElementById("btnStop");
+    const seekBar = document.getElementById("seekBar");
+    const btnSpartito = document.getElementById("btnSpartito");
+
+    function formatTime(sec) {
+        const m = Math.floor(sec / 60);
+        const s = Math.floor(sec % 60).toString().padStart(2, "0");
+        return `${m}:${s}`;
+    }
+
+    playBtn.onclick = async () => {
+        const overlay = document.getElementById("loadingOverlay");
+        overlay.style.display = "flex";
+
+        await Tone.start();
+        await Tone.loaded();
+
+        overlay.style.display = "none";
+        
+        currentEngine.play();
+        btnSpartito.classList.remove("hidden");
+            btnSpartito.classList.add("show-flex");
+    };
+
+    pauseBtn.onclick = () => currentEngine?.pause();
+    // --- PULSANTE STOP ---
+// --- All'interno di initPlayerUI ---
+
+// Gestione STOP
+stopBtn.onclick = () => {
+    currentEngine?.stop();
+    // Usiamo scoreUI globale per sicurezza
+    if (scoreUI) scoreUI.hide();
+    
+    btnSpartito.classList.add("hidden");
+    btnSpartito.classList.remove("show-flex");
+};
+
+// Gestione SPARTITO (Indipendente e pulito)
+btnSpartito.onclick = () => {
+    console.log("Pulsante spartito cliccato"); // Debug per vedere se risponde
+    if (scoreUI) {
+        scoreUI.show();
+    } else {
+        console.error("scoreUI non inizializzato!");
+    }
+};
+
+
+    const currentTimeEl = document.getElementById("currentTime");
+    const totalTimeEl = document.getElementById("totalTime");
+    totalTimeEl.textContent = formatTime(currentEngine.totalDuration);
+
+    Tone.Transport.scheduleRepeat(() => {
+        const now = Tone.Transport.seconds;
+        const duration = currentEngine.totalDuration;
+        seekBar.value = (now / duration) * 100;
+        currentTimeEl.textContent = formatTime(now);
+    }, 0.1);
+
+    seekBar.addEventListener("input", () => {
+        const seconds = (seekBar.value / 100) * currentEngine.totalDuration;
+        currentEngine.seek(seconds);
+    });
+}
+
+// -------------------------------------------------------------
+// Spectrum Analyzer
+// -------------------------------------------------------------
+const fft = new Tone.Analyser("fft", 256);
+Tone.Destination.connect(fft);
+
+const canvas = document.getElementById("spectrumCanvas");
+const ctx = canvas.getContext("2d");
+const W = canvas.width;
+const H = canvas.height;
+let peaks = new Array(256).fill(0);
+
+function drawSpectrum() {
+    requestAnimationFrame(drawSpectrum);
+    
+    // Recuperiamo le dimensioni REALI del canvas in quel momento
+    const rect = canvas.getBoundingClientRect();
+    
+    // Se le dimensioni interne del canvas non corrispondono a quelle CSS, le aggiorniamo
+    if (canvas.width !== canvas.clientWidth || canvas.height !== canvas.clientHeight) {
+        canvas.width = canvas.clientWidth;
+        canvas.height = canvas.clientHeight;
+    }
+
+    const W = canvas.width;
+    const H = canvas.height;
+    
+    const values = fft.getValue();
+    ctx.clearRect(0, 0, W, H);
+
+    // Se non ci sono dati o il pannello è chiuso, usciamo
+    if (W === 0) return;
+
+    const barWidth = W / values.length;
+
+    for (let i = 0; i < values.length; i++) {
+        const v = values[i];
+        
+        // Normalizzazione: -140 è il silenzio quasi totale, 0 è il massimo.
+        // Usiamo 120 per renderlo un po' più "reattivo" visivamente
+        const magnitude = (v + 120) / 120; 
+        const barHeight = Math.max(0, magnitude * H);
+
+        // Colori: manteniamo i tuoi HSL ma li rendiamo più vibranti
+        const startHue = 320; // Viola/Fucsia
+        const endHue = 220;   // Blu/Azzurro
+        const hue = startHue + (endHue - startHue) * magnitude;
+        ctx.fillStyle = `hsl(${hue}, 100%, 60%)`;
+
+        const x = i * barWidth;
+        const y = H - barHeight;
+        
+        // Disegniamo la barra (togliamo 1 pixel per distanziarle bene)
+        ctx.fillRect(x, y, Math.max(1, barWidth - 1), barHeight);
+
+        // Gestione dei PICCHI (Peak Meter)
+        if (barHeight > peaks[i]) {
+            peaks[i] = barHeight;
+        } else {
+            // Caduta fluida dei picchi
+            peaks[i] *= 0.97; 
+        }
+
+        ctx.fillStyle = "#FFFFFF";
+        const peakY = H - peaks[i];
+        // Disegna il trattino del picco leggermente sopra la barra
+        ctx.fillRect(x, peakY - 2, Math.max(1, barWidth - 1), 2);
+    }
+}
+
+// -------------------------------------------------------------
+// FX Panel
+// -------------------------------------------------------------
+
+function initFxPanel(mixerData) {
+    const fxPanel = document.getElementById("fxPanel");
+    const btnFxPanel = document.getElementById("btnFxPanel");
+    const closeFxPanel = document.getElementById("closeFxPanel");
+
+    btnFxPanel.onclick = () => fxPanel.classList.add("open");
+    closeFxPanel.onclick = () => fxPanel.classList.remove("open");
+
+    // ============================================================
+    // MASTER EQ CONTROLS
+    // ============================================================
+
+    const eqLow = document.getElementById("eqLow");
+    const eqMid = document.getElementById("eqMid");
+    const eqHigh = document.getElementById("eqHigh");
+
+    eqLow.addEventListener("input", e => {
+        masterEQ.low.value = Tone.dbToGain(Number(e.target.value));
+    });
+
+    eqMid.addEventListener("input", e => {
+        masterEQ.mid.value = Tone.dbToGain(Number(e.target.value));
+    });
+
+    eqHigh.addEventListener("input", e => {
+        masterEQ.high.value = Tone.dbToGain(Number(e.target.value));
+    });
+
+    // ============================================================
+    // VOLUME CONTROLS (DINAMICI)
+    // ============================================================
+
+    const volumeContainer = document.createElement("div");
+    volumeContainer.classList.add("volume-controls");
+
+    const title = document.createElement("h3");
+    title.textContent = "Volumi Strumenti";
+    volumeContainer.appendChild(title);
+
+    Object.entries(mixerData.volumeMap).forEach(([busName, label]) => {
+
+        const row = document.createElement("div");
+        row.classList.add("fx-row");
+
+        const lbl = document.createElement("label");
+        lbl.textContent = label;
+
+        const slider = document.createElement("input");
+        slider.type = "range";
+        slider.min = -24;
+        slider.max = 6;
+        slider.value = 0;
+        slider.dataset.bus = busName;
+
+        slider.addEventListener("input", e => {
+            mixerData.instruments.setVolume(busName, Number(e.target.value));
+        });
+
+        // --- SOLO ---
+        const btnSolo = document.createElement("button");
+        btnSolo.textContent = "Solo";
+        btnSolo.classList.add("fx-btn");
+
+        btnSolo.addEventListener("click", () => {
+            Object.keys(mixerData.volumeMap).forEach(otherBus => {
+                const otherSlider = volumeContainer.querySelector(`input[data-bus="${otherBus}"]`);
+                if (otherBus === busName) {
+                    mixerData.instruments.setVolume(otherBus, 0);
+                    if (otherSlider) otherSlider.value = 0;
+                } else {
+                    mixerData.instruments.setVolume(otherBus, -99);
+                    if (otherSlider) otherSlider.value = -24;
+                }
+            });
+        });
+
+        // --- MUTE ---
+        const btnMute = document.createElement("button");
+        btnMute.textContent = "Mute";
+        btnMute.classList.add("fx-btn");
+
+        btnMute.addEventListener("click", () => {
+            mixerData.instruments.setVolume(busName, -99);
+            slider.value = -24;
+        });
+
+        row.appendChild(lbl);
+        row.appendChild(slider);
+        row.appendChild(btnSolo);
+        row.appendChild(btnMute);
+
+        volumeContainer.appendChild(row);
+    });
+
+    fxPanel.appendChild(volumeContainer);
+}
+
+
+
+// reset audio
+
+async function resetAudio() {
+    const ctx = Tone.getContext();
+
+    // Se il contesto non è mai stato avviato, NON chiudere nulla
+    if (ctx.state === "suspended") {
+        console.log("AudioContext non avviato: skip reset");
+        return;
+    }
+
+    try {
+        Tone.Transport.stop();
+        Tone.Transport.cancel();
+
+        if (ctx.state !== "closed") {
+            await ctx.close();
+            console.log("AudioContext chiuso correttamente");
+        }
+    } catch (e) {
+        console.warn("Errore durante la chiusura AudioContext:", e);
+    }
+
+    // Riattiva per iOS
+    await Tone.start();
+    console.log("AudioContext riavviato");
+}
+
+
+
+// -------------------------------------------------------------
+// Reset App
+// -------------------------------------------------------------
+function resetAppState() {
+    currentEngine?.stop();
+    if (currentEngine?.score) currentEngine.score.hide(); 
+    currentEngine = null;
+    closeMixelUI();
+    if (miniVideo) {
+        miniVideo.pause();
+        miniVideo.currentTime = 0; 
+    }
+    releaseWakeLock();
+    if ( firstStart !== 1 ) {
+    resetAudio();
+    firstStart = 0;
+    }
+}
+
+// -------------------------------------------------------------
+// UI animazioni generiche (non legate al metal)
+// -------------------------------------------------------------
+function openMixelUI() {
+    const player = document.getElementById("playerPanel");
+    const preview = document.getElementById("previewImage");
+    const spectrum = document.getElementById("spectrumPanel");
+
+    preview.classList.add("shift-left");
+    player.classList.add("open");
+
+    setTimeout(() => {
+        spectrum.classList.add("active");
+    }, 250);
+}
+
+function closeMixelUI() {
+    document.getElementById("spectrumPanel").classList.remove("active");
+    document.getElementById("previewImage").classList.remove("shift-left");
+    document.getElementById("playerPanel").classList.remove("open");
+}
+
+let wakeLock = null;
+
+async function requestWakeLock() {
+    try {
+        // Questa è l'API moderna per tenere lo schermo acceso
+        if ('wakeLock' in navigator) {
+            wakeLock = await navigator.wakeLock.request('screen');
+            console.log("✅ Schermo bloccato: non si spegnerà.");
+            
+            // Se l'utente minimizza il browser e poi torna, dobbiamo riattivarlo
+            wakeLock.addEventListener('release', () => {
+                console.log("Wake Lock rilasciato.");
+            });
+        }
+    } catch (err) {
+        console.error(`❌ Errore Wake Lock: ${err.name}, ${err.message}`);
+    }
+}
+
+function releaseWakeLock() {
+    if (wakeLock !== null) {
+        wakeLock.release();
+        wakeLock = null;
+        console.log("💤 Schermo libero: ora può spegnersi.");
+    }
+}
+

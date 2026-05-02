@@ -14,17 +14,12 @@
         
         body {
             font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+            background: #000;
             color: #fff;
             width: 100vw;
             height: 100vh;
             overflow: hidden;
             position: fixed;
-        }
-        
-        /* Stili base comuni */
-        .hidden {
-            display: none !important;
         }
         
         /* Loader iniziale */
@@ -59,6 +54,12 @@
             opacity: 0.8;
         }
         
+        .orientation-badge {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #00ff00;
+        }
+        
         /* Overlay orientamento */
         .rotate-overlay {
             position: fixed;
@@ -79,20 +80,24 @@
         .rotate-icon {
             font-size: 60px;
             margin-bottom: 20px;
-            animation: rotate 1.5s infinite;
+            animation: rotateAnim 1.5s infinite;
         }
         
-        @keyframes rotate {
+        @keyframes rotateAnim {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(90deg); }
         }
         
-        /* Container dinamico */
+        /* Container per l'app */
         #app-root {
             width: 100%;
             height: 100%;
             position: relative;
-            overflow: hidden;
+        }
+        
+        /* Stili base che non devono mai mancare */
+        .hidden {
+            display: none !important;
         }
     </style>
 </head>
@@ -100,637 +105,296 @@
     <div id="loader-container">
         <div class="loader-spinner"></div>
         <div class="loader-text">Caricamento Mixel...</div>
+        <div class="orientation-badge">
+            Orientamento: <span id="orientation-status">rilevamento...</span>
+        </div>
     </div>
     
     <div id="rotateOverlay" class="rotate-overlay">
         <div class="rotate-icon">🔄</div>
-        <p>Ruota il dispositivo in verticale<br>per usare l'app</p>
+        <p>Ruota il dispositivo in VERTICALE<br>per usare l'app</p>
+        <p style="font-size: 12px; margin-top: 15px;">(L'app è ottimizzata per uso verticale)</p>
     </div>
     
     <div id="app-root"></div>
 
-    <script type="module">
-        import * as Tone from "https://esm.sh/tone";
-        import { masterEQ } from "./common.js";
-        import { analyzeImage } from "./imageAnalysis.js";
-        import { photoToMusicParams } from "./photoToMusicParams.js";
-        import { createPianoEngine, waitPianoInstruments } from "./genres/piano/pianoEngine.js";
-        import { createMetalEngine, waitMetalInstruments } from "./genres/metal/metalEngine.js";
-        import { createOrchestraEngine, waitOrchestraInstruments } from "./genres/orchestra/orchestraEngine.js";
-        import { createDanceEngine, waitDanceInstruments } from "./genres/dance/danceEngine.js";
-        import { scoreVisualizer } from "./scoreUI.js";
-
-        console.log("main.js - Versione Unificata v1.0");
-
-        // Variabili globali
-        let currentEngine = null;
-        let currentOrientation = 'portrait';
-        let scoreUI = null;
-        let firstStart = 1;
-        let currentGenre = null;
-        let wakeLock = null;
+    <script>
+        // Funzione per rilevare l'orientamento
+        function getOrientation() {
+            const isPortrait = window.matchMedia("(orientation: portrait)").matches || 
+                              (window.innerHeight > window.innerWidth);
+            return isPortrait ? 'portrait' : 'landscape';
+        }
         
-        const miniVideo = document.createElement('video');
+        // Funzione per caricare CSS
+        function loadStylesheet(href) {
+            return new Promise((resolve, reject) => {
+                const link = document.createElement('link');
+                link.rel = 'stylesheet';
+                link.href = href;
+                link.onload = resolve;
+                link.onerror = reject;
+                document.head.appendChild(link);
+            });
+        }
         
-        // Riferimenti UI dinamici
-        let elements = {};
-
-        // -------------------------------------------------------------
-        // Costruzione UI dinamica in base all'orientamento
-        // -------------------------------------------------------------
-        function buildUI() {
-            const isPortrait = window.innerHeight > window.innerWidth;
-            currentOrientation = isPortrait ? 'portrait' : 'landscape';
-            
+        // Funzione per caricare JS
+        function loadScript(src) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.type = 'module';
+                script.src = src;
+                script.onload = resolve;
+                script.onerror = reject;
+                document.body.appendChild(script);
+            });
+        }
+        
+        // Funzione per caricare l'HTML della UI
+        async function loadUI(orientation) {
             const appRoot = document.getElementById('app-root');
-            appRoot.innerHTML = '';
+            const statusSpan = document.getElementById('orientation-status');
             
-            if (isPortrait) {
-                buildPortraitUI(appRoot);
-            } else {
-                buildLandscapeUI(appRoot);
-            }
-            
-            // Riacquisisci riferimenti agli elementi
-            cacheElements();
-            
-            // Riapplica eventi
-            bindEvents();
-        }
-        
-        function buildPortraitUI(root) {
-            root.innerHTML = `
-                <div class="app-container portrait-mode">
-                    <header class="app-header">
-                        <div class="logo-box">
-                            <img src="Mixel.jpg" alt="Logo">
-                        </div>
-                        <div class="upload-area">
-                            <input type="file" id="fileInput" accept="image/*">
-                            <label for="fileInput" class="upload-btn">📸 Carica foto</label>
-                        </div>
-                        <button id="btnElabora" class="elabora-btn hidden">✨ Elabora foto</button>
-                    </header>
-
-                    <main class="content">
-                        <div class="video-mini-wrapper">
-                            <video id="miniVideo" autoplay muted loop playsinline>
-                                <source src="onair.mp4" type="video/mp4">
-                            </video>
-                        </div>
-
-                        <div id="heroLogoContainer" class="hero-container">
-                            <div class="hero-logo-box">
+            if (orientation === 'portrait') {
+                statusSpan.textContent = 'VERTICALE';
+                console.log('📱 Caricamento versione VERTICALE');
+                
+                // Carica il contenuto HTML verticale
+                appRoot.innerHTML = `
+                    <div class="app-container">
+                        <header class="app-header">
+                            <div class="logo-box">
                                 <img src="Mixel.jpg" alt="Logo">
                             </div>
-                        </div>
+                            <div class="upload-area">
+                                <input type="file" id="fileInput" accept="image/*">
+                                <label for="fileInput" class="upload-btn">📸 Carica foto</label>
+                            </div>
+                            <button id="btnElabora" class="elabora-btn hidden">✨ Elabora foto</button>
+                        </header>
 
-                        <img id="previewImage" class="preview hidden" alt="MIXEL">
+                        <main class="content">
+                            <div class="video-mini-wrapper">
+                                <video autoplay muted loop playsinline>
+                                    <source src="onair.mp4" type="video/mp4">
+                                </video>
+                            </div>
 
-                        <div id="spectrumPanel" class="spectrum-panel hidden">
-                            <canvas id="spectrumCanvas"></canvas>
-                        </div>
-
-                        <div id="playerPanel" class="player-panel hidden">
-                            <div class="player-ui">
-                                <div class="player-controls">
-                                    <button id="btnPlay">▶️ Play</button>
-                                    <button id="btnPause">⏸️ Pause</button>
-                                    <button id="btnStop">⏹️ Stop</button>
-                                    <button id="btnFxPanel">🎛️ FX</button>
-                                    <button id="btnSpartito" class="spartito-btn hidden">🎼 Spartito</button>
-                                </div>
-                                <div class="player-seek">
-                                    <input type="range" id="seekBar" min="0" max="100" value="0">
-                                </div>
-                                <div class="player-time">
-                                    <span id="currentTime">0:00</span> / <span id="totalTime">0:00</span>
+                            <div id="heroLogoContainer" class="hero-container">
+                                <div class="hero-logo-box">
+                                    <img src="Mixel.jpg" alt="Logo">
                                 </div>
                             </div>
-                        </div>
-                    </main>
-                </div>
 
-                <div id="genrePanel" class="genre-panel">
-                    <div class="panel-header">
-                        <h2>Scegli il genere musicale</h2>
-                        <button id="closeGenrePanel" class="close-panel-btn">✖</button>
-                    </div>
-                    <div class="genre-buttons">
-                        <button class="genre-btn" data-genre="dance">🎧 Dance '90</button>
-                        <button class="genre-btn" data-genre="metal">🤘 Metal</button>
-                        <button class="genre-btn" data-genre="orchestra">🎻 Orchestra</button>
-                        <button class="genre-btn" data-genre="piano">🎹 Piano</button>
-                    </div>
-                </div>
+                            <img id="previewImage" class="preview hidden" alt="MIXEL">
 
-                <div id="fxPanel" class="fx-panel">
-                    <div class="panel-header">
-                        <h2>Controlli Audio</h2>
-                        <button id="closeFxPanel" class="close-panel-btn">✖</button>
-                    </div>
-                    <div class="fx-section">
-                        <h3>Equalizzatore Master</h3>
-                        <div class="fx-control">
-                            <label for="eqLow">Bassi</label>
-                            <input type="range" id="eqLow" min="-12" max="12" value="0">
-                        </div>
-                        <div class="fx-control">
-                            <label for="eqMid">Medi</label>
-                            <input type="range" id="eqMid" min="-12" max="12" value="0">
-                        </div>
-                        <div class="fx-control">
-                            <label for="eqHigh">Alti</label>
-                            <input type="range" id="eqHigh" min="-12" max="12" value="0">
-                        </div>
-                    </div>
-                    <div id="volumeControls" class="fx-section">
-                        <h3>Volumi Strumenti</h3>
-                    </div>
-                </div>
-            `;
-        }
-        
-        function buildLandscapeUI(root) {
-            root.innerHTML = `
-                <div class="app-container landscape-mode">
-                    <aside class="sidebar">
-                        <div class="sidebar-logo-box">
-                            <img src="Mixel.jpg" alt="Logo">
-                        </div>
-                        <input type="file" id="fileInput" class="file-input">
-                        <button id="btnElabora" class="side-btn hidden">✨ Elabora foto</button>
-                        <button id="btnSpartito" class="side-btn hidden" style="background:#fff;color:#000;">🎼 Spartito</button>
-                    </aside>
-
-                    <main class="content">
-                        <div class="video-mini-wrapper">
-                            <video id="miniVideo" autoplay muted loop playsinline>
-                                <source src="onair.mp4" type="video/mp4">
-                            </video>
-                        </div>
-
-                        <div id="heroLogoContainer">
-                            <div class="hero-logo-box">
-                                <img src="Mixel.jpg" alt="Logo">
+                            <div id="spectrumPanel" class="spectrum-panel hidden">
+                                <canvas id="spectrumCanvas"></canvas>
                             </div>
-                        </div>
 
-                        <img id="previewImage" class="preview hidden" alt="MIXEL">
+                            <div id="playerPanel" class="player-panel hidden">
+                                <div class="player-ui">
+                                    <div class="player-controls">
+                                        <button id="btnPlay">▶️ Play</button>
+                                        <button id="btnPause">⏸️ Pause</button>
+                                        <button id="btnStop">⏹️ Stop</button>
+                                        <button id="btnFxPanel">🎛️ FX</button>
+                                        <button id="btnSpartito" class="spartito-btn hidden">🎼 Spartito</button>
+                                    </div>
+                                    <div class="player-seek">
+                                        <input type="range" id="seekBar" min="0" max="100" value="0">
+                                    </div>
+                                    <div class="player-time">
+                                        <span id="currentTime">0:00</span> / <span id="totalTime">0:00</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+                    </div>
 
-                        <div id="genrePanel" class="genre-panel hidden">
+                    <div id="genrePanel" class="genre-panel">
+                        <div class="panel-header">
                             <h2>Scegli il genere musicale</h2>
+                            <button id="closeGenrePanel" class="close-panel-btn">✖</button>
+                        </div>
+                        <div class="genre-buttons">
                             <button class="genre-btn" data-genre="dance">🎧 Dance '90</button>
                             <button class="genre-btn" data-genre="metal">🤘 Metal</button>
                             <button class="genre-btn" data-genre="orchestra">🎻 Orchestra</button>
                             <button class="genre-btn" data-genre="piano">🎹 Piano</button>
-                            <button id="closeGenrePanel" class="close-panel-btn">Chiudi</button>
                         </div>
+                    </div>
 
-                        <div id="playerPanel" class="player-slideup">
-                            <div class="player-ui">
-                                <div class="player-controls">
-                                    <button id="btnPlay">▶️ Play</button>
-                                    <button id="btnPause">⏸️ Pause</button>
-                                    <button id="btnStop">⏹️ Stop</button>
-                                    <button id="btnFxPanel">🎛️ Controlli</button>
-                                </div>
-                                <div class="player-seek">
-                                    <input type="range" id="seekBar" min="0" max="100" value="0">
-                                </div>
-                                <div class="player-time">
-                                    <span id="currentTime">0:00</span> / <span id="totalTime">0:00</span>
-                                </div>
+                    <div id="fxPanel" class="fx-panel">
+                        <div class="panel-header">
+                            <h2>Controlli Audio</h2>
+                            <button id="closeFxPanel" class="close-panel-btn">✖</button>
+                        </div>
+                        <div class="fx-section">
+                            <h3>Equalizzatore Master</h3>
+                            <div class="fx-control">
+                                <label for="eqLow">Bassi</label>
+                                <input type="range" id="eqLow" min="-12" max="12" value="0">
+                            </div>
+                            <div class="fx-control">
+                                <label for="eqMid">Medi</label>
+                                <input type="range" id="eqMid" min="-12" max="12" value="0">
+                            </div>
+                            <div class="fx-control">
+                                <label for="eqHigh">Alti</label>
+                                <input type="range" id="eqHigh" min="-12" max="12" value="0">
                             </div>
                         </div>
-
-                        <div id="spectrumPanel">
-                            <canvas id="spectrumCanvas" width="300" height="200"></canvas>
+                        <div id="volumeControls" class="fx-section">
+                            <h3>Volumi Strumenti</h3>
                         </div>
-                    </main>
-                </div>
-
-                <div id="fxPanel" class="fx-panel">
-                    <div class="fx-header">
-                        <h2>Controlli Audio</h2>
-                        <button id="closeFxPanel" class="close-fx-btn">✖</button>
                     </div>
-                    <h3>Equalizzatore Master</h3>
-                    <label for="eqLow">Bassi</label>
-                    <input type="range" id="eqLow" min="-12" max="12" value="0">
-                    <label for="eqMid">Medi</label>
-                    <input type="range" id="eqMid" min="-12" max="12" value="0">
-                    <label for="eqHigh">Alti</label>
-                    <input type="range" id="eqHigh" min="-12" max="12" value="0">
-                </div>
-            `;
-        }
-        
-        function cacheElements() {
-            elements = {
-                fileInput: document.getElementById('fileInput'),
-                btnElabora: document.getElementById('btnElabora'),
-                previewImage: document.getElementById('previewImage'),
-                heroLogoContainer: document.getElementById('heroLogoContainer'),
-                spectrumPanel: document.getElementById('spectrumPanel'),
-                playerPanel: document.getElementById('playerPanel'),
-                btnPlay: document.getElementById('btnPlay'),
-                btnPause: document.getElementById('btnPause'),
-                btnStop: document.getElementById('btnStop'),
-                btnFxPanel: document.getElementById('btnFxPanel'),
-                btnSpartito: document.getElementById('btnSpartito'),
-                seekBar: document.getElementById('seekBar'),
-                currentTime: document.getElementById('currentTime'),
-                totalTime: document.getElementById('totalTime'),
-                genrePanel: document.getElementById('genrePanel'),
-                closeGenrePanel: document.getElementById('closeGenrePanel'),
-                fxPanel: document.getElementById('fxPanel'),
-                closeFxPanel: document.getElementById('closeFxPanel'),
-                spectrumCanvas: document.getElementById('spectrumCanvas'),
-                eqLow: document.getElementById('eqLow'),
-                eqMid: document.getElementById('eqMid'),
-                eqHigh: document.getElementById('eqHigh'),
-                volumeControls: document.getElementById('volumeControls')
-            };
-            
-            // Video element
-            const videoEl = document.getElementById('miniVideo');
-            if (videoEl) {
-                elements.miniVideo = videoEl;
-            }
-        }
-        
-        // -------------------------------------------------------------
-        // Eventi e logica principale
-        // -------------------------------------------------------------
-        function bindEvents() {
-            if (elements.fileInput) {
-                elements.fileInput.addEventListener('change', onFileSelected);
-            }
-            if (elements.btnElabora) {
-                elements.btnElabora.addEventListener('click', onElaboraClick);
-            }
-            if (elements.closeGenrePanel) {
-                elements.closeGenrePanel.addEventListener('click', () => closePanel('genrePanel'));
-            }
-            if (elements.closeFxPanel) {
-                elements.closeFxPanel.addEventListener('click', () => closePanel('fxPanel'));
-            }
-            if (elements.btnFxPanel) {
-                elements.btnFxPanel.addEventListener('click', () => openPanel('fxPanel'));
-            }
-            
-            // Genre buttons
-            document.querySelectorAll('.genre-btn').forEach(btn => {
-                btn.removeEventListener('click', onGenreClick);
-                btn.addEventListener('click', onGenreClick);
-            });
-        }
-        
-        function onFileSelected(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            if (!file.type.startsWith('image/')) {
-                alert('Carica solo immagini');
-                return;
-            }
-            
-            const img = new Image();
-            img.src = URL.createObjectURL(file);
-            img.onload = () => {
-                elements.previewImage.src = img.src;
-                elements.previewImage.classList.remove('hidden');
-                if (elements.heroLogoContainer) {
-                    elements.heroLogoContainer.style.display = 'none';
-                }
-                elements.btnElabora.classList.remove('hidden');
+                `;
                 
-                if (elements.spectrumPanel) {
-                    elements.spectrumPanel.classList.add('hidden');
-                }
-                if (elements.playerPanel) {
-                    elements.playerPanel.classList.add('hidden');
-                }
-                if (elements.miniVideo) {
-                    elements.miniVideo.pause();
-                    elements.miniVideo.currentTime = 0;
-                }
+                // Carica CSS e JS verticali
+                await loadStylesheet('style-vertical.css');
+                await loadScript('main-vertical.js');
                 
-                resetAppState();
-            };
-        }
-        
-        function onElaboraClick() {
-            closeMixelUI();
-            if (elements.miniVideo) {
-                elements.miniVideo.play().catch(e => console.log('Autoplay bloccato:', e));
-            }
-            requestWakeLock();
-            
-            if (firstStart !== 1) {
-                resetAudio();
-                firstStart = 0;
-            }
-            
-            openPanel('genrePanel');
-        }
-        
-        async function onGenreClick(e) {
-            const genre = e.currentTarget.dataset.genre;
-            currentGenre = genre;
-            if (scoreUI) scoreUI.setTheme(genre);
-            
-            const analysis = await analyzeImage(elements.previewImage);
-            const params = photoToMusicParams(analysis);
-            
-            if (genre === 'dance') {
-                if (firstStart === 1) await waitDanceInstruments();
-                currentEngine = await createDanceEngine(params, scoreUI);
-            } else if (genre === 'metal') {
-                if (firstStart === 1) await waitMetalInstruments();
-                currentEngine = await createMetalEngine(params, scoreUI);
-            } else if (genre === 'orchestra') {
-                if (firstStart === 1) await waitOrchestraInstruments();
-                currentEngine = await createOrchestraEngine(params, scoreUI);
-            } else if (genre === 'piano') {
-                if (firstStart === 1) await waitPianoInstruments();
-                currentEngine = await createPianoEngine(params, scoreUI);
-            }
-            
-            if (!currentEngine) {
-                console.error('Engine non creato');
-                return;
-            }
-            
-            initPlayerUI();
-            initSpectrum();
-            initFxPanel();
-            
-            closePanel('genrePanel');
-        }
-        
-        function initPlayerUI() {
-            if (elements.spectrumPanel) elements.spectrumPanel.classList.remove('hidden');
-            if (elements.playerPanel) elements.playerPanel.classList.remove('hidden');
-            if (elements.btnSpartito) elements.btnSpartito.classList.remove('hidden');
-            if (elements.previewImage) elements.previewImage.classList.add('moved-up');
-            
-            function formatTime(sec) {
-                if (isNaN(sec)) return '0:00';
-                const m = Math.floor(sec / 60);
-                const s = Math.floor(sec % 60).toString().padStart(2, '0');
-                return `${m}:${s}`;
-            }
-            
-            if (elements.btnPlay) {
-                elements.btnPlay.onclick = async () => {
-                    const overlay = document.getElementById('loader-container');
-                    if (overlay) overlay.style.display = 'flex';
-                    await Tone.start();
-                    await Tone.loaded();
-                    if (overlay) overlay.style.display = 'none';
-                    currentEngine.play();
-                };
-            }
-            
-            if (elements.btnPause) {
-                elements.btnPause.onclick = () => currentEngine?.pause();
-            }
-            
-            if (elements.btnStop) {
-                elements.btnStop.onclick = () => {
-                    currentEngine?.stop();
-                    if (scoreUI) scoreUI.hide();
-                };
-            }
-            
-            if (elements.btnSpartito) {
-                elements.btnSpartito.onclick = () => {
-                    if (scoreUI) scoreUI.show();
-                };
-            }
-            
-            if (elements.totalTime && currentEngine) {
-                elements.totalTime.textContent = formatTime(currentEngine.totalDuration);
-            }
-            
-            if (elements.seekBar) {
-                Tone.Transport.scheduleRepeat(() => {
-                    const now = Tone.Transport.seconds;
-                    const duration = currentEngine?.totalDuration || 1;
-                    elements.seekBar.value = (now / duration) * 100;
-                    if (elements.currentTime) {
-                        elements.currentTime.textContent = formatTime(now);
-                    }
-                }, 0.1);
+            } else {
+                statusSpan.textContent = 'ORIZZONTALE';
+                console.log('📱 Caricamento versione ORIZZONTALE');
                 
-                elements.seekBar.addEventListener('input', () => {
-                    const seconds = (elements.seekBar.value / 100) * currentEngine.totalDuration;
-                    currentEngine.seek(seconds);
-                });
+                // Carica il contenuto HTML orizzontale
+                appRoot.innerHTML = `
+                    <div class="app-container">
+                        <aside class="sidebar">
+                            <div class="sidebar-logo-box">
+                                <img src="Mixel.jpg" alt="Logo">
+                            </div>
+                            <input type="file" id="fileInput" class="file-input">
+                            <button id="btnElabora" class="side-btn hidden">✨ Elabora foto</button>
+                            <button id="btnSpartito" class="side-btn hidden" style="background:#fff;color:#000;">🎼 Spartito</button>
+                        </aside>
+
+                        <main class="content">
+                            <div class="video-mini-wrapper">
+                                <video autoplay muted loop playsinline>
+                                    <source src="onair.mp4" type="video/mp4">
+                                </video>
+                            </div>
+
+                            <div id="heroLogoContainer">
+                                <div class="hero-logo-box">
+                                    <img src="Mixel.jpg" alt="Logo">
+                                </div>
+                            </div>
+
+                            <img id="previewImage" class="preview hidden" alt="MIXEL">
+
+                            <div id="genrePanel" class="genre-panel hidden">
+                                <h2>Scegli il genere musicale</h2>
+                                <button class="genre-btn" data-genre="dance">🎧 Dance '90</button>
+                                <button class="genre-btn" data-genre="metal">🤘 Metal</button>
+                                <button class="genre-btn" data-genre="orchestra">🎻 Orchestra</button>
+                                <button class="genre-btn" data-genre="piano">🎹 Piano</button>
+                                <button id="closeGenrePanel" class="close-panel-btn">Chiudi</button>
+                            </div>
+
+                            <div id="playerPanel" class="player-slideup">
+                                <div class="player-ui">
+                                    <div class="player-controls">
+                                        <button id="btnPlay">▶️ Play</button>
+                                        <button id="btnPause">⏸️ Pause</button>
+                                        <button id="btnStop">⏹️ Stop</button>
+                                        <button id="btnFxPanel">🎛️ Controlli</button>
+                                    </div>
+                                    <div class="player-seek">
+                                        <input type="range" id="seekBar" min="0" max="100" value="0">
+                                    </div>
+                                    <div class="player-time">
+                                        <span id="currentTime">0:00</span> / <span id="totalTime">0:00</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="spectrumPanel">
+                                <canvas id="spectrumCanvas" width="300" height="200"></canvas>
+                            </div>
+                        </main>
+                    </div>
+
+                    <div id="fxPanel" class="fx-panel">
+                        <div class="fx-header">
+                            <h2>Controlli Audio</h2>
+                            <button id="closeFxPanel" class="close-fx-btn">✖</button>
+                        </div>
+                        <h3>Equalizzatore Master</h3>
+                        <label for="eqLow">Bassi</label>
+                        <input type="range" id="eqLow" min="-12" max="12" value="0">
+                        <label for="eqMid">Medi</label>
+                        <input type="range" id="eqMid" min="-12" max="12" value="0">
+                        <label for="eqHigh">Alti</label>
+                        <input type="range" id="eqHigh" min="-12" max="12" value="0">
+                    </div>
+                `;
+                
+                // Carica CSS e JS orizzontali
+                await loadStylesheet('style-horizontal.css');
+                await loadScript('main-horizontal.js');
             }
         }
         
-        function initSpectrum() {
-            const canvas = elements.spectrumCanvas;
-            if (!canvas) return;
-            
-            const fft = new Tone.Analyser('fft', 256);
-            Tone.Destination.connect(fft);
-            
-            let ctx = canvas.getContext('2d');
-            let peaks = new Array(256).fill(0);
-            
-            function resizeCanvas() {
-                const container = canvas.parentElement;
-                if (container) {
-                    canvas.width = container.clientWidth;
-                    canvas.height = container.clientHeight;
-                    ctx = canvas.getContext('2d');
-                }
-            }
-            
-            resizeCanvas();
-            
-            function draw() {
-                requestAnimationFrame(draw);
-                
-                const rect = canvas.getBoundingClientRect();
-                if (canvas.width !== rect.width || canvas.height !== rect.height) {
-                    canvas.width = rect.width;
-                    canvas.height = rect.height;
-                    ctx = canvas.getContext('2d');
-                }
-                
-                const W = canvas.width;
-                const H = canvas.height;
-                if (W === 0 || H === 0) return;
-                
-                const values = fft.getValue();
-                ctx.clearRect(0, 0, W, H);
-                
-                const barWidth = W / values.length;
-                for (let i = 0; i < values.length; i++) {
-                    const magnitude = Math.max(0, Math.min(1, (values[i] + 120) / 120));
-                    const barHeight = magnitude * H;
-                    const hue = 320 + (220 - 320) * magnitude;
-                    ctx.fillStyle = `hsl(${hue}, 100%, 60%)`;
-                    
-                    const x = i * barWidth;
-                    const y = H - barHeight;
-                    ctx.fillRect(x, y, Math.max(1, barWidth - 1), barHeight);
-                    
-                    if (barHeight > peaks[i]) {
-                        peaks[i] = barHeight;
-                    } else {
-                        peaks[i] *= 0.97;
-                    }
-                    
-                    ctx.fillStyle = '#FFFFFF';
-                    ctx.fillRect(x, H - peaks[i] - 2, Math.max(1, barWidth - 1), 2);
-                }
-            }
-            
-            draw();
-            window.addEventListener('resize', resizeCanvas);
-        }
+        // Variabile per tenere traccia dell'orientamento corrente
+        let currentOrientation = getOrientation();
         
-        function initFxPanel() {
-            if (!elements.eqLow || !elements.eqMid || !elements.eqHigh) return;
-            
-            elements.eqLow.addEventListener('input', e => {
-                masterEQ.low.value = Tone.dbToGain(Number(e.target.value));
-            });
-            elements.eqMid.addEventListener('input', e => {
-                masterEQ.mid.value = Tone.dbToGain(Number(e.target.value));
-            });
-            elements.eqHigh.addEventListener('input', e => {
-                masterEQ.high.value = Tone.dbToGain(Number(e.target.value));
-            });
-        }
-        
-        function openPanel(panelId) {
-            const panel = document.getElementById(panelId);
-            if (panel) panel.classList.add('show');
-        }
-        
-        function closePanel(panelId) {
-            const panel = document.getElementById(panelId);
-            if (panel) panel.classList.remove('show');
-        }
-        
-        function closeMixelUI() {
-            if (elements.spectrumPanel) elements.spectrumPanel.classList.add('hidden');
-            if (elements.playerPanel) elements.playerPanel.classList.add('hidden');
-            if (elements.btnSpartito) elements.btnSpartito.classList.add('hidden');
-            if (elements.previewImage) elements.previewImage.classList.remove('moved-up');
-        }
-        
-        async function resetAudio() {
-            const ctx = Tone.getContext();
-            if (ctx.state === 'suspended') return;
+        // Avvia l'app
+        async function startApp() {
             try {
-                Tone.Transport.stop();
-                Tone.Transport.cancel();
-                if (ctx.state !== 'closed') await ctx.close();
-            } catch (e) {
-                console.warn('Errore reset audio:', e);
-            }
-            await Tone.start();
-        }
-        
-        function resetAppState() {
-            currentEngine?.stop();
-            if (currentEngine?.score) currentEngine.score.hide();
-            currentEngine = null;
-            closeMixelUI();
-            if (elements.miniVideo) {
-                elements.miniVideo.pause();
-                elements.miniVideo.currentTime = 0;
-            }
-            releaseWakeLock();
-            if (firstStart !== 1) {
-                resetAudio();
-                firstStart = 0;
+                await loadUI(currentOrientation);
+                
+                // Nascondi loader dopo un breve delay
+                setTimeout(() => {
+                    const loader = document.getElementById('loader-container');
+                    if (loader) {
+                        loader.style.opacity = '0';
+                        setTimeout(() => {
+                            loader.style.display = 'none';
+                        }, 500);
+                    }
+                }, 500);
+            } catch (error) {
+                console.error('Errore nel caricamento:', error);
+                document.getElementById('orientation-status').textContent = 'ERRORE';
             }
         }
         
-        async function requestWakeLock() {
-            try {
-                if ('wakeLock' in navigator) {
-                    wakeLock = await navigator.wakeLock.request('screen');
-                }
-            } catch (err) {
-                console.error('Wake Lock error:', err);
-            }
-        }
-        
-        function releaseWakeLock() {
-            if (wakeLock) {
-                wakeLock.release();
-                wakeLock = null;
-            }
-        }
-        
-        // -------------------------------------------------------------
-        // Gestione orientamento
-        // -------------------------------------------------------------
+        // Gestione cambio orientamento
         function handleOrientationChange() {
-            const isPortrait = window.innerHeight > window.innerWidth;
+            const newOrientation = getOrientation();
             const rotateOverlay = document.getElementById('rotateOverlay');
             
-            if (!isPortrait && currentOrientation === 'portrait') {
-                // Passato a landscape - mostra avviso
-                if (rotateOverlay) rotateOverlay.classList.add('show');
-                if (currentEngine) currentEngine.pause();
-            } else if (isPortrait && currentOrientation === 'landscape') {
-                // Passato a portrait - rigenera UI
-                if (rotateOverlay) rotateOverlay.classList.remove('show');
-                currentOrientation = 'portrait';
-                buildUI();
-                // Riavvio eventuale stato
-                if (scoreUI) scoreUI.hide();
-            } else {
-                if (rotateOverlay) rotateOverlay.classList.remove('show');
+            // Se stai usando solo verticale, mostra overlay in orizzontale
+            if (newOrientation === 'landscape' && currentOrientation === 'portrait') {
+                rotateOverlay.classList.add('show');
+                // Metti in pausa l'audio se attivo
+                if (window.currentEngine) {
+                    window.currentEngine.pause();
+                }
+            } else if (newOrientation === 'portrait' && currentOrientation === 'landscape') {
+                rotateOverlay.classList.remove('show');
+                // Ricarica la versione verticale
+                location.reload();
+            } else if (newOrientation !== currentOrientation) {
+                // Ricarica la pagina per applicare la versione corretta
+                location.reload();
             }
-            currentOrientation = isPortrait ? 'portrait' : 'landscape';
         }
         
-        // -------------------------------------------------------------
-        // Inizializzazione
-        // -------------------------------------------------------------
-        async function init() {
-            buildUI();
-            
-            // Nascondi loader
-            const loader = document.getElementById('loader-container');
-            if (loader) {
-                setTimeout(() => {
-                    loader.style.opacity = '0';
-                    setTimeout(() => {
-                        loader.style.display = 'none';
-                    }, 500);
-                }, 1000);
-            }
-            
-            // Inizializza scoreUI
-            if (!scoreUI) {
-                scoreUI = new scoreVisualizer();
-            }
-            
-            // Ascolta cambi di orientamento
-            window.addEventListener('resize', () => {
-                setTimeout(handleOrientationChange, 100);
-            });
-            window.addEventListener('orientationchange', () => {
-                setTimeout(handleOrientationChange, 100);
-            });
-            
-            handleOrientationChange();
-        }
+        // Ascolta cambi di orientamento
+        window.addEventListener('resize', () => {
+            setTimeout(handleOrientationChange, 100);
+        });
+        window.addEventListener('orientationchange', () => {
+            setTimeout(handleOrientationChange, 100);
+        });
         
         // Avvia tutto
-        init();
+        startApp();
     </script>
 </body>
 </html>
