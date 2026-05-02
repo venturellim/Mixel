@@ -1,6 +1,6 @@
 //
-// main.js - Versione VERTICALE
-// Router centrale dell’app: UI, caricamento immagine, analisi, parametri,
+// main.js - Versione VERTICALE/ORIZZONTALE
+// Router centrale dell'app: UI, caricamento immagine, analisi, parametri,
 // selezione genere, player, spectrum, FX panel.
 // Tutto il resto vive nei moduli dei generi.
 //
@@ -14,9 +14,9 @@ import { createPianoEngine, waitPianoInstruments } from "./genres/piano/pianoEng
 import { createMetalEngine, waitMetalInstruments } from "./genres/metal/metalEngine.js";
 import { createOrchestraEngine, waitOrchestraInstruments } from "./genres/orchestra/orchestraEngine.js";
 import { createDanceEngine, waitDanceInstruments } from "./genres/dance/danceEngine.js";
-import { Visualizer } from "./scoreUI.js";
+import { scoreVisualizer } from "./scoreUI.js";
 
-console.log("main.js VERTICALE ver. 008 loaded");
+console.log("main.js COMPLETO ver. 010 loaded");
 
 
 let currentEngine = null;
@@ -45,10 +45,26 @@ window.addEventListener("DOMContentLoaded", () => {
         scoreUI = new scoreVisualizer();
     }
     resizeCanvas();
+    initCloseScoreButton();
 });
 
 // -------------------------------------------------------------
-// File Loader + Preview - VERSIONE VERTICALE
+// Pulsante chiusura spartito
+// -------------------------------------------------------------
+function initCloseScoreButton() {
+    const closeScoreBtn = document.getElementById("closeScoreBtn");
+    if (closeScoreBtn) {
+        closeScoreBtn.onclick = () => {
+            if (scoreUI) {
+                scoreUI.hide();
+                closeScoreBtn.style.display = "none";
+            }
+        };
+    }
+}
+
+// -------------------------------------------------------------
+// File Loader + Preview
 // -------------------------------------------------------------
 function initFileLoader() {
     const fileInput = document.getElementById("fileInput");
@@ -61,8 +77,6 @@ function initFileLoader() {
     fileInput.addEventListener("change", function () {
         const file = this.files[0];
         if (!file) return;
-        
-        // Verifica che sia un'immagine[span_0](start_span)[span_0](end_span)
         if (!file.type.startsWith("image/")) {
             alert("Carica solo immagini.");
             return;
@@ -72,38 +86,30 @@ function initFileLoader() {
         img.src = URL.createObjectURL(file);
 
         img.onload = () => {
-            // Applica l'immagine all'anteprima[span_1](start_span)[span_1](end_span)
             previewImage.src = img.src;
-            
-            // 1. Rimuove la classe hidden per mostrare l'immagine[span_2](start_span)[span_2](end_span)
             previewImage.classList.remove("hidden");
-            
-            // 2. Rimuove l'effetto zoom-out se presente da una sessione precedente
-            previewImage.classList.remove("zoom-out");
-            
-            // 3. Nasconde il logo iniziale[span_3](start_span)[span_3](end_span)
             heroLogoContainer.style.display = "none";
-            
-            // 4. MOSTRA il tasto elabora solo ORA[span_4](start_span)[span_4](end_span)
             btnElabora.classList.remove("hidden");
             
-            // Reset dei pannelli audio per nuova analisi[span_5](start_span)[span_5](end_span)
             spectrumPanel.classList.add("hidden");
             playerPanel.classList.add("hidden");
             
-            // Gestione video on-air[span_6](start_span)[span_6](end_span)
+            // Rimuovi zoom se presente
+            previewImage.classList.remove("zoomed-out");
+            previewImage.classList.remove("moved-up");
+            
             if (miniVideo) {
                 miniVideo.pause();
                 miniVideo.currentTime = 0; 
             }
 
-            resetAppState(); //[span_7](start_span)[span_7](end_span)
+            resetAppState();
         };
     });
 }
 
 // -------------------------------------------------------------
-// Pannello generi - VERSIONE VERTICALE (scende dall'alto)
+// Pannello generi
 // -------------------------------------------------------------
 function initGenrePanel() {
     const btnElabora = document.getElementById("btnElabora");
@@ -177,9 +183,9 @@ async function selectGenre(genre) {
         console.error("❌ Engine non creato!");
         return;
     }
-    // Zoom-out dell'anteprima dopo la scelta del genere
-    const previewImage = document.getElementById("previewImage");
-    previewImage.classList.add("zoom-out");
+
+    // Zoom-out dell'immagine dopo la selezione del genere
+    previewImage.classList.add("zoomed-out");
 
     initPlayerUI();
     drawSpectrum();
@@ -190,13 +196,14 @@ async function selectGenre(genre) {
 }
 
 // -------------------------------------------------------------
-// Player UI - VERSIONE VERTICALE
+// Player UI
 // -------------------------------------------------------------
 function initPlayerUI() {
     const spectrumPanel = document.getElementById("spectrumPanel");
     const playerPanel = document.getElementById("playerPanel");
     const btnSpartito = document.getElementById("btnSpartito");
     const previewImage = document.getElementById("previewImage");
+    const closeScoreBtn = document.getElementById("closeScoreBtn");
     
     spectrumPanel.classList.remove("hidden");
     playerPanel.classList.remove("hidden");
@@ -221,12 +228,12 @@ function initPlayerUI() {
 
     playBtn.onclick = async () => {
         const overlay = document.getElementById("loadingOverlay");
-        overlay.style.display = "flex";
+        if (overlay) overlay.style.display = "flex";
 
         await Tone.start();
         await Tone.loaded();
 
-        overlay.style.display = "none";
+        if (overlay) overlay.style.display = "none";
         
         currentEngine.play();
     };
@@ -236,11 +243,13 @@ function initPlayerUI() {
     stopBtn.onclick = () => {
         currentEngine?.stop();
         if (scoreUI) scoreUI.hide();
+        if (closeScoreBtn) closeScoreBtn.style.display = "none";
     };
     
     btnSpartito.onclick = () => {
         if (scoreUI) {
             scoreUI.show();
+            if (closeScoreBtn) closeScoreBtn.style.display = "flex";
         } else {
             console.error("scoreUI non inizializzato!");
         }
@@ -257,7 +266,7 @@ function initPlayerUI() {
         const now = Tone.Transport.seconds;
         const duration = currentEngine?.totalDuration || 1;
         seekBar.value = (now / duration) * 100;
-        currentTimeEl.textContent = formatTime(now);
+        if (currentTimeEl) currentTimeEl.textContent = formatTime(now);
     }, 0.1);
 
     seekBar.addEventListener("input", () => {
@@ -267,7 +276,7 @@ function initPlayerUI() {
 }
 
 // -------------------------------------------------------------
-// Spectrum Analyzer - OTTIMIZZATO PER VERTICALE
+// Spectrum Analyzer
 // -------------------------------------------------------------
 const fft = new Tone.Analyser("fft", 256);
 Tone.Destination.connect(fft);
@@ -347,34 +356,42 @@ function drawSpectrum() {
 }
 
 // -------------------------------------------------------------
-// FX Panel - VERSIONE VERTICALE (scende dall'alto)
+// FX Panel
 // -------------------------------------------------------------
 function initFxPanel(mixerData) {
     const fxPanel = document.getElementById("fxPanel");
     const btnFxPanel = document.getElementById("btnFxPanel");
     const closeFxPanel = document.getElementById("closeFxPanel");
 
-    btnFxPanel.onclick = () => fxPanel.classList.add("show");
-    closeFxPanel.onclick = () => fxPanel.classList.remove("show");
+    if (btnFxPanel) {
+        btnFxPanel.onclick = () => fxPanel.classList.add("show");
+    }
+    if (closeFxPanel) {
+        closeFxPanel.onclick = () => fxPanel.classList.remove("show");
+    }
 
     const eqLow = document.getElementById("eqLow");
     const eqMid = document.getElementById("eqMid");
     const eqHigh = document.getElementById("eqHigh");
 
-    eqLow.addEventListener("input", e => {
-        masterEQ.low.value = Tone.dbToGain(Number(e.target.value));
-    });
-
-    eqMid.addEventListener("input", e => {
-        masterEQ.mid.value = Tone.dbToGain(Number(e.target.value));
-    });
-
-    eqHigh.addEventListener("input", e => {
-        masterEQ.high.value = Tone.dbToGain(Number(e.target.value));
-    });
+    if (eqLow) {
+        eqLow.addEventListener("input", e => {
+            masterEQ.low.value = Tone.dbToGain(Number(e.target.value));
+        });
+    }
+    if (eqMid) {
+        eqMid.addEventListener("input", e => {
+            masterEQ.mid.value = Tone.dbToGain(Number(e.target.value));
+        });
+    }
+    if (eqHigh) {
+        eqHigh.addEventListener("input", e => {
+            masterEQ.high.value = Tone.dbToGain(Number(e.target.value));
+        });
+    }
 
     const volumeContainer = document.getElementById("volumeControls");
-    if (!volumeContainer) return;
+    if (!volumeContainer || !mixerData || !mixerData.volumeMap) return;
     
     volumeContainer.innerHTML = "";
 
@@ -454,7 +471,7 @@ async function resetAudio() {
 }
 
 // -------------------------------------------------------------
-// Reset App - VERSIONE VERTICALE
+// Reset App
 // -------------------------------------------------------------
 function resetAppState() {
     currentEngine?.stop();
@@ -470,21 +487,32 @@ function resetAppState() {
         resetAudio();
         firstStart = 0;
     }
+    // Rimuovi zoom dall'immagine
+    const previewImage = document.getElementById("previewImage");
+    if (previewImage) {
+        previewImage.classList.remove("zoomed-out");
+        previewImage.classList.remove("moved-up");
+    }
+    // Nascondi pulsante chiusura spartito
+    const closeScoreBtn = document.getElementById("closeScoreBtn");
+    if (closeScoreBtn) closeScoreBtn.style.display = "none";
 }
 
 // -------------------------------------------------------------
-// UI animazioni - VERSIONE VERTICALE
+// UI animazioni
 // -------------------------------------------------------------
 function closeMixelUI() {
     const spectrumPanel = document.getElementById("spectrumPanel");
     const playerPanel = document.getElementById("playerPanel");
     const previewImage = document.getElementById("previewImage");
     const btnSpartito = document.getElementById("btnSpartito");
+    const closeScoreBtn = document.getElementById("closeScoreBtn");
     
     if (spectrumPanel) spectrumPanel.classList.add("hidden");
     if (playerPanel) playerPanel.classList.add("hidden");
     if (btnSpartito) btnSpartito.classList.add("hidden");
     if (previewImage) previewImage.classList.remove("moved-up");
+    if (closeScoreBtn) closeScoreBtn.style.display = "none";
 }
 
 // -------------------------------------------------------------

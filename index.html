@@ -31,7 +31,6 @@
     <div id="loadingText" style="margin-bottom: 12px;">
         Caricamento strumenti in corso…
     </div>
-
     <div style="width: 80%; height: 10px; background: #333; border-radius: 4px; overflow: hidden;">
         <div id="loadingBar" style="height: 10px; width: 0%; background: #4caf50;"></div>
     </div>
@@ -40,30 +39,22 @@
 <div class="app-container">
 
     <!-- HEADER SUPERIORE CON LOGO E CARICAMENTO -->
-  <!-- Cerca questa riga e sostituisci l'input e l'header -->
-<header class="app-header">
-    <div class="logo-box">
-        <img src="Mixel.jpg" alt="Logo">
-    </div>
-    
-    <div class="upload-area">
-        <!-- Rimosso 'capture' per permettere scelta da filesystem[span_0](start_span)[span_0](end_span) -->
-        <input type="file" id="fileInput" accept="image/*"> 
-        <label for="fileInput" class="upload-btn">📸 Scegli foto</label>
-    </div>
-    
-    <!-- Inizialmente nascosto come richiesto -->
-    <button id="btnElabora" class="elabora-btn hidden">
-        ✨ Elabora
-    </button>
-</header>
-<!-- Sotto il canvas dello spartito, aggiungiamo il tasto chiudi -->
-<div id="scoreWrapper" class="hidden">
-    <button id="btnCloseScore" class="close-score-btn">✖ Chiudi Spartito</button>
-    <canvas id="scoreCanvas"></canvas>
-</div>
+    <header class="app-header">
+        <div class="logo-box">
+            <img src="Mixel.jpg" alt="Logo">
+        </div>
+        
+        <div class="upload-area">
+            <input type="file" id="fileInput" accept="image/*">
+            <label for="fileInput" class="upload-btn">📸 Carica foto</label>
+        </div>
+        
+        <button id="btnElabora" class="elabora-btn hidden">
+            ✨ Elabora foto
+        </button>
+    </header>
 
-    <!-- CONTENUTO PRINCIPALE SCROLLABILE -->
+    <!-- CONTENUTO PRINCIPALE -->
     <main class="content">
         
         <!-- Video On-Air (in alto a destra) -->
@@ -81,7 +72,7 @@
         </div>
 
         <!-- Immagine Preview -->
-        <img id="previewImage" class="preview hidden" alt=" ">
+        <img id="previewImage" class="preview hidden" alt="MIXEL - Ascolta le tue foto!">
 
         <!-- Analizzatore di spettro -->
         <div id="spectrumPanel" class="spectrum-panel hidden">
@@ -98,14 +89,11 @@
                     <button id="btnFxPanel">🎛️ FX</button>
                     <button id="btnSpartito" class="spartito-btn hidden">🎼 Spartito</button>
                 </div>
-
                 <div class="player-seek">
                     <input type="range" id="seekBar" min="0" max="100" value="0">
                 </div>
-
                 <div class="player-time">
-                    <span id="currentTime">0:00</span> /
-                    <span id="totalTime">0:00</span>
+                    <span id="currentTime">0:00</span> / <span id="totalTime">0:00</span>
                 </div>
             </div>
         </div>
@@ -133,7 +121,6 @@
         <h2>Controlli Audio</h2>
         <button id="closeFxPanel" class="close-panel-btn">✖</button>
     </div>
-
     <div class="fx-section">
         <h3>Equalizzatore Master</h3>
         <div class="fx-control">
@@ -149,12 +136,13 @@
             <input type="range" id="eqHigh" min="-12" max="12" value="0">
         </div>
     </div>
-
     <div id="volumeControls" class="fx-section">
         <h3>Volumi Strumenti</h3>
-        <!-- I volumi verranno aggiunti dinamicamente -->
     </div>
 </div>
+
+<!-- Pulsante chiusura spartito (inizialmente nascosto) -->
+<button id="closeScoreBtn" class="close-score-btn" style="display: none;">✖</button>
 
 <script type="module" src="main.js"></script>
 

@@ -96,6 +96,10 @@ body {
     box-shadow: 0 5px 20px rgba(245,87,108,0.4);
 }
 
+.hidden {
+    display: none !important;
+}
+
 /* ==========================================
    3. CONTENUTO PRINCIPALE
    ========================================== */
@@ -107,29 +111,64 @@ body {
     align-items: center;
     gap: 20px;
     position: relative;
+    transition: all 0.3s ease;
+}
+
+/* Modalità orizzontale - immagine e spettro affiancati */
+@media (orientation: landscape) {
+    .content {
+        flex-direction: row !important;
+        justify-content: center;
+        align-items: center;
+        gap: 40px;
+    }
+    
+    .hero-container,
+    #previewImage {
+        flex: 1;
+        max-width: 45%;
+    }
+    
+    .spectrum-panel {
+        flex: 1;
+        max-width: 45%;
+        height: 200px;
+    }
+    
+    .player-panel {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 90%;
+        max-width: 600px;
+        z-index: 100;
+    }
 }
 
 /* Video On-Air */
-
+/* Video On-Air - NASCosto ma attivo per evitare standby */
 .video-mini-wrapper {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 1px;       /* Quasi invisibile */
-    height: 1px;      /* Quasi invisibile */
-    opacity: 0.01;    /* Quasi trasparente */
-    pointer-events: none; /* Non intralcia i click */
-    z-index: -1;      /* Lo mette dietro a tutto il resto */
+    bottom: 0;
+    right: 0;
+    width: 1px;
+    height: 1px;
     overflow: hidden;
+    background: transparent;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0;
 }
 
 .video-mini-wrapper video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+    width: 1px;
+    height: 1px;
+    object-fit: none;
+    opacity: 0;
 }
 
-/* Hero Logo iniziale */
+/* Hero Logo iniziale - intero senza tagli */
 .hero-container {
     flex: 1;
     display: flex;
@@ -139,8 +178,8 @@ body {
 }
 
 .hero-logo-box {
-    width: 200px;
-    height: 200px;
+    width: 250px;
+    height: 250px;
     border-radius: 20px;
     overflow: hidden;
     box-shadow: 0 10px 40px rgba(0,0,0,0.3);
@@ -150,7 +189,7 @@ body {
 .hero-logo-box img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
 }
 
 @keyframes pulse {
@@ -164,12 +203,14 @@ body {
     max-width: 400px;
     border-radius: 15px;
     box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-    object-fit: cover;
+    object-fit: contain;
     transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-#previewImage.moved-up {
-    transform: translateY(-20px);
+/* Zoom-out dopo selezione genere */
+#previewImage.zoomed-out {
+    transform: scale(0.7);
+    opacity: 0.9;
 }
 
 /* Spectrum Panel */
@@ -423,37 +464,7 @@ body {
 }
 
 /* ==========================================
-   5. OVERLAY ORIENTAMENTO
-   ========================================== */
-.rotate-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.95);
-    z-index: 9999;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    flex-direction: column;
-}
-
-.rotate-overlay.hidden {
-    display: none;
-}
-
-.rotate-icon {
-    font-size: 60px;
-    margin-bottom: 20px;
-    animation: rotate 1.5s infinite;
-}
-
-@keyframes rotate {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(90deg); }
-}
-
-/* ==========================================
-   6. SPARTITO STYLE
+   5. SPARTITO STYLE
    ========================================== */
 #scoreCanvas {
     position: fixed;
@@ -467,15 +478,41 @@ body {
     cursor: pointer;
 }
 
+/* Pulsante chiusura spartito */
+.close-score-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1101;
+    background: #ff4444;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.close-score-btn:hover {
+    background: #cc0000;
+    transform: scale(1.1);
+}
+
 /* ==========================================
-   7. LOADING OVERLAY
+   6. LOADING OVERLAY
    ========================================== */
 #loadingOverlay {
     z-index: 10000;
 }
 
 /* ==========================================
-   8. RESPONSIVE
+   7. RESPONSIVE
    ========================================== */
 @media (max-width: 600px) {
     .app-header {
@@ -493,8 +530,8 @@ body {
     }
     
     .hero-logo-box {
-        width: 150px;
-        height: 150px;
+        width: 180px;
+        height: 180px;
     }
     
     .player-controls button {
@@ -519,65 +556,3 @@ body {
     from { opacity: 0; }
     to { opacity: 1; }
 }
-
-/* --- Modifiche Immagine --- */
-#previewImage {
-    width: 90%;
-    max-height: 40vh;
-    object-fit: contain; /* Immagine intera, non tagliata[span_2](start_span)[span_2](end_span) */
-    transition: all 0.6s ease-in-out;
-}
-
-/* Effetto Zoom-out dopo scelta genere */
-#previewImage.zoom-out {
-    transform: scale(0.7);
-    opacity: 0.8;
-}
-
-/* --- Layout Orizzontale (Affiancato) --- */
-@media (orientation: landscape) {
-    .content {
-        flex-direction: row; /* Affianca gli elementi[span_3](start_span)[span_3](end_span) */
-        justify-content: space-around;
-        align-items: center;
-        padding: 10px;
-    }
-
-    #previewImage {
-        width: 45%;
-        max-height: 70vh;
-    }
-
-    .spectrum-panel {
-        width: 45%;
-        height: 60vh;
-    }
-}
-
-.close-score-btn {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    width: 45px;
-    height: 45px;
-    background: #ff4444; /* Rosso */
-    color: white;
-    border: none;
-    border-radius: 50%;
-    font-size: 24px;
-    font-weight: bold;
-    display: flex; /* Centra la X */
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    z-index: 9999; /* Sopra tutto */
-}
-
-.close-score-btn:hover {
-    background: #cc0000;
-    transform: scale(1.1);
-}
-
-
-

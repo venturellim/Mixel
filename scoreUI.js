@@ -1,7 +1,8 @@
-// scoreUI.js — ver. 015.5 (PARTE 1)
-// Fix: Etichette strumenti ripristinate + Xtra Sopra/Sotto + Drum 10x5
+// scoreUI.js — ver. 016
+// Fix: Rimosso pulsante chiusura (gestito da main.js)
+// Fix: Note Xtra rosse
 
-console.log("scoreUI.js ver. 015.5 loaded");
+console.log("scoreUI.js ver. 016 loaded");
 
 export class scoreVisualizer {
     constructor() {
@@ -27,12 +28,7 @@ export class scoreVisualizer {
         this.imageLoaded = false;
         this.bgImage.onload = () => { this.imageLoaded = true; };
 
-        this.closeBtn = document.createElement("button");
-        this.closeBtn.innerHTML = "✕";
-        this.closeBtn.className = "close-score-btn";
-        this.closeBtn.style.display = "none";
-        this.closeBtn.style.zIndex = "9999";
-        this.closeBtn.onclick = () => this.hide();
+        // RIMOSSO: closeBtn (ora gestito da main.js)
 
         // Mappa altezze per il pentagramma (Offset pixel)
         this.pitchMap = {
@@ -63,7 +59,9 @@ export class scoreVisualizer {
         window.addEventListener("resize", () => this.initCanvas());
     }
 
-    setTheme(genre) { if (this.themes[genre]) this.currentGenre = genre; }
+    setTheme(genre) { 
+        if (this.themes[genre]) this.currentGenre = genre; 
+    }
 
     cleanNoteLabel(note) {
         if (!note || typeof note !== 'string') return "";
@@ -76,13 +74,24 @@ export class scoreVisualizer {
         this.canvas.height = window.innerHeight;
         this.canvas.id = "scoreCanvas"; 
         if (!this.canvas.parentElement) document.body.appendChild(this.canvas);
-        if (!this.closeBtn.parentElement) document.body.appendChild(this.closeBtn);
+        // RIMOSSO: append del closeBtn (ora gestito da HTML)
         this.playheadX = this.canvas.width * 0.80;
         this.leftLimit = this.canvas.width * 0.12; 
     }
 
-    show() { this.isVisible = true; this.canvas.style.display = "block"; this.closeBtn.style.display = "flex"; this.render(); }
-    hide() { this.isVisible = false; this.canvas.style.display = "none"; this.closeBtn.style.display = "none"; this.notes = []; }
+    show() { 
+        this.isVisible = true; 
+        this.canvas.style.display = "block"; 
+        // RIMOSSO: closeBtn.style.display
+        this.render(); 
+    }
+    
+    hide() { 
+        this.isVisible = false; 
+        this.canvas.style.display = "none"; 
+        // RIMOSSO: closeBtn.style.display
+        this.notes = []; 
+    }
 
     addNote(track, note, section) {
         this.currentSection = section;
@@ -95,32 +104,46 @@ export class scoreVisualizer {
             index: Date.now() + Math.random() 
         });
     }
+    
     render() {
         if (!this.isVisible) return;
         const { ctx, canvas, playheadX, leftLimit, bgImage, imageLoaded } = this;
         const currentLabels = this.themes[this.currentGenre] || this.themes.metal;
         
-        const tracksY = { "Lead": 0.22, "LeadXtra": 0.22, "Rhythm": 0.40, "RhythmXtra": 0.40, "Bass": 0.58, "BassXtra": 0.58, "Drums": 0.76 };
+        const tracksY = { 
+            "Lead": 0.22, "LeadXtra": 0.22, 
+            "Rhythm": 0.40, "RhythmXtra": 0.40, 
+            "Bass": 0.58, "BassXtra": 0.58, 
+            "Drums": 0.76 
+        };
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         if (imageLoaded) ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
 
         // Intestazione Sezione
         if (this.currentSection) {
-            ctx.fillStyle = "#ff0000"; ctx.font = "bold 24px serif"; ctx.textAlign = "left";
+            ctx.fillStyle = "#ff0000"; 
+            ctx.font = "bold 24px serif"; 
+            ctx.textAlign = "left";
             ctx.fillText(this.currentSection.toUpperCase(), leftLimit + 20, canvas.height * 0.10); 
         }
 
         // Playhead
-        ctx.strokeStyle = "#ff000022"; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.moveTo(playheadX, 0); ctx.lineTo(playheadX, canvas.height); ctx.stroke();
+        ctx.strokeStyle = "#ff000022"; 
+        ctx.lineWidth = 2;
+        ctx.beginPath(); 
+        ctx.moveTo(playheadX, 0); 
+        ctx.lineTo(playheadX, canvas.height); 
+        ctx.stroke();
 
         // --- DISEGNO NOMI STRUMENTI (Fissi a destra della Playhead) ---
-        ctx.font = "bold 13px sans-serif"; ctx.textAlign = "left";
+        ctx.font = "bold 13px sans-serif"; 
+        ctx.textAlign = "left";
         Object.keys(tracksY).forEach(t => {
             const label = currentLabels[t];
             if (label && label !== "") {
                 const y = canvas.height * tracksY[t];
+                // Strumenti Xtra in rosso
                 ctx.fillStyle = t.includes("Xtra") ? "#ff0000" : "#444";
                 const yOff = t.includes("Xtra") ? y - 22 : y - 8;
                 ctx.fillText(label, playheadX + 15, yOff);
@@ -148,11 +171,12 @@ export class scoreVisualizer {
                     if (n.label.includes("Kick") || n.label.includes("Snare") || n.label.includes("Timpano")) {
                         ctx.fillRect(n.x - 5, drumY - 2.5, 10, 5); 
                     } else {
-                        ctx.font = "bold 12px sans-serif"; ctx.textAlign = "center";
+                        ctx.font = "bold 12px sans-serif"; 
+                        ctx.textAlign = "center";
                         ctx.fillText("✕", n.x, drumY + 6);
                     }
                 } 
-                // --- STRUMENTI (Xtra Sopra/Sotto + ZigZag) ---
+                // --- STRUMENTI (Xtra in ROSSO + Sopra/Sotto) ---
                 else {
                     const isXtra = n.track.includes("Xtra");
                     const hasPartner = currentLabels[baseTrack + "Xtra"] !== "";
@@ -161,19 +185,27 @@ export class scoreVisualizer {
 
                     if (hasPartner) {
                         finalY += isXtra ? -15 : 15;
-                        ctx.fillStyle = isXtra ? "#191970" : "#000000";
+                        // Note Xtra ROSSE
+                        ctx.fillStyle = isXtra ? "#ff0000" : "#000000";
                     } else {
                         finalY += (Math.floor(n.index / 100) % 2 === 0) ? -5 : 5;
                         ctx.fillStyle = "#000000";
                     }
 
-                    ctx.textAlign = "center"; ctx.font = "22px serif";
+                    ctx.textAlign = "center"; 
+                    ctx.font = "22px serif";
                     ctx.fillText("♩", n.x, finalY + 7);
 
                     ctx.font = "bold 12px 'Courier New', monospace";
                     const isEvenZig = Math.floor(n.index / 100) % 2 === 0;
-                    //const labelY = (hasPartner && isXtra) ? finalY + 22 : (isEvenZig ? finalY - 18 : finalY - 28);
                     const labelY = (hasPartner && isXtra) ? finalY + 22 : (isEvenZig ? finalY - 18 : finalY - 18);
+                    
+                    // Etichetta nota Xtra in ROSSO
+                    if (isXtra) {
+                        ctx.fillStyle = "#ff0000";
+                    } else {
+                        ctx.fillStyle = "#000000";
+                    }
                     ctx.fillText(n.label, n.x, labelY);
                 }
             }
