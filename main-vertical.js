@@ -40,7 +40,6 @@ window.onerror = function (msg, url, line, col, error) {
 // Inizializzazione UI
 // -------------------------------------------------------------
 window.addEventListener("DOMContentLoaded", () => {
-    initOrientation();
     initFileLoader();
     initGenrePanel();
     if (!scoreUI) {
@@ -48,42 +47,6 @@ window.addEventListener("DOMContentLoaded", () => {
     }
     resizeCanvas();
 });
-
-// -------------------------------------------------------------
-// Orientamento - VERSIONE VERTICALE
-// -------------------------------------------------------------
-function initOrientation() {
-    const rotateOverlay = document.getElementById("rotateOverlay");
-
-    function checkOrientation() {
-        const isPortrait = window.matchMedia("(orientation: portrait)").matches || 
-                          (window.innerHeight > window.innerWidth);
-        
-        currentOrientation = isPortrait ? 'portrait' : 'landscape';
-        
-        if (!isPortrait) {
-            rotateOverlay.style.display = "flex";
-            rotateOverlay.classList.remove("hidden");
-            
-            if (currentEngine) {
-                currentEngine.pause();
-            }
-        } else {
-            rotateOverlay.style.display = "none";
-            rotateOverlay.classList.add("hidden");
-        }
-    }
-
-    const mql = window.matchMedia("(orientation: portrait)");
-    if (mql.addEventListener) {
-        mql.addEventListener("change", checkOrientation);
-    } else {
-        window.addEventListener("orientationchange", checkOrientation);
-    }
-
-    window.addEventListener("resize", checkOrientation);
-    checkOrientation();
-}
 
 
 // -------------------------------------------------------------
