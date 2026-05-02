@@ -110,18 +110,17 @@ body {
 }
 
 /* Video On-Air */
+
 .video-mini-wrapper {
     position: fixed;
-    top: 70px;
-    right: 10px;
-    width: 100px;
-    height: 50px;
+    top: 0;
+    left: 0;
+    width: 1px;       /* Quasi invisibile */
+    height: 1px;      /* Quasi invisibile */
+    opacity: 0.01;    /* Quasi trasparente */
+    pointer-events: none; /* Non intralcia i click */
+    z-index: -1;      /* Lo mette dietro a tutto il resto */
     overflow: hidden;
-    border-radius: 8px;
-    background: #000;
-    z-index: 90;
-    border: 1px solid rgba(255,255,255,0.2);
-    pointer-events: none;
 }
 
 .video-mini-wrapper video {
@@ -520,3 +519,65 @@ body {
     from { opacity: 0; }
     to { opacity: 1; }
 }
+
+/* --- Modifiche Immagine --- */
+#previewImage {
+    width: 90%;
+    max-height: 40vh;
+    object-fit: contain; /* Immagine intera, non tagliata[span_2](start_span)[span_2](end_span) */
+    transition: all 0.6s ease-in-out;
+}
+
+/* Effetto Zoom-out dopo scelta genere */
+#previewImage.zoom-out {
+    transform: scale(0.7);
+    opacity: 0.8;
+}
+
+/* --- Layout Orizzontale (Affiancato) --- */
+@media (orientation: landscape) {
+    .content {
+        flex-direction: row; /* Affianca gli elementi[span_3](start_span)[span_3](end_span) */
+        justify-content: space-around;
+        align-items: center;
+        padding: 10px;
+    }
+
+    #previewImage {
+        width: 45%;
+        max-height: 70vh;
+    }
+
+    .spectrum-panel {
+        width: 45%;
+        height: 60vh;
+    }
+}
+
+.close-score-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 45px;
+    height: 45px;
+    background: #ff4444; /* Rosso */
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 24px;
+    font-weight: bold;
+    display: flex; /* Centra la X */
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    z-index: 9999; /* Sopra tutto */
+}
+
+.close-score-btn:hover {
+    background: #cc0000;
+    transform: scale(1.1);
+}
+
+
+

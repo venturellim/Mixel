@@ -14,7 +14,7 @@ import { createPianoEngine, waitPianoInstruments } from "./genres/piano/pianoEng
 import { createMetalEngine, waitMetalInstruments } from "./genres/metal/metalEngine.js";
 import { createOrchestraEngine, waitOrchestraInstruments } from "./genres/orchestra/orchestraEngine.js";
 import { createDanceEngine, waitDanceInstruments } from "./genres/dance/danceEngine.js";
-import { scoreVisualizer } from "./scoreUI.js";
+import { Visualizer } from "./scoreUI.js";
 
 console.log("main.js VERTICALE ver. 008 loaded");
 
@@ -61,6 +61,8 @@ function initFileLoader() {
     fileInput.addEventListener("change", function () {
         const file = this.files[0];
         if (!file) return;
+        
+        // Verifica che sia un'immagine[span_0](start_span)[span_0](end_span)
         if (!file.type.startsWith("image/")) {
             alert("Carica solo immagini.");
             return;
@@ -70,20 +72,32 @@ function initFileLoader() {
         img.src = URL.createObjectURL(file);
 
         img.onload = () => {
+            // Applica l'immagine all'anteprima[span_1](start_span)[span_1](end_span)
             previewImage.src = img.src;
+            
+            // 1. Rimuove la classe hidden per mostrare l'immagine[span_2](start_span)[span_2](end_span)
             previewImage.classList.remove("hidden");
+            
+            // 2. Rimuove l'effetto zoom-out se presente da una sessione precedente
+            previewImage.classList.remove("zoom-out");
+            
+            // 3. Nasconde il logo iniziale[span_3](start_span)[span_3](end_span)
             heroLogoContainer.style.display = "none";
+            
+            // 4. MOSTRA il tasto elabora solo ORA[span_4](start_span)[span_4](end_span)
             btnElabora.classList.remove("hidden");
             
+            // Reset dei pannelli audio per nuova analisi[span_5](start_span)[span_5](end_span)
             spectrumPanel.classList.add("hidden");
             playerPanel.classList.add("hidden");
             
+            // Gestione video on-air[span_6](start_span)[span_6](end_span)
             if (miniVideo) {
                 miniVideo.pause();
                 miniVideo.currentTime = 0; 
             }
 
-            resetAppState();
+            resetAppState(); //[span_7](start_span)[span_7](end_span)
         };
     });
 }
@@ -163,6 +177,9 @@ async function selectGenre(genre) {
         console.error("❌ Engine non creato!");
         return;
     }
+    // Zoom-out dell'anteprima dopo la scelta del genere
+    const previewImage = document.getElementById("previewImage");
+    previewImage.classList.add("zoom-out");
 
     initPlayerUI();
     drawSpectrum();
