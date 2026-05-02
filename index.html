@@ -60,34 +60,6 @@
             color: #00ff00;
         }
         
-        /* Overlay orientamento */
-        .rotate-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.95);
-            z-index: 9999;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            flex-direction: column;
-        }
-        
-        .rotate-overlay.show {
-            display: flex;
-        }
-        
-        .rotate-icon {
-            font-size: 60px;
-            margin-bottom: 20px;
-            animation: rotateAnim 1.5s infinite;
-        }
-        
-        @keyframes rotateAnim {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(90deg); }
-        }
-        
         /* Container per l'app */
         #app-root {
             width: 100%;
@@ -95,7 +67,6 @@
             position: relative;
         }
         
-        /* Stili base che non devono mai mancare */
         .hidden {
             display: none !important;
         }
@@ -106,14 +77,8 @@
         <div class="loader-spinner"></div>
         <div class="loader-text">Caricamento Mixel...</div>
         <div class="orientation-badge">
-            Orientamento: <span id="orientation-status">rilevamento...</span>
+            Versione: <span id="version-status">...</span>
         </div>
-    </div>
-    
-    <div id="rotateOverlay" class="rotate-overlay">
-        <div class="rotate-icon">🔄</div>
-        <p>Ruota il dispositivo in VERTICALE<br>per usare l'app</p>
-        <p style="font-size: 12px; margin-top: 15px;">(L'app è ottimizzata per uso verticale)</p>
     </div>
     
     <div id="app-root"></div>
@@ -129,6 +94,11 @@
         // Funzione per caricare CSS
         function loadStylesheet(href) {
             return new Promise((resolve, reject) => {
+                // Evita duplicati
+                if (document.querySelector(`link[href="${href}"]`)) {
+                    resolve();
+                    return;
+                }
                 const link = document.createElement('link');
                 link.rel = 'stylesheet';
                 link.href = href;
@@ -141,6 +111,11 @@
         // Funzione per caricare JS
         function loadScript(src) {
             return new Promise((resolve, reject) => {
+                // Evita duplicati
+                if (document.querySelector(`script[src="${src}"]`)) {
+                    resolve();
+                    return;
+                }
                 const script = document.createElement('script');
                 script.type = 'module';
                 script.src = src;
@@ -150,16 +125,14 @@
             });
         }
         
-        // Funzione per caricare l'HTML della UI
-        async function loadUI(orientation) {
+        let currentOrientation = getOrientation();
+        const versionSpan = document.getElementById('version-status');
+        
+        // Costruisce l'HTML in base all'orientamento
+        function buildHTML(orientation) {
             const appRoot = document.getElementById('app-root');
-            const statusSpan = document.getElementById('orientation-status');
             
             if (orientation === 'portrait') {
-                statusSpan.textContent = 'VERTICALE';
-                console.log('📱 Caricamento versione VERTICALE');
-                
-                // Carica il contenuto HTML verticale
                 appRoot.innerHTML = `
                     <div class="app-container">
                         <header class="app-header">
@@ -250,16 +223,7 @@
                         </div>
                     </div>
                 `;
-                
-                // Carica CSS e JS verticali
-                await loadStylesheet('style-vertical.css');
-                await loadScript('main-vertical.js');
-                
             } else {
-                statusSpan.textContent = 'ORIZZONTALE';
-                console.log('📱 Caricamento versione ORIZZONTALE');
-                
-                // Carica il contenuto HTML orizzontale
                 appRoot.innerHTML = `
                     <div class="app-container">
                         <aside class="sidebar">
@@ -332,69 +296,62 @@
                         <input type="range" id="eqHigh" min="-12" max="12" value="0">
                     </div>
                 `;
-                
-                // Carica CSS e JS orizzontali
+            }
+        }
+        
+        // Carica l'app in base all'orientamento
+        async function loadApp() {
+            const orientation = getOrientation();
+            currentOrientation = orientation;
+            
+            if (versionSpan) {
+                versionSpan.textContent = orientation === 'portrait' ? 'VERTICALE' : 'ORIZZONTALE';
+            }
+            
+            console.log(`📱 Caricamento versione ${orientation.toUpperCase()}`);
+            
+            buildHTML(orientation);
+            
+            if (orientation === 'portrait') {
+                await loadStylesheet('style-vertical.css');
+                await loadScript('main-vertical.js');
+            } else {
                 await loadStylesheet('style-horizontal.css');
                 await loadScript('main-horizontal.js');
             }
-        }
-        
-        // Variabile per tenere traccia dell'orientamento corrente
-        let currentOrientation = getOrientation();
-        
-        // Avvia l'app
-        async function startApp() {
-            try {
-                await loadUI(currentOrientation);
-                
-                // Nascondi loader dopo un breve delay
+            
+            // Nascondi loader
+            const loader = document.getElementById('loader-container');
+            if (loader) {
+                loader.style.opacity = '0';
                 setTimeout(() => {
-                    const loader = document.getElementById('loader-container');
-                    if (loader) {
-                        loader.style.opacity = '0';
-                        setTimeout(() => {
-                            loader.style.display = 'none';
-                        }, 500);
-                    }
+                    loader.style.display = 'none';
                 }, 500);
-            } catch (error) {
-                console.error('Errore nel caricamento:', error);
-                document.getElementById('orientation-status').textContent = 'ERRORE';
             }
         }
         
-        // Gestione cambio orientamento
+        // Gestione cambio orientamento - ricarica la pagina
+        let reloadTimeout = null;
+        
         function handleOrientationChange() {
             const newOrientation = getOrientation();
-            const rotateOverlay = document.getElementById('rotateOverlay');
             
-            // Se stai usando solo verticale, mostra overlay in orizzontale
-            if (newOrientation === 'landscape' && currentOrientation === 'portrait') {
-                rotateOverlay.classList.add('show');
-                // Metti in pausa l'audio se attivo
-                if (window.currentEngine) {
-                    window.currentEngine.pause();
-                }
-            } else if (newOrientation === 'portrait' && currentOrientation === 'landscape') {
-                rotateOverlay.classList.remove('show');
-                // Ricarica la versione verticale
-                location.reload();
-            } else if (newOrientation !== currentOrientation) {
-                // Ricarica la pagina per applicare la versione corretta
-                location.reload();
+            if (newOrientation !== currentOrientation) {
+                console.log(`🔄 Orientamento cambiato: ${currentOrientation} → ${newOrientation}. Ricaricamento...`);
+                
+                if (reloadTimeout) clearTimeout(reloadTimeout);
+                reloadTimeout = setTimeout(() => {
+                    location.reload();
+                }, 150);
             }
         }
         
         // Ascolta cambi di orientamento
-        window.addEventListener('resize', () => {
-            setTimeout(handleOrientationChange, 100);
-        });
-        window.addEventListener('orientationchange', () => {
-            setTimeout(handleOrientationChange, 100);
-        });
+        window.addEventListener('resize', handleOrientationChange);
+        window.addEventListener('orientationchange', handleOrientationChange);
         
-        // Avvia tutto
-        startApp();
+        // Avvia l'app
+        loadApp();
     </script>
 </body>
 </html>
