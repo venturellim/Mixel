@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <title>Mixel - Ascolta le tue foto!</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+    <script>
+        eruda.init();
+        console.log("🟦 Eruda inizializzato");
+    </script>
+</head>
+
+<body>
+
+<div id="loadingOverlay" style="
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    z-index: 9999;
+    color: white;
+    font-family: sans-serif;
+">
+    <div id="loadingText" style="margin-bottom: 12px;">
+        Caricamento strumenti in corso…
+    </div>
+
+    <div style="width: 80%; height: 10px; background: #333; border-radius: 4px; overflow: hidden;">
+        <div id="loadingBar" style="height: 10px; width: 0%; background: #4caf50;"></div>
+    </div>
+</div>
+
+<!-- OVERLAY ORIENTAMENTO -->
+<div id="rotateOverlay" class="rotate-overlay hidden">
+    <div class="rotate-box">
+        <div class="rotate-icon">🔄</div>
+        <p>Ruota il dispositivo in verticale<br>per usare l'app</p>
+    </div>
+</div>
+
+<div class="app-container">
+
+    <!-- HEADER SUPERIORE CON LOGO E CARICAMENTO -->
+    <header class="app-header">
+        <div class="logo-box">
+            <img src="Mixel.jpg" alt="Logo">
+        </div>
+        
+        <div class="upload-area">
+            <input type="file" id="fileInput" accept="image/*" capture="environment">
+            <label for="fileInput" class="upload-btn">📸 Carica foto</label>
+        </div>
+        
+        <button id="btnElabora" class="elabora-btn hidden">
+            ✨ Elabora foto
+        </button>
+    </header>
+
+    <!-- CONTENUTO PRINCIPALE SCROLLABILE -->
+    <main class="content">
+        
+        <!-- Video On-Air (in alto a destra) -->
+        <div class="video-mini-wrapper">
+            <video autoplay muted loop playsinline>
+                <source src="onair.mp4" type="video/mp4">
+            </video>
+        </div>
+
+        <!-- Logo Hero iniziale -->
+        <div id="heroLogoContainer" class="hero-container">
+            <div class="hero-logo-box">
+                <img src="Mixel.jpg" alt="Logo">
+            </div>
+        </div>
+
+        <!-- Immagine Preview -->
+        <img id="previewImage" class="preview hidden" alt="MIXEL - Ascolta le tue foto!">
+
+        <!-- Analizzatore di spettro -->
+        <div id="spectrumPanel" class="spectrum-panel hidden">
+            <canvas id="spectrumCanvas"></canvas>
+        </div>
+
+        <!-- Player Panel -->
+        <div id="playerPanel" class="player-panel hidden">
+            <div class="player-ui">
+                <div class="player-controls">
+                    <button id="btnPlay">▶️ Play</button>
+                    <button id="btnPause">⏸️ Pause</button>
+                    <button id="btnStop">⏹️ Stop</button>
+                    <button id="btnFxPanel">🎛️ FX</button>
+                    <button id="btnSpartito" class="spartito-btn hidden">🎼 Spartito</button>
+                </div>
+
+                <div class="player-seek">
+                    <input type="range" id="seekBar" min="0" max="100" value="0">
+                </div>
+
+                <div class="player-time">
+                    <span id="currentTime">0:00</span> /
+                    <span id="totalTime">0:00</span>
+                </div>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<!-- GENRE PANEL (SCENDE DALL'ALTO) -->
+<div id="genrePanel" class="genre-panel">
+    <div class="panel-header">
+        <h2>Scegli il genere musicale</h2>
+        <button id="closeGenrePanel" class="close-panel-btn">✖</button>
+    </div>
+    <div class="genre-buttons">
+        <button class="genre-btn" data-genre="dance">🎧 Dance '90</button>
+        <button class="genre-btn" data-genre="metal">🤘 Metal</button>
+        <button class="genre-btn" data-genre="orchestra">🎻 Orchestra</button>
+        <button class="genre-btn" data-genre="piano">🎹 Piano</button>
+    </div>
+</div>
+
+<!-- FX PANEL (SCENDE DALL'ALTO) -->
+<div id="fxPanel" class="fx-panel">
+    <div class="panel-header">
+        <h2>Controlli Audio</h2>
+        <button id="closeFxPanel" class="close-panel-btn">✖</button>
+    </div>
+
+    <div class="fx-section">
+        <h3>Equalizzatore Master</h3>
+        <div class="fx-control">
+            <label for="eqLow">Bassi</label>
+            <input type="range" id="eqLow" min="-12" max="12" value="0">
+        </div>
+        <div class="fx-control">
+            <label for="eqMid">Medi</label>
+            <input type="range" id="eqMid" min="-12" max="12" value="0">
+        </div>
+        <div class="fx-control">
+            <label for="eqHigh">Alti</label>
+            <input type="range" id="eqHigh" min="-12" max="12" value="0">
+        </div>
+    </div>
+
+    <div id="volumeControls" class="fx-section">
+        <h3>Volumi Strumenti</h3>
+        <!-- I volumi verranno aggiunti dinamicamente -->
+    </div>
+</div>
+
+<script type="module" src="main.js"></script>
+
+</body>
+</html>
