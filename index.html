@@ -4,97 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Mixel - Ascolta le tue foto!</title>
-    <link rel="stylesheet" href="style.css">
+    <link id="theme-link" rel="stylesheet" href=""> 
     <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
     <script>eruda.init();</script>
 </head>
-<body class="portrait-mode"> <div id="loadingOverlay">
-    <div id="loadingText">Caricamento strumenti in corso…</div>
-    <div class="progress-container">
-        <div id="loadingBar"></div>
-    </div>
-</div>
-
-<div id="rotateOverlay" class="hidden">
-    <div class="rotate-box">
-        <div class="rotate-icon">🔄</div>
-        <p>Ruota il dispositivo per un'esperienza migliore</p>
-    </div>
-</div>
-
-<div class="app-container">
-    <main class="content">
-        
-        <div class="video-mini-wrapper">
-            <video autoplay muted loop playsinline>
-                <source src="onair.mp4" type="video/mp4">
-            </video>
-        </div>
-
-        <div id="imageDisplayArea">
-            <div id="heroLogoContainer">
-                <img src="Mixel.jpg" id="heroLogo" class="hero-logo-box" alt="Logo">
-            </div>
-            <img id="previewImage" class="preview hidden" alt="MIXEL Preview">
-        </div>
-
-        <div id="spectrumPanel">
-            <canvas id="spectrumCanvas"></canvas>
-        </div>
-
-        <div class="upload-zone">
-            <input type="file" id="fileInput" class="file-input">
-            <button id="btnElabora" class="side-btn hidden">✨ Elabora foto</button>
-        </div>
-
-        <div id="playerPanel">
-            <div class="player-ui">
-                <div class="player-controls">
-                    <button id="btnPlay">▶️</button>
-                    <button id="btnPause">⏸️</button>
-                    <button id="btnStop">⏹️</button>
-                    <button id="btnFxPanel">🎛️</button>
-                    <button id="btnSpartito" class="side-btn hidden">🎼</button>
-                </div>
-                <input type="range" id="seekBar" min="0" max="100" value="0">
-                <div class="player-time">
-                    <span id="currentTime">0:00</span> / <span id="totalTime">0:00</span>
-                </div>
-            </div>
-        </div>
-    </main>
-</div>
-
-<div id="fxPanel" class="fx-panel">
-    <div class="panel-header">
-        <h2>Controlli Audio</h2>
-        <button id="closeFxPanel" class="close-btn">✖</button>
-    </div>
-    <div id="fxDynamicContent">
-        <div class="fx-content">
-            <h3>Equalizzatore</h3>
-            <label>Bassi</label><input type="range" id="eqLow" min="-12" max="12" value="0">
-            <label>Medi</label><input type="range" id="eqMid" min="-12" max="12" value="0">
-            <label>Alti</label><input type="range" id="eqHigh" min="-12" max="12" value="0">
-        </div>
-    </div>
-</div>
-
-<div id="genrePanel" class="genre-panel">
-    <div class="panel-header">
-        <h2>Scegli Genere</h2>
-        <button id="closeGenrePanel" class="close-btn">✖</button>
-    </div>
-    <div class="genre-grid">
-        <button class="genre-btn" data-genre="dance">🎧 Dance '90</button>
-        <button class="genre-btn" data-genre="metal">🤘 Metal</button>
-        <button class="genre-btn" data-genre="orchestra">🎻 Orchestra</button>
-        <button class="genre-btn" data-genre="piano">🎹 Piano</button>
-    </div>
-</div>
-
-<canvas id="scoreCanvas"></canvas>
-
-<script type="module" src="main.js"></script>
+<body>
+    <div id="app-root"></div>
+    <script type="module" src="main.js"></script>
 </body>
 </html>
