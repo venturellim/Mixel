@@ -45,23 +45,7 @@ window.addEventListener("DOMContentLoaded", () => {
         scoreUI = new scoreVisualizer();
     }
     resizeCanvas();
-    initCloseScoreButton();
 });
-
-// -------------------------------------------------------------
-// Pulsante chiusura spartito
-// -------------------------------------------------------------
-function initCloseScoreButton() {
-    const closeScoreBtn = document.getElementById("closeScoreBtn");
-    if (closeScoreBtn) {
-        closeScoreBtn.onclick = () => {
-            if (scoreUI) {
-                scoreUI.hide();
-                closeScoreBtn.style.display = "none";
-            }
-        };
-    }
-}
 
 // -------------------------------------------------------------
 // File Loader + Preview

@@ -28,7 +28,12 @@ export class scoreVisualizer {
         this.imageLoaded = false;
         this.bgImage.onload = () => { this.imageLoaded = true; };
 
-        // RIMOSSO: closeBtn (ora gestito da main.js)
+        this.closeBtn = document.createElement("button");
+        this.closeBtn.innerHTML = "✕";
+        this.closeBtn.className = "close-score-btn";
+        this.closeBtn.style.display = "none";
+        this.closeBtn.style.zIndex = "9999";
+        this.closeBtn.onclick = () => this.hide();
 
         // Mappa altezze per il pentagramma (Offset pixel)
         this.pitchMap = {
