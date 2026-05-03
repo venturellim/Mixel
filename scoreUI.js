@@ -87,15 +87,13 @@ export class scoreVisualizer {
     show() { 
         this.isVisible = true; 
         this.canvas.style.display = "block"; 
-        // RIMOSSO: closeBtn.style.display
-        this.render(); 
-    }
+        this.closeBtn.style.display = "flex"; this.render(); }
+    hide() { this.isVisible = false; this.canvas.style.display = "none"; this.closeBtn.style.display = "none"; this.notes = []; }
     
     hide() { 
         this.isVisible = false; 
         this.canvas.style.display = "none"; 
-        // RIMOSSO: closeBtn.style.display
-        this.notes = []; 
+      this.closeBtn.style.display = "none"; this.notes = []; 
     }
 
     addNote(track, note, section) {
