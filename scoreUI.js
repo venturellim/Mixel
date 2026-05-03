@@ -79,7 +79,7 @@ export class scoreVisualizer {
         this.canvas.height = window.innerHeight;
         this.canvas.id = "scoreCanvas"; 
         if (!this.canvas.parentElement) document.body.appendChild(this.canvas);
-        // RIMOSSO: append del closeBtn (ora gestito da HTML)
+        if (!this.closeBtn.parentElement) document.body.appendChild(this.closeBtn);
         this.playheadX = this.canvas.width * 0.80;
         this.leftLimit = this.canvas.width * 0.12; 
     }
