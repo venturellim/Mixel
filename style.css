@@ -181,7 +181,7 @@ body {
 
 /* Zoom-out dopo selezione genere */
 #previewImage.zoomed-out {
-    transform: scale(0.5);
+    transform: scale(0.5) translateY(-20px);
     opacity: 0.8;
 }
 
@@ -313,7 +313,7 @@ body {
     #previewImage {
         flex: 1;
         max-width: 35%;
-        margin-top: -50px;
+        margin-top: -80px;
     }
     
     /* Contenitore destro (spettro + player) affiancato */
