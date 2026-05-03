@@ -182,7 +182,7 @@ body {
 /* Zoom-out dopo selezione genere */
 #previewImage.zoomed-out {
     transform: scale(0.6) translateY(-100px);
-    opacity: 0.8;
+    opacity: 0.9;
 }
 
 /* Contenitore destro per spettro + player */
@@ -348,6 +348,13 @@ body {
         justify-content: center;
         gap: 10px;
     }
+    
+    /* Zoom-out dopo selezione genere */
+#previewImage.zoomed-out {
+    transform: scale(0.8) translateY(-40px);
+    opacity: 1;
+}
+
 }
 
 /* ==========================================
