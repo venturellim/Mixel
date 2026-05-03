@@ -227,8 +227,11 @@ function initPlayerUI() {
     stopBtn.onclick = () => {
         currentEngine?.stop();
         if (scoreUI) scoreUI.hide();
-        if (closeScoreBtn) closeScoreBtn.style.display = "none";
-    };
+        btnSpartito.classList.add("hidden");
+    btnSpartito.classList.remove("show-flex");
+};
+        //if (closeScoreBtn) closeScoreBtn.style.display = "none";
+    //};
     
     btnSpartito.onclick = () => {
         if (scoreUI) {
