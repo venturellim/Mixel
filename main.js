@@ -80,7 +80,7 @@ function initFileLoader() {
             
             // Rimuovi zoom se presente
             previewImage.classList.remove("zoomed-out");
-            previewImage.classList.remove("moved-up");
+            //previewImage.classList.remove("moved-up");
             
             if (miniVideo) {
                 miniVideo.pause();
@@ -478,7 +478,7 @@ function resetAppState() {
     const previewImage = document.getElementById("previewImage");
     if (previewImage) {
         previewImage.classList.remove("zoomed-out");
-        previewImage.classList.remove("moved-up");
+        //previewImage.classList.remove("moved-up");
     }
     // Nascondi pulsante chiusura spartito
     const closeScoreBtn = document.getElementById("closeScoreBtn");
