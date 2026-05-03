@@ -114,35 +114,65 @@ body {
     transition: all 0.3s ease;
 }
 
-/* Modalità orizzontale - immagine e spettro affiancati */
+/* Contenitore destro per spettro + player (verticale) */
+.right-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    width: 100%;
+    max-width: 500px;
+}
+
+/* ==========================================
+   MODALITÀ ORIZZONTALE
+   ========================================== */
 @media (orientation: landscape) {
     .content {
         flex-direction: row !important;
         justify-content: center;
         align-items: center;
         gap: 40px;
+        padding: 20px;
     }
     
+    /* Immagine a sinistra */
     .hero-container,
     #previewImage {
         flex: 1;
-        max-width: 45%;
+        max-width: 40%;
+        margin: 0;
     }
     
-    .spectrum-panel {
+    /* Contenitore destro (spettro + player) affiancato */
+    .right-panel {
         flex: 1;
-        max-width: 45%;
-        height: 200px;
+        max-width: 40%;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
     }
     
+    /* Spettro nella parte alta del pannello destro */
+    .spectrum-panel {
+        width: 100%;
+        height: 180px;
+        margin: 0;
+    }
+    
+    /* Player nella parte bassa del pannello destro */
     .player-panel {
-        position: fixed;
-        bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 90%;
-        max-width: 600px;
-        z-index: 100;
+        width: 100%;
+        margin: 0;
+        position: relative;
+        bottom: auto;
+        left: auto;
+        transform: none;
+    }
+    
+    /* Nascondi video in orizzontale (opzionale) */
+    .video-mini-wrapper {
+        display: none;
     }
 }
 
@@ -209,7 +239,7 @@ body {
 
 /* Zoom-out dopo selezione genere */
 #previewImage.zoomed-out {
-    transform: scale(0.7);
+    transform: scale(0.5);
     opacity: 0.9;
 }
 
