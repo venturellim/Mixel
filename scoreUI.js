@@ -153,7 +153,7 @@ export class scoreVisualizer {
             }
         });
 
-        // Ciclo Note
+                // Ciclo Note
         for (let i = this.notes.length - 1; i >= 0; i--) {
             const n = this.notes[i];
             const baseTrack = n.track.replace("Xtra", "");
@@ -164,7 +164,7 @@ export class scoreVisualizer {
             n.x -= 3.5; 
 
             if (n.x > leftLimit) {
-                // --- BATTERIA (10x5) ---
+                // --- BATTERIA ---
                 if (n.track === "Drums") {
                     ctx.fillStyle = "#000";
                     let drumY = baseY;
@@ -179,19 +179,19 @@ export class scoreVisualizer {
                         ctx.fillText("✕", n.x, drumY + 6);
                     }
                 } 
-                // --- STRUMENTI (Xtra in ROSSO + Sopra/Sotto) ---
+                // --- STRUMENTI (Xtra sopra, Normali sotto) ---
                 else {
                     const isXtra = n.track.includes("Xtra");
                     const hasPartner = currentLabels[baseTrack + "Xtra"] !== "";
                     const pitchOffset = this.pitchMap[n.rawKey] || 0;
                     let finalY = baseY + pitchOffset;
 
+                    // Logica delle righe separate (niente più zigzag)
                     if (hasPartner) {
-                        finalY += isXtra ? -15 : 15;
-                        // Note Xtra ROSSE
+                        finalY += isXtra ? -20 : 10; // Xtra riga sopra, Normale riga sotto
                         ctx.fillStyle = isXtra ? "#ff0000" : "#000000";
                     } else {
-                        finalY += (Math.floor(n.index / 100) % 2 === 0) ? -5 : 5;
+                        finalY += 0; // Singolo strumento: riga centrale
                         ctx.fillStyle = "#000000";
                     }
 
@@ -200,10 +200,8 @@ export class scoreVisualizer {
                     ctx.fillText("♩", n.x, finalY + 7);
 
                     ctx.font = "bold 12px 'Courier New', monospace";
-                    const isEvenZig = Math.floor(n.index / 100) % 2 === 0;
-                    const labelY = (hasPartner && isXtra) ? finalY + 22 : (isEvenZig ? finalY - 18 : finalY - 18);
+                    const labelY = finalY - 18; // Etichetta sempre sopra la nota
                     
-                    // Etichetta nota Xtra in ROSSO
                     if (isXtra) {
                         ctx.fillStyle = "#ff0000";
                     } else {
