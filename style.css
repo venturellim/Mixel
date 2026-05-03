@@ -114,70 +114,7 @@ body {
     transition: all 0.3s ease;
 }
 
-/* Contenitore destro per spettro + player (verticale) */
-.right-panel {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20px;
-    width: 100%;
-    max-width: 500px;
-}
-
-/* ==========================================
-   MODALITÀ ORIZZONTALE
-   ========================================== */
-@media (orientation: landscape) {
-    .content {
-        flex-direction: row !important;
-        justify-content: center;
-        align-items: center;
-        gap: 40px;
-        padding: 20px;
-    }
-    
-    /* Immagine a sinistra */
-    .hero-container,
-    #previewImage {
-        flex: 1;
-        max-width: 40%;
-        margin: 0;
-    }
-    
-    /* Contenitore destro (spettro + player) affiancato */
-    .right-panel {
-        flex: 1;
-        max-width: 40%;
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-    }
-    
-    /* Spettro nella parte alta del pannello destro */
-    .spectrum-panel {
-        width: 100%;
-        height: 180px;
-        margin: 0;
-    }
-    
-    /* Player nella parte bassa del pannello destro */
-    .player-panel {
-        width: 100%;
-        margin: 0;
-        position: relative;
-        bottom: auto;
-        left: auto;
-        transform: none;
-    }
-    
-    /* Nascondi video in orizzontale (opzionale) */
-    .video-mini-wrapper {
-        display: none;
-    }
-}
-
-/* Video On-Air */
-/* Video On-Air - NASCosto ma attivo per evitare standby */
+/* Video On-Air - Nascosto ma attivo per evitare standby */
 .video-mini-wrapper {
     position: fixed;
     bottom: 0;
@@ -200,16 +137,15 @@ body {
 
 /* Hero Logo iniziale - intero senza tagli */
 .hero-container {
-    flex: 1;
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 300px;
+    min-height: 250px;
 }
 
 .hero-logo-box {
-    width: 250px;
-    height: 250px;
+    width: 200px;
+    height: 200px;
     border-radius: 20px;
     overflow: hidden;
     box-shadow: 0 10px 40px rgba(0,0,0,0.3);
@@ -227,7 +163,7 @@ body {
     50% { transform: scale(1.05); opacity: 0.9; }
 }
 
-/* Immagine Preview */
+/* Immagine Preview - più in alto */
 #previewImage {
     width: 85%;
     max-width: 400px;
@@ -235,18 +171,33 @@ body {
     box-shadow: 0 10px 40px rgba(0,0,0,0.5);
     object-fit: contain;
     transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    margin-top: 10px;
+}
+
+/* Spostamento verso l'alto dopo selezione */
+#previewImage.moved-up {
+    transform: translateY(-30px);
 }
 
 /* Zoom-out dopo selezione genere */
 #previewImage.zoomed-out {
     transform: scale(0.5);
-    opacity: 0.9;
+    opacity: 0.8;
+}
+
+/* Contenitore destro per spettro + player */
+.right-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    width: 100%;
+    max-width: 500px;
 }
 
 /* Spectrum Panel */
 .spectrum-panel {
-    width: 90%;
-    max-width: 500px;
+    width: 100%;
     height: 120px;
     background: rgba(0, 0, 0, 0.6);
     border-radius: 15px;
@@ -267,13 +218,11 @@ body {
 
 /* Player Panel */
 .player-panel {
-    width: 95%;
-    max-width: 500px;
+    width: 100%;
     background: rgba(20, 20, 30, 0.95);
     backdrop-filter: blur(10px);
     border-radius: 20px;
     padding: 20px;
-    margin-bottom: 20px;
     transition: all 0.5s ease;
 }
 
@@ -345,6 +294,60 @@ body {
     text-align: center;
     font-size: 12px;
     opacity: 0.7;
+}
+
+/* ==========================================
+   MODALITÀ ORIZZONTALE
+   ========================================== */
+@media (orientation: landscape) {
+    .content {
+        flex-direction: row !important;
+        justify-content: center;
+        align-items: center;
+        gap: 40px;
+        padding: 20px;
+    }
+    
+    /* Immagine a sinistra - più in alto */
+    .hero-container,
+    #previewImage {
+        flex: 1;
+        max-width: 35%;
+        margin-top: -50px;
+    }
+    
+    /* Contenitore destro (spettro + player) affiancato */
+    .right-panel {
+        flex: 1;
+        max-width: 35%;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    /* Spettro */
+    .spectrum-panel {
+        width: 100%;
+        height: 150px;
+    }
+    
+    /* Player - stesso stile della verticale */
+    .player-panel {
+        width: 100%;
+        position: relative;
+        bottom: auto;
+        left: auto;
+        transform: none;
+        margin: 0;
+    }
+    
+    /* I bottoni del player rimangono affiancati come in verticale */
+    .player-controls {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+    }
 }
 
 /* ==========================================
@@ -560,13 +563,13 @@ body {
     }
     
     .hero-logo-box {
-        width: 180px;
-        height: 180px;
+        width: 150px;
+        height: 150px;
     }
     
     .player-controls button {
-        padding: 8px 14px;
-        font-size: 12px;
+        padding: 8px 12px;
+        font-size: 11px;
     }
 }
 
