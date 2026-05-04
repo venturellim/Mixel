@@ -16,7 +16,7 @@ import { createOrchestraEngine, waitOrchestraInstruments } from "./genres/orches
 import { createDanceEngine, waitDanceInstruments } from "./genres/dance/danceEngine.js";
 import { scoreVisualizer } from "./scoreUI.js";
 
-console.log("main.js COMPLETO ver. 010 loaded");
+console.log("main.js COMPLETO ver. 011 loaded");
 
 
 let currentEngine = null;
@@ -188,6 +188,10 @@ function initPlayerUI() {
     const btnSpartito = document.getElementById("btnSpartito");
     const previewImage = document.getElementById("previewImage");
     const closeScoreBtn = document.getElementById("closeScoreBtn");
+    const rightPanel = document.querySelector(".right-panel");
+    
+    // Aggiungi questa riga per rendere visibile il pannello destro in orizzontale
+    if (rightPanel) rightPanel.classList.add("visible");
     
     spectrumPanel.classList.remove("hidden");
     playerPanel.classList.remove("hidden");
@@ -494,6 +498,10 @@ function closeMixelUI() {
     const previewImage = document.getElementById("previewImage");
     const btnSpartito = document.getElementById("btnSpartito");
     const closeScoreBtn = document.getElementById("closeScoreBtn");
+    const rightPanel = document.querySelector(".right-panel");
+    
+    // Rimuovi la visibilità del pannello destro
+    if (rightPanel) rightPanel.classList.remove("visible");
     
     if (spectrumPanel) spectrumPanel.classList.add("hidden");
     if (playerPanel) playerPanel.classList.add("hidden");

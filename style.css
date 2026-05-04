@@ -308,42 +308,73 @@ body {
         align-items: center;
         gap: 40px;
         padding: 20px;
+        position: relative;
     }
     
-    /* Immagine a sinistra - più in alto */
-    .hero-container,
+    /* Hero Logo iniziale - centrato */
+    .hero-container {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+        z-index: 10;
+    }
+    
+    /* Immagine Preview - inizialmente centrata */
     #previewImage {
-        flex: 1;
-        max-width: 35%;
-        margin-top: 30px;
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+        margin-top: 0;
+        z-index: 10;
     }
     
+    /* Dopo selezione - si sposta a sinistra e si rimpicciolisce */
     #previewImage.moved-up {
-    transform: translateY(20px);
+        position: relative;
+        left: 0;
+        transform: translateX(0) scale(0.8);
+        margin-left: 20px;
+        flex: 0.8;
+        max-width: 30%;
     }
     
     #previewImage.zoomed-out {
-    transform: scale(0.8) translateY(20px);
-    opacity: 0.9;
+        position: relative;
+        left: 0;
+        transform: translateX(0) scale(0.65);
+        margin-left: 20px;
+        flex: 0.6;
+        max-width: 25%;
+        opacity: 0.9;
     }
     
-    /* Contenitore destro (spettro + player) affiancato */
+    /* Contenitore destro (spettro + player) - inizialmente nascosto */
     .right-panel {
         flex: 1;
-        max-width: 35%;
-        display: flex;
-        flex-direction: column;
+        max-width: 0;
+        opacity: 0;
+        overflow: hidden;
+        transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
         gap: 20px;
         margin-top: 0;
+    }
+    
+    /* Quando diventa visibile */
+    .right-panel.visible {
+        max-width: 45%;
+        opacity: 1;
+        margin-left: 20px;
     }
     
     /* Spettro */
     .spectrum-panel {
         width: 100%;
-        height: 150px;
+        height: 140px;
     }
     
-    /* Player - stesso stile della verticale */
+    /* Player */
     .player-panel {
         width: 100%;
         position: relative;
@@ -353,33 +384,28 @@ body {
         margin: 0;
     }
     
-    /* I bottoni del player rimangono affiancati come in verticale */
     .player-controls {
         display: flex;
         flex-wrap: wrap;
         justify-content: center;
         gap: 10px;
     }
-
 }
 
 /* Modalità orizzontale su mobile (schermi piccoli in landscape) */
 @media (max-width: 900px) and (orientation: landscape) {
-    .hero-container,
-    #previewImage {
-        margin-top: 20px;  /* Meno abbassamento su mobile in landscape */
-    }
-    
     #previewImage.moved-up {
-        transform: translateY(10px);
+        transform: translateX(0) scale(0.7);
+        max-width: 28%;
     }
     
     #previewImage.zoomed-out {
-        transform: scale(0.65) translateY(10px);
+        transform: translateX(0) scale(0.55);
+        max-width: 22%;
     }
     
-    .right-panel {
-        gap: 10px;
+    .right-panel.visible {
+        max-width: 50%;
     }
     
     .spectrum-panel {
