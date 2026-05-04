@@ -315,7 +315,16 @@ body {
     #previewImage {
         flex: 1;
         max-width: 35%;
-        margin-top: -100px;
+        margin-top: 50px;
+    }
+    
+    #previewImage.moved-up {
+    transform: translateY(20px);
+    }
+    
+    #previewImage.zoomed-out {
+    transform: scale(0.8) translateY(20px);
+    opacity: 0.9;
     }
     
     /* Contenitore destro (spettro + player) affiancato */
@@ -325,6 +334,7 @@ body {
         display: flex;
         flex-direction: column;
         gap: 20px;
+        margin-top: 0;
     }
     
     /* Spettro */
@@ -350,13 +360,36 @@ body {
         justify-content: center;
         gap: 10px;
     }
-    
-    /* Zoom-out dopo selezione genere */
-#previewImage.zoomed-out {
-    transform: scale(0.8) translateY(20px);
-    opacity: 1;
+
 }
 
+/* Modalità orizzontale su mobile (schermi piccoli in landscape) */
+@media (max-width: 900px) and (orientation: landscape) {
+    .hero-container,
+    #previewImage {
+        margin-top: 20px;  /* Meno abbassamento su mobile in landscape */
+    }
+    
+    #previewImage.moved-up {
+        transform: translateY(10px);
+    }
+    
+    #previewImage.zoomed-out {
+        transform: scale(0.65) translateY(10px);
+    }
+    
+    .right-panel {
+        gap: 10px;
+    }
+    
+    .spectrum-panel {
+        height: 100px;
+    }
+    
+    .player-controls button {
+        padding: 5px 8px;
+        font-size: 10px;
+    }
 }
 
 /* ==========================================
