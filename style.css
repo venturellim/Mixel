@@ -171,18 +171,19 @@ body {
     box-shadow: 0 10px 40px rgba(0,0,0,0.5);
     object-fit: contain;
     transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-    margin-top: 0px;
+    margin-top: -20px;
 }
 
 /* Spostamento verso l'alto dopo selezione */
 #previewImage.moved-up {
-    transform: translateY(-30px);
+    transform: translateY(-50px);
 }
 
 /* Zoom-out dopo selezione genere */
 #previewImage.zoomed-out {
-    transform: scale(0.5) translateY(-30px);
+    transform: scale(0.5) translateY(-50px);
     opacity: 0.9;
+    
 }
 
 /* Contenitore destro per spettro + player */
@@ -193,7 +194,7 @@ body {
     gap: 8px;
     width: 100%;
     max-width: 450px;
-    margin-top: -10px;
+    margin-top: -20px;
 }
 
 /* Spectrum Panel */
@@ -352,7 +353,7 @@ body {
     
     /* Zoom-out dopo selezione genere */
 #previewImage.zoomed-out {
-    transform: scale(0.8) translateY(-30px);
+    transform: scale(0.8) translateY(20px);
     opacity: 1;
 }
 
