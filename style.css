@@ -140,7 +140,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 250px;
+    min-height: 300px;
 }
 
 .hero-logo-box {
@@ -171,7 +171,6 @@ body {
     box-shadow: 0 10px 40px rgba(0,0,0,0.5);
     object-fit: contain;
     transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-    margin-top: -20px;
 }
 
 /* Spostamento verso l'alto dopo selezione */
