@@ -55,8 +55,15 @@ body {
     object-fit: cover;
 }
 
-.upload-area {
+.header-buttons {
     flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.upload-area {
     min-width: 150px;
 }
 
@@ -96,38 +103,43 @@ body {
     box-shadow: 0 5px 20px rgba(245,87,108,0.4);
 }
 
+.hidden {
+    display: none !important;
+}
+
 /* ==========================================
    3. CONTENUTO PRINCIPALE
    ========================================== */
 .content {
     flex: 1;
-    padding: 20px;
+    padding: 10px 20px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 20px;
+    gap: 5px;
     position: relative;
+    transition: all 0.3s ease;
 }
 
-/* Video On-Air */
+/* Video On-Air - Nascosto ma attivo */
 .video-mini-wrapper {
     position: fixed;
-    top: 70px;
-    right: 10px;
-    width: 100px;
-    height: 50px;
+    bottom: 0;
+    right: 0;
+    width: 1px;
+    height: 1px;
     overflow: hidden;
-    border-radius: 8px;
-    background: #000;
-    z-index: 90;
-    border: 1px solid rgba(255,255,255,0.2);
+    background: transparent;
+    z-index: -1;
     pointer-events: none;
+    opacity: 0;
 }
 
 .video-mini-wrapper video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+    width: 1px;
+    height: 1px;
+    object-fit: none;
+    opacity: 0;
 }
 
 /* Hero Logo iniziale */
@@ -140,8 +152,8 @@ body {
 }
 
 .hero-logo-box {
-    width: 200px;
-    height: 200px;
+    width: 250px;
+    height: 250px;
     border-radius: 20px;
     overflow: hidden;
     box-shadow: 0 10px 40px rgba(0,0,0,0.3);
@@ -159,25 +171,78 @@ body {
     50% { transform: scale(1.05); opacity: 0.9; }
 }
 
-/* Immagine Preview */
+/* Immagine Preview - Base */
 #previewImage {
-    width: 85%;
-    max-width: 400px;
     border-radius: 15px;
     box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-    object-fit: cover;
+    object-fit: contain;
     transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    margin-top: 30px;
 }
 
+/* Default per immagini verticali */
+#previewImage.portrait-img {
+    width: auto;
+    height: auto;
+    max-width: 85%;
+    max-height: 55vh;
+    margin-top: 30px;
+}
+
+/* Default per immagini orizzontali */
+#previewImage.landscape-img {
+    width: 90%;
+    max-width: 600px;
+    height: auto;
+    max-height: 40vh;
+    margin-top: 40px;
+}
+
+/* Spostamento verso l'alto dopo selezione */
 #previewImage.moved-up {
-    transform: translateY(-20px);
+    transform: translateY(-50px);
+}
+
+/* Zoom-out dopo selezione genere */
+#previewImage.zoomed-out {
+    transform: scale(0.5) translateY(-50px);
+    opacity: 0.9;
+}
+
+/* Versione verticale dello schermo */
+@media (orientation: portrait) {
+    #previewImage.portrait-img.moved-up {
+        transform: translateY(-30px);
+    }
+    
+    #previewImage.portrait-img.zoomed-out {
+        transform: scale(0.5) translateY(-30px);
+    }
+    
+    #previewImage.landscape-img.moved-up {
+        transform: translateY(-40px);
+    }
+    
+    #previewImage.landscape-img.zoomed-out {
+        transform: scale(0.6) translateY(-40px);
+    }
+}
+
+/* Contenitore destro per spettro + player */
+.right-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    max-width: 450px;
+    margin-top: -20px;
 }
 
 /* Spectrum Panel */
 .spectrum-panel {
-    width: 90%;
-    max-width: 500px;
-    height: 120px;
+    width: 100%;
+    height: 100px;
     background: rgba(0, 0, 0, 0.6);
     border-radius: 15px;
     overflow: hidden;
@@ -197,13 +262,11 @@ body {
 
 /* Player Panel */
 .player-panel {
-    width: 95%;
-    max-width: 500px;
+    width: 100%;
     background: rgba(20, 20, 30, 0.95);
     backdrop-filter: blur(10px);
     border-radius: 20px;
-    padding: 20px;
-    margin-bottom: 20px;
+    padding: 15px;
     transition: all 0.5s ease;
 }
 
@@ -214,24 +277,24 @@ body {
 .player-ui {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 10px;
 }
 
 .player-controls {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 10px;
+    gap: 8px;
 }
 
 .player-controls button {
-    padding: 10px 18px;
+    padding: 8px 14px;
     background: rgba(255,255,255,0.1);
     border: 1px solid rgba(255,255,255,0.2);
     border-radius: 30px;
     color: #fff;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 13px;
     transition: all 0.2s;
 }
 
@@ -256,7 +319,7 @@ body {
 
 #seekBar {
     width: 100%;
-    height: 6px;
+    height: 5px;
     border-radius: 3px;
     background: #333;
     -webkit-appearance: none;
@@ -273,8 +336,157 @@ body {
 
 .player-time {
     text-align: center;
-    font-size: 12px;
+    font-size: 11px;
     opacity: 0.7;
+}
+
+/* ==========================================
+   MODALITÀ ORIZZONTALE
+   ========================================== */
+@media (orientation: landscape) {
+    .content {
+        flex-direction: row !important;
+        justify-content: center;
+        align-items: center;
+        gap: 40px;
+        padding: 20px;
+        position: relative;
+    }
+    
+    /* Hero Logo iniziale - centrato */
+    .hero-container {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+        z-index: 10;
+    }
+    
+    /* Immagine Preview - inizialmente centrata */
+    #previewImage {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+        margin-top: 0;
+        z-index: 10;
+    }
+    
+    /* Dopo selezione - si sposta a sinistra */
+    #previewImage.moved-up {
+        position: relative;
+        left: 0;
+        transform: translateX(0) scale(0.8);
+        margin-left: 20px;
+        flex: 0.8;
+        max-width: 30%;
+    }
+    
+    #previewImage.zoomed-out {
+        position: relative;
+        left: 0;
+        transform: translateX(0) scale(0.65);
+        margin-left: 20px;
+        flex: 0.6;
+        max-width: 25%;
+        opacity: 0.9;
+    }
+    
+    /* Versione orizzontale dello schermo - aspect ratio */
+    #previewImage.portrait-img {
+        max-height: 70vh;
+        max-width: 30%;
+    }
+    
+    #previewImage.portrait-img.moved-up {
+        transform: translateX(0) scale(0.9);
+        margin-top: 0;
+    }
+    
+    #previewImage.portrait-img.zoomed-out {
+        transform: translateX(0) scale(0.8);
+        margin-left: 20px;
+    }
+    
+    #previewImage.landscape-img {
+        max-width: 40%;
+        max-height: 50vh;
+    }
+    
+    #previewImage.landscape-img.moved-up {
+        transform: translateX(0) scale(0.85);
+        margin-top: 0;
+    }
+    
+    #previewImage.landscape-img.zoomed-out {
+        transform: translateX(0) scale(0.7);
+        margin-left: 20px;
+    }
+    
+    /* Contenitore destro - inizialmente nascosto */
+    .right-panel {
+        flex: 1;
+        max-width: 0;
+        opacity: 0;
+        overflow: hidden;
+        transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+        gap: 20px;
+        margin-top: 0;
+    }
+    
+    /* Quando diventa visibile */
+    .right-panel.visible {
+        max-width: 45%;
+        opacity: 1;
+        margin-left: 20px;
+    }
+    
+    .spectrum-panel {
+        width: 100%;
+        height: 140px;
+    }
+    
+    .player-panel {
+        width: 100%;
+        position: relative;
+        bottom: auto;
+        left: auto;
+        transform: none;
+        margin: 0;
+    }
+    
+    .player-controls {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+    }
+}
+
+/* Modalità orizzontale su mobile */
+@media (max-width: 900px) and (orientation: landscape) {
+    #previewImage.moved-up {
+        transform: translateX(0) scale(0.7);
+        max-width: 28%;
+    }
+    
+    #previewImage.zoomed-out {
+        transform: translateX(0) scale(0.55);
+        max-width: 22%;
+    }
+    
+    .right-panel.visible {
+        max-width: 50%;
+    }
+    
+    .spectrum-panel {
+        height: 100px;
+    }
+    
+    .player-controls button {
+        padding: 5px 8px;
+        font-size: 10px;
+    }
 }
 
 /* ==========================================
@@ -424,37 +636,7 @@ body {
 }
 
 /* ==========================================
-   5. OVERLAY ORIENTAMENTO
-   ========================================== */
-.rotate-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.95);
-    z-index: 9999;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    flex-direction: column;
-}
-
-.rotate-overlay.hidden {
-    display: none;
-}
-
-.rotate-icon {
-    font-size: 60px;
-    margin-bottom: 20px;
-    animation: rotate 1.5s infinite;
-}
-
-@keyframes rotate {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(90deg); }
-}
-
-/* ==========================================
-   6. SPARTITO STYLE
+   5. SPARTITO STYLE
    ========================================== */
 #scoreCanvas {
     position: fixed;
@@ -468,29 +650,54 @@ body {
     cursor: pointer;
 }
 
+.close-score-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1101;
+    background: #ff4444;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.close-score-btn:hover {
+    background: #cc0000;
+    transform: scale(1.1);
+}
+
 /* ==========================================
-   7. LOADING OVERLAY
+   6. LOADING OVERLAY
    ========================================== */
 #loadingOverlay {
     z-index: 10000;
 }
 
 /* ==========================================
-   8. RESPONSIVE
+   7. RESPONSIVE MOBILE
    ========================================== */
 @media (max-width: 600px) {
     .app-header {
         padding: 10px 15px;
     }
     
-    .upload-btn, .elabora-btn {
-        padding: 8px 16px;
-        font-size: 12px;
+    .header-buttons {
+        gap: 8px;
     }
     
-    .logo-box {
-        width: 40px;
-        height: 40px;
+    .upload-btn, .elabora-btn {
+        padding: 8px 12px;
+        font-size: 11px;
+        white-space: nowrap;
     }
     
     .hero-logo-box {
@@ -499,8 +706,8 @@ body {
     }
     
     .player-controls button {
-        padding: 8px 14px;
-        font-size: 12px;
+        padding: 6px 10px;
+        font-size: 11px;
     }
 }
 
