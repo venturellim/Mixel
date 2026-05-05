@@ -176,13 +176,14 @@ body {
 /* Spostamento verso l'alto dopo selezione */
 #previewImage.moved-up {
     transform: translateY(-50px);
+    margin-top: -20px;
 }
 
 /* Zoom-out dopo selezione genere */
 #previewImage.zoomed-out {
     transform: scale(0.5) translateY(-50px);
     opacity: 0.9;
-    
+    margin-top: -20px;
 }
 
 /* Contenitore destro per spettro + player */
