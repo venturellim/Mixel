@@ -176,6 +176,7 @@ body {
     box-shadow: 0 10px 40px rgba(0,0,0,0.5);
     object-fit: contain;
     transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    margin-top: 30px;
 }
 
 /* Default per immagini verticali */
@@ -184,7 +185,7 @@ body {
     height: auto;
     max-width: 85%;
     max-height: 55vh;
-    margin-top: -20px;
+    margin-top: 30px;
 }
 
 /* Default per immagini orizzontali */
@@ -193,7 +194,7 @@ body {
     max-width: 600px;
     height: auto;
     max-height: 40vh;
-    margin-top: -50px;
+    margin-top: 50px;
 }
 
 /* Spostamento verso l'alto dopo selezione */
