@@ -170,8 +170,13 @@ body {
 /* Classi per aspect ratio dell'immagine */
 #previewImage.portrait-img {
     /* Immagine verticale - gestita normalmente */
-    max-height: 60vh;
-    width: auto;
+    width: 85%;
+    max-width: 400px;
+    border-radius: 15px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    object-fit: contain;
+    transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    margin-top: -50px;
 }
 
 #previewImage.landscape-img {
@@ -216,7 +221,7 @@ body {
     }
     
     #previewImage.portrait-img.zoomed-out {
-        transform: translateX(0) scale(0.7);
+        transform: translateX(0) scale(0.9);
         margin-left: 20px;
     }
     
@@ -232,8 +237,8 @@ body {
     }
     
     #previewImage.landscape-img.zoomed-out {
-        transform: translateX(0) scale(0.65);
-        margin-left: 20px;
+        transform: translateX(0) scale(0.85);
+        margin-left: 10px;
     }
 }
 
