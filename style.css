@@ -88,10 +88,11 @@ body {
 }
 
 .elabora-btn {
+    display: block;
     background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    padding: 12px 24px;
-    border: none;
+    padding: 12px 20px;
     border-radius: 30px;
+    text-align: center;
     color: white;
     font-weight: bold;
     cursor: pointer;
