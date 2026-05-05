@@ -195,7 +195,7 @@ body {
     max-width: 600px;
     height: auto;
     max-height: 40vh;
-    margin-top: 30px;
+    margin-top: 40px;
 }
 
 /* Spostamento verso l'alto dopo selezione */
@@ -224,7 +224,7 @@ body {
     }
     
     #previewImage.landscape-img.zoomed-out {
-        transform: scale(0.7) translateY(-40px);
+        transform: scale(0.8) translateY(-40px);
     }
 }
 
@@ -415,12 +415,12 @@ body {
     
     #previewImage.landscape-img.moved-up {
         transform: translateX(0) scale(0.85);
-        margin-top: 0;
+        margin-top: -20;
     }
     
     #previewImage.landscape-img.zoomed-out {
         transform: translateX(0) scale(0.9);
-        margin-left: 10px;
+        margin-left: 15px;
     }
     
     /* Contenitore destro - inizialmente nascosto */
