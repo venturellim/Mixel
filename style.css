@@ -163,6 +163,81 @@ body {
     50% { transform: scale(1.05); opacity: 0.9; }
 }
 
+/* ==========================================
+   3. CONTENUTO PRINCIPALE
+   ========================================== */
+
+/* Classi per aspect ratio dell'immagine */
+#previewImage.portrait-img {
+    /* Immagine verticale - gestita normalmente */
+    max-height: 60vh;
+    width: auto;
+}
+
+#previewImage.landscape-img {
+    /* Immagine orizzontale - più larga ma meno alta */
+    width: 90%;
+    max-width: 500px;
+    max-height: 45vh;
+}
+
+/* Versione verticale dello schermo */
+@media (orientation: portrait) {
+    /* Immagine verticale su schermo verticale - spostamento ridotto */
+    #previewImage.portrait-img.moved-up {
+        transform: translateY(-30px);
+    }
+    
+    #previewImage.portrait-img.zoomed-out {
+        transform: scale(0.5) translateY(-30px);
+    }
+    
+    /* Immagine orizzontale su schermo verticale - spostamento maggiore */
+    #previewImage.landscape-img.moved-up {
+        transform: translateY(-20px);
+    }
+    
+    #previewImage.landscape-img.zoomed-out {
+        transform: scale(0.6) translateY(-20px);
+    }
+}
+
+/* Versione orizzontale dello schermo */
+@media (orientation: landscape) {
+    /* Immagine verticale su schermo orizzontale */
+    #previewImage.portrait-img {
+        max-height: 70vh;
+        max-width: 30%;
+    }
+    
+    #previewImage.portrait-img.moved-up {
+        transform: translateY(0) scale(0.9);
+        margin-top: 0;
+    }
+    
+    #previewImage.portrait-img.zoomed-out {
+        transform: translateX(0) scale(0.7);
+        margin-left: 20px;
+    }
+    
+    /* Immagine orizzontale su schermo orizzontale */
+    #previewImage.landscape-img {
+        max-width: 40%;
+        max-height: 50vh;
+    }
+    
+    #previewImage.landscape-img.moved-up {
+        transform: translateY(0) scale(0.85);
+        margin-top: 0;
+    }
+    
+    #previewImage.landscape-img.zoomed-out {
+        transform: translateX(0) scale(0.65);
+        margin-left: 20px;
+    }
+}
+
+
 /* Immagine Preview - più in alto */
 #previewImage {
     width: 85%;

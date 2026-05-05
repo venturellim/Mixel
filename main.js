@@ -16,7 +16,7 @@ import { createOrchestraEngine, waitOrchestraInstruments } from "./genres/orches
 import { createDanceEngine, waitDanceInstruments } from "./genres/dance/danceEngine.js";
 import { scoreVisualizer } from "./scoreUI.js";
 
-console.log("main.js COMPLETO ver. 011 loaded");
+console.log("main.js COMPLETO ver. 011.1 loaded");
 
 
 let currentEngine = null;
@@ -72,6 +72,19 @@ function initFileLoader() {
         img.onload = () => {
             previewImage.src = img.src;
             previewImage.classList.remove("hidden");
+            
+            // RILEVA ASPECT RATIO DELL'IMMAGINE
+            const isLandscape = img.width > img.height;
+            if (isLandscape) {
+                previewImage.classList.add("landscape-img");
+                previewImage.classList.remove("portrait-img");
+                console.log("📷 Immagine orizzontale rilevata");
+            } else {
+                previewImage.classList.add("portrait-img");
+                previewImage.classList.remove("landscape-img");
+                console.log("📷 Immagine verticale rilevata");
+            }
+            
             heroLogoContainer.style.display = "none";
             btnElabora.classList.remove("hidden");
             
@@ -80,7 +93,7 @@ function initFileLoader() {
             
             // Rimuovi zoom se presente
             previewImage.classList.remove("zoomed-out");
-            //previewImage.classList.remove("moved-up");
+            previewImage.classList.remove("moved-up");
             
             if (miniVideo) {
                 miniVideo.pause();
