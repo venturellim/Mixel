@@ -165,8 +165,8 @@ body {
 
 /* Immagine Preview - più in alto */
 #previewImage {
-    width: 75%;
-    max-width: 350px;
+    width: 85%;
+    max-width: 400px;
     border-radius: 15px;
     box-shadow: 0 10px 40px rgba(0,0,0,0.5);
     object-fit: contain;
