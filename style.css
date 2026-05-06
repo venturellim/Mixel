@@ -91,6 +91,7 @@ body {
     display: block;
     background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
     padding: 12px 20px;
+    border: none;
     border-radius: 30px;
     text-align: center;
     color: white;
@@ -221,7 +222,7 @@ body {
     }
     
     #previewImage.landscape-img.moved-up {
-        transform: translateY(-40px);
+        transform: translateY(-30px);
     }
     
     #previewImage.landscape-img.zoomed-out {
