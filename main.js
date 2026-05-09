@@ -16,15 +16,24 @@ import { createOrchestraEngine, waitOrchestraInstruments } from "./genres/orches
 import { createDanceEngine, waitDanceInstruments } from "./genres/dance/danceEngine.js";
 import { scoreVisualizer } from "./scoreUI.js";
 
-console.log("main.js COMPLETO ver. 011.1 loaded");
+console.log("main.js ver. 013 loaded");
 
 
 let currentEngine = null;
 let currentGenre = null;
-let firstStart = 1;
 let scoreUI = null;
 const miniVideo = document.querySelector('.video-mini-wrapper video'); 
 
+// Flag per tenere traccia degli strumenti già caricati per ogni genere
+const instrumentsLoaded = {
+    dance: false,
+    metal: false,
+    orchestra: false,
+    piano: false
+};
+
+// Flag per evitare reset multipli
+let isResetting = false;
 
 // -------------------------------------------------------------
 // Error handler globale
@@ -33,7 +42,6 @@ window.onerror = function (msg, url, line, col, error) {
     console.log("🔥 ERRORE:", msg, " @", url, ":", line, ":", col);
     console.log("STACK:", error?.stack);
 };
-
 
 // -------------------------------------------------------------
 // Inizializzazione UI
@@ -100,7 +108,7 @@ function initFileLoader() {
                 miniVideo.currentTime = 0; 
             }
 
-            resetAppState();
+            resetAppState(false); // false = non resettare l'audio
         };
     });
 }
@@ -117,11 +125,6 @@ function initGenrePanel() {
         closeMixelUI();
         miniVideo?.play().catch(e => console.log("Autoplay video bloccato:", e));
         requestWakeLock();
-        
-        if (firstStart !== 1) {
-            resetAudio();
-            firstStart = 0;
-        }
         
         genrePanel.classList.add("show");
         genrePanel.classList.remove("hidden");
@@ -140,53 +143,182 @@ function initGenrePanel() {
 }
 
 // -------------------------------------------------------------
+// Reset audio sicuro (solo quando necessario)
+// -------------------------------------------------------------
+async function safeResetAudio() {
+    if (isResetting) {
+        console.log("Reset audio già in corso, skip");
+        return;
+    }
+    
+    isResetting = true;
+    const ctx = Tone.getContext();
+    
+    try {
+        // Ferma tutto il transporte
+        Tone.Transport.stop();
+        Tone.Transport.cancel();
+        
+        // Scollega eventuali nodi dall'engine corrente
+        if (currentEngine && currentEngine.dispose) {
+            await currentEngine.dispose();
+        }
+        
+        // Chiudi il contesto solo se è attivo e non è già in chiusura
+        if (ctx.state !== "closed" && ctx.state !== "suspended") {
+            await ctx.close();
+            console.log("AudioContext chiuso correttamente");
+            // Crea un nuovo contesto
+            await Tone.start();
+            console.log("Nuovo AudioContext creato");
+        } else if (ctx.state === "suspended") {
+            // Se è sospeso, basta riattivarlo
+            await Tone.start();
+            console.log("AudioContext riattivato");
+        }
+    } catch (e) {
+        console.warn("Errore durante reset audio:", e);
+        // Tentativo di recupero
+        try {
+            await Tone.start();
+        } catch (e2) {
+            console.error("Impossibile riavviare AudioContext:", e2);
+        }
+    } finally {
+        isResetting = false;
+    }
+}
+
+// -------------------------------------------------------------
+// Caricamento strumenti per genere (con caching)
+// -------------------------------------------------------------
+async function loadInstrumentsForGenre(genre) {
+    // Se gli strumenti sono già stati caricati, salta
+    if (instrumentsLoaded[genre]) {
+        console.log(`✅ Strumenti ${genre} già caricati, skip`);
+        return true;
+    }
+    
+    console.log(`🎵 Caricamento strumenti per ${genre}...`);
+    
+    // Mostra loading overlay
+    const overlay = document.getElementById("loadingOverlay");
+    const loadingText = document.getElementById("loadingText");
+    const loadingBar = document.getElementById("loadingBar");
+    
+    if (overlay) overlay.style.display = "flex";
+    if (loadingText) loadingText.textContent = `Caricamento strumenti ${genre}...`;
+    
+    try {
+        switch(genre) {
+            case "dance":
+                await waitDanceInstruments();
+                break;
+            case "metal":
+                await waitMetalInstruments();
+                break;
+            case "orchestra":
+                await waitOrchestraInstruments();
+                break;
+            case "piano":
+                await waitPianoInstruments();
+                break;
+            default:
+                console.warn(`Genere sconosciuto: ${genre}`);
+                return false;
+        }
+        instrumentsLoaded[genre] = true;
+        console.log(`✅ Strumenti ${genre} caricati con successo`);
+        return true;
+    } catch (error) {
+        console.error(`❌ Errore caricamento strumenti ${genre}:`, error);
+        return false;
+    } finally {
+        if (overlay) overlay.style.display = "none";
+    }
+}
+
+// -------------------------------------------------------------
 // Selezione genere
 // -------------------------------------------------------------
 async function selectGenre(genre) {
+    // Se è lo stesso genere, non fare nulla
+    if (currentGenre === genre && currentEngine) {
+        console.log(`Genere ${genre} già attivo, nessuna azione`);
+        document.getElementById("genrePanel").classList.remove("show");
+        setTimeout(() => document.getElementById("genrePanel").classList.add("hidden"), 400);
+        return;
+    }
+    
     currentGenre = genre;
     if (scoreUI) scoreUI.setTheme(genre);
 
     const previewImage = document.getElementById("previewImage");
+    
+    // Mostra loading
+    const overlay = document.getElementById("loadingOverlay");
+    const loadingText = document.getElementById("loadingText");
+    if (loadingText) loadingText.textContent = `Preparazione ${genre}...`;
+    if (overlay) overlay.style.display = "flex";
 
-    const analysis = await analyzeImage(previewImage);
-    const params = photoToMusicParams(analysis);
+    try {
+        // RESET AUDIO SOLO SE CAMBIA GENERE (non per nuova foto)
+        if (currentEngine) {
+            console.log("Cambio genere, reset audio in corso...");
+            await safeResetAudio();
+        }
+        
+        // Analisi immagine
+        const analysis = await analyzeImage(previewImage);
+        const params = photoToMusicParams(analysis);
 
-    if (genre === "dance") {
-        if (firstStart === 1) {
-            await waitDanceInstruments();
+        // Carica strumenti solo se necessario
+        const loaded = await loadInstrumentsForGenre(genre);
+        if (!loaded) {
+            throw new Error(`Impossibile caricare gli strumenti per ${genre}`);
         }
-        currentEngine = await createDanceEngine(params, scoreUI);
-    }
-    if (genre === "metal") {
-        if (firstStart === 1) {
-            await waitMetalInstruments();
-        }
-        currentEngine = await createMetalEngine(params, scoreUI);
-    }
-    if (genre === "orchestra") {
-        if (firstStart === 1) {
-            await waitOrchestraInstruments();
-        }
-        currentEngine = await createOrchestraEngine(params, scoreUI);
-    }
-    if (genre === "piano") {
-        if (firstStart === 1) {
-            await waitPianoInstruments();
-        }
-        currentEngine = await createPianoEngine(params, scoreUI);
-    }
 
-    if (!currentEngine) {
-        console.error("❌ Engine non creato!");
+        // Crea l'engine
+        switch(genre) {
+            case "dance":
+                currentEngine = await createDanceEngine(params, scoreUI);
+                break;
+            case "metal":
+                currentEngine = await createMetalEngine(params, scoreUI);
+                break;
+            case "orchestra":
+                currentEngine = await createOrchestraEngine(params, scoreUI);
+                break;
+            case "piano":
+                currentEngine = await createPianoEngine(params, scoreUI);
+                break;
+            default:
+                throw new Error(`Genere non supportato: ${genre}`);
+        }
+
+        if (!currentEngine) {
+            throw new Error("Engine non creato!");
+        }
+
+        // Zoom-out dell'immagine dopo la selezione del genere
+        previewImage.classList.add("zoomed-out");
+
+        initPlayerUI();
+        drawSpectrum();
+        initFxPanel(currentEngine.mixerData);
+
+    } catch (error) {
+        console.error("❌ Errore nella selezione del genere:", error);
+        if (loadingText) loadingText.textContent = `Errore: ${error.message}`;
+        setTimeout(() => {
+            if (overlay) overlay.style.display = "none";
+        }, 2000);
         return;
+    } finally {
+        if (overlay && loadingText && !loadingText.textContent.includes("Errore")) {
+            overlay.style.display = "none";
+        }
     }
-
-    // Zoom-out dell'immagine dopo la selezione del genere
-    previewImage.classList.add("zoomed-out");
-
-    initPlayerUI();
-    drawSpectrum();
-    initFxPanel(currentEngine.mixerData);
 
     document.getElementById("genrePanel").classList.remove("show");
     setTimeout(() => document.getElementById("genrePanel").classList.add("hidden"), 400);
@@ -203,7 +335,7 @@ function initPlayerUI() {
     const closeScoreBtn = document.getElementById("closeScoreBtn");
     const rightPanel = document.querySelector(".right-panel");
     
-    // Aggiungi questa riga per rendere visibile il pannello destro in orizzontale
+    // Rendi visibile il pannello destro in orizzontale
     if (rightPanel) rightPanel.classList.add("visible");
     
     spectrumPanel.classList.remove("hidden");
@@ -229,14 +361,19 @@ function initPlayerUI() {
 
     playBtn.onclick = async () => {
         const overlay = document.getElementById("loadingOverlay");
+        const loadingText = document.getElementById("loadingText");
+        if (loadingText) loadingText.textContent = "Avvio audio...";
         if (overlay) overlay.style.display = "flex";
 
-        await Tone.start();
-        await Tone.loaded();
-
-        if (overlay) overlay.style.display = "none";
-        
-        currentEngine.play();
+        try {
+            await Tone.start();
+            await Tone.loaded();
+            currentEngine.play();
+        } catch (error) {
+            console.error("Errore avvio audio:", error);
+        } finally {
+            if (overlay) overlay.style.display = "none";
+        }
     };
 
     pauseBtn.onclick = () => currentEngine?.pause();
@@ -245,10 +382,10 @@ function initPlayerUI() {
         currentEngine?.stop();
         if (scoreUI) scoreUI.hide();
         btnSpartito.classList.add("hidden");
-    btnSpartito.classList.remove("show-flex");
-};
-        //if (closeScoreBtn) closeScoreBtn.style.display = "none";
-    //};
+        btnSpartito.classList.remove("show-flex");
+        const closeScoreBtnLocal = document.getElementById("closeScoreBtn");
+        if (closeScoreBtnLocal) closeScoreBtnLocal.style.display = "none";
+    };
     
     btnSpartito.onclick = () => {
         if (scoreUI) {
@@ -266,17 +403,26 @@ function initPlayerUI() {
         totalTimeEl.textContent = formatTime(currentEngine.totalDuration);
     }
 
-    Tone.Transport.scheduleRepeat(() => {
+    // Cleanup vecchi listener prima di aggiungerne di nuovi
+    if (window._transportHandler) {
+        Tone.Transport.clear(window._transportHandler);
+    }
+    
+    window._transportHandler = Tone.Transport.scheduleRepeat(() => {
         const now = Tone.Transport.seconds;
         const duration = currentEngine?.totalDuration || 1;
-        seekBar.value = (now / duration) * 100;
+        if (seekBar) seekBar.value = (now / duration) * 100;
         if (currentTimeEl) currentTimeEl.textContent = formatTime(now);
     }, 0.1);
 
-    seekBar.addEventListener("input", () => {
-        const seconds = (seekBar.value / 100) * currentEngine.totalDuration;
+    // Rimuovi vecchio listener e aggiungi nuovo
+    const newSeekBar = seekBar.cloneNode(true);
+    seekBar.parentNode.replaceChild(newSeekBar, seekBar);
+    newSeekBar.addEventListener("input", () => {
+        const seconds = (newSeekBar.value / 100) * currentEngine.totalDuration;
         currentEngine.seek(seconds);
     });
+    window.seekBar = newSeekBar;
 }
 
 // -------------------------------------------------------------
@@ -448,55 +594,39 @@ function initFxPanel(mixerData) {
 }
 
 // -------------------------------------------------------------
-// Reset audio
-// -------------------------------------------------------------
-async function resetAudio() {
-    const ctx = Tone.getContext();
-
-    if (ctx.state === "suspended") {
-        console.log("AudioContext non avviato: skip reset");
-        return;
-    }
-
-    try {
-        Tone.Transport.stop();
-        Tone.Transport.cancel();
-
-        if (ctx.state !== "closed") {
-            await ctx.close();
-            console.log("AudioContext chiuso correttamente");
-        }
-    } catch (e) {
-        console.warn("Errore durante la chiusura AudioContext:", e);
-    }
-
-    await Tone.start();
-    console.log("AudioContext riavviato");
-}
-
-// -------------------------------------------------------------
 // Reset App
 // -------------------------------------------------------------
-function resetAppState() {
-    currentEngine?.stop();
-    if (currentEngine?.score) currentEngine.score.hide(); 
-    currentEngine = null;
+function resetAppState(resetAudio = false) {
+    // Ferma l'engine corrente
+    if (currentEngine) {
+        currentEngine.stop();
+        if (currentEngine.score) currentEngine.score.hide();
+        // Non distruggere l'engine, lascia che venga sovrascritto
+        currentEngine = null;
+    }
+    
+    currentGenre = null;
     closeMixelUI();
+    
     if (miniVideo) {
         miniVideo.pause();
         miniVideo.currentTime = 0; 
     }
+    
     releaseWakeLock();
-    if (firstStart !== 1) {
-        resetAudio();
-        firstStart = 0;
+    
+    // Reset audio solo se richiesto esplicitamente
+    if (resetAudio) {
+        safeResetAudio().catch(console.warn);
     }
+    
     // Rimuovi zoom dall'immagine
     const previewImage = document.getElementById("previewImage");
     if (previewImage) {
         previewImage.classList.remove("zoomed-out");
-        //previewImage.classList.remove("moved-up");
+        previewImage.classList.remove("moved-up");
     }
+    
     // Nascondi pulsante chiusura spartito
     const closeScoreBtn = document.getElementById("closeScoreBtn");
     if (closeScoreBtn) closeScoreBtn.style.display = "none";
