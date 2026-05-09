@@ -8,13 +8,8 @@ import { generateSongProgressions, degreeToRoot } from "../../utils/musicTheory.
 import { scheduleDanceRhythm } from "./danceRhythmEngine.js";
 import { scheduleDanceBass } from "./danceBassEngine.js";
 import { scheduleDanceLead } from "./danceLeadEngine.js";
-import { waitForInstruments } from "../../common.js";
 
 console.log("danceEngine.js ver. 002.1 loaded");
-
-export async function waitDanceInstruments() {
-    await waitForInstruments(10, "Dance");
-}
 
 export function createDanceEngine(params, score) {
     const rand = createSeededRandom(params.dna);
