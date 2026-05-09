@@ -13,7 +13,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("common.js ver. 003 loaded");
+console.log("common.js ver. 004 loaded");
 
 // ======================================================
 // 🎚 MASTER BUS & MASTERING
@@ -53,15 +53,15 @@ let __loadedCount = 0;
 let __currentTotal = 0;
 let __resolveWait = null;
 let __waitPromise = null;
+let __isLoading = false;
 
-// Crea e inietta lo stile per il loader Win11
+// Inietta lo stile CSS una sola volta
 function injectWin11LoaderStyle() {
     if (document.getElementById("win11-loader-style")) return;
     
     const style = document.createElement("style");
     style.id = "win11-loader-style";
     style.textContent = `
-        /* Overlay stile Windows 11 */
         .win11-overlay {
             position: fixed;
             inset: 0;
@@ -71,7 +71,7 @@ function injectWin11LoaderStyle() {
             align-items: center;
             justify-content: center;
             z-index: 10000;
-            font-family: 'Segoe UI', 'Segoe UI Variable', system-ui, -apple-system, sans-serif;
+            font-family: 'Segoe UI', 'Segoe UI Variable', system-ui, sans-serif;
             animation: win11-fadeIn 0.2s ease;
         }
         
@@ -80,7 +80,6 @@ function injectWin11LoaderStyle() {
             to { opacity: 1; backdrop-filter: blur(8px); }
         }
         
-        /* Contenitore principale */
         .win11-loader {
             background: rgba(32, 32, 32, 0.85);
             backdrop-filter: blur(20px);
@@ -103,7 +102,6 @@ function injectWin11LoaderStyle() {
             }
         }
         
-        /* Icona animata */
         .win11-icon {
             margin-bottom: 20px;
         }
@@ -119,7 +117,6 @@ function injectWin11LoaderStyle() {
             50% { opacity: 1; transform: scale(1.05); }
         }
         
-        /* Titolo */
         .win11-title {
             font-size: 16px;
             font-weight: 500;
@@ -128,14 +125,12 @@ function injectWin11LoaderStyle() {
             letter-spacing: -0.2px;
         }
         
-        /* Testo secondario */
         .win11-subtitle {
             font-size: 13px;
             color: rgba(255, 255, 255, 0.6);
             margin-bottom: 20px;
         }
         
-        /* Contenitore barra */
         .win11-bar-container {
             background: rgba(255, 255, 255, 0.1);
             border-radius: 10px;
@@ -144,7 +139,6 @@ function injectWin11LoaderStyle() {
             margin-bottom: 12px;
         }
         
-        /* Barra di progresso stile Win11 */
         .win11-progress-bar {
             height: 100%;
             width: 0%;
@@ -155,7 +149,6 @@ function injectWin11LoaderStyle() {
             overflow: hidden;
         }
         
-        /* Effetto scintillio sulla barra */
         .win11-progress-bar::after {
             content: '';
             position: absolute;
@@ -163,12 +156,7 @@ function injectWin11LoaderStyle() {
             left: 0;
             right: 0;
             bottom: 0;
-            background: linear-gradient(
-                90deg,
-                transparent,
-                rgba(255, 255, 255, 0.3),
-                transparent
-            );
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
             animation: win11-shimmer 1.5s infinite;
             transform: translateX(-100%);
         }
@@ -178,61 +166,43 @@ function injectWin11LoaderStyle() {
             100% { transform: translateX(100%); }
         }
         
-        /* Percentuale */
         .win11-percent {
             font-size: 12px;
             font-weight: 500;
             color: #60a5fa;
             text-align: right;
-            font-family: 'JetBrains Mono', 'Cascadia Code', monospace;
+            font-family: monospace;
         }
         
-        /* Testo del caricamento corrente */
         .win11-status {
             font-size: 11px;
             color: rgba(255, 255, 255, 0.4);
             margin-top: 16px;
             letter-spacing: 0.3px;
         }
-        
-        /* Pulsante di chiusura (opzionale) */
-        .win11-close-btn {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.05);
-            border: none;
-            color: rgba(255, 255, 255, 0.6);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-        }
-        
-        .win11-close-btn:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff;
-        }
     `;
     document.head.appendChild(style);
 }
 
-// Crea la struttura HTML del loader
-function createWin11Loader() {
+// Crea la struttura HTML del loader (una sola istanza)
+let win11Overlay = null;
+
+function getOrCreateLoader() {
     injectWin11LoaderStyle();
+    
+    if (win11Overlay && win11Overlay.parentNode) {
+        return win11Overlay;
+    }
     
     // Rimuovi vecchio loader se esiste
     const existingLoader = document.getElementById("win11-loader-overlay");
     if (existingLoader) existingLoader.remove();
     
-    const overlay = document.createElement("div");
-    overlay.id = "win11-loader-overlay";
-    overlay.className = "win11-overlay";
-    overlay.innerHTML = `
+    win11Overlay = document.createElement("div");
+    win11Overlay.id = "win11-loader-overlay";
+    win11Overlay.className = "win11-overlay";
+    win11Overlay.style.display = "none";
+    win11Overlay.innerHTML = `
         <div class="win11-loader">
             <div class="win11-icon">
                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -251,52 +221,56 @@ function createWin11Loader() {
         </div>
     `;
     
-    document.body.appendChild(overlay);
-    return overlay;
+    document.body.appendChild(win11Overlay);
+    return win11Overlay;
 }
 
-// Aggiorna la percentuale
+function showWin11Loader() {
+    const overlay = getOrCreateLoader();
+    overlay.style.display = "flex";
+}
+
+function hideWin11Loader() {
+    if (win11Overlay) {
+        win11Overlay.style.display = "none";
+    }
+}
+
 function updateWin11Loader(percent, title, subtitle, status) {
+    const overlay = getOrCreateLoader();
     const progressBar = document.getElementById("win11-progress-bar");
     const percentText = document.getElementById("win11-percent");
     const titleEl = document.getElementById("win11-title");
     const subtitleEl = document.getElementById("win11-subtitle");
     const statusEl = document.getElementById("win11-status");
     
-    if (progressBar) progressBar.style.width = Math.min(100, Math.max(0, percent)) + "%";
-    if (percentText) percentText.textContent = Math.floor(percent) + "%";
+    if (progressBar && percent !== undefined && percent !== null) {
+        progressBar.style.width = Math.min(100, Math.max(0, percent)) + "%";
+    }
+    if (percentText && percent !== undefined && percent !== null) {
+        percentText.textContent = Math.floor(percent) + "%";
+    }
     if (titleEl && title) titleEl.textContent = title;
     if (subtitleEl && subtitle) subtitleEl.textContent = subtitle;
     if (statusEl && status) statusEl.textContent = status;
-}
-
-// Nascondi il loader Win11
-function hideWin11Loader() {
-    const overlay = document.getElementById("win11-loader-overlay");
-    if (overlay) {
-        overlay.style.opacity = "0";
-        setTimeout(() => {
-            if (overlay.parentNode) overlay.remove();
-        }, 300);
-    }
 }
 
 export function registerInstrumentLoaded() {
     __loadedCount++;
     console.log(`📦 Strumento caricato: ${__loadedCount}/${__currentTotal}`);
     
-    // Aggiorna la UI Win11
     if (__currentTotal > 0) {
         const percent = (__loadedCount / __currentTotal) * 100;
         updateWin11Loader(percent, null, null, `Caricamento ${__loadedCount}/${__currentTotal}`);
     }
     
-    // Se abbiamo raggiunto il totale, risolvi la promise
     if (__resolveWait && __loadedCount >= __currentTotal) {
         updateWin11Loader(100, "Completato!", "Tutto pronto", "Caricamento completato");
         setTimeout(() => {
-            if (__resolveWait) __resolveWait();
-            __resolveWait = null;
+            if (__resolveWait) {
+                __resolveWait();
+                __resolveWait = null;
+            }
         }, 200);
     }
 }
@@ -304,8 +278,20 @@ export function registerInstrumentLoaded() {
 export async function waitForInstruments(total, genreName = "strumenti") {
     console.log(`⏳ waitForInstruments chiamato con total=${total}, loadedCount=${__loadedCount}`);
     
-    // Crea e mostra loader Win11
-    createWin11Loader();
+    // Evita caricamenti multipli simultanei
+    if (__isLoading) {
+        console.log("Caricamento già in corso, attendo...");
+        // Se c'è già una promise in corso, attendila
+        if (__waitPromise) {
+            await __waitPromise;
+        }
+        return;
+    }
+    
+    __isLoading = true;
+    
+    // Mostra loader
+    showWin11Loader();
     updateWin11Loader(0, `Caricamento ${genreName}`, "Preparazione dei campioni...", "Inizializzazione");
     
     // Reset contatore se necessario
@@ -320,7 +306,10 @@ export async function waitForInstruments(total, genreName = "strumenti") {
     if (__loadedCount >= total) {
         console.log(`✅ Strumenti già tutti caricati (${__loadedCount}/${total})`);
         updateWin11Loader(100, "Completato!", "Tutto pronto", "Strumenti già disponibili");
-        setTimeout(() => hideWin11Loader(), 500);
+        setTimeout(() => {
+            hideWin11Loader();
+            __isLoading = false;
+        }, 500);
         __loadedCount = 0;
         __currentTotal = 0;
         return;
@@ -340,16 +329,17 @@ export async function waitForInstruments(total, genreName = "strumenti") {
     
     console.log(`✅ Caricamento completato (${__loadedCount}/${total})`);
     
-    // Nascondi loader
-    hideWin11Loader();
-    
-    __loadedCount = 0;
-    __currentTotal = 0;
-    __resolveWait = null;
-    __waitPromise = null;
+    // Nascondi loader e resetta
+    setTimeout(() => {
+        hideWin11Loader();
+        __loadedCount = 0;
+        __currentTotal = 0;
+        __resolveWait = null;
+        __waitPromise = null;
+        __isLoading = false;
+    }, 300);
 }
 
-// Funzione per resettare forzatamente il caricamento
 export function resetInstrumentLoader() {
     console.log(`🔄 Reset forzato loader: ${__loadedCount} → 0`);
     __loadedCount = 0;
@@ -359,10 +349,10 @@ export function resetInstrumentLoader() {
         __resolveWait = null;
     }
     __waitPromise = null;
+    __isLoading = false;
     hideWin11Loader();
 }
 
-// Funzione per aggiornare il testo del loader (utile per i singoli generi)
 export function updateLoaderStatus(status, subtitle) {
     updateWin11Loader(null, null, subtitle, status);
 }
@@ -372,19 +362,16 @@ export function updateLoaderStatus(status, subtitle) {
 // 🧰 UTILITIES GENERICHE
 // ======================================================
 
-// Clamp MIDI note range
 export function clampNote(note, minMidi, maxMidi) {
     const midi = Tone.Frequency(note).toMidi();
     if (midi < minMidi || midi > maxMidi) return null;
     return note;
 }
 
-// Prende un elemento da una scala ciclicamente
 export function pickFromScale(scale, step) {
     return scale[step % scale.length];
 }
 
-// Random deterministico
 export function createSeededRandom(seed) {
     return function () {
         seed = (seed * 1664525 + 1013904223) % 4294967296;
@@ -392,13 +379,11 @@ export function createSeededRandom(seed) {
     };
 }
 
-// Humanizzazione temporale
 export function humanizeTime(time, rand, amount = 0.008) {
     const offset = (rand() - 0.5) * amount;
     return time + offset;
 }
 
-// Humanizzazione velocity
 export function humanizeVelocity(rand, base = 1) {
     const variation = 0.85 + rand() * 0.3;
     return base * variation;
