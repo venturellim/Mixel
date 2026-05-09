@@ -12,7 +12,7 @@ import { waitForInstruments } from "../../common.js";
 console.log("pianoEngine.js ver. 001.2 loaded");
 
 export async function waitPianoInstruments() {
-    await waitForInstruments(1); // solo piano
+    await waitForInstruments(1, "Piano"); // solo piano
 }
 
 export function createPianoEngine(params, score) {
