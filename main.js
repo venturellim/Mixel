@@ -7,7 +7,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-import { masterEQ, registerInstrumentLoaded, waitForInstruments, resetInstrumentLoader } from "./common.js";
+import { masterEQ } from "./common.js";
 import { analyzeImage } from "./imageAnalysis.js";
 import { photoToMusicParams } from "./photoToMusicParams.js";
 import { createPianoEngine, waitPianoInstruments } from "./genres/piano/pianoEngine.js";
@@ -178,14 +178,10 @@ async function safeResetAudio() {
 // -------------------------------------------------------------
 // Caricamento strumenti per genere (con debug dettagliato)
 // -------------------------------------------------------------
+// Nella funzione loadInstrumentsForGenre, rimuovi il sistema complesso:
+
 async function loadInstrumentsForGenre(genre) {
-    // Se c'è già un caricamento in corso, attendi
-    if (loadingPromises[genre]) {
-        console.log(`⏳ Caricamento ${genre} già in corso, attendo...`);
-        return loadingPromises[genre];
-    }
-    
-    // Se già caricati, ritorna subito
+    // Se già caricati, salta
     if (instrumentsLoaded[genre]) {
         console.log(`✅ Strumenti ${genre} già caricati, skip`);
         return true;
@@ -193,75 +189,47 @@ async function loadInstrumentsForGenre(genre) {
     
     console.log(`🎵 Caricamento strumenti per ${genre}...`);
     
-    // Reset loader prima di iniziare
-    resetInstrumentLoader();
+    // Mostra loader
+    showLoader(`Caricamento ${genre}`, "Preparazione dei campioni...");
+    updateLoaderProgress(0, "Avvio caricamento...");
     
-    const loadingPromise = (async () => {
-        const overlay = document.getElementById("loadingOverlay");
-        const loadingText = document.getElementById("loadingText");
-        const loadingBar = document.getElementById("loadingBar");
-        
-        if (overlay) overlay.style.display = "flex";
-        if (loadingText) loadingText.textContent = `Caricamento strumenti ${genre}...`;
-        if (loadingBar) loadingBar.style.width = "0%";
-        
-        // Timeout di 20 secondi
-        const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error(`Timeout caricamento ${genre} (20s)`)), 20000);
-        });
-        
-        try {
-            console.log(`📦 Avvio caricamento ${genre}...`);
-            
-            let loadPromise;
-            switch(genre) {
-                case "dance":
-                    console.log("🕺 Caricamento Dance...");
-                    loadPromise = waitDanceInstruments();
-                    break;
-                case "metal":
-                    console.log("🤘 Caricamento Metal...");
-                    loadPromise = waitMetalInstruments();
-                    break;
-                case "orchestra":
-                    console.log("🎻 Caricamento Orchestra...");
-                    loadPromise = waitOrchestraInstruments();
-                    break;
-                case "piano":
-                    console.log("🎹 Caricamento Piano...");
-                    loadPromise = waitPianoInstruments();
-                    break;
-                default:
-                    throw new Error(`Genere sconosciuto: ${genre}`);
-            }
-            
-            await Promise.race([loadPromise, timeoutPromise]);
-            instrumentsLoaded[genre] = true;
-            console.log(`✅ Strumenti ${genre} caricati con successo`);
-            
-            if (loadingBar) loadingBar.style.width = "100%";
-            
-            return true;
-        } catch (error) {
-            console.error(`❌ Errore caricamento strumenti ${genre}:`, error);
-            if (loadingText) loadingText.textContent = `Errore caricamento ${genre}`;
-            
-            // Resetta il flag
-            instrumentsLoaded[genre] = false;
-            resetInstrumentLoader();
-            
-            throw error;
-        } finally {
-            if (overlay) overlay.style.display = "none";
-            delete loadingPromises[genre];
+    try {
+        let loadPromise;
+        switch(genre) {
+            case "dance":
+                loadPromise = waitDanceInstruments();
+                break;
+            case "metal":
+                loadPromise = waitMetalInstruments();
+                break;
+            case "orchestra":
+                loadPromise = waitOrchestraInstruments();
+                break;
+            case "piano":
+                loadPromise = waitPianoInstruments();
+                break;
+            default:
+                throw new Error(`Genere sconosciuto: ${genre}`);
         }
-    })();
-    
-    loadingPromises[genre] = loadingPromise;
-    return loadingPromise;
+        
+        await loadPromise;
+        instrumentsLoaded[genre] = true;
+        console.log(`✅ Strumenti ${genre} caricati con successo`);
+        
+        updateLoaderProgress(100, "Completato!");
+        await new Promise(r => setTimeout(r, 300));
+        
+        return true;
+    } catch (error) {
+        console.error(`❌ Errore caricamento strumenti ${genre}:`, error);
+        updateLoaderProgress(0, `Errore: ${error.message}`);
+        throw error;
+    } finally {
+        hideLoader();
+    }
 }
 
-// -------------------------------------
+// ------------------------------
 // Selezione genere
 // -------------------------------------------------------------
 async function selectGenre(genre) {

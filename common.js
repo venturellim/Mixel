@@ -4,7 +4,6 @@
 // - master bus
 // - EQ/mastering
 // - utilities generiche
-// - sistema di caricamento strumenti (generico)
 // - logging note
 //
 // Nessun sampler, nessun effetto, nessuna logica metal.
@@ -13,7 +12,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("common.js ver. 004 loaded");
+console.log("common.js ver. 005 loaded");
 
 // ======================================================
 // 🎚 MASTER BUS & MASTERING
@@ -46,16 +45,12 @@ export function logNote(instrumentName, note, time) {
 
 
 // ======================================================
-// 📦 SISTEMA DI CARICAMENTO STRUMENTI (STILE WIN11)
+// 📦 LOADER STILE WIN11 (SEMPLIFICATO)
 // ======================================================
 
-let __loadedCount = 0;
-let __currentTotal = 0;
-let __resolveWait = null;
-let __waitPromise = null;
-let __isLoading = false;
+let win11Overlay = null;
 
-// Inietta lo stile CSS una sola volta
+// Inietta lo stile CSS
 function injectWin11LoaderStyle() {
     if (document.getElementById("win11-loader-style")) return;
     
@@ -67,7 +62,7 @@ function injectWin11LoaderStyle() {
             inset: 0;
             background: rgba(0, 0, 0, 0.75);
             backdrop-filter: blur(8px);
-            display: flex;
+            display: none;
             align-items: center;
             justify-content: center;
             z-index: 10000;
@@ -102,9 +97,7 @@ function injectWin11LoaderStyle() {
             }
         }
         
-        .win11-icon {
-            margin-bottom: 20px;
-        }
+        .win11-icon { margin-bottom: 20px; }
         
         .win11-icon svg {
             width: 48px;
@@ -122,7 +115,6 @@ function injectWin11LoaderStyle() {
             font-weight: 500;
             color: #fff;
             margin-bottom: 8px;
-            letter-spacing: -0.2px;
         }
         
         .win11-subtitle {
@@ -178,14 +170,10 @@ function injectWin11LoaderStyle() {
             font-size: 11px;
             color: rgba(255, 255, 255, 0.4);
             margin-top: 16px;
-            letter-spacing: 0.3px;
         }
     `;
     document.head.appendChild(style);
 }
-
-// Crea la struttura HTML del loader (una sola istanza)
-let win11Overlay = null;
 
 function getOrCreateLoader() {
     injectWin11LoaderStyle();
@@ -194,14 +182,12 @@ function getOrCreateLoader() {
         return win11Overlay;
     }
     
-    // Rimuovi vecchio loader se esiste
     const existingLoader = document.getElementById("win11-loader-overlay");
     if (existingLoader) existingLoader.remove();
     
     win11Overlay = document.createElement("div");
     win11Overlay.id = "win11-loader-overlay";
     win11Overlay.className = "win11-overlay";
-    win11Overlay.style.display = "none";
     win11Overlay.innerHTML = `
         <div class="win11-loader">
             <div class="win11-icon">
@@ -225,136 +211,35 @@ function getOrCreateLoader() {
     return win11Overlay;
 }
 
-function showWin11Loader() {
+export function showLoader(title = "Caricamento strumenti", subtitle = "Preparazione...") {
     const overlay = getOrCreateLoader();
+    const titleEl = document.getElementById("win11-title");
+    const subtitleEl = document.getElementById("win11-subtitle");
+    const progressBar = document.getElementById("win11-progress-bar");
+    const percentEl = document.getElementById("win11-percent");
+    
+    if (titleEl) titleEl.textContent = title;
+    if (subtitleEl) subtitleEl.textContent = subtitle;
+    if (progressBar) progressBar.style.width = "0%";
+    if (percentEl) percentEl.textContent = "0%";
+    
     overlay.style.display = "flex";
 }
 
-function hideWin11Loader() {
-    if (win11Overlay) {
-        win11Overlay.style.display = "none";
-    }
-}
-
-function updateWin11Loader(percent, title, subtitle, status) {
-    const overlay = getOrCreateLoader();
+export function updateLoaderProgress(percent, status = null) {
     const progressBar = document.getElementById("win11-progress-bar");
-    const percentText = document.getElementById("win11-percent");
-    const titleEl = document.getElementById("win11-title");
-    const subtitleEl = document.getElementById("win11-subtitle");
+    const percentEl = document.getElementById("win11-percent");
     const statusEl = document.getElementById("win11-status");
     
-    if (progressBar && percent !== undefined && percent !== null) {
-        progressBar.style.width = Math.min(100, Math.max(0, percent)) + "%";
-    }
-    if (percentText && percent !== undefined && percent !== null) {
-        percentText.textContent = Math.floor(percent) + "%";
-    }
-    if (titleEl && title) titleEl.textContent = title;
-    if (subtitleEl && subtitle) subtitleEl.textContent = subtitle;
+    if (progressBar) progressBar.style.width = Math.min(100, Math.max(0, percent)) + "%";
+    if (percentEl) percentEl.textContent = Math.floor(percent) + "%";
     if (statusEl && status) statusEl.textContent = status;
 }
 
-export function registerInstrumentLoaded() {
-    __loadedCount++;
-    console.log(`📦 Strumento caricato: ${__loadedCount}/${__currentTotal}`);
-    
-    if (__currentTotal > 0) {
-        const percent = (__loadedCount / __currentTotal) * 100;
-        updateWin11Loader(percent, null, null, `Caricamento ${__loadedCount}/${__currentTotal}`);
+export function hideLoader() {
+    if (win11Overlay) {
+        win11Overlay.style.display = "none";
     }
-    
-    if (__resolveWait && __loadedCount >= __currentTotal) {
-        updateWin11Loader(100, "Completato!", "Tutto pronto", "Caricamento completato");
-        setTimeout(() => {
-            if (__resolveWait) {
-                __resolveWait();
-                __resolveWait = null;
-            }
-        }, 200);
-    }
-}
-
-export async function waitForInstruments(total, genreName = "strumenti") {
-    console.log(`⏳ waitForInstruments chiamato con total=${total}, loadedCount=${__loadedCount}`);
-    
-    // Evita caricamenti multipli simultanei
-    if (__isLoading) {
-        console.log("Caricamento già in corso, attendo...");
-        // Se c'è già una promise in corso, attendila
-        if (__waitPromise) {
-            await __waitPromise;
-        }
-        return;
-    }
-    
-    __isLoading = true;
-    
-    // Mostra loader
-    showWin11Loader();
-    updateWin11Loader(0, `Caricamento ${genreName}`, "Preparazione dei campioni...", "Inizializzazione");
-    
-    // Reset contatore se necessario
-    if (__loadedCount > 0 && __loadedCount < total) {
-        console.log(`⚠️ Reset contatore da ${__loadedCount} a 0`);
-        __loadedCount = 0;
-    }
-    
-    __currentTotal = total;
-    
-    // Se siamo già a quota, esci subito
-    if (__loadedCount >= total) {
-        console.log(`✅ Strumenti già tutti caricati (${__loadedCount}/${total})`);
-        updateWin11Loader(100, "Completato!", "Tutto pronto", "Strumenti già disponibili");
-        setTimeout(() => {
-            hideWin11Loader();
-            __isLoading = false;
-        }, 500);
-        __loadedCount = 0;
-        __currentTotal = 0;
-        return;
-    }
-    
-    // Aggiorna UI iniziale
-    const initialPercent = (__loadedCount / total) * 100;
-    updateWin11Loader(initialPercent, `Caricamento ${genreName}`, "Caricamento dei campioni...", `Avvio caricamento (0/${total})`);
-    
-    // Crea una nuova promise
-    __waitPromise = new Promise((resolve) => {
-        __resolveWait = resolve;
-    });
-    
-    // Attendi il completamento
-    await __waitPromise;
-    
-    console.log(`✅ Caricamento completato (${__loadedCount}/${total})`);
-    
-    // Nascondi loader e resetta
-    setTimeout(() => {
-        hideWin11Loader();
-        __loadedCount = 0;
-        __currentTotal = 0;
-        __resolveWait = null;
-        __waitPromise = null;
-        __isLoading = false;
-    }, 300);
-}
-
-export function resetInstrumentLoader() {
-    console.log(`🔄 Reset forzato loader: ${__loadedCount} → 0`);
-    __loadedCount = 0;
-    __currentTotal = 0;
-    if (__resolveWait) {
-        __resolveWait();
-        __resolveWait = null;
-    }
-    __waitPromise = null;
-    __isLoading = false;
-    hideWin11Loader();
-}
-
-export function updateLoaderStatus(status, subtitle) {
-    updateWin11Loader(null, null, subtitle, status);
 }
 
 
