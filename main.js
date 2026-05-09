@@ -16,13 +16,13 @@ import { createOrchestraEngine, waitOrchestraInstruments } from "./genres/orches
 import { createDanceEngine, waitDanceInstruments } from "./genres/dance/danceEngine.js";
 import { scoreVisualizer } from "./scoreUI.js";
 
-console.log("main.js COMPLETO ver. 013.1 loaded");
+console.log("main.js COMPLETO ver. 014 loaded");
 
 
 let currentEngine = null;
 let currentGenre = null;
 let scoreUI = null;
-let isChangingGenre = false; // Flag per evitare cambi genere multipli
+let isChangingGenre = false;
 const miniVideo = document.querySelector('.video-mini-wrapper video'); 
 
 // Flag per tenere traccia degli strumenti già caricati per ogni genere
@@ -32,6 +32,9 @@ const instrumentsLoaded = {
     orchestra: false,
     piano: false
 };
+
+// Promise di caricamento in corso per evitare caricamenti multipli
+const loadingPromises = {};
 
 // -------------------------------------------------------------
 // Error handler globale
@@ -79,7 +82,6 @@ function initFileLoader() {
             previewImage.src = img.src;
             previewImage.classList.remove("hidden");
             
-            // RILEVA ASPECT RATIO DELL'IMMAGINE
             const isLandscape = img.width > img.height;
             if (isLandscape) {
                 previewImage.classList.add("landscape-img");
@@ -97,7 +99,6 @@ function initFileLoader() {
             spectrumPanel.classList.add("hidden");
             playerPanel.classList.add("hidden");
             
-            // Rimuovi zoom se presente
             previewImage.classList.remove("zoomed-out");
             previewImage.classList.remove("moved-up");
             
@@ -145,17 +146,15 @@ function initGenrePanel() {
 }
 
 // -------------------------------------------------------------
-// Reset audio sicuro (solo quando necessario)
+// Reset audio sicuro
 // -------------------------------------------------------------
 async function safeResetAudio() {
     console.log("🔄 Reset audio in corso...");
     
     try {
-        // Ferma tutto il transporte
         Tone.Transport.stop();
         Tone.Transport.cancel();
         
-        // Scollega l'engine corrente
         if (currentEngine) {
             if (currentEngine.stop) currentEngine.stop();
             if (currentEngine.dispose) {
@@ -164,17 +163,9 @@ async function safeResetAudio() {
             currentEngine = null;
         }
         
-        // Scollega eventuali nodi dal master
-        if (Tone.Destination && Tone.Destination.disconnect) {
-            Tone.Destination.disconnect();
-        }
-        
-        // Non chiudere il contesto, basta solo riavviare il Transport
-        // Questo evita il blocco
+        // Non chiudere il contesto, basta riavviare
         await Tone.start();
-        
-        // Piccola pausa per stabilizzare
-        await new Promise(r => setTimeout(r, 100));
+        await new Promise(r => setTimeout(r, 50));
         
         console.log("✅ Reset audio completato");
         return true;
@@ -185,10 +176,16 @@ async function safeResetAudio() {
 }
 
 // -------------------------------------------------------------
-// Caricamento strumenti per genere (con timeout)
+// Caricamento strumenti per genere (con debug dettagliato)
 // -------------------------------------------------------------
 async function loadInstrumentsForGenre(genre) {
-    // Se gli strumenti sono già stati caricati, salta
+    // Se c'è già un caricamento in corso per questo genere, attendi
+    if (loadingPromises[genre]) {
+        console.log(`⏳ Caricamento ${genre} già in corso, attendo...`);
+        return loadingPromises[genre];
+    }
+    
+    // Se già caricati, ritorna subito
     if (instrumentsLoaded[genre]) {
         console.log(`✅ Strumenti ${genre} già caricati, skip`);
         return true;
@@ -196,65 +193,84 @@ async function loadInstrumentsForGenre(genre) {
     
     console.log(`🎵 Caricamento strumenti per ${genre}...`);
     
-    // Mostra loading overlay
-    const overlay = document.getElementById("loadingOverlay");
-    const loadingText = document.getElementById("loadingText");
-    
-    if (overlay) overlay.style.display = "flex";
-    if (loadingText) loadingText.textContent = `Caricamento strumenti ${genre}...`;
-    
-    // Timeout di 30 secondi
-    const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error(`Timeout caricamento ${genre}`)), 30000);
-    });
-    
-    try {
-        let loadPromise;
-        switch(genre) {
-            case "dance":
-                loadPromise = waitDanceInstruments();
-                break;
-            case "metal":
-                loadPromise = waitMetalInstruments();
-                break;
-            case "orchestra":
-                loadPromise = waitOrchestraInstruments();
-                break;
-            case "piano":
-                loadPromise = waitPianoInstruments();
-                break;
-            default:
-                throw new Error(`Genere sconosciuto: ${genre}`);
-        }
+    const loadingPromise = (async () => {
+        const overlay = document.getElementById("loadingOverlay");
+        const loadingText = document.getElementById("loadingText");
+        const loadingBar = document.getElementById("loadingBar");
         
-        await Promise.race([loadPromise, timeoutPromise]);
-        instrumentsLoaded[genre] = true;
-        console.log(`✅ Strumenti ${genre} caricati con successo`);
-        return true;
-    } catch (error) {
-        console.error(`❌ Errore caricamento strumenti ${genre}:`, error);
-        if (loadingText) loadingText.textContent = `Errore caricamento ${genre}, riprova`;
-        return false;
-    } finally {
-        if (overlay) overlay.style.display = "none";
-    }
+        if (overlay) overlay.style.display = "flex";
+        if (loadingText) loadingText.textContent = `Caricamento strumenti ${genre}...`;
+        
+        // Timeout di 20 secondi
+        const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error(`Timeout caricamento ${genre} (20s)`)), 20000);
+        });
+        
+        try {
+            console.log(`📦 Avvio caricamento ${genre}...`);
+            
+            let loadPromise;
+            switch(genre) {
+                case "dance":
+                    console.log("🕺 Caricamento Dance...");
+                    loadPromise = waitDanceInstruments();
+                    break;
+                case "metal":
+                    console.log("🤘 Caricamento Metal...");
+                    loadPromise = waitMetalInstruments();
+                    break;
+                case "orchestra":
+                    console.log("🎻 Caricamento Orchestra...");
+                    loadPromise = waitOrchestraInstruments();
+                    break;
+                case "piano":
+                    console.log("🎹 Caricamento Piano...");
+                    loadPromise = waitPianoInstruments();
+                    break;
+                default:
+                    throw new Error(`Genere sconosciuto: ${genre}`);
+            }
+            
+            await Promise.race([loadPromise, timeoutPromise]);
+            instrumentsLoaded[genre] = true;
+            console.log(`✅ Strumenti ${genre} caricati con successo`);
+            
+            if (loadingBar) loadingBar.style.width = "100%";
+            
+            return true;
+        } catch (error) {
+            console.error(`❌ Errore caricamento strumenti ${genre}:`, error);
+            if (loadingText) loadingText.textContent = `Errore caricamento ${genre}`;
+            
+            // Resetta il flag per permettere un nuovo tentativo
+            instrumentsLoaded[genre] = false;
+            delete loadingPromises[genre];
+            
+            throw error;
+        } finally {
+            if (overlay) overlay.style.display = "none";
+            delete loadingPromises[genre];
+        }
+    })();
+    
+    loadingPromises[genre] = loadingPromise;
+    return loadingPromise;
 }
 
 // -------------------------------------------------------------
 // Selezione genere
 // -------------------------------------------------------------
 async function selectGenre(genre) {
-    // Evita cambi multipli simultanei
     if (isChangingGenre) {
         console.log("⏳ Attendi, cambio genere già in corso...");
         return;
     }
     
-    // Se è lo stesso genere e l'engine esiste, non fare nulla
     if (currentGenre === genre && currentEngine) {
-        console.log(`Genere ${genre} già attivo, nessuna azione`);
-        document.getElementById("genrePanel").classList.remove("show");
-        setTimeout(() => document.getElementById("genrePanel").classList.add("hidden"), 400);
+        console.log(`Genere ${genre} già attivo`);
+        const genrePanel = document.getElementById("genrePanel");
+        genrePanel.classList.remove("show");
+        setTimeout(() => genrePanel.classList.add("hidden"), 400);
         return;
     }
     
@@ -273,20 +289,18 @@ async function selectGenre(genre) {
     try {
         // Reset audio solo se c'è un engine attivo
         if (currentEngine) {
-            console.log("Cambio genere, reset audio in corso...");
+            console.log("Cambio genere, reset audio...");
             await safeResetAudio();
         }
         
         // Analisi immagine
-        console.log("📷 Analisi immagine in corso...");
+        console.log("📷 Analisi immagine...");
         const analysis = await analyzeImage(previewImage);
         const params = photoToMusicParams(analysis);
+        console.log("📊 Parametri musicali calcolati");
 
         // Carica strumenti
-        const loaded = await loadInstrumentsForGenre(genre);
-        if (!loaded) {
-            throw new Error(`Impossibile caricare gli strumenti per ${genre}`);
-        }
+        await loadInstrumentsForGenre(genre);
 
         // Crea l'engine
         console.log(`🔧 Creazione engine ${genre}...`);
@@ -298,6 +312,7 @@ async function selectGenre(genre) {
                 currentEngine = await createMetalEngine(params, scoreUI);
                 break;
             case "orchestra":
+                console.log("🎻 Invocazione createOrchestraEngine...");
                 currentEngine = await createOrchestraEngine(params, scoreUI);
                 break;
             case "piano":
@@ -320,13 +335,12 @@ async function selectGenre(genre) {
         drawSpectrum();
         initFxPanel(currentEngine.mixerData);
 
-        // Chiudi il pannello dei generi
         genrePanel.classList.remove("show");
         setTimeout(() => genrePanel.classList.add("hidden"), 400);
 
     } catch (error) {
         console.error("❌ Errore nella selezione del genere:", error);
-        if (loadingText) loadingText.textContent = `Errore: ${error.message}`;
+        if (loadingText) loadingText.textContent = `Errore: ${error.message || "Riprova"}`;
         await new Promise(r => setTimeout(r, 2000));
     } finally {
         if (overlay) overlay.style.display = "none";
@@ -345,7 +359,6 @@ function initPlayerUI() {
     const closeScoreBtn = document.getElementById("closeScoreBtn");
     const rightPanel = document.querySelector(".right-panel");
     
-    // Rendi visibile il pannello destro in orizzontale
     if (rightPanel) rightPanel.classList.add("visible");
     
     spectrumPanel.classList.remove("hidden");
@@ -410,7 +423,6 @@ function initPlayerUI() {
         totalTimeEl.textContent = formatTime(currentEngine.totalDuration);
     }
 
-    // Pulisci eventuali handler precedenti
     if (window._transportHandler) {
         Tone.Transport.clear(window._transportHandler);
     }
@@ -422,9 +434,7 @@ function initPlayerUI() {
         if (currentTimeEl) currentTimeEl.textContent = formatTime(now);
     }, 0.1);
 
-    // Gestione seekBar
     if (seekBar) {
-        // Rimuovi vecchi listener
         const newSeekBar = seekBar.cloneNode(true);
         if (seekBar.parentNode) {
             seekBar.parentNode.replaceChild(newSeekBar, seekBar);
@@ -611,7 +621,6 @@ function initFxPanel(mixerData) {
 // Reset App
 // -------------------------------------------------------------
 function resetAppState(resetAudio = false) {
-    // Ferma l'engine corrente
     if (currentEngine) {
         try {
             currentEngine.stop();
@@ -632,19 +641,16 @@ function resetAppState(resetAudio = false) {
     
     releaseWakeLock();
     
-    // Reset audio solo se richiesto
     if (resetAudio) {
         safeResetAudio().catch(console.warn);
     }
     
-    // Rimuovi zoom dall'immagine
     const previewImage = document.getElementById("previewImage");
     if (previewImage) {
         previewImage.classList.remove("zoomed-out");
         previewImage.classList.remove("moved-up");
     }
     
-    // Nascondi pulsante chiusura spartito
     const closeScoreBtn = document.getElementById("closeScoreBtn");
     if (closeScoreBtn) closeScoreBtn.style.display = "none";
 }
@@ -678,13 +684,13 @@ async function requestWakeLock() {
     try {
         if ('wakeLock' in navigator) {
             wakeLock = await navigator.wakeLock.request('screen');
-            console.log("✅ Schermo bloccato: non si spegnerà.");
+            console.log("✅ Schermo bloccato");
             wakeLock.addEventListener('release', () => {
-                console.log("Wake Lock rilasciato.");
+                console.log("Wake Lock rilasciato");
             });
         }
     } catch (err) {
-        console.error(`❌ Errore Wake Lock: ${err.name}, ${err.message}`);
+        console.error(`❌ Wake Lock error:`, err);
     }
 }
 
@@ -692,7 +698,6 @@ function releaseWakeLock() {
     if (wakeLock !== null) {
         wakeLock.release();
         wakeLock = null;
-        console.log("💤 Schermo libero: ora può spegnersi.");
     }
 }
 
