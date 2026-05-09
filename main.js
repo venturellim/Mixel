@@ -7,7 +7,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-import { masterEQ } from "./common.js";
+import { masterEQ, showLoader, updateLoaderProgress, hideLoader } from "./common.js";
 import { analyzeImage } from "./imageAnalysis.js";
 import { photoToMusicParams } from "./photoToMusicParams.js";
 import { createPianoEngine, waitPianoInstruments } from "./genres/piano/pianoEngine.js";
@@ -229,9 +229,10 @@ async function loadInstrumentsForGenre(genre) {
     }
 }
 
-// ------------------------------
+// -------------------------------------------------------------
 // Selezione genere
 // -------------------------------------------------------------
+
 async function selectGenre(genre) {
     if (isChangingGenre) {
         console.log("⏳ Attendi, cambio genere già in corso...");
