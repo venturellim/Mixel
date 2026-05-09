@@ -7,13 +7,8 @@ import { generateSongProgressions, degreeToRoot } from "../../utils/musicTheory.
 import { orchestraInstruments, orchestraVolumeMap } from "./orchestraInstruments.js";
 import { scheduleOrchestraRhythm } from "./orchestraRhythmEngine.js";
 import { scheduleOrchestraLead } from "./orchestraLeadEngine.js";
-import { waitForInstruments } from "../../common.js";
 
 console.log("orchestraEngine.js ver. 001.1 loaded");
-
-export async function waitOrchestraInstruments() {
-    await waitForInstruments(5, "Orchestra"); // violin, viola, cello, doubleBass, percussion
-}
 
 export function createOrchestraEngine(params, score) {
     const rand = createSeededRandom(params.dna);
