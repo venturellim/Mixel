@@ -9,10 +9,10 @@ import { scheduleOrchestraRhythm } from "./orchestraRhythmEngine.js";
 import { scheduleOrchestraLead } from "./orchestraLeadEngine.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("orchestraEngine.js ver. 001 loaded");
+console.log("orchestraEngine.js ver. 001.1 loaded");
 
 export async function waitOrchestraInstruments() {
-    await waitForInstruments(5); // violin, viola, cello, doubleBass, percussion
+    await waitForInstruments(5, "Orchestra"); // violin, viola, cello, doubleBass, percussion
 }
 
 export function createOrchestraEngine(params, score) {
