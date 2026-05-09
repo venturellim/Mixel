@@ -16,7 +16,7 @@ import { createOrchestraEngine, waitOrchestraInstruments } from "./genres/orches
 import { createDanceEngine, waitDanceInstruments } from "./genres/dance/danceEngine.js";
 import { scoreVisualizer } from "./scoreUI.js";
 
-console.log("main.js COMPLETO ver. 014.1 loaded");
+console.log("main.js ver. 014.1 loaded");
 
 
 let currentEngine = null;
@@ -264,8 +264,6 @@ async function selectGenre(genre) {
             console.log("Cambio genere, reset audio...");
             await safeResetAudio();
         }
-        
-resetInstrumentLoader();
         // Analisi immagine
         console.log("📷 Analisi immagine...");
         const analysis = await analyzeImage(previewImage);
