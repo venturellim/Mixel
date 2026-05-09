@@ -9,10 +9,10 @@ import { scheduleRhythm } from "./metalRhythmEngine.js";
 import { scheduleLead } from "./metalLeadEngine.js"; 
 import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 016.2 loaded");
+console.log("metalEngine.js ver. 016.3 loaded");
 
 export async function waitMetalInstruments() {
-    await waitForInstruments(4);
+    await waitForInstruments(4, "Metal");
 }
 
 export function createMetalEngine(params, score) {
