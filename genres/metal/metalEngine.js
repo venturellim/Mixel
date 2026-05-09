@@ -7,13 +7,8 @@ import { generateSongProgressions, degreeToRoot } from "../../utils/musicTheory.
 import { metalInstruments, metalVolumeMap } from "./metalInstruments.js";
 import { scheduleRhythm } from "./metalRhythmEngine.js";
 import { scheduleLead } from "./metalLeadEngine.js"; 
-import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 016.3 loaded");
-
-export async function waitMetalInstruments() {
-    await waitForInstruments(4, "Metal");
-}
+console.log("metalEngine.js ver. 017 loaded");
 
 export function createMetalEngine(params, score) {
     const rand = createSeededRandom(params.dna);
