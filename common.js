@@ -13,7 +13,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("common.js loaded");
+console.log("common.js ver. 003 loaded");
 
 // ======================================================
 // 🎚 MASTER BUS & MASTERING
@@ -46,42 +46,325 @@ export function logNote(instrumentName, note, time) {
 
 
 // ======================================================
-// 📦 SISTEMA DI CARICAMENTO STRUMENTI (GENERICA)
+// 📦 SISTEMA DI CARICAMENTO STRUMENTI (STILE WIN11)
 // ======================================================
-//
-// Ogni sampler/strumento deve chiamare:
-//     registerInstrumentLoaded()
-//
-// Il genere deve chiamare:
-//     await waitForInstruments(total)
-//
 
 let __loadedCount = 0;
+let __currentTotal = 0;
+let __resolveWait = null;
+let __waitPromise = null;
+
+// Crea e inietta lo stile per il loader Win11
+function injectWin11LoaderStyle() {
+    if (document.getElementById("win11-loader-style")) return;
+    
+    const style = document.createElement("style");
+    style.id = "win11-loader-style";
+    style.textContent = `
+        /* Overlay stile Windows 11 */
+        .win11-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            font-family: 'Segoe UI', 'Segoe UI Variable', system-ui, -apple-system, sans-serif;
+            animation: win11-fadeIn 0.2s ease;
+        }
+        
+        @keyframes win11-fadeIn {
+            from { opacity: 0; backdrop-filter: blur(0px); }
+            to { opacity: 1; backdrop-filter: blur(8px); }
+        }
+        
+        /* Contenitore principale */
+        .win11-loader {
+            background: rgba(32, 32, 32, 0.85);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            padding: 28px 32px;
+            min-width: 320px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.05);
+            animation: win11-slideUp 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+        }
+        
+        @keyframes win11-slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        /* Icona animata */
+        .win11-icon {
+            margin-bottom: 20px;
+        }
+        
+        .win11-icon svg {
+            width: 48px;
+            height: 48px;
+            animation: win11-pulse 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes win11-pulse {
+            0%, 100% { opacity: 0.6; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.05); }
+        }
+        
+        /* Titolo */
+        .win11-title {
+            font-size: 16px;
+            font-weight: 500;
+            color: #fff;
+            margin-bottom: 8px;
+            letter-spacing: -0.2px;
+        }
+        
+        /* Testo secondario */
+        .win11-subtitle {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 20px;
+        }
+        
+        /* Contenitore barra */
+        .win11-bar-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            height: 6px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+        
+        /* Barra di progresso stile Win11 */
+        .win11-progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #0a6eff, #3b82f6, #60a5fa);
+            border-radius: 10px;
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Effetto scintillio sulla barra */
+        .win11-progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.3),
+                transparent
+            );
+            animation: win11-shimmer 1.5s infinite;
+            transform: translateX(-100%);
+        }
+        
+        @keyframes win11-shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        /* Percentuale */
+        .win11-percent {
+            font-size: 12px;
+            font-weight: 500;
+            color: #60a5fa;
+            text-align: right;
+            font-family: 'JetBrains Mono', 'Cascadia Code', monospace;
+        }
+        
+        /* Testo del caricamento corrente */
+        .win11-status {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.4);
+            margin-top: 16px;
+            letter-spacing: 0.3px;
+        }
+        
+        /* Pulsante di chiusura (opzionale) */
+        .win11-close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: none;
+            color: rgba(255, 255, 255, 0.6);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        
+        .win11-close-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+// Crea la struttura HTML del loader
+function createWin11Loader() {
+    injectWin11LoaderStyle();
+    
+    // Rimuovi vecchio loader se esiste
+    const existingLoader = document.getElementById("win11-loader-overlay");
+    if (existingLoader) existingLoader.remove();
+    
+    const overlay = document.createElement("div");
+    overlay.id = "win11-loader-overlay";
+    overlay.className = "win11-overlay";
+    overlay.innerHTML = `
+        <div class="win11-loader">
+            <div class="win11-icon">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#60a5fa" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    <path d="M2 17L12 22L22 17" stroke="#60a5fa" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    <path d="M2 12L12 17L22 12" stroke="#3b82f6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+            </div>
+            <div class="win11-title" id="win11-title">Caricamento strumenti</div>
+            <div class="win11-subtitle" id="win11-subtitle">Preparazione del tuo mix...</div>
+            <div class="win11-bar-container">
+                <div class="win11-progress-bar" id="win11-progress-bar"></div>
+            </div>
+            <div class="win11-percent" id="win11-percent">0%</div>
+            <div class="win11-status" id="win11-status">Inizializzazione</div>
+        </div>
+    `;
+    
+    document.body.appendChild(overlay);
+    return overlay;
+}
+
+// Aggiorna la percentuale
+function updateWin11Loader(percent, title, subtitle, status) {
+    const progressBar = document.getElementById("win11-progress-bar");
+    const percentText = document.getElementById("win11-percent");
+    const titleEl = document.getElementById("win11-title");
+    const subtitleEl = document.getElementById("win11-subtitle");
+    const statusEl = document.getElementById("win11-status");
+    
+    if (progressBar) progressBar.style.width = Math.min(100, Math.max(0, percent)) + "%";
+    if (percentText) percentText.textContent = Math.floor(percent) + "%";
+    if (titleEl && title) titleEl.textContent = title;
+    if (subtitleEl && subtitle) subtitleEl.textContent = subtitle;
+    if (statusEl && status) statusEl.textContent = status;
+}
+
+// Nascondi il loader Win11
+function hideWin11Loader() {
+    const overlay = document.getElementById("win11-loader-overlay");
+    if (overlay) {
+        overlay.style.opacity = "0";
+        setTimeout(() => {
+            if (overlay.parentNode) overlay.remove();
+        }, 300);
+    }
+}
 
 export function registerInstrumentLoaded() {
     __loadedCount++;
+    console.log(`📦 Strumento caricato: ${__loadedCount}/${__currentTotal}`);
+    
+    // Aggiorna la UI Win11
+    if (__currentTotal > 0) {
+        const percent = (__loadedCount / __currentTotal) * 100;
+        updateWin11Loader(percent, null, null, `Caricamento ${__loadedCount}/${__currentTotal}`);
+    }
+    
+    // Se abbiamo raggiunto il totale, risolvi la promise
+    if (__resolveWait && __loadedCount >= __currentTotal) {
+        updateWin11Loader(100, "Completato!", "Tutto pronto", "Caricamento completato");
+        setTimeout(() => {
+            if (__resolveWait) __resolveWait();
+            __resolveWait = null;
+        }, 200);
+    }
 }
 
-export async function waitForInstruments(total) {
-    const overlay = document.getElementById("loadingOverlay");
-    const bar = document.getElementById("loadingBar");
-    const text = document.getElementById("loadingText");
-
-    overlay.style.display = "flex";
-
-    function update() {
-        const percent = Math.floor((__loadedCount / total) * 100);
-        bar.style.width = percent + "%";
-        text.innerText = "Caricamento strumenti… " + percent + "%";
+export async function waitForInstruments(total, genreName = "strumenti") {
+    console.log(`⏳ waitForInstruments chiamato con total=${total}, loadedCount=${__loadedCount}`);
+    
+    // Crea e mostra loader Win11
+    createWin11Loader();
+    updateWin11Loader(0, `Caricamento ${genreName}`, "Preparazione dei campioni...", "Inizializzazione");
+    
+    // Reset contatore se necessario
+    if (__loadedCount > 0 && __loadedCount < total) {
+        console.log(`⚠️ Reset contatore da ${__loadedCount} a 0`);
+        __loadedCount = 0;
     }
-
-    while (__loadedCount < total) {
-        update();
-        await new Promise(res => setTimeout(res, 100));
+    
+    __currentTotal = total;
+    
+    // Se siamo già a quota, esci subito
+    if (__loadedCount >= total) {
+        console.log(`✅ Strumenti già tutti caricati (${__loadedCount}/${total})`);
+        updateWin11Loader(100, "Completato!", "Tutto pronto", "Strumenti già disponibili");
+        setTimeout(() => hideWin11Loader(), 500);
+        __loadedCount = 0;
+        __currentTotal = 0;
+        return;
     }
+    
+    // Aggiorna UI iniziale
+    const initialPercent = (__loadedCount / total) * 100;
+    updateWin11Loader(initialPercent, `Caricamento ${genreName}`, "Caricamento dei campioni...", `Avvio caricamento (0/${total})`);
+    
+    // Crea una nuova promise
+    __waitPromise = new Promise((resolve) => {
+        __resolveWait = resolve;
+    });
+    
+    // Attendi il completamento
+    await __waitPromise;
+    
+    console.log(`✅ Caricamento completato (${__loadedCount}/${total})`);
+    
+    // Nascondi loader
+    hideWin11Loader();
+    
+    __loadedCount = 0;
+    __currentTotal = 0;
+    __resolveWait = null;
+    __waitPromise = null;
+}
 
-    overlay.style.display = "none";
-    __loadedCount = 0; // reset per futuri caricamenti
+// Funzione per resettare forzatamente il caricamento
+export function resetInstrumentLoader() {
+    console.log(`🔄 Reset forzato loader: ${__loadedCount} → 0`);
+    __loadedCount = 0;
+    __currentTotal = 0;
+    if (__resolveWait) {
+        __resolveWait();
+        __resolveWait = null;
+    }
+    __waitPromise = null;
+    hideWin11Loader();
+}
+
+// Funzione per aggiornare il testo del loader (utile per i singoli generi)
+export function updateLoaderStatus(status, subtitle) {
+    updateWin11Loader(null, null, subtitle, status);
 }
 
 

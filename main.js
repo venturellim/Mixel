@@ -7,7 +7,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-import { masterEQ, } from "./common.js";
+import { masterEQ, registerInstrumentLoaded, waitForInstruments, resetInstrumentLoader } from "./common.js";
 import { analyzeImage } from "./imageAnalysis.js";
 import { photoToMusicParams } from "./photoToMusicParams.js";
 import { createPianoEngine, waitPianoInstruments } from "./genres/piano/pianoEngine.js";
@@ -16,7 +16,7 @@ import { createOrchestraEngine, waitOrchestraInstruments } from "./genres/orches
 import { createDanceEngine, waitDanceInstruments } from "./genres/dance/danceEngine.js";
 import { scoreVisualizer } from "./scoreUI.js";
 
-console.log("main.js COMPLETO ver. 014 loaded");
+console.log("main.js COMPLETO ver. 014.1 loaded");
 
 
 let currentEngine = null;
@@ -179,7 +179,7 @@ async function safeResetAudio() {
 // Caricamento strumenti per genere (con debug dettagliato)
 // -------------------------------------------------------------
 async function loadInstrumentsForGenre(genre) {
-    // Se c'è già un caricamento in corso per questo genere, attendi
+    // Se c'è già un caricamento in corso, attendi
     if (loadingPromises[genre]) {
         console.log(`⏳ Caricamento ${genre} già in corso, attendo...`);
         return loadingPromises[genre];
@@ -193,6 +193,9 @@ async function loadInstrumentsForGenre(genre) {
     
     console.log(`🎵 Caricamento strumenti per ${genre}...`);
     
+    // Reset loader prima di iniziare
+    resetInstrumentLoader();
+    
     const loadingPromise = (async () => {
         const overlay = document.getElementById("loadingOverlay");
         const loadingText = document.getElementById("loadingText");
@@ -200,6 +203,7 @@ async function loadInstrumentsForGenre(genre) {
         
         if (overlay) overlay.style.display = "flex";
         if (loadingText) loadingText.textContent = `Caricamento strumenti ${genre}...`;
+        if (loadingBar) loadingBar.style.width = "0%";
         
         // Timeout di 20 secondi
         const timeoutPromise = new Promise((_, reject) => {
@@ -242,9 +246,9 @@ async function loadInstrumentsForGenre(genre) {
             console.error(`❌ Errore caricamento strumenti ${genre}:`, error);
             if (loadingText) loadingText.textContent = `Errore caricamento ${genre}`;
             
-            // Resetta il flag per permettere un nuovo tentativo
+            // Resetta il flag
             instrumentsLoaded[genre] = false;
-            delete loadingPromises[genre];
+            resetInstrumentLoader();
             
             throw error;
         } finally {
@@ -257,7 +261,7 @@ async function loadInstrumentsForGenre(genre) {
     return loadingPromise;
 }
 
-// -------------------------------------------------------------
+// -------------------------------------
 // Selezione genere
 // -------------------------------------------------------------
 async function selectGenre(genre) {
@@ -293,6 +297,7 @@ async function selectGenre(genre) {
             await safeResetAudio();
         }
         
+resetInstrumentLoader();
         // Analisi immagine
         console.log("📷 Analisi immagine...");
         const analysis = await analyzeImage(previewImage);
