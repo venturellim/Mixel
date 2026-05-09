@@ -10,10 +10,10 @@ import * as Tone from "https://esm.sh/tone";
 import { masterEQ, showLoader, updateLoaderProgress, hideLoader } from "./common.js";
 import { analyzeImage } from "./imageAnalysis.js";
 import { photoToMusicParams } from "./photoToMusicParams.js";
-import { createPianoEngine, waitPianoInstruments } from "./genres/piano/pianoEngine.js";
-import { createMetalEngine, waitMetalInstruments } from "./genres/metal/metalEngine.js";
-import { createOrchestraEngine, waitOrchestraInstruments } from "./genres/orchestra/orchestraEngine.js";
-import { createDanceEngine, waitDanceInstruments } from "./genres/dance/danceEngine.js";
+import { createPianoEngine } from "./genres/piano/pianoEngine.js";
+import { createMetalEngine } from "./genres/metal/metalEngine.js";
+import { createOrchestraEngine } from "./genres/orchestra/orchestraEngine.js";
+import { createDanceEngine } from "./genres/dance/danceEngine.js";
 import { scoreVisualizer } from "./scoreUI.js";
 
 console.log("main.js ver. 014.1 loaded");
