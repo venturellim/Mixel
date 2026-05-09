@@ -10,10 +10,10 @@ import { scheduleDanceBass } from "./danceBassEngine.js";
 import { scheduleDanceLead } from "./danceLeadEngine.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("danceEngine.js ver. 002 loaded");
+console.log("danceEngine.js ver. 002.1 loaded");
 
 export async function waitDanceInstruments() {
-    await waitForInstruments(10);
+    await waitForInstruments(10, "Dance");
 }
 
 export function createDanceEngine(params, score) {
