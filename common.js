@@ -6,31 +6,24 @@
 // - utilities generiche
 // - sistema di caricamento strumenti (generico)
 // - logging note
-// - loader stile Win11 (SOLO GRAFICA)
-//
-// Nessun sampler, nessun effetto, nessuna logica metal.
-// Tutto ciò che è strumento → va nella cartella del genere.
+// - loader stile Win11 (solo grafica, stessa logica)
 //
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("common.js ver. 010 loaded");
+console.log("common.js ver. 011 loaded");
 
 // ======================================================
 // 🎚 MASTER BUS & MASTERING
 // ======================================================
 
-// EQ principale
 export const masterEQ = new Tone.EQ3({
     low: 0,
     mid: 0,
     high: 0
 });
 
-// Limiter globale (ultimo anello della catena)
 export const masterLimiter = new Tone.Limiter(-1);
-
-// Catena corretta: EQ → Limiter → Destination
 masterEQ.chain(masterLimiter, Tone.Destination);
 
 
@@ -46,10 +39,15 @@ export function logNote(instrumentName, note, time) {
 }
 
 // ======================================================
-// 🎨 LOADER GRAFICO STILE WIN11 (SOLO UI, NON TOCCA LA LOGICA)
+// 🎨 LOADER GRAFICO STILE WIN11 (SOLO UI)
 // ======================================================
 
 let win11Overlay = null;
+let win11ProgressBar = null;
+let win11Percent = null;
+let win11Status = null;
+let win11Title = null;
+let win11Subtitle = null;
 
 function injectWin11LoaderStyle() {
     if (document.getElementById("win11-loader-style")) return;
@@ -65,8 +63,8 @@ function injectWin11LoaderStyle() {
             display: none;
             align-items: center;
             justify-content: center;
-            z-index: 10000;
-            font-family: 'Segoe UI', 'Segoe UI Variable', system-ui, sans-serif;
+            z-index: 10001;
+            font-family: 'Segoe UI', system-ui, sans-serif;
         }
         
         .win11-loader {
@@ -157,15 +155,10 @@ function injectWin11LoaderStyle() {
     document.head.appendChild(style);
 }
 
-function getOrCreateLoader() {
+function initWin11Loader() {
     injectWin11LoaderStyle();
     
-    if (win11Overlay && win11Overlay.parentNode) {
-        return win11Overlay;
-    }
-    
-    const existingLoader = document.getElementById("win11-loader-overlay");
-    if (existingLoader) existingLoader.remove();
+    if (win11Overlay) return;
     
     win11Overlay = document.createElement("div");
     win11Overlay.id = "win11-loader-overlay";
@@ -189,93 +182,74 @@ function getOrCreateLoader() {
         </div>
     `;
     
+    win11ProgressBar = win11Overlay.querySelector("#win11-progress-bar");
+    win11Percent = win11Overlay.querySelector("#win11-percent");
+    win11Status = win11Overlay.querySelector("#win11-status");
+    win11Title = win11Overlay.querySelector("#win11-title");
+    win11Subtitle = win11Overlay.querySelector("#win11-subtitle");
+    
     document.body.appendChild(win11Overlay);
-    return win11Overlay;
 }
 
-// Funzioni per aggiornare la UI del loader (chiamate dal tuo vecchio sistema)
-export function updateWin11Loader(percent, status = null) {
-    const overlay = getOrCreateLoader();
-    const progressBar = document.getElementById("win11-progress-bar");
-    const percentEl = document.getElementById("win11-percent");
-    const statusEl = document.getElementById("win11-status");
-    
-    if (progressBar) progressBar.style.width = Math.min(100, Math.max(0, percent)) + "%";
-    if (percentEl) percentEl.textContent = Math.floor(percent) + "%";
-    if (statusEl && status) statusEl.textContent = status;
-    
-    if (overlay && percent > 0 && percent < 100) {
-        overlay.style.display = "flex";
-    }
+function updateWin11UI(percent, status, title, subtitle) {
+    if (win11ProgressBar) win11ProgressBar.style.width = Math.min(100, Math.max(0, percent)) + "%";
+    if (win11Percent) win11Percent.textContent = Math.floor(percent) + "%";
+    if (win11Status && status) win11Status.textContent = status;
+    if (win11Title && title) win11Title.textContent = title;
+    if (win11Subtitle && subtitle) win11Subtitle.textContent = subtitle;
 }
 
-export function showWin11Loader(title = "Caricamento strumenti", subtitle = "Preparazione...") {
-    const overlay = getOrCreateLoader();
-    const titleEl = document.getElementById("win11-title");
-    const subtitleEl = document.getElementById("win11-subtitle");
-    
-    if (titleEl) titleEl.textContent = title;
-    if (subtitleEl) subtitleEl.textContent = subtitle;
-    
-    updateWin11Loader(0, "Avvio...");
-    overlay.style.display = "flex";
+function showWin11UI() {
+    if (win11Overlay) win11Overlay.style.display = "flex";
 }
 
-export function hideWin11Loader() {
-    if (win11Overlay) {
-        win11Overlay.style.display = "none";
-    }
+function hideWin11UI() {
+    if (win11Overlay) win11Overlay.style.display = "none";
 }
 
 // ======================================================
-// 📦 SISTEMA DI CARICAMENTO STRUMENTI (IDENTICO AL TUO ORIGINALE)
+// 📦 SISTEMA DI CARICAMENTO STRUMENTI (IDENTICO ALL'ORIGINALE)
 // ======================================================
 
 let __loadedCount = 0;
 
 export function registerInstrumentLoaded() {
     __loadedCount++;
-    
-    // Aggiorna la UI Win11
-    if (window.__currentTotal > 0) {
-        const percent = (__loadedCount / window.__currentTotal) * 100;
-        updateWin11Loader(percent, `Caricamento ${__loadedCount}/${window.__currentTotal}`);
-    }
 }
 
-export async function waitForInstruments(total) {
-    window.__currentTotal = total;
-    __loadedCount = 0;
+export async function waitForInstruments(total, genreName = "strumenti") {
+    initWin11Loader();
     
     const overlay = document.getElementById("loadingOverlay");
     const bar = document.getElementById("loadingBar");
     const text = document.getElementById("loadingText");
     
-    // Mostra loader Win11 invece di quello vecchio
-    showWin11Loader("Caricamento strumenti", "Preparazione dei campioni...");
+    // Nascondi il vecchio overlay se esiste
+    if (overlay) overlay.style.display = "none";
     
-    if (overlay) overlay.style.display = "flex";
-    
+    // Mostra il nuovo loader Win11
+    updateWin11UI(0, "Avvio...", `Caricamento ${genreName}`, "Preparazione dei campioni...");
+    showWin11UI();
+
     function update() {
         const percent = Math.floor((__loadedCount / total) * 100);
+        // Aggiorna anche il vecchio (per compatibilità)
         if (bar) bar.style.width = percent + "%";
         if (text) text.innerText = "Caricamento strumenti… " + percent + "%";
-        updateWin11Loader(percent, `Caricamento ${__loadedCount}/${total}`);
+        // Aggiorna il nuovo Win11
+        updateWin11UI(percent, `Caricamento ${__loadedCount}/${total}`);
     }
-    
+
     while (__loadedCount < total) {
         update();
         await new Promise(res => setTimeout(res, 100));
     }
-    
+
     update();
     await new Promise(res => setTimeout(res, 200));
     
-    if (overlay) overlay.style.display = "none";
-    hideWin11Loader();
-    
+    hideWin11UI();
     __loadedCount = 0;
-    window.__currentTotal = 0;
 }
 
 
