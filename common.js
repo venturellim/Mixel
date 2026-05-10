@@ -5,7 +5,7 @@
 // - EQ/mastering
 // - utilities generiche
 // - logging note
-// - loader stile Win11
+// - loader stile Win11 (semplice)
 //
 // Nessun sampler, nessun effetto, nessuna logica metal.
 // Tutto ciò che è strumento → va nella cartella del genere.
@@ -13,7 +13,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("common.js ver. 006 loaded");
+console.log("common.js ver. 007 loaded");
 
 // ======================================================
 // 🎚 MASTER BUS & MASTERING
@@ -26,10 +26,10 @@ export const masterEQ = new Tone.EQ3({
     high: 0
 });
 
-// Limiter globale (ultimo anello della catena)
+// Limiter globale
 export const masterLimiter = new Tone.Limiter(-1);
 
-// Catena corretta: EQ → Limiter → Destination
+// Catena: EQ → Limiter → Destination
 masterEQ.chain(masterLimiter, Tone.Destination);
 
 
@@ -46,13 +46,12 @@ export function logNote(instrumentName, note, time) {
 
 
 // ======================================================
-// 📦 LOADER STILE WIN11
+// 📦 LOADER STILE WIN11 (VERSIONE SEMPLICE)
 // ======================================================
 
 let win11Overlay = null;
-let currentTotal = 0;
-let currentCount = 0;
-let resolveWait = null;
+let __loadedCount = 0;
+let __currentTotal = 0;
 
 // Inietta lo stile CSS Win11
 function injectWin11LoaderStyle() {
@@ -215,17 +214,14 @@ function getOrCreateLoader() {
     return win11Overlay;
 }
 
+// Funzioni loader esportate
 export function showLoader(title = "Caricamento strumenti", subtitle = "Preparazione...") {
     const overlay = getOrCreateLoader();
     const titleEl = document.getElementById("win11-title");
     const subtitleEl = document.getElementById("win11-subtitle");
-    const progressBar = document.getElementById("win11-progress-bar");
-    const percentEl = document.getElementById("win11-percent");
     
     if (titleEl) titleEl.textContent = title;
     if (subtitleEl) subtitleEl.textContent = subtitle;
-    if (progressBar) progressBar.style.width = "0%";
-    if (percentEl) percentEl.textContent = "0%";
     
     overlay.style.display = "flex";
 }
@@ -246,37 +242,40 @@ export function hideLoader() {
     }
 }
 
-// Sistema di caricamento strumenti (mantenuto per compatibilità)
+// ======================================================
+// 📦 SISTEMA DI CARICAMENTO STRUMENTI (COME PRIMA, MA CON GRAFICA WIN11)
+// ======================================================
+
 export function registerInstrumentLoaded() {
-    currentCount++;
-    const percent = (currentCount / currentTotal) * 100;
-    updateLoaderProgress(percent, `Caricamento ${currentCount}/${currentTotal}`);
+    __loadedCount++;
     
-    if (resolveWait && currentCount >= currentTotal) {
-        resolveWait();
-        resolveWait = null;
+    // Aggiorna la barra Win11
+    if (__currentTotal > 0) {
+        const percent = (__loadedCount / __currentTotal) * 100;
+        updateLoaderProgress(percent, `Caricamento ${__loadedCount}/${__currentTotal}`);
     }
 }
 
 export async function waitForInstruments(total, genreName = "strumenti") {
-    currentTotal = total;
-    currentCount = 0;
+    __currentTotal = total;
+    __loadedCount = 0;
     
     showLoader(`Caricamento ${genreName}`, "Preparazione dei campioni...");
     updateLoaderProgress(0, `Avvio caricamento (0/${total})`);
     
-    if (currentCount >= currentTotal) {
-        hideLoader();
-        return;
+    // Loop semplice come nella vecchia versione
+    while (__loadedCount < total) {
+        updateLoaderProgress((__loadedCount / total) * 100, `Caricamento ${__loadedCount}/${total}`);
+        await new Promise(res => setTimeout(res, 100));
     }
     
-    await new Promise((resolve) => {
-        resolveWait = resolve;
-    });
-    
+    updateLoaderProgress(100, "Completato!");
+    await new Promise(res => setTimeout(res, 300));
     hideLoader();
-    currentTotal = 0;
-    currentCount = 0;
+    
+    // Reset per futuri caricamenti
+    __currentTotal = 0;
+    __loadedCount = 0;
 }
 
 
@@ -284,19 +283,16 @@ export async function waitForInstruments(total, genreName = "strumenti") {
 // 🧰 UTILITIES GENERICHE
 // ======================================================
 
-// Clamp MIDI note range
 export function clampNote(note, minMidi, maxMidi) {
     const midi = Tone.Frequency(note).toMidi();
     if (midi < minMidi || midi > maxMidi) return null;
     return note;
 }
 
-// Prende un elemento da una scala ciclicamente
 export function pickFromScale(scale, step) {
     return scale[step % scale.length];
 }
 
-// Random deterministico
 export function createSeededRandom(seed) {
     return function () {
         seed = (seed * 1664525 + 1013904223) % 4294967296;
@@ -304,13 +300,11 @@ export function createSeededRandom(seed) {
     };
 }
 
-// Humanizzazione temporale
 export function humanizeTime(time, rand, amount = 0.008) {
     const offset = (rand() - 0.5) * amount;
     return time + offset;
 }
 
-// Humanizzazione velocity
 export function humanizeVelocity(rand, base = 1) {
     const variation = 0.85 + rand() * 0.3;
     return base * variation;
