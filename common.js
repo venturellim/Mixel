@@ -6,12 +6,12 @@
 // - utilities generiche
 // - sistema di caricamento strumenti (generico)
 // - logging note
-// - loader stile Win11 (con delay 1s per strumento)
+// - loader stile Win11 (durata fissa 10 secondi)
 //
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("common.js ver. 012 loaded");
+console.log("common.js ver. 013 loaded");
 
 // ======================================================
 // 🎚 MASTER BUS & MASTERING
@@ -33,7 +33,7 @@ masterEQ.chain(masterLimiter, Tone.Destination);
 
 export function logNote(instrumentName, note, time) {
     console.log(
-        `%c🎵 ${instrumentName} → ${note} @ ${time}`,
+        "%c🎵 " + instrumentName + " → " + note + " @ " + time,
         "color:#4CAF50; font-weight:bold;"
     );
 }
@@ -163,24 +163,23 @@ function initWin11Loader() {
     win11Overlay = document.createElement("div");
     win11Overlay.id = "win11-loader-overlay";
     win11Overlay.className = "win11-overlay";
-    win11Overlay.innerHTML = `
-        <div class="win11-loader">
-            <div class="win11-icon">
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#60a5fa" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-                    <path d="M2 17L12 22L22 17" stroke="#60a5fa" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-                    <path d="M2 12L12 17L22 12" stroke="#3b82f6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-                </svg>
-            </div>
-            <div class="win11-title" id="win11-title">Caricamento strumenti</div>
-            <div class="win11-subtitle" id="win11-subtitle">Preparazione del tuo mix...</div>
-            <div class="win11-bar-container">
-                <div class="win11-progress-bar" id="win11-progress-bar"></div>
-            </div>
-            <div class="win11-percent" id="win11-percent">0%</div>
-            <div class="win11-status" id="win11-status">Inizializzazione</div>
-        </div>
-    `;
+    win11Overlay.innerHTML = 
+        '<div class="win11-loader">' +
+            '<div class="win11-icon">' +
+                '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+                    '<path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#60a5fa" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>' +
+                    '<path d="M2 17L12 22L22 17" stroke="#60a5fa" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>' +
+                    '<path d="M2 12L12 17L22 12" stroke="#3b82f6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>' +
+                '</svg>' +
+            '</div>' +
+            '<div class="win11-title" id="win11-title">Caricamento strumenti</div>' +
+            '<div class="win11-subtitle" id="win11-subtitle">Preparazione del tuo mix...</div>' +
+            '<div class="win11-bar-container">' +
+                '<div class="win11-progress-bar" id="win11-progress-bar"></div>' +
+            '</div>' +
+            '<div class="win11-percent" id="win11-percent">0%</div>' +
+            '<div class="win11-status" id="win11-status">Inizializzazione</div>' +
+        '</div>';
     
     win11ProgressBar = win11Overlay.querySelector("#win11-progress-bar");
     win11Percent = win11Overlay.querySelector("#win11-percent");
@@ -208,7 +207,7 @@ function hideWin11UI() {
 }
 
 // ======================================================
-// 📦 SISTEMA DI CARICAMENTO STRUMENTI (CON DELAY 1 SECONDO)
+// 📦 SISTEMA DI CARICAMENTO STRUMENTI (DURATA FISSA 10 SECONDI)
 // ======================================================
 
 let __loadedCount = 0;
@@ -217,8 +216,11 @@ export function registerInstrumentLoaded() {
     __loadedCount++;
 }
 
-export async function waitForInstruments(total, genreName = "strumenti") {
+export async function waitForInstruments(total, genreName) {
     initWin11Loader();
+    
+    // Nome di default
+    if (!genreName) genreName = "strumenti";
     
     const overlay = document.getElementById("loadingOverlay");
     const bar = document.getElementById("loadingBar");
@@ -228,27 +230,37 @@ export async function waitForInstruments(total, genreName = "strumenti") {
     if (overlay) overlay.style.display = "none";
     
     // Mostra il nuovo loader Win11
-    updateWin11UI(0, "Avvio...", `Caricamento ${genreName}`, "Preparazione dei campioni...");
+    updateWin11UI(0, "Avvio...", "Caricamento " + genreName, "Preparazione dei campioni...");
     showWin11UI();
 
+    // Calcola il delay tra ogni strumento per una durata totale di 10 secondi
+    const TOTAL_DURATION_MS = 10000; // 10 secondi totali
+    const delayPerInstrument = TOTAL_DURATION_MS / total;
+    
+    console.log("⏱️ Caricamento " + genreName + ": " + total + " strumenti, delay " + Math.floor(delayPerInstrument) + "ms l'uno (totale " + (TOTAL_DURATION_MS/1000) + "s)");
+
     function update() {
-        const percent = Math.floor((__loadedCount / total) * 100);
+        var percent = Math.floor((__loadedCount / total) * 100);
         // Aggiorna anche il vecchio (per compatibilità)
         if (bar) bar.style.width = percent + "%";
         if (text) text.innerText = "Caricamento strumenti… " + percent + "%";
         // Aggiorna il nuovo Win11
-        updateWin11UI(percent, `Caricamento ${__loadedCount}/${total}`);
+        updateWin11UI(percent, "Caricamento " + __loadedCount + "/" + total + " - " + percent + "%");
     }
 
     while (__loadedCount < total) {
         update();
         
-        // ATTESA DI 1 SECONDO PER OGNI STRUMENTO (per vedere l'animazione)
-        await new Promise(res => setTimeout(res, 750));
+        // Delay calcolato in base al numero di strumenti
+        if (__loadedCount < total - 1) {
+            await new Promise(function(res) { setTimeout(res, delayPerInstrument); });
+        } else {
+            await new Promise(function(res) { setTimeout(res, 500); });
+        }
     }
 
     update();
-    await new Promise(res => setTimeout(res, 500)); // delay finale
+    await new Promise(function(res) { setTimeout(res, 500); });
     
     hideWin11UI();
     __loadedCount = 0;
@@ -260,7 +272,7 @@ export async function waitForInstruments(total, genreName = "strumenti") {
 // ======================================================
 
 export function clampNote(note, minMidi, maxMidi) {
-    const midi = Tone.Frequency(note).toMidi();
+    var midi = Tone.Frequency(note).toMidi();
     if (midi < minMidi || midi > maxMidi) return null;
     return note;
 }
@@ -270,18 +282,20 @@ export function pickFromScale(scale, step) {
 }
 
 export function createSeededRandom(seed) {
-    return function () {
+    return function() {
         seed = (seed * 1664525 + 1013904223) % 4294967296;
         return seed / 4294967296;
     };
 }
 
-export function humanizeTime(time, rand, amount = 0.008) {
-    const offset = (rand() - 0.5) * amount;
+export function humanizeTime(time, rand, amount) {
+    if (amount === undefined) amount = 0.008;
+    var offset = (rand() - 0.5) * amount;
     return time + offset;
 }
 
-export function humanizeVelocity(rand, base = 1) {
-    const variation = 0.85 + rand() * 0.3;
+export function humanizeVelocity(rand, base) {
+    if (base === undefined) base = 1;
+    var variation = 0.85 + rand() * 0.3;
     return base * variation;
 }
