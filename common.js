@@ -5,6 +5,7 @@
 // - EQ/mastering
 // - utilities generiche
 // - logging note
+// - loader stile Win11
 //
 // Nessun sampler, nessun effetto, nessuna logica metal.
 // Tutto ciò che è strumento → va nella cartella del genere.
@@ -12,7 +13,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("common.js ver. 005 loaded");
+console.log("common.js ver. 006 loaded");
 
 // ======================================================
 // 🎚 MASTER BUS & MASTERING
@@ -45,12 +46,15 @@ export function logNote(instrumentName, note, time) {
 
 
 // ======================================================
-// 📦 LOADER STILE WIN11 (SEMPLIFICATO)
+// 📦 LOADER STILE WIN11
 // ======================================================
 
 let win11Overlay = null;
+let currentTotal = 0;
+let currentCount = 0;
+let resolveWait = null;
 
-// Inietta lo stile CSS
+// Inietta lo stile CSS Win11
 function injectWin11LoaderStyle() {
     if (document.getElementById("win11-loader-style")) return;
     
@@ -242,21 +246,57 @@ export function hideLoader() {
     }
 }
 
+// Sistema di caricamento strumenti (mantenuto per compatibilità)
+export function registerInstrumentLoaded() {
+    currentCount++;
+    const percent = (currentCount / currentTotal) * 100;
+    updateLoaderProgress(percent, `Caricamento ${currentCount}/${currentTotal}`);
+    
+    if (resolveWait && currentCount >= currentTotal) {
+        resolveWait();
+        resolveWait = null;
+    }
+}
+
+export async function waitForInstruments(total, genreName = "strumenti") {
+    currentTotal = total;
+    currentCount = 0;
+    
+    showLoader(`Caricamento ${genreName}`, "Preparazione dei campioni...");
+    updateLoaderProgress(0, `Avvio caricamento (0/${total})`);
+    
+    if (currentCount >= currentTotal) {
+        hideLoader();
+        return;
+    }
+    
+    await new Promise((resolve) => {
+        resolveWait = resolve;
+    });
+    
+    hideLoader();
+    currentTotal = 0;
+    currentCount = 0;
+}
+
 
 // ======================================================
 // 🧰 UTILITIES GENERICHE
 // ======================================================
 
+// Clamp MIDI note range
 export function clampNote(note, minMidi, maxMidi) {
     const midi = Tone.Frequency(note).toMidi();
     if (midi < minMidi || midi > maxMidi) return null;
     return note;
 }
 
+// Prende un elemento da una scala ciclicamente
 export function pickFromScale(scale, step) {
     return scale[step % scale.length];
 }
 
+// Random deterministico
 export function createSeededRandom(seed) {
     return function () {
         seed = (seed * 1664525 + 1013904223) % 4294967296;
@@ -264,11 +304,13 @@ export function createSeededRandom(seed) {
     };
 }
 
+// Humanizzazione temporale
 export function humanizeTime(time, rand, amount = 0.008) {
     const offset = (rand() - 0.5) * amount;
     return time + offset;
 }
 
+// Humanizzazione velocity
 export function humanizeVelocity(rand, base = 1) {
     const variation = 0.85 + rand() * 0.3;
     return base * variation;
