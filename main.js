@@ -7,7 +7,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-import { masterEQ, } from "./common.js";
+import { masterEQ, showLoader, updateLoaderProgress, hideLoader, waitForInstruments } from "./common.js";
 import { analyzeImage } from "./imageAnalysis.js";
 import { photoToMusicParams } from "./photoToMusicParams.js";
 import { createPianoEngine, waitPianoInstruments } from "./genres/piano/pianoEngine.js";
@@ -16,13 +16,21 @@ import { createOrchestraEngine, waitOrchestraInstruments } from "./genres/orches
 import { createDanceEngine, waitDanceInstruments } from "./genres/dance/danceEngine.js";
 import { scoreVisualizer } from "./scoreUI.js";
 
-console.log("main.js COMPLETO ver. 011.1 loaded");
+console.log("main.js VER. 015.0 loaded");
 
 
 let currentEngine = null;
 let currentGenre = null;
 let firstStart = 1;
 let scoreUI = null;
+
+const genreInstrumentsLoaded = {
+    dance: false,
+    metal: false,
+    orchestra: false,
+    piano: false
+};
+
 const miniVideo = document.querySelector('.video-mini-wrapper video'); 
 
 
@@ -152,26 +160,34 @@ async function selectGenre(genre) {
     const params = photoToMusicParams(analysis);
 
     if (genre === "dance") {
-        if (firstStart === 1) {
+        //if (firstStart === 1) {
+        if (!genreInstrumentsLoaded.dance) {
             await waitDanceInstruments();
+            genreInstrumentsLoaded.dance = true;
         }
         currentEngine = await createDanceEngine(params, scoreUI);
     }
     if (genre === "metal") {
-        if (firstStart === 1) {
+        //if (firstStart === 1) {
+        if (!genreInstrumentsLoaded.metal) {
             await waitMetalInstruments();
+            genreInstrumentsLoaded.metal = true;
         }
         currentEngine = await createMetalEngine(params, scoreUI);
     }
     if (genre === "orchestra") {
-        if (firstStart === 1) {
+        //if (firstStart === 1) {
+        if (!genreInstrumentsLoaded.orchestra) {
             await waitOrchestraInstruments();
+            if (!genreInstrumentsLoaded.orchestra = true;
         }
         currentEngine = await createOrchestraEngine(params, scoreUI);
     }
     if (genre === "piano") {
-        if (firstStart === 1) {
+        //if (firstStart === 1) {
+        if (!genreInstrumentsLoaded.piano) {
             await waitPianoInstruments();
+          genreInstrumentsLoaded.piano = true;
         }
         currentEngine = await createPianoEngine(params, scoreUI);
     }
@@ -237,6 +253,8 @@ function initPlayerUI() {
         if (overlay) overlay.style.display = "none";
         
         currentEngine.play();
+        btnSpartito.classList.remove("hidden");
+        btnSpartito.classList.add("show-flex");
     };
 
     pauseBtn.onclick = () => currentEngine?.pause();
@@ -245,10 +263,8 @@ function initPlayerUI() {
         currentEngine?.stop();
         if (scoreUI) scoreUI.hide();
         btnSpartito.classList.add("hidden");
-    btnSpartito.classList.remove("show-flex");
-};
-        //if (closeScoreBtn) closeScoreBtn.style.display = "none";
-    //};
+        btnSpartito.classList.remove("show-flex");
+    };
     
     btnSpartito.onclick = () => {
         if (scoreUI) {
@@ -495,7 +511,7 @@ function resetAppState() {
     const previewImage = document.getElementById("previewImage");
     if (previewImage) {
         previewImage.classList.remove("zoomed-out");
-        //previewImage.classList.remove("moved-up");
+        previewImage.classList.remove("moved-up");
     }
     // Nascondi pulsante chiusura spartito
     const closeScoreBtn = document.getElementById("closeScoreBtn");
