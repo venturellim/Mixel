@@ -1,8 +1,8 @@
-// metalInstruments.js — ver. 004
+// metalInstruments.js — ver. 005
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("metalInstruments.js ver. 004 loaded");
+console.log("metalInstruments.js ver. 005 loaded");
 
 // ============================================================
 // 🎚 BUS SPECIFICI DEL METAL
@@ -67,6 +67,12 @@ const leadVibrato = new Tone.Vibrato({
     frequency: 5,
     depth: 0.1
 }).connect(leadDelay);
+
+// ============================================================
+// 📦 CONTEGGIO STRUMENTI (per il loader)
+// ============================================================
+// Ogni sampler chiamerà registerInstrumentLoaded() quando caricato
+const TOTAL_INSTRUMENTS = 6; // guitarPalm, guitarOpen, guitarLead, bass, drums + 1 extra
 
 // ============================================================
 // 🎸 STRUMENTI (SAMPLERS)
@@ -146,6 +152,8 @@ export const drums = new Tone.Players({
     tom2: "Samples/Drums/tom_2.mp3", tom3: "Samples/Drums/tom_3.mp3",
     tom4: "Samples/Drums/tom_4.mp3", ride: "Samples/Drums/ride.mp3",
     ridebell: "Samples/Drums/ride_bell.mp3", china: "Samples/Drums/china.mp3"
+}, {
+    onload: () => registerInstrumentLoaded()
 }).connect(drumBus);
 
 // ============================================================
