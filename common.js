@@ -5,31 +5,24 @@
 // - EQ/mastering
 // - utilities generiche
 // - logging note
-// - loader stile Win11 (semplice)
-//
-// Nessun sampler, nessun effetto, nessuna logica metal.
-// Tutto ciò che è strumento → va nella cartella del genere.
+// - loader stile Win11 (con timeout)
 //
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("common.js ver. 007 loaded");
+console.log("common.js ver. 008 loaded");
 
 // ======================================================
 // 🎚 MASTER BUS & MASTERING
 // ======================================================
 
-// EQ principale
 export const masterEQ = new Tone.EQ3({
     low: 0,
     mid: 0,
     high: 0
 });
 
-// Limiter globale
 export const masterLimiter = new Tone.Limiter(-1);
-
-// Catena: EQ → Limiter → Destination
 masterEQ.chain(masterLimiter, Tone.Destination);
 
 
@@ -46,14 +39,14 @@ export function logNote(instrumentName, note, time) {
 
 
 // ======================================================
-// 📦 LOADER STILE WIN11 (VERSIONE SEMPLICE)
+// 📦 LOADER STILE WIN11 (CON TIMEOUT)
 // ======================================================
 
 let win11Overlay = null;
 let __loadedCount = 0;
 let __currentTotal = 0;
+let __waitTimeout = null;
 
-// Inietta lo stile CSS Win11
 function injectWin11LoaderStyle() {
     if (document.getElementById("win11-loader-style")) return;
     
@@ -69,7 +62,7 @@ function injectWin11LoaderStyle() {
             align-items: center;
             justify-content: center;
             z-index: 10000;
-            font-family: 'Segoe UI', 'Segoe UI Variable', system-ui, sans-serif;
+            font-family: 'Segoe UI', system-ui, sans-serif;
             animation: win11-fadeIn 0.2s ease;
         }
         
@@ -139,7 +132,7 @@ function injectWin11LoaderStyle() {
             width: 0%;
             background: linear-gradient(90deg, #0a6eff, #3b82f6, #60a5fa);
             border-radius: 10px;
-            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: width 0.3s;
             position: relative;
             overflow: hidden;
         }
@@ -214,7 +207,6 @@ function getOrCreateLoader() {
     return win11Overlay;
 }
 
-// Funzioni loader esportate
 export function showLoader(title = "Caricamento strumenti", subtitle = "Preparazione...") {
     const overlay = getOrCreateLoader();
     const titleEl = document.getElementById("win11-title");
@@ -243,13 +235,13 @@ export function hideLoader() {
 }
 
 // ======================================================
-// 📦 SISTEMA DI CARICAMENTO STRUMENTI (COME PRIMA, MA CON GRAFICA WIN11)
+// 📦 SISTEMA DI CARICAMENTO STRUMENTI (CON TIMEOUT)
 // ======================================================
 
 export function registerInstrumentLoaded() {
     __loadedCount++;
+    console.log(`📦 registerInstrumentLoaded: ${__loadedCount}/${__currentTotal}`);
     
-    // Aggiorna la barra Win11
     if (__currentTotal > 0) {
         const percent = (__loadedCount / __currentTotal) * 100;
         updateLoaderProgress(percent, `Caricamento ${__loadedCount}/${__currentTotal}`);
@@ -257,25 +249,47 @@ export function registerInstrumentLoaded() {
 }
 
 export async function waitForInstruments(total, genreName = "strumenti") {
+    console.log(`⏳ waitForInstruments: ${genreName}, total=${total}`);
+    
     __currentTotal = total;
     __loadedCount = 0;
     
     showLoader(`Caricamento ${genreName}`, "Preparazione dei campioni...");
     updateLoaderProgress(0, `Avvio caricamento (0/${total})`);
     
-    // Loop semplice come nella vecchia versione
+    // Timeout di 30 secondi (se non si carica, esce comunque)
+    const startTime = Date.now();
+    const TIMEOUT_MS = 30000;
+    
     while (__loadedCount < total) {
-        updateLoaderProgress((__loadedCount / total) * 100, `Caricamento ${__loadedCount}/${total}`);
+        const percent = (__loadedCount / total) * 100;
+        updateLoaderProgress(percent, `Caricamento ${__loadedCount}/${total}`);
+        
+        // Timeout check
+        if (Date.now() - startTime > TIMEOUT_MS) {
+            console.warn(`⚠️ Timeout caricamento ${genreName} dopo ${TIMEOUT_MS}ms (${__loadedCount}/${total} caricati)`);
+            break;
+        }
+        
         await new Promise(res => setTimeout(res, 100));
     }
     
     updateLoaderProgress(100, "Completato!");
-    await new Promise(res => setTimeout(res, 300));
+    await new Promise(res => setTimeout(res, 500));
     hideLoader();
     
-    // Reset per futuri caricamenti
+    console.log(`✅ waitForInstruments completato: ${__loadedCount}/${total} strumenti caricati`);
+    
+    // Reset
     __currentTotal = 0;
     __loadedCount = 0;
+}
+
+export function resetInstrumentLoader() {
+    if (__waitTimeout) clearTimeout(__waitTimeout);
+    __currentTotal = 0;
+    __loadedCount = 0;
+    hideLoader();
 }
 
 
