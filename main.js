@@ -7,7 +7,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-import { masterEQ, showLoader, updateLoaderProgress, hideLoader, waitForInstruments } from "./common.js";
+import { masterEQ, } from "./common.js";
 import { analyzeImage } from "./imageAnalysis.js";
 import { photoToMusicParams } from "./photoToMusicParams.js";
 import { createPianoEngine, waitPianoInstruments } from "./genres/piano/pianoEngine.js";
@@ -16,7 +16,7 @@ import { createOrchestraEngine, waitOrchestraInstruments } from "./genres/orches
 import { createDanceEngine, waitDanceInstruments } from "./genres/dance/danceEngine.js";
 import { scoreVisualizer } from "./scoreUI.js";
 
-console.log("main.js VER. 015.0 loaded");
+console.log("main.js COMPLETO ver. 011.1 loaded");
 
 
 let currentEngine = null;
@@ -237,8 +237,6 @@ function initPlayerUI() {
         if (overlay) overlay.style.display = "none";
         
         currentEngine.play();
-        btnSpartito.classList.remove("hidden");
-        btnSpartito.classList.add("show-flex");
     };
 
     pauseBtn.onclick = () => currentEngine?.pause();
@@ -247,8 +245,10 @@ function initPlayerUI() {
         currentEngine?.stop();
         if (scoreUI) scoreUI.hide();
         btnSpartito.classList.add("hidden");
-        btnSpartito.classList.remove("show-flex");
-    };
+    btnSpartito.classList.remove("show-flex");
+};
+        //if (closeScoreBtn) closeScoreBtn.style.display = "none";
+    //};
     
     btnSpartito.onclick = () => {
         if (scoreUI) {
@@ -495,7 +495,7 @@ function resetAppState() {
     const previewImage = document.getElementById("previewImage");
     if (previewImage) {
         previewImage.classList.remove("zoomed-out");
-        previewImage.classList.remove("moved-up");
+        //previewImage.classList.remove("moved-up");
     }
     // Nascondi pulsante chiusura spartito
     const closeScoreBtn = document.getElementById("closeScoreBtn");
