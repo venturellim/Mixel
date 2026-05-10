@@ -6,12 +6,12 @@
 // - utilities generiche
 // - sistema di caricamento strumenti (generico)
 // - logging note
-// - loader stile Win11 (solo grafica, stessa logica)
+// - loader stile Win11 (con delay 1s per strumento)
 //
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("common.js ver. 011 loaded");
+console.log("common.js ver. 012 loaded");
 
 // ======================================================
 // 🎚 MASTER BUS & MASTERING
@@ -39,7 +39,7 @@ export function logNote(instrumentName, note, time) {
 }
 
 // ======================================================
-// 🎨 LOADER GRAFICO STILE WIN11 (SOLO UI)
+// 🎨 LOADER GRAFICO STILE WIN11
 // ======================================================
 
 let win11Overlay = null;
@@ -208,7 +208,7 @@ function hideWin11UI() {
 }
 
 // ======================================================
-// 📦 SISTEMA DI CARICAMENTO STRUMENTI (IDENTICO ALL'ORIGINALE)
+// 📦 SISTEMA DI CARICAMENTO STRUMENTI (CON DELAY 1 SECONDO)
 // ======================================================
 
 let __loadedCount = 0;
@@ -242,11 +242,13 @@ export async function waitForInstruments(total, genreName = "strumenti") {
 
     while (__loadedCount < total) {
         update();
-        await new Promise(res => setTimeout(res, 100));
+        
+        // ATTESA DI 1 SECONDO PER OGNI STRUMENTO (per vedere l'animazione)
+        await new Promise(res => setTimeout(res, 750));
     }
 
     update();
-    await new Promise(res => setTimeout(res, 200));
+    await new Promise(res => setTimeout(res, 500)); // delay finale
     
     hideWin11UI();
     __loadedCount = 0;
