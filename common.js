@@ -6,12 +6,12 @@
 // - utilities generiche
 // - sistema di caricamento strumenti (generico)
 // - logging note
-// - loader stile Win11 (durata fissa 10 secondi con delay forzato)
+// - loader stile Win11 con due barre e durata fissa
 //
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("common.js ver. 014 loaded");
+console.log("common.js ver. 015 loaded");
 
 // ======================================================
 // 🎚 MASTER BUS & MASTERING
@@ -39,7 +39,7 @@ export function logNote(instrumentName, note, time) {
 }
 
 // ======================================================
-// 🎨 LOADER GRAFICO STILE WIN11
+// 🎨 LOADER GRAFICO STILE WIN11 CON DUE BARRE
 // ======================================================
 
 let win11Overlay = null;
@@ -48,6 +48,9 @@ let win11Percent = null;
 let win11Status = null;
 let win11Title = null;
 let win11Subtitle = null;
+let win11GenreBar = null;
+let win11GenrePercent = null;
+let win11GenreName = null;
 
 function injectWin11LoaderStyle() {
     if (document.getElementById("win11-loader-style")) return;
@@ -62,7 +65,7 @@ function injectWin11LoaderStyle() {
         "}" +
         ".win11-loader {" +
             "background: rgba(32, 32, 32, 0.85); backdrop-filter: blur(20px); border-radius: 16px;" +
-            "padding: 28px 32px; min-width: 320px; text-align: center;" +
+            "padding: 28px 32px; min-width: 360px; text-align: center;" +
             "box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.05);" +
         "}" +
         ".win11-icon { margin-bottom: 20px; }" +
@@ -70,12 +73,17 @@ function injectWin11LoaderStyle() {
         "@keyframes win11-pulse { 0%, 100% { opacity: 0.6; transform: scale(1); } 50% { opacity: 1; transform: scale(1.05); } }" +
         ".win11-title { font-size: 16px; font-weight: 500; color: #fff; margin-bottom: 8px; }" +
         ".win11-subtitle { font-size: 13px; color: rgba(255, 255, 255, 0.6); margin-bottom: 20px; }" +
-        ".win11-bar-container { background: rgba(255, 255, 255, 0.1); border-radius: 10px; height: 6px; overflow: hidden; margin-bottom: 12px; }" +
+        ".win11-bar-container { background: rgba(255, 255, 255, 0.1); border-radius: 10px; height: 6px; overflow: hidden; margin-bottom: 8px; }" +
         ".win11-progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #0a6eff, #3b82f6, #60a5fa); border-radius: 10px; transition: width 0.3s; position: relative; overflow: hidden; }" +
         ".win11-progress-bar::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent); animation: win11-shimmer 1.5s infinite; transform: translateX(-100%); }" +
         "@keyframes win11-shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }" +
-        ".win11-percent { font-size: 12px; font-weight: 500; color: #60a5fa; text-align: right; font-family: monospace; }" +
-        ".win11-status { font-size: 11px; color: rgba(255, 255, 255, 0.4); margin-top: 16px; }";
+        ".win11-percent { font-size: 12px; font-weight: 500; color: #60a5fa; text-align: right; font-family: monospace; margin-bottom: 16px; }" +
+        ".win11-genre-label { font-size: 11px; color: rgba(255, 255, 255, 0.5); margin-bottom: 4px; text-align: left; }" +
+        ".win11-genre-bar-container { background: rgba(255, 255, 255, 0.08); border-radius: 8px; height: 4px; overflow: hidden; margin-bottom: 4px; }" +
+        ".win11-genre-progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #60a5fa, #3b82f6, #0a6eff); border-radius: 8px; transition: width 0.3s; }" +
+        ".win11-genre-percent { font-size: 10px; color: #60a5fa; text-align: right; font-family: monospace; margin-bottom: 8px; }" +
+        ".win11-status { font-size: 11px; color: rgba(255, 255, 255, 0.4); margin-top: 16px; }" +
+        ".win11-divider { margin: 12px 0 8px 0; border-top: 1px solid rgba(255, 255, 255, 0.1); }";
     document.head.appendChild(style);
 }
 
@@ -102,6 +110,12 @@ function initWin11Loader() {
                 '<div class="win11-progress-bar" id="win11-progress-bar"></div>' +
             '</div>' +
             '<div class="win11-percent" id="win11-percent">0%</div>' +
+            '<div class="win11-divider"></div>' +
+            '<div class="win11-genre-label" id="win11-genre-label">Caricamento genere...</div>' +
+            '<div class="win11-genre-bar-container">' +
+                '<div class="win11-genre-progress-bar" id="win11-genre-progress-bar"></div>' +
+            '</div>' +
+            '<div class="win11-genre-percent" id="win11-genre-percent">0%</div>' +
             '<div class="win11-status" id="win11-status">Inizializzazione</div>' +
         '</div>';
     
@@ -110,13 +124,21 @@ function initWin11Loader() {
     win11Status = win11Overlay.querySelector("#win11-status");
     win11Title = win11Overlay.querySelector("#win11-title");
     win11Subtitle = win11Overlay.querySelector("#win11-subtitle");
+    win11GenreBar = win11Overlay.querySelector("#win11-genre-progress-bar");
+    win11GenrePercent = win11Overlay.querySelector("#win11-genre-percent");
+    win11GenreName = win11Overlay.querySelector("#win11-genre-label");
     
     document.body.appendChild(win11Overlay);
 }
 
-function updateWin11UI(percent, status, title, subtitle) {
-    if (win11ProgressBar) win11ProgressBar.style.width = Math.min(100, Math.max(0, percent)) + "%";
-    if (win11Percent) win11Percent.textContent = Math.floor(percent) + "%";
+function updateWin11UI(totalPercent, genrePercent, genreName, genreCurrent, genreTotal, status, title, subtitle) {
+    if (win11ProgressBar) win11ProgressBar.style.width = Math.min(100, Math.max(0, totalPercent)) + "%";
+    if (win11Percent) win11Percent.textContent = Math.floor(totalPercent) + "%";
+    
+    if (win11GenreBar) win11GenreBar.style.width = Math.min(100, Math.max(0, genrePercent)) + "%";
+    if (win11GenrePercent) win11GenrePercent.textContent = Math.floor(genrePercent) + "%";
+    if (win11GenreName && genreName) win11GenreName.textContent = genreName + ": " + genreCurrent + "/" + genreTotal;
+    
     if (win11Status && status) win11Status.textContent = status;
     if (win11Title && title) win11Title.textContent = title;
     if (win11Subtitle && subtitle) win11Subtitle.textContent = subtitle;
@@ -131,65 +153,144 @@ function hideWin11UI() {
 }
 
 // ======================================================
-// 📦 SISTEMA DI CARICAMENTO STRUMENTI (CON DELAY FORZATO)
+// 📦 SISTEMA DI CARICAMENTO STRUMENTI (CON OGGETTO GENERI)
 // ======================================================
 
-let __loadedCount = 0;
-let __totalInstruments = 0;
+// Mappa per nomi display
+var displayNames = {
+    dance: "Dance",
+    metal: "Metal",
+    orchestra: "Orchestra",
+    piano: "Piano"
+};
 
-export function registerInstrumentLoaded() {
-    __loadedCount++;
-    console.log("📦 registerInstrumentLoaded: " + __loadedCount + "/" + __totalInstruments);
-}
-
-export async function waitForInstruments(total, genreName) {
-    if (!genreName) genreName = "strumenti";
-    
+export async function waitForInstruments(genres) {
     initWin11Loader();
     
-    // Resetta i contatori
-    __loadedCount = 0;
-    __totalInstruments = total;
-    
-    var overlay = document.getElementById("loadingOverlay");
-    var bar = document.getElementById("loadingBar");
-    var text = document.getElementById("loadingText");
-    
-    // Nascondi il vecchio overlay
-    if (overlay) overlay.style.display = "none";
-    
-    // Mostra il nuovo loader
-    updateWin11UI(0, "Avvio...", "Caricamento " + genreName, "Preparazione dei campioni...");
-    showWin11UI();
-    
-    // Calcola delay per strumento (durata totale 10 secondi)
-    var TOTAL_DURATION_MS = 10000;
-    var delayPerStep = TOTAL_DURATION_MS / total;
-    
-    console.log("⏱️ " + genreName + ": " + total + " strumenti, delay " + Math.floor(delayPerStep) + "ms per step, totale " + (TOTAL_DURATION_MS/1000) + "s");
-    
-    // Forza il delay indipendentemente dal conteggio reale
-    for (var i = 0; i <= total; i++) {
-        var percent = Math.floor((i / total) * 100);
-        
-        // Aggiorna le UI
-        if (bar) bar.style.width = percent + "%";
-        if (text) text.innerText = "Caricamento strumenti… " + percent + "%";
-        updateWin11UI(percent, "Caricamento " + i + "/" + total + " - " + percent + "%");
-        
-        // Delay (ultimo step incluso)
-        if (i < total) {
-            await new Promise(function(res) { setTimeout(res, delayPerStep); });
-        }
+    // Calcola totale strumenti e crea lista generi
+    var totalInstruments = 0;
+    var genreList = [];
+    for (var g in genres) {
+        totalInstruments += genres[g];
+        genreList.push({
+            name: g,
+            displayName: displayNames[g] || g,
+            count: genres[g]
+        });
     }
     
-    // Delay finale per far vedere il 100%
+    console.log("🎵 Caricamento " + totalInstruments + " strumenti totali da: " + Object.keys(genres).join(", "));
+    
+    var overlay = document.getElementById("loadingOverlay");
+    if (overlay) overlay.style.display = "none";
+    
+    // Durata totale animazione: 10 secondi
+    var TOTAL_DURATION_MS = 10000;
+    var startTime = Date.now();
+    
+    updateWin11UI(0, 0, "Inizializzazione", 0, 0, "Avvio...", "Caricamento strumenti", "Preparazione dei campioni...");
+    showWin11UI();
+    
+    // Calcola i confini di ogni genere
+    var boundaries = [];
+    var cumulative = 0;
+    for (var i = 0; i < genreList.length; i++) {
+        var g = genreList[i];
+        boundaries.push({
+            name: g.displayName,
+            originalName: g.name,
+            count: g.count,
+            start: cumulative,
+            end: cumulative + g.count
+        });
+        cumulative += g.count;
+    }
+    
+    // Anima step by step (ogni 50ms)
+    var steps = 200; // 200 step per animazione fluida (50ms x 200 = 10 secondi)
+    var stepDuration = TOTAL_DURATION_MS / steps;
+    
+    for (var step = 0; step <= steps; step++) {
+        var elapsed = Date.now() - startTime;
+        var totalPercent = Math.min(100, (elapsed / TOTAL_DURATION_MS) * 100);
+        
+        // Determina quale genere è attivo in base alla percentuale
+        var currentGenre = null;
+        var genreLoaded = 0;
+        var genreTotal = 0;
+        var targetInstrumentIndex = Math.floor((totalPercent / 100) * totalInstruments);
+        
+        for (var b = 0; b < boundaries.length; b++) {
+            var bound = boundaries[b];
+            if (targetInstrumentIndex < bound.end) {
+                currentGenre = bound;
+                genreLoaded = targetInstrumentIndex - bound.start;
+                genreTotal = bound.count;
+                break;
+            }
+        }
+        
+        if (currentGenre) {
+            var genrePercent = (genreLoaded / genreTotal) * 100;
+            updateWin11UI(
+                totalPercent,
+                genrePercent,
+                currentGenre.name,
+                genreLoaded,
+                genreTotal,
+                "Caricamento " + currentGenre.name + "... (" + Math.floor(totalPercent) + "%)"
+            );
+        } else if (totalPercent >= 100) {
+            updateWin11UI(100, 100, "Completato!", totalInstruments, totalInstruments, "Tutti gli strumenti pronti!");
+        }
+        
+        await new Promise(function(res) { setTimeout(res, stepDuration); });
+    }
+    
+    // Assicura 100%
+    updateWin11UI(100, 100, "Completato!", totalInstruments, totalInstruments, "Tutti gli strumenti pronti!");
     await new Promise(function(res) { setTimeout(res, 300); });
     
-    // Nascondi loader
     hideWin11UI();
-    
-    // Resetta contatori
-    __loadedCount = 0;
-    __totalInstruments = 0;
+}
+
+// Funzione vuota per compatibilità (non serve più)
+export function registerInstrumentLoaded() {
+    __loadedCount++;
+}
+
+// ======================================================
+// 🧰 UTILITIES GENERICHE
+// ======================================================
+
+// Clamp MIDI note range
+export function clampNote(note, minMidi, maxMidi) {
+    const midi = Tone.Frequency(note).toMidi();
+    if (midi < minMidi || midi > maxMidi) return null;
+    return note;
+}
+
+// Prende un elemento da una scala ciclicamente
+export function pickFromScale(scale, step) {
+    return scale[step % scale.length];
+}
+
+// Random deterministico
+export function createSeededRandom(seed) {
+    return function () {
+        seed = (seed * 1664525 + 1013904223) % 4294967296;
+        return seed / 4294967296;
+    };
+}
+
+// Humanizzazione temporale
+export function humanizeTime(time, rand, amount = 0.008) {
+    const offset = (rand() - 0.5) * amount;
+    return time + offset;
+}
+
+// Humanizzazione velocity
+export function humanizeVelocity(rand, base = 1) {
+    const variation = 0.85 + rand() * 0.3;
+    return base * variation;
 }
