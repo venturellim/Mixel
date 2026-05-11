@@ -16,7 +16,7 @@ import { createOrchestraEngine } from "./genres/orchestra/orchestraEngine.js";
 import { createDanceEngine } from "./genres/dance/danceEngine.js";
 import { scoreVisualizer } from "./scoreUI.js";
 
-console.log("main.js Ver. 016.2 loaded");
+console.log("main.js Ver. 017 loaded");
 
 
 let currentEngine = null;
@@ -244,11 +244,13 @@ function initPlayerUI() {
     pauseBtn.onclick = () => currentEngine?.pause();
     
     stopBtn.onclick = () => {
-        currentEngine?.stop();
-        if (scoreUI) scoreUI.hide();
-        btnSpartito.classList.add("hidden");
-        btnSpartito.classList.remove("show-flex");
-    };
+    if (currentEngine) {
+        currentEngine.stop();  // ferma la riproduzione
+    }
+    if (scoreUI) scoreUI.hide();
+    btnSpartito.classList.add("hidden");
+    btnSpartito.classList.remove("show-flex");
+};
     
     btnSpartito.onclick = () => {
         if (scoreUI) {
@@ -451,27 +453,23 @@ function initFxPanel(mixerData) {
 // Reset audio
 // -------------------------------------------------------------
 async function resetAudio() {
-    const ctx = Tone.getContext();
-
-    if (ctx.state === "suspended") {
-        console.log("AudioContext non avviato: skip reset");
-        return;
-    }
-
+    console.log("🔄 Reset audio in corso (solo Transport)...");
+    
     try {
+        // Ferma e resetta il Transport, ma NON chiudere il contesto
         Tone.Transport.stop();
         Tone.Transport.cancel();
-
-        if (ctx.state !== "closed") {
-            await ctx.close();
-            console.log("AudioContext chiuso correttamente");
+        Tone.Transport.seconds = 0;
+        
+        // Non chiudere il contesto! Riavvia solo se necessario
+        if (Tone.context.state !== "running") {
+            await Tone.start();
         }
+        
+        console.log("✅ Reset audio completato");
     } catch (e) {
-        console.warn("Errore durante la chiusura AudioContext:", e);
+        console.warn("⚠️ Errore durante reset audio:", e);
     }
-
-    await Tone.start();
-    console.log("AudioContext riavviato");
 }
 
 // -------------------------------------------------------------
