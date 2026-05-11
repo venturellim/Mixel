@@ -24,11 +24,11 @@ let currentGenre = null;
 let firstStart = 1;
 let scoreUI = null;
 
-const genreInstrumentsLoaded = {
-    dance: false,
-    metal: false,
-    orchestra: false,
-    piano: false
+const genteInstrument = {
+    dance: 11,
+    metal: 5,
+    orchestra: 5,
+    piano: 1
 };
 
 const miniVideo = document.querySelector('.video-mini-wrapper video'); 
@@ -131,7 +131,7 @@ function initGenrePanel() {
             resetAudio();
             firstStart = 0;
         } else {
-        await waitForInstruments(22, "Sample");
+        await waitForInstruments(genteInstrument);
         firstStart = 0;
         }
         
