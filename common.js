@@ -8,7 +8,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("common.js ver. 017.1 loaded");
+console.log("common.js ver. 017 loaded");
 
 // ======================================================
 // 🎚 MASTER BUS & MASTERING
@@ -90,20 +90,20 @@ function createLoader() {
     return win11Overlay;
 }
 
-export function showLoader(title, subtitle) {
+function showLoader(title, subtitle) {
     createLoader();
     if (title) win11Title.textContent = title;
     if (subtitle) win11Subtitle.textContent = subtitle;
     win11Overlay.style.display = "flex";
 }
 
-export function updateLoader(percent, status) {
+function updateLoader(percent, status) {
     if (win11Bar) win11Bar.style.width = Math.min(100, Math.max(0, percent)) + "%";
     if (win11Percent) win11Percent.textContent = Math.floor(percent) + "%";
     if (win11Status && status) win11Status.textContent = status;
 }
 
-export function hideLoader() {
+function hideLoader() {
     if (win11Overlay) win11Overlay.style.display = "none";
 }
 
