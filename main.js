@@ -16,7 +16,7 @@ import { createOrchestraEngine, waitOrchestraInstruments } from "./genres/orches
 import { createDanceEngine, waitDanceInstruments } from "./genres/dance/danceEngine.js";
 import { scoreVisualizer } from "./scoreUI.js";
 
-console.log("main.js Ver. 015.2 loaded");
+console.log("main.js Ver. 016 loaded");
 
 
 let currentEngine = null;
@@ -130,8 +130,9 @@ function initGenrePanel() {
         if (firstStart !== 1) {
             resetAudio();
             firstStart = 0;
-        } else
-        await waitForInstruments(22, "Strumenti");
+        } else {
+        await waitForInstruments(22, "Sample");
+        }
         
         genrePanel.classList.add("show");
         genrePanel.classList.remove("hidden");
