@@ -2,12 +2,13 @@
 // common.js — versione universale per tutti i generi
 // - master bus, EQ, limiter
 // - logging note
-// - loader Win11 con due barre di avanzamento
+// - loader Win11 con due barre e cache per genere
+// - accetta oggetto generi o (total, genreName)
 //
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("common.js ver. 020 loaded");
+console.log("common.js ver. 023 FINALE loaded");
 
 // ======================================================
 // 🎚 MASTER BUS & MASTERING
@@ -57,7 +58,6 @@ function createLoader() {
         .win11-title { font-size: 16px; font-weight: 500; color: #fff; margin-bottom: 8px; }
         .win11-subtitle { font-size: 13px; color: rgba(255,255,255,0.6); margin-bottom: 20px; }
         
-        /* Barra principale */
         .win11-bar-container { background: rgba(255,255,255,0.1); border-radius: 10px;
             height: 6px; overflow: hidden; margin-bottom: 8px; }
         .win11-progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg,#0a6eff,#3b82f6,#60a5fa);
@@ -68,7 +68,6 @@ function createLoader() {
         @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
         .win11-percent { font-size: 12px; font-weight: 500; color: #60a5fa; text-align: right; font-family: monospace; margin-bottom: 16px; }
         
-        /* Barra del genere corrente */
         .win11-genre-label { font-size: 11px; color: rgba(255,255,255,0.5); margin-bottom: 4px; text-align: left; }
         .win11-genre-bar-container { background: rgba(255,255,255,0.08); border-radius: 8px;
             height: 4px; overflow: hidden; margin-bottom: 4px; }
@@ -118,17 +117,14 @@ function showLoader(title, subtitle) {
     win11Overlay.style.display = "flex";
 }
 
-function updateLoader(percent, genrePercent, genreName, genreCurrent, genreTotal, status) {
-    // Barra principale
-    if (win11Bar) win11Bar.style.width = Math.min(100, Math.max(0, percent)) + "%";
-    if (win11Percent) win11Percent.textContent = Math.floor(percent) + "%";
+function updateLoader(totalPercent, genrePercent, genreName, genreCurrent, genreTotal, status) {
+    if (win11Bar) win11Bar.style.width = Math.min(100, Math.max(0, totalPercent)) + "%";
+    if (win11Percent) win11Percent.textContent = Math.floor(totalPercent) + "%";
     
-    // Barra del genere
     if (win11GenreBar) win11GenreBar.style.width = Math.min(100, Math.max(0, genrePercent)) + "%";
     if (win11GenrePercent) win11GenrePercent.textContent = Math.floor(genrePercent) + "%";
     if (win11GenreName && genreName) win11GenreName.textContent = genreName + ": " + genreCurrent + "/" + genreTotal;
     
-    // Status
     if (win11Status && status) win11Status.textContent = status;
 }
 
@@ -137,99 +133,80 @@ function hideLoader() {
 }
 
 // ======================================================
-// 📦 CARICAMENTO STRUMENTI CON DUE BARRE
+// 📦 CARICAMENTO STRUMENTI CON CACHE (supporta entrambi i formati)
 // ======================================================
 
-var __loadedCount = 0;
-var __startTime = 0;
-var __totalInstruments = 0;
-var __genreBoundaries = [];
+var loadedGenres = {};
+var globalLoadedCount = 0;
+var globalTotalCount = 0;
+var currentResolve = null;
 
-// Calcola i confini di ogni genere
-function calculateGenreBoundaries(genres) {
-    var boundaries = [];
-    var cumulative = 0;
-    var genreNames = Object.keys(genres);
+export function registerInstrumentLoaded() {
+    globalLoadedCount++;
+    console.log("📦 Strumento caricato: " + globalLoadedCount + "/" + globalTotalCount);
     
-    for (var i = 0; i < genreNames.length; i++) {
-        var name = genreNames[i];
-        // Traduci in italiano per visualizzazione
-        var displayName = name;
-        if (name === "dance") displayName = "Dance";
-        if (name === "metal") displayName = "Metal";
-        if (name === "orchestra") displayName = "Orchestra";
-        if (name === "piano") displayName = "Piano";
-        
-        boundaries.push({
-            name: name,
-            displayName: displayName,
-            count: genres[name],
-            start: cumulative,
-            end: cumulative + genres[name]
-        });
-        cumulative += genres[name];
+    if (globalLoadedCount >= globalTotalCount && currentResolve) {
+        currentResolve();
+        currentResolve = null;
     }
-    
-    return boundaries;
 }
 
-// Determina quale genere sta caricando in base al contatore
-function getCurrentGenre(loadedCount, boundaries) {
-    for (var i = 0; i < boundaries.length; i++) {
-        var b = boundaries[i];
-        if (loadedCount < b.end) {
-            return b;
+// Supporta sia (total, genreName) che (genres)
+export async function waitForInstruments(param1, param2) {
+    var total, genreName;
+    
+    // Se il secondo parametro esiste, è (total, genreName)
+    if (param2 !== undefined) {
+        total = param1;
+        genreName = param2;
+    } else {
+        // Altrimenti è un oggetto { genere: numero, ... }
+        // Calcola il totale e usa il primo genere come name
+        total = 0;
+        var firstGenre = null;
+        for (var g in param1) {
+            total += param1[g];
+            if (!firstGenre) firstGenre = g;
         }
-    }
-    return boundaries[boundaries.length - 1];
-}
-
-export async function waitForInstruments(genres) {
-    // Calcola totale e confini
-    __totalInstruments = 0;
-    for (var g in genres) {
-        __totalInstruments += genres[g];
+        genreName = firstGenre;
     }
     
-    __genreBoundaries = calculateGenreBoundaries(genres);
-    __loadedCount = 0;
-    __startTime = Date.now();
+    // Se questo genere è già stato caricato, esci subito
+    if (loadedGenres[genreName]) {
+        console.log("✅ Genere " + genreName + " già caricato, skip loader");
+        return;
+    }
     
-    var genreNames = Object.keys(genres).join(", ");
-    console.log("🎵 Caricamento " + __totalInstruments + " strumenti da: " + genreNames);
+    // Aggiorna i totali globali
+    globalTotalCount += total;
     
-    showLoader("Caricamento strumenti", "Preparazione dei campioni...");
-    updateLoader(0, 0, "Inizializzazione", 0, 0, "Avvio...");
+    console.log("🎵 Caricamento " + genreName + " (" + total + " strumenti)... Totale atteso: " + globalTotalCount);
     
-    // Nascondi vecchio loader
+    showLoader("Caricamento " + genreName, "Preparazione dei campioni...");
+    updateLoader(0, 0, genreName, 0, total, "Avvio...");
+    
     var oldOverlay = document.getElementById("loadingOverlay");
     if (oldOverlay) oldOverlay.style.display = "none";
     
-    // Aspetta che tutti gli strumenti siano caricati
-    while (__loadedCount < __totalInstruments) {
-        var totalPercent = (__loadedCount / __totalInstruments) * 100;
-        
-        // Determina il genere corrente
-        var currentGenreInfo = getCurrentGenre(__loadedCount, __genreBoundaries);
-        var genreLoaded = __loadedCount - currentGenreInfo.start;
-        var genrePercent = (genreLoaded / currentGenreInfo.count) * 100;
-        
-        updateLoader(
-            totalPercent, 
-            genrePercent, 
-            currentGenreInfo.displayName, 
-            genreLoaded, 
-            currentGenreInfo.count,
-            "Caricamento " + currentGenreInfo.displayName + "..."
-        );
-        
-        await new Promise(function(r) { setTimeout(r, 50); });
+    var startTime = Date.now();
+    var MIN_DISPLAY = 1500;
+    
+    // Se siamo già a quota, usa un delay minimo
+    if (globalLoadedCount >= globalTotalCount) {
+        updateLoader(100, 100, genreName, total, total, "Completato!");
+        await new Promise(function(r) { setTimeout(r, MIN_DISPLAY); });
+        hideLoader();
+        loadedGenres[genreName] = true;
+        return;
     }
     
-    var elapsed = Date.now() - __startTime;
-    var MIN_DISPLAY = 2000;
+    // Crea una promise per attendere il caricamento
+    await new Promise(function(resolve) {
+        currentResolve = resolve;
+    });
     
-    updateLoader(100, 100, "Completato!", __totalInstruments, __totalInstruments, "Tutti gli strumenti pronti!");
+    var elapsed = Date.now() - startTime;
+    updateLoader(100, 100, genreName, total, total, "Completato!");
     
     if (elapsed < MIN_DISPLAY) {
         await new Promise(function(r) { setTimeout(r, MIN_DISPLAY - elapsed); });
@@ -238,11 +215,9 @@ export async function waitForInstruments(genres) {
     }
     
     hideLoader();
-    __loadedCount = 0;
-}
-
-export function registerInstrumentLoaded() {
-    __loadedCount++;
+    
+    // Marca questo genere come caricato
+    loadedGenres[genreName] = true;
 }
 
 // ======================================================
