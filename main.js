@@ -19,7 +19,7 @@ console.log("main.js Ver. 017.0 loaded");
 
 // OGGETTO CON IL NUMERO DI STRUMENTI PER GENERE
 const GENRE_INSTRUMENTS = {
-    dance: 11,
+    // dance: 11,
     metal: 5,
     orchestra: 5,
     piano: 1
