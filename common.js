@@ -2,13 +2,12 @@
 // common.js — versione universale per tutti i generi
 // - master bus, EQ, limiter
 // - logging note
-// - loader Win11 (minimo 2 secondi)
-// - cache strumenti per evitare ricaricamenti
+// - loader Win11 con supporto oggetto generi
 //
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("common.js ver. 017 loaded");
+console.log("common.js ver. 019 loaded");
 
 // ======================================================
 // 🎚 MASTER BUS & MASTERING
@@ -108,34 +107,62 @@ function hideLoader() {
 }
 
 // ======================================================
-// 📦 CARICAMENTO STRUMENTI CON CACHE
+// 📦 CARICAMENTO STRUMENTI CON OGGETTO GENERI
 // ======================================================
 
-// Cache per sapere quali generi sono già stati caricati
-var loadedGenres = {};
-
-// Contatori per il caricamento corrente
 var __loadedCount = 0;
 var __startTime = 0;
-var __currentGenre = null;
+var __totalInstruments = 0;
+var __genreList = [];
+var __genreBoundaries = []; // { name, start, end, count }
 
-export function registerInstrumentLoaded() {
-    __loadedCount++;
-}
-
-export async function waitForInstruments(total, genreName) {
-    // Se gli strumenti di questo genere sono già stati caricati, esci subito
-    if (loadedGenres[genreName]) {
-        console.log("✅ Strumenti " + genreName + " già caricati in precedenza, skip");
-        return;
+// Calcola i confini di ogni genere
+function calculateGenreBoundaries(genres) {
+    var boundaries = [];
+    var cumulative = 0;
+    var genreNames = Object.keys(genres);
+    
+    for (var i = 0; i < genreNames.length; i++) {
+        var name = genreNames[i];
+        var count = genres[name];
+        boundaries.push({
+            name: name,
+            start: cumulative,
+            end: cumulative + count,
+            count: count
+        });
+        cumulative += count;
     }
     
-    genreName = genreName || "strumenti";
-    __currentGenre = genreName;
+    return boundaries;
+}
+
+// Determina quale genere sta caricando in base al contatore
+function getCurrentGenre(loadedCount, boundaries) {
+    for (var i = 0; i < boundaries.length; i++) {
+        var b = boundaries[i];
+        if (loadedCount < b.end) {
+            return b;
+        }
+    }
+    return boundaries[boundaries.length - 1];
+}
+
+export async function waitForInstruments(genres) {
+    // Calcola totale e confini
+    __totalInstruments = 0;
+    for (var g in genres) {
+        __totalInstruments += genres[g];
+    }
+    
+    __genreBoundaries = calculateGenreBoundaries(genres);
     __loadedCount = 0;
     __startTime = Date.now();
     
-    showLoader("Caricamento " + genreName, "Preparazione dei campioni...");
+    var genreNames = Object.keys(genres).join(", ");
+    console.log("🎵 Caricamento " + __totalInstruments + " strumenti da: " + genreNames);
+    
+    showLoader("Caricamento strumenti", "Preparazione dei campioni...");
     updateLoader(0, "Avvio...");
     
     // Nascondi vecchio loader
@@ -143,14 +170,16 @@ export async function waitForInstruments(total, genreName) {
     if (oldOverlay) oldOverlay.style.display = "none";
     
     // Aspetta che tutti gli strumenti siano caricati
-    while (__loadedCount < total) {
-        var percent = (__loadedCount / total) * 100;
-        updateLoader(percent, "Caricamento " + __loadedCount + "/" + total);
+    while (__loadedCount < __totalInstruments) {
+        var percent = (__loadedCount / __totalInstruments) * 100;
+        
+        // Determina il genere corrente
+        var currentGenreInfo = getCurrentGenre(__loadedCount, __genreBoundaries);
+        var statusText = currentGenreInfo.name + ": " + (__loadedCount - currentGenreInfo.start) + "/" + currentGenreInfo.count;
+        
+        updateLoader(percent, statusText);
         await new Promise(function(r) { setTimeout(r, 50); });
     }
-    
-    // Segna questo genere come caricato
-    loadedGenres[genreName] = true;
     
     var elapsed = Date.now() - __startTime;
     var MIN_DISPLAY = 2000;
@@ -165,13 +194,10 @@ export async function waitForInstruments(total, genreName) {
     
     hideLoader();
     __loadedCount = 0;
-    __currentGenre = null;
 }
 
-// Funzione per resettare il cache (se necessario, ad esempio per debug)
-export function resetInstrumentCache() {
-    loadedGenres = {};
-    console.log("🔄 Cache strumenti resettata");
+export function registerInstrumentLoaded() {
+    __loadedCount++;
 }
 
 // ======================================================
