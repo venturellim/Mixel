@@ -3,12 +3,11 @@
 // - master bus, EQ, limiter
 // - logging note
 // - loader Win11 con due barre e cache per genere
-// - accetta oggetto generi o (total, genreName)
 //
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("common.js ver. 023 FINALE loaded");
+console.log("common.js ver. 024 FINALE loaded");
 
 // ======================================================
 // 🎚 MASTER BUS & MASTERING
@@ -133,13 +132,14 @@ function hideLoader() {
 }
 
 // ======================================================
-// 📦 CARICAMENTO STRUMENTI CON CACHE (supporta entrambi i formati)
+// 📦 CARICAMENTO STRUMENTI CON CACHE
 // ======================================================
 
 var loadedGenres = {};
 var globalLoadedCount = 0;
 var globalTotalCount = 0;
 var currentResolve = null;
+var MIN_DISPLAY = 1500;
 
 export function registerInstrumentLoaded() {
     globalLoadedCount++;
@@ -151,17 +151,13 @@ export function registerInstrumentLoaded() {
     }
 }
 
-// Supporta sia (total, genreName) che (genres)
 export async function waitForInstruments(param1, param2) {
     var total, genreName;
     
-    // Se il secondo parametro esiste, è (total, genreName)
     if (param2 !== undefined) {
         total = param1;
         genreName = param2;
     } else {
-        // Altrimenti è un oggetto { genere: numero, ... }
-        // Calcola il totale e usa il primo genere come name
         total = 0;
         var firstGenre = null;
         for (var g in param1) {
@@ -171,36 +167,51 @@ export async function waitForInstruments(param1, param2) {
         genreName = firstGenre;
     }
     
-    // Se questo genere è già stato caricato, esci subito
     if (loadedGenres[genreName]) {
         console.log("✅ Genere " + genreName + " già caricato, skip loader");
         return;
     }
     
-    // Aggiorna i totali globali
+    // RESETTA I CONTATORI ALLA PRIMA CHIAMATA
+    if (globalTotalCount === 0) {
+        globalLoadedCount = 0;
+        console.log("🔄 Reset contatori iniziale");
+    }
+    
     globalTotalCount += total;
     
-    console.log("🎵 Caricamento " + genreName + " (" + total + " strumenti)... Totale atteso: " + globalTotalCount);
-    
-    showLoader("Caricamento " + genreName, "Preparazione dei campioni...");
-    updateLoader(0, 0, genreName, 0, total, "Avvio...");
+    console.log("🎵 Caricamento " + genreName + " (" + total + " strumenti)... Totale atteso: " + globalTotalCount + " (già caricati: " + globalLoadedCount + ")");
     
     var oldOverlay = document.getElementById("loadingOverlay");
     if (oldOverlay) oldOverlay.style.display = "none";
     
-    var startTime = Date.now();
-    var MIN_DISPLAY = 1500;
-    
-    // Se siamo già a quota, usa un delay minimo
+    // Se abbiamo già abbastanza strumenti, mostra animazione di completamento
     if (globalLoadedCount >= globalTotalCount) {
+        console.log("✅ Strumenti già disponibili, animazione di " + MIN_DISPLAY + "ms");
+        
+        showLoader("Caricamento " + genreName, "Preparazione dei campioni...");
+        
+        var startTime = Date.now();
+        while (Date.now() - startTime < MIN_DISPLAY) {
+            var elapsed = Date.now() - startTime;
+            var percent = (elapsed / MIN_DISPLAY) * 100;
+            updateLoader(percent, percent, genreName, Math.floor((percent / 100) * total), total, "Caricamento " + genreName + "...");
+            await new Promise(function(r) { setTimeout(r, 30); });
+        }
+        
         updateLoader(100, 100, genreName, total, total, "Completato!");
-        await new Promise(function(r) { setTimeout(r, MIN_DISPLAY); });
+        await new Promise(function(r) { setTimeout(r, 300); });
         hideLoader();
         loadedGenres[genreName] = true;
         return;
     }
     
-    // Crea una promise per attendere il caricamento
+    // Caricamento normale
+    showLoader("Caricamento " + genreName, "Preparazione dei campioni...");
+    updateLoader(0, 0, genreName, 0, total, "Avvio...");
+    
+    var startTime = Date.now();
+    
     await new Promise(function(resolve) {
         currentResolve = resolve;
     });
@@ -215,8 +226,6 @@ export async function waitForInstruments(param1, param2) {
     }
     
     hideLoader();
-    
-    // Marca questo genere come caricato
     loadedGenres[genreName] = true;
 }
 
