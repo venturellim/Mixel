@@ -254,6 +254,8 @@ export async function waitForInstruments(genres) {
     hideWin11UI();
 }
 
+let __loadedCount = 0;
+
 // Funzione vuota per compatibilità (non serve più)
 export function registerInstrumentLoaded() {
     __loadedCount++;
