@@ -16,7 +16,7 @@ import { createOrchestraEngine, waitOrchestraInstruments } from "./genres/orches
 import { createDanceEngine, waitDanceInstruments } from "./genres/dance/danceEngine.js";
 import { scoreVisualizer } from "./scoreUI.js";
 
-console.log("main.js Ver. 015.2 loaded");
+console.log("main.js Ver. 016 loaded");
 
 
 let currentEngine = null;
@@ -121,7 +121,8 @@ function initGenrePanel() {
     const genrePanel = document.getElementById("genrePanel");
     const closeGenrePanel = document.getElementById("closeGenrePanel");
 
-    btnElabora.addEventListener("click", () => {
+    btnElabora.addEventListener("click", async () => {
+        
         closeMixelUI();
         miniVideo?.play().catch(e => console.log("Autoplay video bloccato:", e));
         requestWakeLock();
@@ -129,6 +130,9 @@ function initGenrePanel() {
         if (firstStart !== 1) {
             resetAudio();
             firstStart = 0;
+        } else {
+        await waitForInstruments(22, "Sample");
+        firstStart = 0;
         }
         
         genrePanel.classList.add("show");
@@ -160,35 +164,15 @@ async function selectGenre(genre) {
     const params = photoToMusicParams(analysis);
 
     if (genre === "dance") {
-        //if (firstStart === 1) {
-        if (!genreInstrumentsLoaded.dance) {
-            await waitDanceInstruments();
-            genreInstrumentsLoaded.dance = true;
-        }
         currentEngine = await createDanceEngine(params, scoreUI);
     }
     if (genre === "metal") {
-        //if (firstStart === 1) {
-        if (!genreInstrumentsLoaded.metal) {
-            await waitMetalInstruments();
-            genreInstrumentsLoaded.metal = true;
-        }
         currentEngine = await createMetalEngine(params, scoreUI);
     }
     if (genre === "orchestra") {
-        //if (firstStart === 1) {
-        if (!genreInstrumentsLoaded.orchestra) {
-            await waitOrchestraInstruments();
-            genreInstrumentsLoaded.orchestra = true;
-        }
         currentEngine = await createOrchestraEngine(params, scoreUI);
     }
     if (genre === "piano") {
-        //if (firstStart === 1) {
-        if (!genreInstrumentsLoaded.piano) {
-            await waitPianoInstruments();
-          genreInstrumentsLoaded.piano = true;
-        }
         currentEngine = await createPianoEngine(params, scoreUI);
     }
 
