@@ -164,17 +164,12 @@ async function selectGenre(genre) {
     const params = photoToMusicParams(analysis);
 
     if (genre === "dance") {
-        //if (firstStart === 1) {
-        if (!genreInstrumentsLoaded.dance) {
-            await waitDanceInstruments();
-            genreInstrumentsLoaded.dance = true;
-        }
         currentEngine = await createDanceEngine(params, scoreUI);
     }
-    if (genre === "metal") 
+    if (genre === "metal") {
         currentEngine = await createMetalEngine(params, scoreUI);
     }
-    if (genre === "orchestra") 
+    if (genre === "orchestra") {
         currentEngine = await createOrchestraEngine(params, scoreUI);
     }
     if (genre === "piano") {
