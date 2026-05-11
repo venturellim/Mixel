@@ -2,7 +2,6 @@
 // main.js - Versione VERTICALE/ORIZZONTALE
 // Router centrale dell'app: UI, caricamento immagine, analisi, parametri,
 // selezione genere, player, spectrum, FX panel.
-// Tutto il resto vive nei moduli dei generi.
 //
 
 import * as Tone from "https://esm.sh/tone";
@@ -10,29 +9,27 @@ import * as Tone from "https://esm.sh/tone";
 import { masterEQ, waitForInstruments } from "./common.js";
 import { analyzeImage } from "./imageAnalysis.js";
 import { photoToMusicParams } from "./photoToMusicParams.js";
-import { createPianoEngine, waitPianoInstruments } from "./genres/piano/pianoEngine.js";
-import { createMetalEngine, waitMetalInstruments } from "./genres/metal/metalEngine.js";
-import { createOrchestraEngine, waitOrchestraInstruments } from "./genres/orchestra/orchestraEngine.js";
-import { createDanceEngine, waitDanceInstruments } from "./genres/dance/danceEngine.js";
+import { createPianoEngine } from "./genres/piano/pianoEngine.js";
+import { createMetalEngine } from "./genres/metal/metalEngine.js";
+import { createOrchestraEngine } from "./genres/orchestra/orchestraEngine.js";
+import { createDanceEngine } from "./genres/dance/danceEngine.js";
 import { scoreVisualizer } from "./scoreUI.js";
 
-console.log("main.js Ver. 015.2 loaded");
+console.log("main.js Ver. 017.0 loaded");
 
+// OGGETTO CON IL NUMERO DI STRUMENTI PER GENERE
+const GENRE_INSTRUMENTS = {
+    dance: 11,
+    metal: 5,
+    orchestra: 5,
+    piano: 1
+};
 
 let currentEngine = null;
 let currentGenre = null;
-let firstStart = 1;
+let instrumentsLoaded = false;
 let scoreUI = null;
-
-const genreInstrumentsLoaded = {
-    dance: false,
-    metal: false,
-    orchestra: false,
-    piano: false
-};
-
-const miniVideo = document.querySelector('.video-mini-wrapper video'); 
-
+const miniVideo = document.querySelector('.video-mini-wrapper video');
 
 // -------------------------------------------------------------
 // Error handler globale
@@ -41,7 +38,6 @@ window.onerror = function (msg, url, line, col, error) {
     console.log("🔥 ERRORE:", msg, " @", url, ":", line, ":", col);
     console.log("STACK:", error?.stack);
 };
-
 
 // -------------------------------------------------------------
 // Inizializzazione UI
@@ -54,6 +50,20 @@ window.addEventListener("DOMContentLoaded", () => {
     }
     resizeCanvas();
 });
+
+// -------------------------------------------------------------
+// CARICAMENTO TUTTI GLI STRUMENTI (UNA SOLA VOLTA)
+// -------------------------------------------------------------
+async function loadAllInstruments() {
+    if (!instrumentsLoaded) {
+        console.log("🎵 Caricamento di TUTTI gli strumenti...");
+        await waitForInstruments(GENRE_INSTRUMENTS);
+        instrumentsLoaded = true;
+        console.log("✅ TUTTI gli strumenti sono pronti!");
+    } else {
+        console.log("⏭️ Strumenti già caricati, skip");
+    }
+}
 
 // -------------------------------------------------------------
 // File Loader + Preview
@@ -81,7 +91,6 @@ function initFileLoader() {
             previewImage.src = img.src;
             previewImage.classList.remove("hidden");
             
-            // RILEVA ASPECT RATIO DELL'IMMAGINE
             const isLandscape = img.width > img.height;
             if (isLandscape) {
                 previewImage.classList.add("landscape-img");
@@ -99,7 +108,6 @@ function initFileLoader() {
             spectrumPanel.classList.add("hidden");
             playerPanel.classList.add("hidden");
             
-            // Rimuovi zoom se presente
             previewImage.classList.remove("zoomed-out");
             previewImage.classList.remove("moved-up");
             
@@ -121,15 +129,13 @@ function initGenrePanel() {
     const genrePanel = document.getElementById("genrePanel");
     const closeGenrePanel = document.getElementById("closeGenrePanel");
 
-    btnElabora.addEventListener("click", () => {
+    btnElabora.addEventListener("click", async () => {
         closeMixelUI();
         miniVideo?.play().catch(e => console.log("Autoplay video bloccato:", e));
         requestWakeLock();
         
-        if (firstStart !== 1) {
-            resetAudio();
-            firstStart = 0;
-        }
+        // CARICA TUTTI GLI STRUMENTI (solo la prima volta)
+        await loadAllInstruments();
         
         genrePanel.classList.add("show");
         genrePanel.classList.remove("hidden");
@@ -148,6 +154,33 @@ function initGenrePanel() {
 }
 
 // -------------------------------------------------------------
+// Reset audio
+// -------------------------------------------------------------
+async function resetAudio() {
+    const ctx = Tone.getContext();
+
+    if (ctx.state === "suspended") {
+        console.log("AudioContext non avviato: skip reset");
+        return;
+    }
+
+    try {
+        Tone.Transport.stop();
+        Tone.Transport.cancel();
+
+        if (ctx.state !== "closed") {
+            await ctx.close();
+            console.log("AudioContext chiuso correttamente");
+        }
+    } catch (e) {
+        console.warn("Errore durante la chiusura AudioContext:", e);
+    }
+
+    await Tone.start();
+    console.log("AudioContext riavviato");
+}
+
+// -------------------------------------------------------------
 // Selezione genere
 // -------------------------------------------------------------
 async function selectGenre(genre) {
@@ -159,36 +192,22 @@ async function selectGenre(genre) {
     const analysis = await analyzeImage(previewImage);
     const params = photoToMusicParams(analysis);
 
+    // Reset audio se necessario (strumenti già caricati)
+    if (instrumentsLoaded && currentEngine) {
+        await resetAudio();
+    }
+
+    // Crea l'engine (strumenti già pronti da loadAllInstruments)
     if (genre === "dance") {
-        //if (firstStart === 1) {
-        if (!genreInstrumentsLoaded.dance) {
-            await waitDanceInstruments();
-            genreInstrumentsLoaded.dance = true;
-        }
         currentEngine = await createDanceEngine(params, scoreUI);
     }
     if (genre === "metal") {
-        //if (firstStart === 1) {
-        if (!genreInstrumentsLoaded.metal) {
-            await waitMetalInstruments();
-            genreInstrumentsLoaded.metal = true;
-        }
         currentEngine = await createMetalEngine(params, scoreUI);
     }
     if (genre === "orchestra") {
-        //if (firstStart === 1) {
-        if (!genreInstrumentsLoaded.orchestra) {
-            await waitOrchestraInstruments();
-            genreInstrumentsLoaded.orchestra = true;
-        }
         currentEngine = await createOrchestraEngine(params, scoreUI);
     }
     if (genre === "piano") {
-        //if (firstStart === 1) {
-        if (!genreInstrumentsLoaded.piano) {
-            await waitPianoInstruments();
-          genreInstrumentsLoaded.piano = true;
-        }
         currentEngine = await createPianoEngine(params, scoreUI);
     }
 
@@ -197,7 +216,7 @@ async function selectGenre(genre) {
         return;
     }
 
-    // Zoom-out dell'immagine dopo la selezione del genere
+    // Zoom-out dell'immagine
     previewImage.classList.add("zoomed-out");
 
     initPlayerUI();
@@ -219,7 +238,6 @@ function initPlayerUI() {
     const closeScoreBtn = document.getElementById("closeScoreBtn");
     const rightPanel = document.querySelector(".right-panel");
     
-    // Aggiungi questa riga per rendere visibile il pannello destro in orizzontale
     if (rightPanel) rightPanel.classList.add("visible");
     
     spectrumPanel.classList.remove("hidden");
@@ -240,7 +258,7 @@ function initPlayerUI() {
         if (isNaN(sec)) return "0:00";
         const m = Math.floor(sec / 60);
         const s = Math.floor(sec % 60).toString().padStart(2, "0");
-        return `${m}:${s}`;
+        return m + ":" + s;
     }
 
     playBtn.onclick = async () => {
@@ -282,17 +300,30 @@ function initPlayerUI() {
         totalTimeEl.textContent = formatTime(currentEngine.totalDuration);
     }
 
-    Tone.Transport.scheduleRepeat(() => {
+    if (window._transportHandler) {
+        Tone.Transport.clear(window._transportHandler);
+    }
+    
+    window._transportHandler = Tone.Transport.scheduleRepeat(() => {
         const now = Tone.Transport.seconds;
         const duration = currentEngine?.totalDuration || 1;
-        seekBar.value = (now / duration) * 100;
+        if (seekBar) seekBar.value = (now / duration) * 100;
         if (currentTimeEl) currentTimeEl.textContent = formatTime(now);
     }, 0.1);
 
-    seekBar.addEventListener("input", () => {
-        const seconds = (seekBar.value / 100) * currentEngine.totalDuration;
-        currentEngine.seek(seconds);
-    });
+    if (seekBar) {
+        const newSeekBar = seekBar.cloneNode(true);
+        if (seekBar.parentNode) {
+            seekBar.parentNode.replaceChild(newSeekBar, seekBar);
+        }
+        seekBar = newSeekBar;
+        window.seekBar = seekBar;
+        
+        seekBar.addEventListener("input", () => {
+            const seconds = (seekBar.value / 100) * currentEngine.totalDuration;
+            currentEngine.seek(seconds);
+        });
+    }
 }
 
 // -------------------------------------------------------------
@@ -354,7 +385,7 @@ function drawSpectrum() {
             const startHue = 320;
             const endHue = 220;
             const hue = startHue + (endHue - startHue) * magnitude;
-            ctx.fillStyle = `hsl(${hue}, 100%, 60%)`;
+            ctx.fillStyle = "hsl(" + hue + ", 100%, 60%)";
             
             const x = i * barWidth;
             const y = H - barHeight;
@@ -395,17 +426,17 @@ function initFxPanel(mixerData) {
     const eqHigh = document.getElementById("eqHigh");
 
     if (eqLow) {
-        eqLow.addEventListener("input", e => {
+        eqLow.addEventListener("input", function(e) {
             masterEQ.low.value = Tone.dbToGain(Number(e.target.value));
         });
     }
     if (eqMid) {
-        eqMid.addEventListener("input", e => {
+        eqMid.addEventListener("input", function(e) {
             masterEQ.mid.value = Tone.dbToGain(Number(e.target.value));
         });
     }
     if (eqHigh) {
-        eqHigh.addEventListener("input", e => {
+        eqHigh.addEventListener("input", function(e) {
             masterEQ.high.value = Tone.dbToGain(Number(e.target.value));
         });
     }
@@ -415,7 +446,7 @@ function initFxPanel(mixerData) {
     
     volumeContainer.innerHTML = "";
 
-    Object.entries(mixerData.volumeMap).forEach(([busName, label]) => {
+    Object.entries(mixerData.volumeMap).forEach(function([busName, label]) {
         const row = document.createElement("div");
         row.classList.add("volume-row");
 
@@ -429,15 +460,15 @@ function initFxPanel(mixerData) {
         slider.value = 0;
         slider.dataset.bus = busName;
 
-        slider.addEventListener("input", e => {
+        slider.addEventListener("input", function(e) {
             mixerData.instruments.setVolume(busName, Number(e.target.value));
         });
 
         const btnSolo = document.createElement("button");
         btnSolo.textContent = "Solo";
-        btnSolo.addEventListener("click", () => {
-            Object.keys(mixerData.volumeMap).forEach(otherBus => {
-                const otherSlider = volumeContainer.querySelector(`input[data-bus="${otherBus}"]`);
+        btnSolo.addEventListener("click", function() {
+            Object.keys(mixerData.volumeMap).forEach(function(otherBus) {
+                const otherSlider = volumeContainer.querySelector("input[data-bus=\"" + otherBus + "\"]");
                 if (otherBus === busName) {
                     mixerData.instruments.setVolume(otherBus, 0);
                     if (otherSlider) otherSlider.value = 0;
@@ -450,7 +481,7 @@ function initFxPanel(mixerData) {
 
         const btnMute = document.createElement("button");
         btnMute.textContent = "Mute";
-        btnMute.addEventListener("click", () => {
+        btnMute.addEventListener("click", function() {
             mixerData.instruments.setVolume(busName, -99);
             slider.value = -24;
         });
@@ -464,56 +495,35 @@ function initFxPanel(mixerData) {
 }
 
 // -------------------------------------------------------------
-// Reset audio
-// -------------------------------------------------------------
-async function resetAudio() {
-    const ctx = Tone.getContext();
-
-    if (ctx.state === "suspended") {
-        console.log("AudioContext non avviato: skip reset");
-        return;
-    }
-
-    try {
-        Tone.Transport.stop();
-        Tone.Transport.cancel();
-
-        if (ctx.state !== "closed") {
-            await ctx.close();
-            console.log("AudioContext chiuso correttamente");
-        }
-    } catch (e) {
-        console.warn("Errore durante la chiusura AudioContext:", e);
-    }
-
-    await Tone.start();
-    console.log("AudioContext riavviato");
-}
-
-// -------------------------------------------------------------
 // Reset App
 // -------------------------------------------------------------
 function resetAppState() {
-    currentEngine?.stop();
-    if (currentEngine?.score) currentEngine.score.hide(); 
-    currentEngine = null;
+    if (currentEngine) {
+        try {
+            currentEngine.stop();
+            if (currentEngine.score) currentEngine.score.hide();
+        } catch(e) {
+            console.warn("Errore nello stop engine:", e);
+        }
+        currentEngine = null;
+    }
+    
+    currentGenre = null;
     closeMixelUI();
+    
     if (miniVideo) {
         miniVideo.pause();
         miniVideo.currentTime = 0; 
     }
+    
     releaseWakeLock();
-    if (firstStart !== 1) {
-        resetAudio();
-        firstStart = 0;
-    }
-    // Rimuovi zoom dall'immagine
+    
     const previewImage = document.getElementById("previewImage");
     if (previewImage) {
         previewImage.classList.remove("zoomed-out");
         previewImage.classList.remove("moved-up");
     }
-    // Nascondi pulsante chiusura spartito
+    
     const closeScoreBtn = document.getElementById("closeScoreBtn");
     if (closeScoreBtn) closeScoreBtn.style.display = "none";
 }
@@ -529,7 +539,6 @@ function closeMixelUI() {
     const closeScoreBtn = document.getElementById("closeScoreBtn");
     const rightPanel = document.querySelector(".right-panel");
     
-    // Rimuovi la visibilità del pannello destro
     if (rightPanel) rightPanel.classList.remove("visible");
     
     if (spectrumPanel) spectrumPanel.classList.add("hidden");
@@ -540,7 +549,7 @@ function closeMixelUI() {
 }
 
 // -------------------------------------------------------------
-// Wake Lock per schermo sempre acceso
+// Wake Lock
 // -------------------------------------------------------------
 let wakeLock = null;
 
@@ -548,14 +557,13 @@ async function requestWakeLock() {
     try {
         if ('wakeLock' in navigator) {
             wakeLock = await navigator.wakeLock.request('screen');
-            console.log("✅ Schermo bloccato: non si spegnerà.");
-            
-            wakeLock.addEventListener('release', () => {
-                console.log("Wake Lock rilasciato.");
+            console.log("✅ Schermo bloccato");
+            wakeLock.addEventListener('release', function() {
+                console.log("Wake Lock rilasciato");
             });
         }
     } catch (err) {
-        console.error(`❌ Errore Wake Lock: ${err.name}, ${err.message}`);
+        console.error("❌ Wake Lock error:", err);
     }
 }
 
@@ -563,14 +571,13 @@ function releaseWakeLock() {
     if (wakeLock !== null) {
         wakeLock.release();
         wakeLock = null;
-        console.log("💤 Schermo libero: ora può spegnersi.");
     }
 }
 
 // -------------------------------------------------------------
-// Event listener per resize (canvas responsive)
+// Event listener
 // -------------------------------------------------------------
-window.addEventListener('resize', () => {
+window.addEventListener('resize', function() {
     resizeCanvas();
     if (currentEngine) {
         const previewImage = document.getElementById("previewImage");
@@ -580,9 +587,8 @@ window.addEventListener('resize', () => {
     }
 });
 
-// Observer per ridimensionare canvas quando diventa visibile
-const observer = new MutationObserver((mutations) => {
-    mutations.forEach((mutation) => {
+const observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
         if (mutation.target.id === 'spectrumPanel' && 
             mutation.type === 'attributes' && 
             mutation.attributeName === 'class') {
@@ -598,10 +604,7 @@ if (spectrumPanelElement) {
     observer.observe(spectrumPanelElement, { attributes: true });
 }
 
-// -------------------------------------------------------------
-// Pulisci animation frame alla chiusura
-// -------------------------------------------------------------
-window.addEventListener('beforeunload', () => {
+window.addEventListener('beforeunload', function() {
     if (animationId) {
         cancelAnimationFrame(animationId);
     }
