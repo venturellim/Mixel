@@ -121,7 +121,7 @@ function initGenrePanel() {
     const genrePanel = document.getElementById("genrePanel");
     const closeGenrePanel = document.getElementById("closeGenrePanel");
 
-    btnElabora.addEventListener("click", () => {
+    btnElabora.addEventListener("click", async () => {
         
         closeMixelUI();
         miniVideo?.play().catch(e => console.log("Autoplay video bloccato:", e));
@@ -132,6 +132,7 @@ function initGenrePanel() {
             firstStart = 0;
         } else {
         await waitForInstruments(22, "Sample");
+        firstStart = 0;
         }
         
         genrePanel.classList.add("show");
