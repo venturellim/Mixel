@@ -4,7 +4,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("common.js ver. 018 loaded");
+console.log("common.js ver. 019 FINALE loaded");
 
 // ======================================================
 // 🎚 MASTER BUS & MASTERING
@@ -137,7 +137,7 @@ function hideWin11UI() {
 }
 
 // ======================================================
-// 📦 CARICAMENTO STRUMENTI (USA Tone.loaded()!!!)
+// 📦 CARICAMENTO STRUMENTI (DURATA MINIMA 10 SECONDI)
 // ======================================================
 
 export async function waitForInstruments(genres) {
@@ -157,7 +157,7 @@ export async function waitForInstruments(genres) {
         });
     }
     
-    console.log("🎵 Caricamento " + totalInstruments + " strumenti (usando Tone.loaded)");
+    console.log("🎵 Caricamento " + totalInstruments + " strumenti (durata minima 10 secondi)");
     
     var overlay = document.getElementById("loadingOverlay");
     if (overlay) overlay.style.display = "none";
@@ -179,13 +179,13 @@ export async function waitForInstruments(genres) {
         cumulative += g.count;
     }
     
-    // Avvia animazione fluida (10 secondi totali)
+    // Avvia animazione (10 secondi)
     var startTime = Date.now();
-    var TOTAL_ANIMATION_MS = 10000;
+    var TOTAL_DURATION_MS = 10000;
     
     var animationInterval = setInterval(function() {
         var elapsed = Date.now() - startTime;
-        var totalPercent = Math.min(100, (elapsed / TOTAL_ANIMATION_MS) * 100);
+        var totalPercent = Math.min(100, (elapsed / TOTAL_DURATION_MS) * 100);
         
         var targetIndex = Math.floor((totalPercent / 100) * totalInstruments);
         var currentBoundary = boundaries[0];
@@ -213,15 +213,22 @@ export async function waitForInstruments(genres) {
         }
     }, 50);
     
-    // USA Tone.loaded() PER ASPETTARE IL VERO CARICAMENTO!
-    // Questa è la funzione magica di Tone.js che aspetta TUTTI i sampler
-    await Tone.loaded();
+    // Aspetta il caricamento REALE (ma anche se finisce prima, aspetta l'animazione)
+    var loadedPromise = Tone.loaded();
+    
+    // Aspetta sia il caricamento reale che l'animazione (minimo 10 secondi)
+    await Promise.all([
+        loadedPromise,
+        new Promise(function(resolve) {
+            setTimeout(resolve, TOTAL_DURATION_MS);
+        })
+    ]);
     
     clearInterval(animationInterval);
     
-    console.log("✅ Tone.loaded() completato! Tutti i campioni sono pronti!");
+    console.log("✅ Caricamento completato!");
     
-    // Animazione finale
+    // Assicura 100% e chiudi
     updateWin11UI(100, 100, "Completato!", totalInstruments, totalInstruments, "Tutti gli strumenti pronti!");
     await new Promise(function(r) { setTimeout(r, 500); });
     
