@@ -4,7 +4,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("common.js ver. 019 FINALE loaded");
+console.log("common.js ver. 019.1 FINALE loaded");
 
 // ======================================================
 // 🎚 MASTER BUS & MASTERING
@@ -82,11 +82,15 @@ function initWin11Loader() {
     win11Overlay.innerHTML = 
         '<div class="win11-loader">' +
             '<div class="win11-icon">' +
-                '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">' +
-                    '<path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#60a5fa" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>' +
-                    '<path d="M2 17L12 22L22 17" stroke="#60a5fa" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>' +
-                    '<path d="M2 12L12 17L22 12" stroke="#3b82f6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>' +
-                '</svg>' +
+                '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">' + 
+    // <!-- Corpo chitarra -->
+    '<ellipse cx="12" cy="14" rx="6" ry="4" stroke="#60a5fa" stroke-width="1.5" fill="none"/>'
+    // <!-- Manico -->
+    + '<rect x="11.5" y="4" width="1" height="10" stroke="#3b82f6" stroke-width="1.5" fill="none"/>' +
+    // <!-- Note musicali che volano -->
+    '<path d="M16 6L18 5V9M16 6C16 7.10457 15.1046 8 14 8C12.8954 8 12 7.10457 12 6C12 4.89543 12.8954 4 14 4C15.1046 4 16 4.89543 16 6Z" stroke="#60a5fa" stroke-width="1" fill="none"/>' +
+    '<path d="M19 8L21 7V11M19 8C19 9.10457 18.1046 10 17 10C15.8954 10 15 9.10457 15 8C15 6.89543 15.8954 6 17 6C18.1046 6 19 6.89543 19 8Z" stroke="#3b82f6" stroke-width="1" fill="none"/>' +
+'</svg>' +
             '</div>' +
             '<div class="win11-title" id="win11-title">Caricamento strumenti</div>' +
             '<div class="win11-subtitle" id="win11-subtitle">Preparazione del tuo mix...</div>' +
