@@ -1,45 +1,29 @@
 //
 // common.js — versione universale per tutti i generi
-// Contiene SOLO:
-// - master bus
-// - EQ/mastering
-// - utilities generiche
-// - sistema di caricamento strumenti (generico)
-// - logging note
-// - loader stile Win11 con due barre e durata fissa
 //
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("common.js ver. 015 loaded");
+console.log("common.js ver. 017 FINALE loaded");
 
 // ======================================================
 // 🎚 MASTER BUS & MASTERING
 // ======================================================
 
-export const masterEQ = new Tone.EQ3({
-    low: 0,
-    mid: 0,
-    high: 0
-});
-
+export const masterEQ = new Tone.EQ3({ low: 0, mid: 0, high: 0 });
 export const masterLimiter = new Tone.Limiter(-1);
 masterEQ.chain(masterLimiter, Tone.Destination);
 
-
 // ======================================================
-// 🎵 LOGGING UNIVERSALE
+// 🎵 LOGGING
 // ======================================================
 
 export function logNote(instrumentName, note, time) {
-    console.log(
-        "%c🎵 " + instrumentName + " → " + note + " @ " + time,
-        "color:#4CAF50; font-weight:bold;"
-    );
+    console.log("%c🎵 " + instrumentName + " → " + note + " @ " + time, "color:#4CAF50; font-weight:bold;");
 }
 
 // ======================================================
-// 🎨 LOADER GRAFICO STILE WIN11 CON DUE BARRE
+// 🎨 LOADER WIN11 CON DUE BARRE
 // ======================================================
 
 let win11Overlay = null;
@@ -153,25 +137,37 @@ function hideWin11UI() {
 }
 
 // ======================================================
-// 📦 SISTEMA DI CARICAMENTO STRUMENTI (CON OGGETTO GENERI)
+// 📦 CARICAMENTO STRUMENTI (CON ATTESA REALE E ANIMAZIONE CONTINUA)
 // ======================================================
 
-// Mappa per nomi display
-var displayNames = {
-    dance: "Dance",
-    metal: "Metal",
-    orchestra: "Orchestra",
-    piano: "Piano"
-};
+var __loadedCount = 0;
+var __totalInstruments = 0;
+var __loaderResolve = null;
+var __animationInterval = null;
+var __animationStartTime = 0;
+
+export function registerInstrumentLoaded() {
+    __loadedCount++;
+    console.log("📦 Strumento caricato: " + __loadedCount + "/" + __totalInstruments);
+    
+    // Se tutti gli strumenti sono caricati, risolvi la promise
+    if (__loadedCount >= __totalInstruments && __loaderResolve) {
+        console.log("✅ Tutti gli strumenti caricati realmente!");
+        __loaderResolve();
+        __loaderResolve = null;
+    }
+}
 
 export async function waitForInstruments(genres) {
     initWin11Loader();
     
-    // Calcola totale strumenti e crea lista generi
-    var totalInstruments = 0;
+    // Calcola totale strumenti
+    __totalInstruments = 0;
     var genreList = [];
+    var displayNames = { dance: "Dance", metal: "Metal", orchestra: "Orchestra", piano: "Piano" };
+    
     for (var g in genres) {
-        totalInstruments += genres[g];
+        __totalInstruments += genres[g];
         genreList.push({
             name: g,
             displayName: displayNames[g] || g,
@@ -179,26 +175,24 @@ export async function waitForInstruments(genres) {
         });
     }
     
-    console.log("🎵 Caricamento " + totalInstruments + " strumenti totali da: " + Object.keys(genres).join(", "));
+    // Resetta contatore
+    __loadedCount = 0;
+    
+    console.log("🎵 Caricamento " + __totalInstruments + " strumenti reali da: " + Object.keys(genres).join(", "));
     
     var overlay = document.getElementById("loadingOverlay");
     if (overlay) overlay.style.display = "none";
     
-    // Durata totale animazione: 10 secondi
-    var TOTAL_DURATION_MS = 10000;
-    var startTime = Date.now();
-    
     updateWin11UI(0, 0, "Inizializzazione", 0, 0, "Avvio...", "Caricamento strumenti", "Preparazione dei campioni...");
     showWin11UI();
     
-    // Calcola i confini di ogni genere
+    // Calcola confini generi
     var boundaries = [];
     var cumulative = 0;
     for (var i = 0; i < genreList.length; i++) {
         var g = genreList[i];
         boundaries.push({
             name: g.displayName,
-            originalName: g.name,
             count: g.count,
             start: cumulative,
             end: cumulative + g.count
@@ -206,60 +200,76 @@ export async function waitForInstruments(genres) {
         cumulative += g.count;
     }
     
-    // Anima step by step (ogni 50ms)
-    var steps = 200; // 200 step per animazione fluida (50ms x 200 = 10 secondi)
-    var stepDuration = TOTAL_DURATION_MS / steps;
+    // Avvia animazione che continua finché non sono pronti
+    __animationStartTime = Date.now();
     
-    for (var step = 0; step <= steps; step++) {
-        var elapsed = Date.now() - startTime;
-        var totalPercent = Math.min(100, (elapsed / TOTAL_DURATION_MS) * 100);
+    function updateAnimation() {
+        var elapsed = Date.now() - __animationStartTime;
         
-        // Determina quale genere è attivo in base alla percentuale
-        var currentGenre = null;
-        var genreLoaded = 0;
-        var genreTotal = 0;
-        var targetInstrumentIndex = Math.floor((totalPercent / 100) * totalInstruments);
+        // Calcola percentuale basata sul tempo (max 95%, mai 100%)
+        // Più tempo passa, più si avvicina a 95% senza mai arrivare
+        var totalPercent = Math.min(95, (elapsed / 10000) * 95);
         
+        // Usa il caricamento reale se disponibile
+        var realPercent = (__loadedCount / __totalInstruments) * 100;
+        var displayPercent = Math.max(totalPercent, realPercent);
+        
+        // Determina genere corrente in base al caricamento reale
+        var targetIndex = Math.floor((displayPercent / 100) * __totalInstruments);
+        var currentBoundary = boundaries[0];
         for (var b = 0; b < boundaries.length; b++) {
-            var bound = boundaries[b];
-            if (targetInstrumentIndex < bound.end) {
-                currentGenre = bound;
-                genreLoaded = targetInstrumentIndex - bound.start;
-                genreTotal = bound.count;
+            if (targetIndex < boundaries[b].end) {
+                currentBoundary = boundaries[b];
                 break;
             }
         }
         
-        if (currentGenre) {
-            var genrePercent = (genreLoaded / genreTotal) * 100;
-            updateWin11UI(
-                totalPercent,
-                genrePercent,
-                currentGenre.name,
-                genreLoaded,
-                genreTotal,
-                "Caricamento " + currentGenre.name + "... (" + Math.floor(totalPercent) + "%)"
-            );
-        } else if (totalPercent >= 100) {
-            updateWin11UI(100, 100, "Completato!", totalInstruments, totalInstruments, "Tutti gli strumenti pronti!");
-        }
+        var genreLoaded = Math.max(0, targetIndex - currentBoundary.start);
+        var genrePercent = (genreLoaded / currentBoundary.count) * 100;
         
-        await new Promise(function(res) { setTimeout(res, stepDuration); });
+        updateWin11UI(
+            displayPercent,
+            genrePercent,
+            currentBoundary.name,
+            genreLoaded,
+            currentBoundary.count,
+            "Caricamento " + currentBoundary.name + "... (" + Math.floor(displayPercent) + "%)"
+        );
+        
+        // Continua l'animazione se non siamo ancora al 100% reale
+        if (__loadedCount < __totalInstruments) {
+            __animationInterval = setTimeout(updateAnimation, 100);
+        } else {
+            // Caricamento reale completato, porta la barra al 100%
+            updateWin11UI(100, 100, currentBoundary.name, currentBoundary.count, currentBoundary.count, "Completato!");
+        }
     }
     
-    // Assicura 100%
-    updateWin11UI(100, 100, "Completato!", totalInstruments, totalInstruments, "Tutti gli strumenti pronti!");
-    await new Promise(function(res) { setTimeout(res, 300); });
+    updateAnimation();
+    
+    // Crea una promise che aspetta il caricamento REALE degli strumenti
+    await new Promise(function(resolve) {
+        __loaderResolve = resolve;
+        
+        // Se siamo già a quota, risolvi subito
+        if (__loadedCount >= __totalInstruments) {
+            __loaderResolve = null;
+            resolve();
+        }
+    });
+    
+    // Stop animazione
+    if (__animationInterval) clearTimeout(__animationInterval);
+    
+    // Assicura 100% e chiudi
+    updateWin11UI(100, 100, "Completato!", __totalInstruments, __totalInstruments, "Tutti gli strumenti pronti!");
+    await new Promise(function(r) { setTimeout(r, 500); });
     
     hideWin11UI();
+    __loadedCount = 0;
+    __totalInstruments = 0;
 }
 
-let __loadedCount = 0;
-
-// Funzione vuota per compatibilità (non serve più)
-export function registerInstrumentLoaded() {
-    __loadedCount++;
-}
 
 // ======================================================
 // 🧰 UTILITIES GENERICHE
