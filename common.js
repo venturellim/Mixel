@@ -4,7 +4,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("common.js ver. 019.1 FINALE loaded");
+console.log("common.js ver. 019 FINALE loaded");
 
 // ======================================================
 // 🎚 MASTER BUS & MASTERING
@@ -80,13 +80,14 @@ function initWin11Loader() {
     win11Overlay.id = "win11-loader-overlay";
     win11Overlay.className = "win11-overlay";
     win11Overlay.innerHTML = 
-        '<div class="win11-icon">' +
-    '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">' +
-        '<path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#60a5fa" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>' +
-        '<path d="M2 17L12 22L22 17" stroke="#60a5fa" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>' +
-        '<path d="M2 12L12 17L22 12" stroke="#3b82f6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>' +
-    '</svg>' +
-'</div>' +
+        '<div class="win11-loader">' +
+            '<div class="win11-icon">' +
+                '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+                    '<path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#60a5fa" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>' +
+                    '<path d="M2 17L12 22L22 17" stroke="#60a5fa" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>' +
+                    '<path d="M2 12L12 17L22 12" stroke="#3b82f6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>' +
+                '</svg>' +
+            '</div>' +
             '<div class="win11-title" id="win11-title">Caricamento strumenti</div>' +
             '<div class="win11-subtitle" id="win11-subtitle">Preparazione del tuo mix...</div>' +
             '<div class="win11-bar-container">' +
