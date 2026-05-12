@@ -81,61 +81,7 @@ function initWin11Loader() {
     win11Overlay.className = "win11-overlay";
     win11Overlay.innerHTML = 
         '<div class="win11-loader">' +
-            '<div class="win11-icon">' +
-                '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">' +
-  // <!-- Sfondo -->
-  '<rect width="400" height="300" fill="#f5f0e8" rx="10"/>' +
-  
-  //<!-- Pentagramma (5 righe) -->
-  '<g stroke="#333" stroke-width="1.5" fill="none">' +
-    '<line x1="40" y1="80" x2="360" y2="80"/>' +
-    '<line x1="40" y1="100" x2="360" y2="100"/>' +
-    '<line x1="40" y1="120" x2="360" y2="120"/>' +
-    '<line x1="40" y1="140" x2="360" y2="140"/>' +
-    '<line x1="40" y1="160" x2="360" y2="160"/>' +
-  '</g>' +
-  
-  //<!-- Chiave di violino stilizzata -->
-  '<path d="M 85,155 C 80,140 85,120 100,115 C 115,110 125,120 120,135 C 115,150 95,160 90,145 C 87,135 92,125 100,122 C 108,119 112,125 110,132 C 108,140 95,175 90,200 C 87,215 95,225 105,220 C 115,215 115,200 105,195" fill="none" stroke="#2c2c2c" stroke-width="3" stroke-linecap="round"/>' +
-  
-  //<!-- Linea della chiave di violino -->
-  '<line x1="85" y1="75" x2="85" y2="230" stroke="#2c2c2c" stroke-width="2"/>' +
-  
-  //<!-- Nota musicale 1 (semicroma) -->
-  '<g fill="#2c2c2c" transform="translate(170, 125)">' +
-    '<ellipse cx="0" cy="0" rx="8" ry="6" transform="rotate(-20)"/>' +
-    '<line x1="7" y1="-2" x2="7" y2="-40" stroke="#2c2c2c" stroke-width="2"/>' +
-    '<path d="M 7,-40 C 15,-38 20,-30 18,-25 C 16,-20 10,-22 7,-25" fill="#2c2c2c"/>' +
-  '</g>' +
-  
-  //<!-- Nota musicale 2 (minima) -->
-  '<g fill="#2c2c2c" transform="translate(230, 100)">' +
-    '<ellipse cx="0" cy="0" rx="8" ry="6" transform="rotate(-20)"/>' +
-    '<line x1="7" y1="-2" x2="7" y2="-40" stroke="#2c2c2c" stroke-width="2"/>' +
-  '</g>' +
-  
-  //<!-- Nota musicale 3 (semicroma) -->
-  '<g fill="#2c2c2c" transform="translate(280, 145)">' +
-    '<ellipse cx="0" cy="0" rx="8" ry="6" transform="rotate(-20)"/>' +
-    '<line x1="7" y1="-2" x2="7" y2="-40" stroke="#2c2c2c" stroke-width="2"/>' +
-    '<path d="M 7,-40 C 15,-38 20,-30 18,-25 C 16,-20 10,-22 7,-25" fill="#2c2c2c"/>' +
-  '</g>' +
-  
-  //<!-- Ottava nota -->
-  '<g fill="#2c2c2c" transform="translate(310, 115)">' +
-    '<ellipse cx="0" cy="0" rx="7" ry="5" transform="rotate(-20)"/>' +
-    '<line x1="6" y1="-2" x2="6" y2="-35" stroke="#2c2c2c" stroke-width="2"/>' +
-    '<path d="M 6,-35 C 13,-33 17,-26 15,-22 C 13,-18 8,-20 6,-22" fill="#2c2c2c"/>' +
-  '</g>' +
-  
-  //<!-- Titolo -->
-  '<text x="200" y="270" text-anchor="middle" font-family="Georgia, serif" font-size="18" fill="#555">' + '♪ Mixel ♪' + '</text>' +
-  
-  //<!-- Decorazione: onde sonore -->
-  '<path d="M 50,250 C 60,240 70,260 80,250 C 90,240 100,260 110,250" fill="none" stroke="#c4a86b" stroke-width="1.5"/>' +
-  '<path d="M 50,260 C 65,245 85,275 100,260 C 115,245 125,265 135,255" fill="none" stroke="#c4a86b" stroke-width="1.5"/>' +
-'</svg>' +
-            '</div>' +
+            '<div class="win11-icon" id="lottie-container"></div>' +
             '<div class="win11-title" id="win11-title">Caricamento strumenti</div>' +
             '<div class="win11-subtitle" id="win11-subtitle">Preparazione del tuo mix...</div>' +
             '<div class="win11-bar-container">' +
@@ -159,6 +105,30 @@ function initWin11Loader() {
     win11GenreBar = win11Overlay.querySelector("#win11-genre-progress-bar");
     win11GenrePercent = win11Overlay.querySelector("#win11-genre-percent");
     win11GenreName = win11Overlay.querySelector("#win11-genre-label");
+    
+    // CARICA L'ANIMAZIONE LOTTIE
+    var lottieContainer = win11Overlay.querySelector("#lottie-container");
+    if (lottieContainer && typeof lottie !== 'undefined') {
+        var animation = lottie.loadAnimation({
+            container: lottieContainer,
+            renderer: 'svg',
+            loop: true,
+            autoplay: true,
+            path: 'loader.json'  // <-- IL TUO FILE JSON
+        });
+        
+        // Opzionale: controlla dimensioni
+        animation.addEventListener('DOMLoaded', function() {
+            var svg = lottieContainer.querySelector('svg');
+            if (svg) {
+                svg.setAttribute('width', '64');
+                svg.setAttribute('height', '64');
+            }
+        });
+    } else {
+        // Fallback se Lottie non è disponibile
+        lottieContainer.innerHTML = '<div style="font-size: 48px;">🎵</div>';
+    }
     
     document.body.appendChild(win11Overlay);
 }
