@@ -4,7 +4,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("common.js ver. 017 FINALE loaded");
+console.log("common.js ver. 018 loaded");
 
 // ======================================================
 // 🎚 MASTER BUS & MASTERING
@@ -137,37 +137,19 @@ function hideWin11UI() {
 }
 
 // ======================================================
-// 📦 CARICAMENTO STRUMENTI (CON ATTESA REALE E ANIMAZIONE CONTINUA)
+// 📦 CARICAMENTO STRUMENTI (USA Tone.loaded()!!!)
 // ======================================================
-
-var __loadedCount = 0;
-var __totalInstruments = 0;
-var __loaderResolve = null;
-var __animationInterval = null;
-var __animationStartTime = 0;
-
-export function registerInstrumentLoaded() {
-    __loadedCount++;
-    console.log("📦 Strumento caricato: " + __loadedCount + "/" + __totalInstruments);
-    
-    // Se tutti gli strumenti sono caricati, risolvi la promise
-    if (__loadedCount >= __totalInstruments && __loaderResolve) {
-        console.log("✅ Tutti gli strumenti caricati realmente!");
-        __loaderResolve();
-        __loaderResolve = null;
-    }
-}
 
 export async function waitForInstruments(genres) {
     initWin11Loader();
     
-    // Calcola totale strumenti
-    __totalInstruments = 0;
+    // Calcola totale strumenti solo per la UI
+    var totalInstruments = 0;
     var genreList = [];
     var displayNames = { dance: "Dance", metal: "Metal", orchestra: "Orchestra", piano: "Piano" };
     
     for (var g in genres) {
-        __totalInstruments += genres[g];
+        totalInstruments += genres[g];
         genreList.push({
             name: g,
             displayName: displayNames[g] || g,
@@ -175,10 +157,7 @@ export async function waitForInstruments(genres) {
         });
     }
     
-    // Resetta contatore
-    __loadedCount = 0;
-    
-    console.log("🎵 Caricamento " + __totalInstruments + " strumenti reali da: " + Object.keys(genres).join(", "));
+    console.log("🎵 Caricamento " + totalInstruments + " strumenti (usando Tone.loaded)");
     
     var overlay = document.getElementById("loadingOverlay");
     if (overlay) overlay.style.display = "none";
@@ -200,22 +179,15 @@ export async function waitForInstruments(genres) {
         cumulative += g.count;
     }
     
-    // Avvia animazione che continua finché non sono pronti
-    __animationStartTime = Date.now();
+    // Avvia animazione fluida (10 secondi totali)
+    var startTime = Date.now();
+    var TOTAL_ANIMATION_MS = 10000;
     
-    function updateAnimation() {
-        var elapsed = Date.now() - __animationStartTime;
+    var animationInterval = setInterval(function() {
+        var elapsed = Date.now() - startTime;
+        var totalPercent = Math.min(100, (elapsed / TOTAL_ANIMATION_MS) * 100);
         
-        // Calcola percentuale basata sul tempo (max 95%, mai 100%)
-        // Più tempo passa, più si avvicina a 95% senza mai arrivare
-        var totalPercent = Math.min(95, (elapsed / 10000) * 95);
-        
-        // Usa il caricamento reale se disponibile
-        var realPercent = (__loadedCount / __totalInstruments) * 100;
-        var displayPercent = Math.max(totalPercent, realPercent);
-        
-        // Determina genere corrente in base al caricamento reale
-        var targetIndex = Math.floor((displayPercent / 100) * __totalInstruments);
+        var targetIndex = Math.floor((totalPercent / 100) * totalInstruments);
         var currentBoundary = boundaries[0];
         for (var b = 0; b < boundaries.length; b++) {
             if (targetIndex < boundaries[b].end) {
@@ -228,48 +200,41 @@ export async function waitForInstruments(genres) {
         var genrePercent = (genreLoaded / currentBoundary.count) * 100;
         
         updateWin11UI(
-            displayPercent,
+            totalPercent,
             genrePercent,
             currentBoundary.name,
             genreLoaded,
             currentBoundary.count,
-            "Caricamento " + currentBoundary.name + "... (" + Math.floor(displayPercent) + "%)"
+            "Caricamento " + currentBoundary.name + "... (" + Math.floor(totalPercent) + "%)"
         );
         
-        // Continua l'animazione se non siamo ancora al 100% reale
-        if (__loadedCount < __totalInstruments) {
-            __animationInterval = setTimeout(updateAnimation, 100);
-        } else {
-            // Caricamento reale completato, porta la barra al 100%
-            updateWin11UI(100, 100, currentBoundary.name, currentBoundary.count, currentBoundary.count, "Completato!");
+        if (totalPercent >= 100) {
+            clearInterval(animationInterval);
         }
-    }
+    }, 50);
     
-    updateAnimation();
+    // USA Tone.loaded() PER ASPETTARE IL VERO CARICAMENTO!
+    // Questa è la funzione magica di Tone.js che aspetta TUTTI i sampler
+    await Tone.loaded();
     
-    // Crea una promise che aspetta il caricamento REALE degli strumenti
-    await new Promise(function(resolve) {
-        __loaderResolve = resolve;
-        
-        // Se siamo già a quota, risolvi subito
-        if (__loadedCount >= __totalInstruments) {
-            __loaderResolve = null;
-            resolve();
-        }
-    });
+    clearInterval(animationInterval);
     
-    // Stop animazione
-    if (__animationInterval) clearTimeout(__animationInterval);
+    console.log("✅ Tone.loaded() completato! Tutti i campioni sono pronti!");
     
-    // Assicura 100% e chiudi
-    updateWin11UI(100, 100, "Completato!", __totalInstruments, __totalInstruments, "Tutti gli strumenti pronti!");
+    // Animazione finale
+    updateWin11UI(100, 100, "Completato!", totalInstruments, totalInstruments, "Tutti gli strumenti pronti!");
     await new Promise(function(r) { setTimeout(r, 500); });
     
     hideWin11UI();
-    __loadedCount = 0;
-    __totalInstruments = 0;
 }
 
+let __loadedCount = 0;
+let __totalInstruments = 0;
+
+export function registerInstrumentLoaded() {
+    __loadedCount++;
+    console.log("📦 registerInstrumentLoaded: " + __loadedCount + "/" + __totalInstruments);
+}
 
 // ======================================================
 // 🧰 UTILITIES GENERICHE
