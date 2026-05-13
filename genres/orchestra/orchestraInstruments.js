@@ -46,7 +46,7 @@ export const violin = new Tone.Sampler({
     G4: "Samples/Violin/G4.mp3"
     },
     release: 1.2,
-    onload: () => registerInstrumentLoaded()
+    onload: () => registerInstrumentLoaded("Violino")
 }).connect(violinBus);
 
 // --- VIOLA ---
@@ -65,7 +65,7 @@ export const viola = new Tone.Sampler({
     G4: "Samples/Viola/G4.mp3"
     },
     release: 1.2,
-    onload: () => registerInstrumentLoaded()
+    onload: () => registerInstrumentLoaded("Viola")
 }).connect(violaBus);
 
 // --- CELLO ---
@@ -86,7 +86,7 @@ export const cello = new Tone.Sampler({
    G3: "Samples/Cello/G3.mp3"
     },
     release: 1.5,
-onload: () => registerInstrumentLoaded()
+onload: () => registerInstrumentLoaded("Violoncello")
 }).connect(celloBus);
 
 // --- DOUBLE BASS ---
@@ -107,7 +107,7 @@ export const doubleBass = new Tone.Sampler({
     G0: "Samples/DoubleBass/G0.mp3"
     },
     release: 2,
-onload: () => registerInstrumentLoaded()
+onload: () => registerInstrumentLoaded("Contrabbasso")
 }).connect(doubleBassBus);
 
 // --- TIMPANI (The Thunder) ---
@@ -121,7 +121,7 @@ export const percussion = new Tone.Players({
          gong: "Samples/Timpani/Gong.mp3"
     },
     release: 3,
-    onload: () => registerInstrumentLoaded()
+    onload: () => registerInstrumentLoaded("Timpani")
 }).connect(percussionBus);
 
 export function setVolume(busName, dbValue) {
