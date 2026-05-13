@@ -76,7 +76,7 @@ export const leadSynthBrass2 = new Tone.Sampler({
 // SWEET
 
 export const fxSweep = new Tone.Sampler({
-  urls: { C4: "Samples/Synth/FxSweep/C4.mp3" },
+  urls: { C4: "Samples/Synth/FxSweet/C4.mp3" },
   release: 1.2,
   onload: () => registerInstrumentLoaded("Sweep")
 }).connect(fxBus);
