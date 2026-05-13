@@ -3,7 +3,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("danceInstruments.js ver. 002.1 loaded");
+console.log("danceInstruments.js ver. 002.2 loaded");
 
 // --- RIVERBERO ---
 const hallReverb = new Tone.Reverb({
@@ -46,7 +46,7 @@ export const leadSaw = new Tone.Sampler({
     E4: "Samples/Synth/LeadSaw/E4.mp3"
     },
     release: 1.2,
-    onload: () => registerInstrumentLoaded()
+    onload: () => registerInstrumentLoaded("Saw")
 }).connect(leadBus);
 
 // --- LEAD SYNTHBRASS 1 ---
@@ -58,7 +58,7 @@ export const leadSynthBrass1 = new Tone.Sampler({
     "F#4": "Samples/Synth/LeadSynthBrass1/F#4.mp3"
     },
     release: 1.2,
-    onload: () => registerInstrumentLoaded()
+    onload: () => registerInstrumentLoaded("Synth Brass 1")
 }).connect(leadBus);
 
 // --- LEAD SYNTHBRASS 2 ---
@@ -70,7 +70,7 @@ export const leadSynthBrass2 = new Tone.Sampler({
     "F#4": "Samples/Synth/LeadSynthBrass2/F#4.mp3"
     },
     release: 1.2,
-    onload: () => registerInstrumentLoaded()
+    onload: () => registerInstrumentLoaded("Synth Brass 2")
 }).connect(leadBus);
 
 // SWEET
@@ -78,7 +78,7 @@ export const leadSynthBrass2 = new Tone.Sampler({
 export const fxSweep = new Tone.Sampler({
   urls: { C4: "Samples/Synth/FxSweep/C4.mp3" },
   release: 1.2,
-  onload: () => registerInstrumentLoaded()
+  onload: () => registerInstrumentLoaded("Sweep")
 }).connect(fxBus);
 
 // NOISE
@@ -86,7 +86,7 @@ export const fxSweep = new Tone.Sampler({
 export const fxNoise = new Tone.Sampler({
   urls: { C4: "Samples/Synth/FxNoise/C4.mp3" },
   release: 1.2,
-  onload: () => registerInstrumentLoaded()
+  onload: () => registerInstrumentLoaded("Noise")
 }).connect(fxBus);
 
 
@@ -99,7 +99,7 @@ export const fxFantasy = new Tone.Sampler({
     C5: "Samples/Synth/FxFantasy/C5.mp3"
     },
     release: 1.2,
-    onload: () => registerInstrumentLoaded()
+    onload: () => registerInstrumentLoaded("Fantasia")
 }).connect(fxBus);
 
 // STACCATO HEAVEN 
@@ -111,7 +111,7 @@ export const fxHeaven = new Tone.Sampler({
     C5: "Samples/Synth/FxHeaven/C5.mp3"
     },
     release: 1.2,
-    onload: () => registerInstrumentLoaded()
+    onload: () => registerInstrumentLoaded("Staccato Heaven")
 }).connect(fxBus);
 
 // JUMP
@@ -125,7 +125,7 @@ export const fxJump = new Tone.Sampler({
     E4: "Samples/Synth/FxJump/E4.mp3"
     },
     release: 1.2,
-    onload: () => registerInstrumentLoaded()
+    onload: () => registerInstrumentLoaded("Jump")
 }).connect(fxBus);
 
 // HARD FIR THE CORE
@@ -139,7 +139,7 @@ export const fxHardFTCore = new Tone.Sampler({
     E4: "Samples/Synth/FxHardFTCore/E4.mp3"
     },
     release: 1.2,
-    onload: () => registerInstrumentLoaded()
+    onload: () => registerInstrumentLoaded("Hard for the Core")
 }).connect(fxBus);
 
 // BELLS PAD 
@@ -152,7 +152,7 @@ export const bellsPad = new Tone.Sampler({
     C5: "Samples/Synth/BellsPad/C5.mp3"
     },
     release: 1.2,
-    onload: () => registerInstrumentLoaded()
+    onload: () => registerInstrumentLoaded("Bells")
 }).connect(padBus);
 
 // GLASS PAD 
@@ -164,7 +164,7 @@ export const glassPad = new Tone.Sampler({
     C4: "Samples/Synth/GlassPad/C4.mp3"
     },
     release: 1.2,
-    onload: () => registerInstrumentLoaded()
+    onload: () => registerInstrumentLoaded("Glass")
 }).connect(padBus);
 
 // SHAKU PAD 
@@ -177,7 +177,7 @@ export const shakuPad = new Tone.Sampler({
     "F#4": "Samples/Synth/ShakuPad/F#4.mp3"
     },
     release: 1.2,
-    onload: () => registerInstrumentLoaded()
+    onload: () => registerInstrumentLoaded("Shaku")
 }).connect(padBus);
 
 // SO TRUE STRING PAD 
@@ -190,7 +190,7 @@ export const StStringPad = new Tone.Sampler({
     C5: "Samples/Synth/StStringPad/C5.mp3"
     },
     release: 1.2,
-    onload: () => registerInstrumentLoaded()
+    onload: () => registerInstrumentLoaded("So true String")
 }).connect(padBus);
 
 // WARM PAD 
@@ -203,7 +203,7 @@ export const warmPad = new Tone.Sampler({
     "F#4": "Samples/Synth/WarmPad/F#4.mp3"
     },
     release: 1.2,
-    onload: () => registerInstrumentLoaded()
+    onload: () => registerInstrumentLoaded("Warm")
 }).connect(padBus);
 
 // WAVE PAD 
@@ -216,7 +216,7 @@ export const wavePad = new Tone.Sampler({
     E4: "Samples/Synth/WavePad/E4.mp3"
     },
     release: 1.2,
-    onload: () => registerInstrumentLoaded()
+    onload: () => registerInstrumentLoaded("Wave")
 }).connect(padBus);
 
 // --- ORGANO 2 ---
@@ -256,7 +256,7 @@ export const organo = new Tone.Sampler({
     G3: "Samples/Synth/Organo/G3.mp3"
     },
     release: 1.2,
-    onload: () => registerInstrumentLoaded()
+    onload: () => registerInstrumentLoaded("Organo")
 }).connect(organoBus);
 
 // --- PIANO 16 ---
@@ -280,7 +280,7 @@ export const piano = new Tone.Sampler({
     "F#7": "Samples/Synth/Piano/F#7.mp3"
     },
     release: 1.5,
-onload: () => registerInstrumentLoaded()
+onload: () => registerInstrumentLoaded("Piano")
 }).connect(pianoBus);
 
 // --- BASS LATELY ---
@@ -292,7 +292,7 @@ export const bass = new Tone.Sampler({
     "F#3": "Samples/Synth/Bass/F#3.mp3"
     },
     release: 2,
-onload: () => registerInstrumentLoaded()
+onload: () => registerInstrumentLoaded("Basso")
 }).connect(bassBus);
 
 // --- 909 ---
@@ -311,7 +311,7 @@ export const percussion = new Tone.Players({
          snareDrum: "Samples/Synth/Percussion/SnareDrum.mp3"
     },
     release: 3,
-    onload: () => registerInstrumentLoaded()
+    onload: () => registerInstrumentLoaded("Percussioni")
 }).connect(percussionBus);
 
 export function setVolume(busName, dbValue) {
