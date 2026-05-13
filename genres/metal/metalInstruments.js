@@ -2,7 +2,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("metalInstruments.js ver. 005 loaded");
+console.log("metalInstruments.js ver. 005.1 loaded");
 
 // ============================================================
 // 🎚 BUS SPECIFICI DEL METAL
@@ -145,14 +145,22 @@ export const bass = new Tone.Sampler({
 }).connect(bassBus);
 
 export const drums = new Tone.Players({
-    kick: "Samples/Drums/kick.mp3", snare: "Samples/Drums/snare.mp3",
-    ghost: "Samples/Drums/ghost.mp3", hihat: "Samples/Drums/hihat_closed.mp3",
-    openhat: "Samples/Drums/hihat_open.mp3", crash1: "Samples/Drums/crash_1.mp3",
-    crash2: "Samples/Drums/crash_2.mp3", tom1: "Samples/Drums/tom_1.mp3",
-    tom2: "Samples/Drums/tom_2.mp3", tom3: "Samples/Drums/tom_3.mp3",
-    tom4: "Samples/Drums/tom_4.mp3", ride: "Samples/Drums/ride.mp3",
-    ridebell: "Samples/Drums/ride_bell.mp3", china: "Samples/Drums/china.mp3"
-}, {
+    urls: {
+    kick: "Samples/Drums/kick.mp3", 
+    snare: "Samples/Drums/snare.mp3",
+    ghost: "Samples/Drums/ghost.mp3", 
+    hihat: "Samples/Drums/hihat_closed.mp3",
+    openhat: "Samples/Drums/hihat_open.mp3", 
+    crash1: "Samples/Drums/crash_1.mp3",
+    crash2: "Samples/Drums/crash_2.mp3", 
+    tom1: "Samples/Drums/tom_1.mp3",
+    tom2: "Samples/Drums/tom_2.mp3", 
+    tom3: "Samples/Drums/tom_3.mp3",
+    tom4: "Samples/Drums/tom_4.mp3", 
+    ride: "Samples/Drums/ride.mp3",
+    ridebell: "Samples/Drums/ride_bell.mp3", 
+    china: "Samples/Drums/china.mp3"
+},
     onload: () => registerInstrumentLoaded("Batteria")
 }).connect(drumBus);
 
