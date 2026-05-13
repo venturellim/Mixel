@@ -90,7 +90,7 @@ export const guitarPalm = new Tone.Sampler({
     },
     attack: 0.015,
     release: 0.6,
-    onload: () => registerInstrumentLoaded()
+    onload: () => registerInstrumentLoaded(" Chitarra Palm")
 }).connect(guitarFX);
 
 export const guitarOpen = new Tone.Sampler({
@@ -105,7 +105,7 @@ export const guitarOpen = new Tone.Sampler({
     },
     attack: 0.02,
     release: 1.2,
-    onload: () => registerInstrumentLoaded()
+    onload: () => registerInstrumentLoaded("Chitarra Open")
 }).connect(guitarFX);
 
 export const guitarLead = new Tone.Sampler({
@@ -130,7 +130,7 @@ export const guitarLead = new Tone.Sampler({
     },
     attack: 0.02,
     release: 0.8,
-    onload: () => registerInstrumentLoaded()
+    onload: () => registerInstrumentLoaded("Chitarra Lead")
 }).connect(leadVibrato);
 
 export const bass = new Tone.Sampler({
@@ -141,7 +141,7 @@ export const bass = new Tone.Sampler({
         A1: "Samples/Bass/A1.mp3", Bb1: "Samples/Bass/Bb1.mp3", B1: "Samples/Bass/B1.mp3",
         C2: "Samples/Bass/C2.mp3"
     },
-    onload: () => registerInstrumentLoaded()
+    onload: () => registerInstrumentLoaded("Basso")
 }).connect(bassBus);
 
 export const drums = new Tone.Players({
@@ -153,7 +153,7 @@ export const drums = new Tone.Players({
     tom4: "Samples/Drums/tom_4.mp3", ride: "Samples/Drums/ride.mp3",
     ridebell: "Samples/Drums/ride_bell.mp3", china: "Samples/Drums/china.mp3"
 }, {
-    onload: () => registerInstrumentLoaded()
+    onload: () => registerInstrumentLoaded("Batteria")
 }).connect(drumBus);
 
 // ============================================================
