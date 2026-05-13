@@ -3,7 +3,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("danceInstruments.js ver. 002 loaded");
+console.log("danceInstruments.js ver. 002.1 loaded");
 
 // --- RIVERBERO ---
 const hallReverb = new Tone.Reverb({
@@ -197,7 +197,7 @@ export const StStringPad = new Tone.Sampler({
 
 export const warmPad = new Tone.Sampler({
     urls: {  
-    C3: "Samples/Synth/WarmPad/C2.mp3", 
+    C3: "Samples/Synth/WarmPad/C3.mp3", 
     "F#3": "Samples/Synth/WarmPad/F#3.mp3", 
     C4: "Samples/Synth/WarmPad/C4.mp3",
     "F#4": "Samples/Synth/WarmPad/F#4.mp3"
@@ -236,7 +236,7 @@ export const organo = new Tone.Sampler({
     C3: "Samples/Synth/Organo/C3.mp3", 
     D1: "Samples/Synth/Organo/D1.mp3",
     D2: "Samples/Synth/Organo/D2.mp3", 
-    D3: "Samples/Synth/Synth/Organo/D3.mp3",
+    D3: "Samples/Synth/Organo/D3.mp3",
     "D#1": "Samples/Synth/Organo/D#1.mp3",
     "D#2": "Samples/Synth/Organo/D#2.mp3", 
     "D#3": "Samples/Synth/Organo/D#3.mp3",
