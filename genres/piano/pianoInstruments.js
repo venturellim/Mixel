@@ -31,8 +31,7 @@ export const piano = new Tone.Sampler({
     baseUrl: "Samples/Piano/",
     //baseUrl: "https://tonejs.github.io/audio/salamander/",
     onload: () => {
-        registerInstrumentLoaded();
-        console.log("🎹 Salamander C5 caricato");
+        registerInstrumentLoaded("Piano");
     }
 }).connect(pianoReverb);
 
