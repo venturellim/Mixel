@@ -171,7 +171,7 @@ export const glassPad = new Tone.Sampler({
 
 export const shakuPad = new Tone.Sampler({
     urls: {  
-    C3: "Samples/Synth/ShakuPad/C2.mp3", 
+    C3: "Samples/Synth/ShakuPad/C3.mp3", 
     "F#3": "Samples/Synth/ShakuPad/F#3.mp3", 
     C4: "Samples/Synth/ShakuPad/C4.mp3",
     "F#4": "Samples/Synth/ShakuPad/F#4.mp3"
