@@ -1,128 +1,387 @@
-// danceInstruments.js — ver. 002 (solo synth integrati)
+// danceInstruments.js — ver. 001 
+
 import * as Tone from "https://esm.sh/tone";
-import { masterEQ, registerInstrumentLoaded } from "../../common.js";
+import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
 console.log("danceInstruments.js ver. 002 loaded");
 
-// ------------------------------------------------------------
-// BUS PRINCIPALI
-// ------------------------------------------------------------
-export const danceBus = new Tone.Gain(1).connect(masterEQ);
-export const drumsBus = new Tone.Gain(1).connect(danceBus);
-export const bassBus = new Tone.Gain(1).connect(danceBus);
-export const leadBus = new Tone.Gain(1).connect(danceBus);
-export const padBus = new Tone.Gain(1).connect(danceBus);
-export const fxBus = new Tone.Gain(1).connect(danceBus);
+// --- RIVERBERO ---
+const hallReverb = new Tone.Reverb({
+    decay: 2.8,
+    preDelay: 0.01,
+    wet: 0.35
+}).toDestination();
 
-// ------------------------------------------------------------
-// DRUMS (synth integrati, nessun sample esterno)
-// ------------------------------------------------------------
-export const danceKick = new Tone.MembraneSynth({
-    pitchDecay: 0.02,
-    octaves: 5,
-    envelope: { attack: 0.001, decay: 0.2, sustain: 0 }
-}).connect(drumsBus);
+export const leadBus = new Tone.Gain(1);
+export const padBus = new Tone.Gain(1);
+export const bassBus = new Tone.Gain(1);
+export const organoBus = new Tone.Gain(1);
+export const pianoBus = new Tone.Gain(1);
+export const fxBus = new Tone.Gain(1);
+export const percussionBus = new Tone.Gain(1);
 
-export const danceSnare = new Tone.NoiseSynth({
-    noise: { type: "white" },
-    envelope: { attack: 0.001, decay: 0.1, sustain: 0 }
-}).connect(drumsBus);
+const leadEQ = new Tone.EQ3({ low: -4, mid: 2, high: 3 });
+const padEQ = new Tone.EQ3({ low: -2, mid: -1, high: 2 });
+const bassEQ = new Tone.EQ3({ low: 4, mid: -2, high: -4 });
+const organoEQ = new Tone.EQ3({ low: -4, mid: 2, high: 3 });
+const pianoEQ = new Tone.EQ3({ low: -4, mid: 2, high: 3 });
+const fxEQ   = new Tone.EQ3({ low: 4, mid: -2, high: -4 });
+const percussionEQ   = new Tone.EQ3({ low: 2, mid: 1, high: 3 });
 
-export const danceHiHat = new Tone.MetalSynth({
-    frequency: 8000,
-    envelope: { attack: 0.001, decay: 0.05, sustain: 0 },
-    harmonicity: 8.5,
-    modulationIndex: 40,
-    resonance: 800
-}).connect(drumsBus);
+// Routing bus → EQ → master
+leadBus.connect(leadEQ).connect(hallReverb).connect(masterEQ);
+padBus.connect(padEQ).connect(hallReverb).connect(masterEQ);
+bassBus.connect(bassEQ).connect(hallReverb).connect(masterEQ);
+organoBus.connect(organoEQ).connect(hallReverb).connect(masterEQ);
+pianoBus.connect(pianoEQ).connect(hallReverb).connect(masterEQ);
+fxBus.connect(fxEQ).connect(hallReverb).connect(masterEQ);
+percussionBus.connect(percussionEQ).connect(hallReverb).connect(masterEQ);
 
-export const danceClap = new Tone.NoiseSynth({
-    noise: { type: "white" },
-    envelope: { attack: 0.001, decay: 0.05, sustain: 0 }
-}).connect(drumsBus);
-
-export const danceCrash = new Tone.MetalSynth({
-    frequency: 4000,
-    envelope: { attack: 0.001, decay: 0.8, sustain: 0 },
-    harmonicity: 5,
-    modulationIndex: 20,
-    resonance: 600
-}).connect(drumsBus);
-
-// ------------------------------------------------------------
-// BASSO — Synth saw
-// ------------------------------------------------------------
-export const danceBass = new Tone.MonoSynth({
-    oscillator: { type: "sawtooth" },
-    filter: { type: "lowpass", Q: 1 },
-    filterEnvelope: { attack: 0.01, decay: 0.1, sustain: 0.2, release: 0.1, baseFrequency: 80, octaves: 2 },
-    envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 0.1 }
-}).connect(bassBus);
-
-// ------------------------------------------------------------
-// LEAD — Supersaw
-// ------------------------------------------------------------
-export const danceLead = new Tone.PolySynth(Tone.FatSynth, {
-    oscillator: { type: "sawtooth" },
-    count: 6,
-    spread: 40,
-    envelope: { attack: 0.01, decay: 0.2, sustain: 0.6, release: 0.3 }
+// --- LEAD SAW ---
+export const leadSaw = new Tone.Sampler({
+    urls: { 
+    C3: "Samples/Synth/LeadSaw/C3.mp3", 
+    C4: "Samples/Synth/LeadSaw/C4.mp3",
+    E3: "Samples/Synth/LeadSaw/E3.mp3", 
+    E4: "Samples/Synth/LeadSaw/E4.mp3"
+    },
+    release: 1.2,
+    onload: () => registerInstrumentLoaded()
 }).connect(leadBus);
 
-// ------------------------------------------------------------
-// PAD
-// ------------------------------------------------------------
-export const dancePad = new Tone.PolySynth(Tone.Synth, {
-    oscillator: { type: "sawtooth" },
-    envelope: { attack: 0.3, decay: 0.4, sustain: 0.7, release: 1.2 }
+// --- LEAD SYNTHBRASS 1 ---
+export const leadSynthBrass1 = new Tone.Sampler({
+    urls: { 
+    C3: "Samples/Synth/LeadSynthBrass1/C3.mp3", 
+    C4: "Samples/Synth/LeadSynthBrass1/C4.mp3",
+    "F#3": "Samples/Synth/LeadSynthBrass1/F#3.mp3",
+    "F#4": "Samples/Synth/LeadSynthBrass1/F#4.mp3"
+    },
+    release: 1.2,
+    onload: () => registerInstrumentLoaded()
+}).connect(leadBus);
+
+// --- LEAD SYNTHBRASS 2 ---
+export const leadSynthBrass2 = new Tone.Sampler({
+    urls: { 
+    C3: "Samples/Synth/LeadSynthBrass2/C3.mp3", 
+    C4: "Samples/Synth/LeadSynthBrass2/C4.mp3",
+    "F#3": "Samples/Synth/LeadSynthBrass2/F#3.mp3",
+    "F#4": "Samples/Synth/LeadSynthBrass2/F#4.mp3"
+    },
+    release: 1.2,
+    onload: () => registerInstrumentLoaded()
+}).connect(leadBus);
+
+// SWEET
+
+export const fxSweep = new Tone.Sampler({
+  urls: { C4: "Samples/Synth/FxSweep/C4.mp3" },
+  release: 1.2,
+  onload: () => registerInstrumentLoaded()
+}).connect(fxBus);
+
+// NOISE
+
+export const fxNoise = new Tone.Sampler({
+  urls: { C4: "Samples/Synth/FxNoise/C4.mp3" },
+  release: 1.2,
+  onload: () => registerInstrumentLoaded()
+}).connect(fxBus);
+
+
+// FANTASY
+
+export const fxFantasy = new Tone.Sampler({
+    urls: { 
+    C3: "Samples/Synth/FxFantasy/C3.mp3", 
+    C4: "Samples/Synth/FxFantasy/C4.mp3",
+    C5: "Samples/Synth/FxFantasy/C5.mp3"
+    },
+    release: 1.2,
+    onload: () => registerInstrumentLoaded()
+}).connect(fxBus);
+
+// STACCATO HEAVEN 
+
+export const fxHeaven = new Tone.Sampler({
+    urls: { 
+    C3: "Samples/Synth/FxHeaven/C3.mp3", 
+    C4: "Samples/Synth/FxHeaven/C4.mp3",
+    C5: "Samples/Synth/FxHeaven/C5.mp3"
+    },
+    release: 1.2,
+    onload: () => registerInstrumentLoaded()
+}).connect(fxBus);
+
+// JUMP
+
+export const fxJump = new Tone.Sampler({
+    urls: { 
+    C3: "Samples/Synth/FxJump/C3.mp3", 
+    C4: "Samples/Synth/FxJump/C4.mp3",
+    C5: "Samples/Synth/FxJump/C5.mp3",
+    E3: "Samples/Synth/FxJump/E3.mp3",
+    E4: "Samples/Synth/FxJump/E4.mp3"
+    },
+    release: 1.2,
+    onload: () => registerInstrumentLoaded()
+}).connect(fxBus);
+
+// HARD FIR THE CORE
+
+export const fxHardFTCore = new Tone.Sampler({
+    urls: { 
+    C2: "Samples/Synth/FxHardFTCore/C2.mp3", 
+    C4: "Samples/Synth/FxHardFTCore/C4.mp3",
+    C5: "Samples/Synth/FxHardFTCore/C5.mp3",
+    E3: "Samples/Synth/FxHardFTCore/E3.mp3",
+    E4: "Samples/Synth/FxHardFTCore/E4.mp3"
+    },
+    release: 1.2,
+    onload: () => registerInstrumentLoaded()
+}).connect(fxBus);
+
+// BELLS PAD 
+
+export const bellsPad = new Tone.Sampler({
+    urls: {  
+    C2: "Samples/Synth/BellsPad/C2.mp3", 
+    C3: "Samples/Synth/BellsPad/C3.mp3", 
+    C4: "Samples/Synth/BellsPad/C4.mp3",
+    C5: "Samples/Synth/BellsPad/C5.mp3"
+    },
+    release: 1.2,
+    onload: () => registerInstrumentLoaded()
 }).connect(padBus);
 
-// ------------------------------------------------------------
-// FX
-// ------------------------------------------------------------
-export const danceRiser = new Tone.NoiseSynth({
-    noise: { type: "white" },
-    envelope: { attack: 2, decay: 0.5, sustain: 0.5, release: 1 }
-}).connect(fxBus);
+// GLASS PAD 
 
-export const danceDownlifter = new Tone.NoiseSynth({
-    noise: { type: "pink" },
-    envelope: { attack: 0.1, decay: 1.5, sustain: 0, release: 0.2 }
-}).connect(fxBus);
+export const glassPad = new Tone.Sampler({
+    urls: {  
+    C2: "Samples/Synth/GlassPad/C2.mp3", 
+    C3: "Samples/Synth/GlassPad/C3.mp3", 
+    C4: "Samples/Synth/GlassPad/C4.mp3"
+    },
+    release: 1.2,
+    onload: () => registerInstrumentLoaded()
+}).connect(padBus);
 
-// ------------------------------------------------------------
-// REGISTRO CARICAMENTO
-// ------------------------------------------------------------
-[danceKick, danceSnare, danceHiHat, danceClap, danceCrash, danceBass, danceLead, dancePad].forEach(inst => {
-    if (inst && inst.onload !== undefined) inst.onload = () => registerInstrumentLoaded();
-    else registerInstrumentLoaded();
-});
+// SHAKU PAD 
 
-// ------------------------------------------------------------
-// MIXER MAP
-// ------------------------------------------------------------
+export const shakuPad = new Tone.Sampler({
+    urls: {  
+    C3: "Samples/Synth/ShakuPad/C2.mp3", 
+    "F#3": "Samples/Synth/ShakuPad/F#3.mp3", 
+    C4: "Samples/Synth/ShakuPad/C4.mp3",
+    "F#4": "Samples/Synth/ShakuPad/F#4.mp3"
+    },
+    release: 1.2,
+    onload: () => registerInstrumentLoaded()
+}).connect(padBus);
+
+// SO TRUE STRING PAD 
+
+export const StStringPad = new Tone.Sampler({
+    urls: {  
+    C2: "Samples/Synth/StStringPad/C2.mp3", 
+    C3: "Samples/Synth/StStringPad/C3.mp3", 
+    C4: "Samples/Synth/StStringPad/C4.mp3",
+    C5: "Samples/Synth/StStringPad/C5.mp3"
+    },
+    release: 1.2,
+    onload: () => registerInstrumentLoaded()
+}).connect(padBus);
+
+// WARM PAD 
+
+export const warmPad = new Tone.Sampler({
+    urls: {  
+    C3: "Samples/Synth/WarmPad/C2.mp3", 
+    "F#3": "Samples/Synth/WarmPad/F#3.mp3", 
+    C4: "Samples/Synth/WarmPad/C4.mp3",
+    "F#4": "Samples/Synth/WarmPad/F#4.mp3"
+    },
+    release: 1.2,
+    onload: () => registerInstrumentLoaded()
+}).connect(padBus);
+
+// WAVE PAD 
+
+export const wavePad = new Tone.Sampler({
+    urls: {  
+    C3: "Samples/Synth/WavePad/C2.mp3", 
+    E3: "Samples/Synth/WavePad/E3.mp3", 
+    C4: "Samples/Synth/WavePad/C4.mp3",
+    E4: "Samples/Synth/WavePad/E4.mp3"
+    },
+    release: 1.2,
+    onload: () => registerInstrumentLoaded()
+}).connect(padBus);
+
+// --- ORGANO 2 ---
+export const organo = new Tone.Sampler({
+    urls: {  
+    "A#1": "Samples/Synth/Organo/A#1.mp3",
+    "A#2": "Samples/Synth/Organo/A#2.mp3", 
+    A1: "Samples/Synth/Organo/A1.mp3",
+    A2: "Samples/Synth/Organo/A2.mp3", 
+    B1: "Samples/Synth/Organo/B1.mp3",
+    B2: "Samples/Synth/Organo/B2.mp3",
+    "C#1": "Samples/Synth/Organo/C#1.mp3",
+    "C#2": "Samples/Synth/Organo/C#2.mp3",
+    "C#3": "Samples/Synth/Organo/C#3.mp3",
+    C1: "Samples/Synth/Organo/C1.mp3", 
+    C2: "Samples/Synth/Organo/C2.mp3",
+    C3: "Samples/Synth/Organo/C3.mp3", 
+    D1: "Samples/Synth/Organo/D1.mp3",
+    D2: "Samples/Synth/Organo/D2.mp3", 
+    D3: "Samples/Synth/Synth/Organo/D3.mp3",
+    "D#1": "Samples/Synth/Organo/D#1.mp3",
+    "D#2": "Samples/Synth/Organo/D#2.mp3", 
+    "D#3": "Samples/Synth/Organo/D#3.mp3",
+    E1: "Samples/Synth/Organo/E1.mp3",
+    E2: "Samples/Synth/Organo/E2.mp3", 
+    E3: "Samples/Synth/Organo/E3.mp3",
+    "F#1": "Samples/Synth/Organo/F#1.mp3",
+    "F#2": "Samples/Synth/Organo/F#2.mp3", 
+    "F#3": "Samples/Synth/Organo/F#3.mp3",
+    F1: "Samples/Synth/Organo/F1.mp3",
+    F2: "Samples/Synth/Organo/F2.mp3", 
+    F3: "Samples/Synth/Organo/F3.mp3",
+    "G#1": "Samples/Synth/Organo/G#1.mp3",
+    "G#2": "Samples/Synth/Organo/G#2.mp3", 
+    G1: "Samples/Synth/Organo/G1.mp3",
+    G2: "Samples/Synth/Organo/G2.mp3", 
+    G3: "Samples/Synth/Organo/G3.mp3"
+    },
+    release: 1.2,
+    onload: () => registerInstrumentLoaded()
+}).connect(organoBus);
+
+// --- PIANO 16 ---
+export const piano = new Tone.Sampler({
+    urls: { 
+    C0: "Samples/Synth/Piano/C0.mp3",
+    C1: "Samples/Synth/Piano/C1.mp3",
+   C2: "Samples/Synth/Piano/C2.mp3",
+    C3: "Samples/Synth/Piano/C3.mp3", 
+    C4: "Samples/Synth/Piano/C4.mp3",
+    C5: "Samples/Synth/Piano/C5.mp3", 
+    C6: "Samples/Synth/Piano/C6.mp3",
+    C7: "Samples/Synth/Piano/C7.mp3", 
+    "F#0": "Samples/Synth/Piano/F#0.mp3",
+    "F#1": "Samples/Synth/Piano/F#1.mp3",
+    "F#2": "Samples/Synth/Piano/F#2.mp3",
+    "F#3": "Samples/Synth/Piano/F#3.mp3",
+    "F#4": "Samples/Synth/Piano/F#4.mp3",
+    "F#5": "Samples/Synth/Piano/F#5.mp3",
+    "F#6": "Samples/Synth/Piano/F#6.mp3",
+    "F#7": "Samples/Synth/Piano/F#7.mp3"
+    },
+    release: 1.5,
+onload: () => registerInstrumentLoaded()
+}).connect(pianoBus);
+
+// --- BASS LATELY ---
+export const bass = new Tone.Sampler({
+    urls: { 
+    C2: "Samples/Synth/Bass/C2.mp3",
+    C3: "Samples/Synth/Bass/C3.mp3",
+    E2: "Samples/Synth/Bass/E2.mp3",
+    "F#3": "Samples/Synth/Bass/F#3.mp3"
+    },
+    release: 2,
+onload: () => registerInstrumentLoaded()
+}).connect(bassBus);
+
+// --- 909 ---
+export const percussion = new Tone.Players({
+    urls: { 
+         bassDrum: "Samples/Synth/Percussion/BassDrum.mp3", 
+         closedHat: "Samples/Synth/Percussion/ClosedHat.mp3",
+         crash: "Samples/Synth/Percussion/Crash.mp3",
+         handClap: "Samples/Synth/Percussion/HandClap.mp3",
+         hiTom: "Samples/Synth/Percussion/HiTom.mp3",
+         lowTom: "Samples/Synth/Percussion/LowTom.mp3",
+         midTom: "Samples/Synth/Percussion/MidTom.mp3", 
+         openHat: "Samples/Synth/Percussion/OpenHat.mp3",
+         ride: "Samples/Synth/Percussion/Ride.mp3",
+         rimShot: "Samples/Synth/Percussion/RimShot.mp3",
+         snareDrum: "Samples/Synth/Percussion/SnareDrum.mp3"
+    },
+    release: 3,
+    onload: () => registerInstrumentLoaded()
+}).connect(percussionBus);
+
+export function setVolume(busName, dbValue) {
+    const mixer = { leadSaw: leadBus, leadSynthBrass1: leadBus, leadSynthBrass2: leadBus, fxFantasy: fxBus, fxHeaven: fxBus, fxJump: fxBus, bass: bassBus, fxHardFTCore: fxBus, organo: organoBus, percussion: percussionBus, piano: pianoBus};
+    const bus = mixer[busName];
+    if (bus) bus.gain.value = Tone.dbToGain(dbValue);
+}
+
+setVolume("leadSaw", +6);
+setVolume("leadSynthBrass1", +6);
+setVolume("leadSynthBrass2", +6);
+setVolume("fxFantasy", +4);
+setVolume("fxHeaven", +4);
+setVolume("fxJump", +4);
+setVolume("fxHardFTCore", +4);
+setVolume("piano", +2);
+setVolume("organo", +2);
+setVolume("bass", +4);
+setVolume("percussion", +6);
+
 export const danceInstruments = {
-    kick: danceKick,
-    snare: danceSnare,
-    hihat: danceHiHat,
-    clap: danceClap,
-    crash: danceCrash,
-    bass: danceBass,
-    lead: danceLead,
-    pad: dancePad,
-    riser: danceRiser,
-    downlifter: danceDownlifter
+    leadSaw,
+    leadSynthBrass1,
+    leadSynthBrass2,
+    fxSweep,
+    fxNoise,
+    fxFantasy,
+    fxHeaven,
+    fxJump,
+    fxHardFTCore,
+    bellsPad,
+    glassPad,
+    shakuPad,
+    StStringPad,
+    warmPad,
+    wavePad,
+    organo,
+    piano,
+    bass,
+    percussion,
+    leadBus,
+    padBus,
+    fxBus,
+    bassBus,
+    organoBus,
+    pianoBus,
+    percussionBus,
+    setVolume
 };
 
 export const danceVolumeMap = {
-    kick: "Kick",
-    snare: "Snare",
-    hihat: "HiHat",
-    clap: "Clap",
-    crash: "Crash",
-    bass: "Bass",
-    lead: "Lead",
-    pad: "Pad",
-    riser: "Riser",
-    downlifter: "Downlifter"
+    leadSaw: "Saw", 
+    leadSynthBrass1: "SynthBrass1", 
+    leadSynthBrass2: "SynthBrass2", 
+    fxSweep: "Sweep",
+    fxNoise: "Noise",
+    fxFantasy: "Fantasy", 
+    fxHeaven: "Heaven", 
+    fxJump: "Jump", 
+    fxHardFTCore: "HardForTheCore",
+    bellsPad: "Bells",
+    glassPad: "Glass",
+    shakuPad: "Shaku",
+    StStringPad: "SoTrueString",
+    warmPad: "Warm",
+    wavePad: "Wave",
+    bass: "Basso", 
+     organo: "Organo", 
+     piano: "Piano",
+     percussion: "Percussioni"
 };
+
+export { hallReverb };

@@ -1,84 +1,135 @@
-// danceEngine.js — ver. 002
+// danceEngine.js — ver. 001 (complete)
 import * as Tone from "https://esm.sh/tone";
+
+import { chooseDanceStyle } from "./chooseDanceStyle.js";
 import { buildDanceParams } from "./danceParams.js";
+
 import { danceInstruments, danceVolumeMap } from "./danceInstruments.js";
-import { buildSongStructure } from "../../utils/structureUtils.js";
-import { createSeededRandom } from "../../utils/randomUtils.js";
-import { generateSongProgressions, degreeToRoot } from "../../utils/musicTheory.js";
 import { scheduleDanceRhythm } from "./danceRhythmEngine.js";
-import { scheduleDanceBass } from "./danceBassEngine.js";
 import { scheduleDanceLead } from "./danceLeadEngine.js";
+
 import { waitForInstruments } from "../../common.js";
 
-console.log("danceEngine.js ver. 002 loaded");
+console.log("danceEngine.js ver. 001 loaded");
 
+// ------------------------------------------------------------
+//  WAIT FOR INSTRUMENTS
+// ------------------------------------------------------------
 export async function waitDanceInstruments() {
-    await waitForInstruments(5, "Dance");
+    const total = Object.keys(danceInstruments).length;
+    await waitForInstruments(total, "Dance");
 }
 
+// ------------------------------------------------------------
+//  SEED RANDOM (deterministico, come nel metal)
+// ------------------------------------------------------------
+function createSeededRandom(seed) {
+    return function () {
+        seed = (seed * 16807) % 2147483647;
+        return (seed - 1) / 2147483646;
+    };
+}
+
+// ------------------------------------------------------------
+//  MAIN ENGINE
+// ------------------------------------------------------------
 export function createDanceEngine(params, score) {
+
+    // Random deterministico
     const rand = createSeededRandom(params.dna);
-    const danceParams = buildDanceParams(rand);
-    
+
+    // Stile dance (Gigi / Prezioso / Eiffel65 / GabryPonte)
+    const style = chooseDanceStyle(params.dna, params.global);
+
+    // Parametri dance (BPM, tonalità, scala, densità…)
+    const danceParams = buildDanceParams(rand, params.global);
+
+    // Reset transport
     Tone.Transport.stop();
     Tone.Transport.cancel();
     Tone.Transport.bpm.value = danceParams.bpm;
 
-    // Struttura
-    const rawStructure = [
-        { name: "intro", weight: 4 },
-        { name: "verse", weight: 8 },
-        { name: "prechorus", weight: 4 },
-        { name: "chorus", weight: 8 },
-        { name: "verse", weight: 8 },
-        { name: "chorus", weight: 8 },
-        { name: "break", weight: 4 },
-        { name: "chorus", weight: 8 },
-        { name: "outro", weight: 4 }
+    // ------------------------------------------------------------
+    //  STRUTTURA DEL BRANO (intro → build → drop → break → chorus → outro)
+    // ------------------------------------------------------------
+    const structure = [
+        { name: "intro",  measures: 4 },
+        { name: "build",  measures: 4 },
+        { name: "drop",   measures: 8 },
+        { name: "break",  measures: 4 },
+        { name: "chorus", measures: 8 },
+        { name: "outro",  measures: 4 }
     ];
 
-    const finalStructure = rawStructure
-        .map(s => ({ name: s.name, measures: Math.max(0, Math.ceil(s.weight / 2) * 2) }))
-        .filter(s => s.measures > 0);
-
-    const structure = buildSongStructure(finalStructure, danceParams.bpm);
-    const progressions = generateSongProgressions(structure, params.imageParams, danceParams.tonalCenter, rand);
+    // Calcolo startTime per ogni sezione
+    let currentTime = 0;
     const measureDur = (60 / danceParams.bpm) * 4;
 
-    const combinedParams = { ...danceParams, imageParams: params.imageParams };
-
-    structure.sections.forEach((sec, index) => {
-        const info = progressions[sec.name];
-        const sectionRoot = info?.root || danceParams.tonalCenter[0] || "C";
-        const degrees = info?.progression || ["I"];
-
-        let fullProgression = [];
-        while (fullProgression.length < sec.measures) fullProgression = fullProgression.concat(degrees);
-        fullProgression = fullProgression.slice(0, sec.measures);
-        const realNotes = fullProgression.map(d => degreeToRoot(d, sectionRoot));
-
-        Tone.Transport.schedule(() => {
-            console.log(`%c 🎧 DANCE ${sec.name.toUpperCase()}`, "color: #FF00AA; font-weight: bold;");
-        }, sec.startTime);
-
-        scheduleDanceRhythm(sec, realNotes, danceInstruments, combinedParams, rand, measureDur, score);
-        scheduleDanceBass(sec, realNotes, danceInstruments, combinedParams, rand, measureDur, score);
-        scheduleDanceLead(sec, realNotes, danceInstruments, combinedParams, rand, measureDur, score);
+    structure.forEach(sec => {
+        sec.startTime = currentTime;
+        currentTime += sec.measures * measureDur;
     });
 
+    // ------------------------------------------------------------
+    //  SCHEDULAZIONE SEZIONI
+    // ------------------------------------------------------------
+    structure.forEach(sec => {
+
+        // Log visivo (come nel metal)
+        Tone.Transport.schedule(() => {
+            console.log(
+                `%c ▶ DANCE | ${sec.name.toUpperCase()} | STYLE: ${style}`,
+                "color:#ff1493; font-weight:bold;"
+            );
+        }, sec.startTime);
+
+        // Ritmica (kick, clap, hat, bassline, pad, FX)
+        scheduleDanceRhythm(
+            sec,
+            danceInstruments,
+            danceParams,
+            style,
+            score,
+            rand
+        );
+
+        // Lead melodici/ritmici
+        scheduleDanceLead(
+            sec,
+            danceInstruments,
+            danceParams,
+            style,
+            score,
+            rand
+        );
+    });
+
+    // ------------------------------------------------------------
+    //  API PUBBLICA (identica al metalEngine)
+    // ------------------------------------------------------------
     return {
-        totalDuration: structure.totalDuration,
+        totalDuration: currentTime,
+
         play: () => {
-            if (Tone.context.state !== 'running') Tone.context.resume();
+            if (Tone.context.state !== "running") Tone.context.resume();
             Tone.Transport.start("+0.1");
         },
+
         pause: () => Tone.Transport.pause(),
+
         stop: () => {
             Tone.Transport.stop();
             Tone.Transport.cancel();
             Tone.Transport.seconds = 0;
         },
-        seek: (s) => Tone.Transport.seconds = s,
-        mixerData: { instruments: danceInstruments, volumeMap: danceVolumeMap }
+
+        seek: s => {
+            Tone.Transport.seconds = s;
+        },
+
+        mixerData: {
+            instruments: danceInstruments,
+            volumeMap: danceVolumeMap
+        }
     };
 }
