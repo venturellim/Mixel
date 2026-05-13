@@ -54,8 +54,8 @@ export const leadSynthBrass1 = new Tone.Sampler({
     urls: { 
     C3: "Samples/Synth/LeadSynthBrass1/C3.mp3", 
     C4: "Samples/Synth/LeadSynthBrass1/C4.mp3",
-    "F#3": "Samples/Synth/LeadSynthBrass1/F#3.mp3",
-    "F#4": "Samples/Synth/LeadSynthBrass1/F#4.mp3"
+    "F#3": "Samples/Synth/LeadSynthBrass1/Fs3.mp3",
+    "F#4": "Samples/Synth/LeadSynthBrass1/Fs4.mp3"
     },
     release: 1.2,
     onload: () => registerInstrumentLoaded("Synth Brass 1")
@@ -66,8 +66,8 @@ export const leadSynthBrass2 = new Tone.Sampler({
     urls: { 
     C3: "Samples/Synth/LeadSynthBrass2/C3.mp3", 
     C4: "Samples/Synth/LeadSynthBrass2/C4.mp3",
-    "F#3": "Samples/Synth/LeadSynthBrass2/F#3.mp3",
-    "F#4": "Samples/Synth/LeadSynthBrass2/F#4.mp3"
+    "F#3": "Samples/Synth/LeadSynthBrass2/Fs3.mp3",
+    "F#4": "Samples/Synth/LeadSynthBrass2/Fs4.mp3"
     },
     release: 1.2,
     onload: () => registerInstrumentLoaded("Synth Brass 2")
@@ -172,9 +172,9 @@ export const glassPad = new Tone.Sampler({
 export const shakuPad = new Tone.Sampler({
     urls: {  
     C3: "Samples/Synth/ShakuPad/C3.mp3", 
-    "F#3": "Samples/Synth/ShakuPad/F#3.mp3", 
+    "F#3": "Samples/Synth/ShakuPad/Fs3.mp3", 
     C4: "Samples/Synth/ShakuPad/C4.mp3",
-    "F#4": "Samples/Synth/ShakuPad/F#4.mp3"
+    "F#4": "Samples/Synth/ShakuPad/Fs4.mp3"
     },
     release: 1.2,
     onload: () => registerInstrumentLoaded("Shaku")
@@ -198,9 +198,9 @@ export const StStringPad = new Tone.Sampler({
 export const warmPad = new Tone.Sampler({
     urls: {  
     C3: "Samples/Synth/WarmPad/C3.mp3", 
-    "F#3": "Samples/Synth/WarmPad/F#3.mp3", 
+    "F#3": "Samples/Synth/WarmPad/Fs3.mp3", 
     C4: "Samples/Synth/WarmPad/C4.mp3",
-    "F#4": "Samples/Synth/WarmPad/F#4.mp3"
+    "F#4": "Samples/Synth/WarmPad/Fs4.mp3"
     },
     release: 1.2,
     onload: () => registerInstrumentLoaded("Warm")
@@ -222,35 +222,35 @@ export const wavePad = new Tone.Sampler({
 // --- ORGANO 2 ---
 export const organo = new Tone.Sampler({
     urls: {  
-    "A#1": "Samples/Synth/Organo/A#1.mp3",
-    "A#2": "Samples/Synth/Organo/A#2.mp3", 
+    "A#1": "Samples/Synth/Organo/As1.mp3",
+    "A#2": "Samples/Synth/Organo/As2.mp3", 
     A1: "Samples/Synth/Organo/A1.mp3",
     A2: "Samples/Synth/Organo/A2.mp3", 
     B1: "Samples/Synth/Organo/B1.mp3",
     B2: "Samples/Synth/Organo/B2.mp3",
-    "C#1": "Samples/Synth/Organo/C#1.mp3",
-    "C#2": "Samples/Synth/Organo/C#2.mp3",
-    "C#3": "Samples/Synth/Organo/C#3.mp3",
+    "C#1": "Samples/Synth/Organo/Cs1.mp3",
+    "C#2": "Samples/Synth/Organo/Cs2.mp3",
+    "C#3": "Samples/Synth/Organo/Cs3.mp3",
     C1: "Samples/Synth/Organo/C1.mp3", 
     C2: "Samples/Synth/Organo/C2.mp3",
     C3: "Samples/Synth/Organo/C3.mp3", 
     D1: "Samples/Synth/Organo/D1.mp3",
     D2: "Samples/Synth/Organo/D2.mp3", 
     D3: "Samples/Synth/Organo/D3.mp3",
-    "D#1": "Samples/Synth/Organo/D#1.mp3",
-    "D#2": "Samples/Synth/Organo/D#2.mp3", 
-    "D#3": "Samples/Synth/Organo/D#3.mp3",
+    "D#1": "Samples/Synth/Organo/Ds1.mp3",
+    "D#2": "Samples/Synth/Organo/Ds2.mp3", 
+    "D#3": "Samples/Synth/Organo/Ds3.mp3",
     E1: "Samples/Synth/Organo/E1.mp3",
     E2: "Samples/Synth/Organo/E2.mp3", 
     E3: "Samples/Synth/Organo/E3.mp3",
-    "F#1": "Samples/Synth/Organo/F#1.mp3",
-    "F#2": "Samples/Synth/Organo/F#2.mp3", 
-    "F#3": "Samples/Synth/Organo/F#3.mp3",
+    "F#1": "Samples/Synth/Organo/Fs1.mp3",
+    "F#2": "Samples/Synth/Organo/Fs2.mp3", 
+    "F#3": "Samples/Synth/Organo/Fs3.mp3",
     F1: "Samples/Synth/Organo/F1.mp3",
     F2: "Samples/Synth/Organo/F2.mp3", 
     F3: "Samples/Synth/Organo/F3.mp3",
-    "G#1": "Samples/Synth/Organo/G#1.mp3",
-    "G#2": "Samples/Synth/Organo/G#2.mp3", 
+    "G#1": "Samples/Synth/Organo/Gs1.mp3",
+    "G#2": "Samples/Synth/Organo/Gs2.mp3", 
     G1: "Samples/Synth/Organo/G1.mp3",
     G2: "Samples/Synth/Organo/G2.mp3", 
     G3: "Samples/Synth/Organo/G3.mp3"
@@ -270,14 +270,14 @@ export const piano = new Tone.Sampler({
     C5: "Samples/Synth/Piano/C5.mp3", 
     C6: "Samples/Synth/Piano/C6.mp3",
     C7: "Samples/Synth/Piano/C7.mp3", 
-    "F#0": "Samples/Synth/Piano/F#0.mp3",
-    "F#1": "Samples/Synth/Piano/F#1.mp3",
-    "F#2": "Samples/Synth/Piano/F#2.mp3",
-    "F#3": "Samples/Synth/Piano/F#3.mp3",
-    "F#4": "Samples/Synth/Piano/F#4.mp3",
-    "F#5": "Samples/Synth/Piano/F#5.mp3",
-    "F#6": "Samples/Synth/Piano/F#6.mp3",
-    "F#7": "Samples/Synth/Piano/F#7.mp3"
+    "F#0": "Samples/Synth/Piano/Fs0.mp3",
+    "F#1": "Samples/Synth/Piano/Fs1.mp3",
+    "F#2": "Samples/Synth/Piano/Fs2.mp3",
+    "F#3": "Samples/Synth/Piano/Fs3.mp3",
+    "F#4": "Samples/Synth/Piano/Fs4.mp3",
+    "F#5": "Samples/Synth/Piano/Fs5.mp3",
+    "F#6": "Samples/Synth/Piano/Fs6.mp3",
+    "F#7": "Samples/Synth/Piano/Fs7.mp3"
     },
     release: 1.5,
 onload: () => registerInstrumentLoaded("Piano")
@@ -289,7 +289,7 @@ export const bass = new Tone.Sampler({
     C2: "Samples/Synth/Bass/C2.mp3",
     C3: "Samples/Synth/Bass/C3.mp3",
     E2: "Samples/Synth/Bass/E2.mp3",
-    "F#3": "Samples/Synth/Bass/F#3.mp3"
+    "F#3": "Samples/Synth/Bass/Fs3.mp3"
     },
     release: 2,
 onload: () => registerInstrumentLoaded("Basso")
