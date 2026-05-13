@@ -3,7 +3,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("danceInstruments.js ver. 002.2 loaded");
+console.log("danceInstruments.js ver. 002.3 loaded");
 
 // --- RIVERBERO ---
 const hallReverb = new Tone.Reverb({
