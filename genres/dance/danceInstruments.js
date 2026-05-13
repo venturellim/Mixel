@@ -3,7 +3,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("danceInstruments.js ver. 002.3 loaded");
+console.log("danceInstruments.js ver. 002.4 loaded");
 
 // --- RIVERBERO ---
 const hallReverb = new Tone.Reverb({
@@ -76,7 +76,7 @@ export const leadSynthBrass2 = new Tone.Sampler({
 // SWEET
 
 export const fxSweep = new Tone.Sampler({
-  urls: { C4: "Samples/Synth/FxSweet/C4.mp3" },
+  urls: { C4: "Samples/Synth/FxSweep/C4.mp3" },
   release: 1.2,
   onload: () => registerInstrumentLoaded("Sweep")
 }).connect(fxBus);
