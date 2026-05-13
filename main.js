@@ -16,7 +16,7 @@ import { createOrchestraEngine } from "./genres/orchestra/orchestraEngine.js";
 import { createDanceEngine } from "./genres/dance/danceEngine.js";
 import { scoreVisualizer } from "./scoreUI.js";
 
-console.log("main.js Ver. 017 loaded");
+console.log("main.js Ver. 017.1 loaded");
 
 
 let currentEngine = null;
@@ -25,7 +25,7 @@ let firstStart = 1;
 let scoreUI = null;
 
 const genteInstrument = {
-    dance: 11,
+    dance: 19,
     metal: 5,
     orchestra: 5,
     piano: 1

@@ -4,7 +4,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("common.js ver. 019.2 FINALE loaded");
+console.log("common.js ver. 019.3 FINALE loaded");
 
 // ======================================================
 // 🎚 MASTER BUS & MASTERING
@@ -253,12 +253,8 @@ export async function waitForInstruments(genres) {
     hideWin11UI();
 }
 
-let __loadedCount = 0;
-let __totalInstruments = 0;
-
-export function registerInstrumentLoaded() {
-    __loadedCount++;
-    console.log("📦 registerInstrumentLoaded: " + __loadedCount + "/" + __totalInstruments);
+export function registerInstrumentLoaded(instrument) {
+    console.log(`📦 instrument: ${instrument} loaded`);
 }
 
 // ======================================================
