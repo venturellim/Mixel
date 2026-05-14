@@ -1,15 +1,19 @@
 // danceRhythmEngine.js — Kick/Clap/Hat + Bassline + Pad + FX
+// VER 006 CON LOG DI DEBUG COMPLETI
 import * as Tone from "https://esm.sh/tone";
 
 import { normalizeNote } from "./danceInstruments.js";
 
-console.log("danceRhythmEngine.js ver. 005 FINALE loaded");
+console.log("danceRhythmEngine.js ver. 006 DEBUG loaded");
 
 // ------------------------------------------------------------
-// FUNZIONI DI SICUREZZA
+// FUNZIONI DI SICUREZZA CON LOG
 // ------------------------------------------------------------
 
 function safeTrigger(instrument, note, duration, time, velocity = 0.5, instrumentName = "unknown") {
+    // Log parametri ricevuti
+    console.log(`🔍 [safeTrigger] ${instrumentName}: note=${note}, duration=${duration}, time=${time}, vel=${velocity}`);
+    
     if (!instrument) {
         console.warn(`⚠️ ${instrumentName}: instrument is null/undefined`);
         return false;
@@ -30,16 +34,38 @@ function safeTrigger(instrument, note, duration, time, velocity = 0.5, instrumen
         return false;
     }
     
+    // VALIDAZIONE DURATION
+    let safeDuration = duration;
+    if (duration === undefined || duration === null || isNaN(duration)) {
+        console.warn(`⚠️ ${instrumentName}: invalid duration "${duration}", using "8n"`);
+        safeDuration = "8n";
+    }
+    
+    if (typeof safeDuration === 'number' && safeDuration <= 0) {
+        console.warn(`⚠️ ${instrumentName}: duration <= 0 (${safeDuration}), using 0.1`);
+        safeDuration = 0.1;
+    }
+    
+    // Validazione velocity
+    let safeVelocity = velocity;
+    if (velocity === undefined || velocity === null || isNaN(velocity)) {
+        safeVelocity = 0.5;
+    }
+    
     try {
-        instrument.triggerAttackRelease(note, duration, time, velocity);
+        console.log(`✅ [safeTrigger] Executing: ${instrumentName}.triggerAttackRelease("${note}", ${safeDuration}, ${time}, ${safeVelocity})`);
+        instrument.triggerAttackRelease(note, safeDuration, time, safeVelocity);
         return true;
     } catch (e) {
-        console.warn(`⚠️ ${instrumentName} failed for note ${note}:`, e.message);
+        console.error(`❌ ${instrumentName} failed for note ${note}:`, e.message);
+        console.trace();
         return false;
     }
 }
 
 function safePlayPercussion(percussion, soundName, time, score, sectionName) {
+    console.log(`🔍 [percussion] Playing ${soundName} at time ${time}`);
+    
     if (!percussion || !percussion.player) {
         console.warn(`⚠️ Percussion not ready for ${soundName}`);
         return false;
@@ -59,6 +85,7 @@ function safePlayPercussion(percussion, soundName, time, score, sectionName) {
     try {
         player.start(time);
         if (score) score.addNote("Drums", soundName, sectionName);
+        console.log(`✅ [percussion] Started ${soundName} at ${time}`);
         return true;
     } catch (e) {
         console.warn(`⚠️ Failed to play "${soundName}":`, e.message);
@@ -83,6 +110,8 @@ function bassGigi(root, t0, sixteenth, bass, score, sectionName) {
     const pattern = [1,0,0,1, 0,0,1,0, 1,0,0,1, 0,0,1,0];
     const bassOctave = getBassOctave(root);
     const note = root + bassOctave;
+    
+    console.log(`🎸 [Bass Gigi] root=${root}, note=${note}, t0=${t0}`);
 
     pattern.forEach((p, i) => {
         if (!p) return;
@@ -97,6 +126,8 @@ function bassGigi(root, t0, sixteenth, bass, score, sectionName) {
 function bassPrezioso(root, t0, eighth, bass, score, sectionName) {
     const bassOctave = getBassOctave(root);
     const note = root + bassOctave;
+    
+    console.log(`🎸 [Bass Prezioso] root=${root}, note=${note}, t0=${t0}`);
     
     for (let i = 0; i < 8; i++) {
         const t = t0 + i * eighth;
@@ -117,6 +148,8 @@ function bassEiffel(root, t0, sixteenth, bass, score, sectionName) {
     } catch (e) {
         fifth = rootNote;
     }
+    
+    console.log(`🎸 [Bass Eiffel] root=${root}, rootNote=${rootNote}, fifth=${fifth}, t0=${t0}`);
 
     for (let i = 0; i < 16; i++) {
         const t = t0 + i * sixteenth;
@@ -132,8 +165,10 @@ function bassGabry(root, t0, sixteenth, bass, score, sectionName) {
     const bassOctave = getBassOctave(root);
     const low  = root + bassOctave;
     const high = root + (parseInt(bassOctave) + 1);
-
+    
     const pattern = [low, null, high, null, low, high, null, null];
+    
+    console.log(`🎸 [Bass Gabry] low=${low}, high=${high}, t0=${t0}`);
 
     pattern.forEach((note, i) => {
         if (!note) return;
@@ -186,6 +221,7 @@ function getSafePadNote(rawNote, padName) {
                 best = safe;
             }
         }
+        console.log(`🔍 [Pad] Normalized ${rawNote} → ${best} for ${padName}`);
         return best;
     } catch (e) {
         return safeNotes[0];
@@ -204,6 +240,9 @@ export function scheduleDanceRhythm(
     score,
     rand
 ) {
+    console.log(`🎬 [scheduleDanceRhythm] START section: ${section.name}, style: ${style}`);
+    console.log(`📊 section object:`, JSON.stringify({ name: section.name, measures: section.measures, startTime: section.startTime }));
+    
     try {
         const {
             percussion,
@@ -237,6 +276,17 @@ export function scheduleDanceRhythm(
         const step = measureDur / 4;
         const eighth = measureDur / 8;
         const sixteenth = measureDur / 16;
+        const quarterNote = measureDur / 4;
+        
+        console.log(`🎵 BPM=${bpm}, measureDur=${measureDur}, step=${step}, eighth=${eighth}, sixteenth=${sixteenth}`);
+
+        // VALIDAZIONE CRITICA: section.measures
+        if (section.measures === undefined || section.measures === null) {
+            console.error(`❌ section.measures is undefined for section ${section.name}!`, section);
+            return;
+        }
+        
+        console.log(`📏 Section ${section.name} has ${section.measures} measures`);
 
         const name = section.name.toLowerCase();
         const isBuild = name.includes("build");
@@ -244,6 +294,8 @@ export function scheduleDanceRhythm(
         const isBreak = name.includes("break");
         const isIntro = name.includes("intro");
         const isChorus = name.includes("chorus");
+        
+        console.log(`🎯 Section flags: isBuild=${isBuild}, isDrop=${isDrop}, isBreak=${isBreak}, isIntro=${isIntro}, isChorus=${isChorus}`);
 
         const bassFn = styleBass[style] || bassPrezioso;
 
@@ -257,6 +309,8 @@ export function scheduleDanceRhythm(
             GabryPonte:[{ inst: warmPad, name: "warmPad" }, { inst: wavePad, name: "wavePad" }]
         };
         const [padA, padB] = padSets[style] || padSets.Prezioso;
+        
+        console.log(`🎹 Pads: A=${padA?.name}, B=${padB?.name}`);
 
         const scaleType = params?.scaleType || params?.imageParams?.scaleType || "naturalMinor";
 
@@ -266,6 +320,8 @@ export function scheduleDanceRhythm(
             major:         [0, 4, 7]
         };
         const intervals = triads[scaleType] || triads.naturalMinor;
+        
+        console.log(`🎼 Scale: ${scaleType}, intervals: [${intervals}]`);
 
         // ------------------------------------------------------------
         // TONAL CENTER
@@ -281,12 +337,16 @@ export function scheduleDanceRhythm(
         
         const safeRootForBass = normalizeNote(rootNoteRaw, "bass");
         const safeRootForPad = normalizeNote(rootNoteRaw, "pad");
+        
+        console.log(`🎵 Tonal: ${tonal}, rootRaw=${rootNoteRaw}, safeBass=${safeRootForBass}, safePad=${safeRootForPad}`);
 
         function buildChord(root, padName) {
             try {
                 const baseMidi = Tone.Frequency(root + "3").toMidi();
                 const rawNotes = intervals.map(semi => Tone.Frequency(baseMidi + semi, "midi").toNote());
-                return rawNotes.map(note => getSafePadNote(note, padName));
+                const safeNotes = rawNotes.map(note => getSafePadNote(note, padName));
+                console.log(`🎹 [buildChord] root=${root}, raw=${rawNotes}, safe=${safeNotes}`);
+                return safeNotes;
             } catch (e) {
                 console.warn("⚠️ buildChord failed:", e.message);
                 return [root + "3", root + "4"];
@@ -299,6 +359,8 @@ export function scheduleDanceRhythm(
         if (isDrop)  padGain = 0.7;
         if (isBreak) padGain = 0.1;
         if (isChorus) padGain = 0.6;
+        
+        console.log(`🎚️ Pad gain: ${padGain}`);
 
         // FX note sicura
         const fxNote = "C4";
@@ -307,9 +369,14 @@ export function scheduleDanceRhythm(
         // FX BUILD-UP
         // ------------------------------------------------------------
         if (isBuild) {
+            console.log(`🔊 Scheduling BUILD FX for section ${section.name}`);
+            
             if (fxSweep) {
+                const sweepDuration = (measureDur && section.measures) ? measureDur * section.measures : 4;
+                console.log(`🔊 Sweep duration: ${sweepDuration} seconds`);
+                
                 Tone.Transport.schedule(time => {
-                    safeTrigger(fxSweep, fxNote, measureDur * section.measures, time, 0.6, "Sweep");
+                    safeTrigger(fxSweep, fxNote, sweepDuration, time, 0.6, "Sweep");
                     if (score) score.addNote("FX", "Sweep", section.name);
                 }, section.startTime);
             }
@@ -327,6 +394,7 @@ export function scheduleDanceRhythm(
 
         // FX DROP IMPACT
         if (isDrop) {
+            console.log(`💥 Scheduling DROP FX for section ${section.name}`);
             const tImpact = section.startTime;
             
             if (fxHardFTCore) {
@@ -346,6 +414,7 @@ export function scheduleDanceRhythm(
 
         // FX BREAK
         if (isBreak && fxFantasy) {
+            console.log(`🌊 Scheduling BREAK FX for section ${section.name}`);
             Tone.Transport.schedule(time => {
                 safeTrigger(fxFantasy, fxNote, "1n", time, 0.4, "Fantasy");
                 if (score) score.addNote("FX", "Fantasy", section.name);
@@ -355,8 +424,11 @@ export function scheduleDanceRhythm(
         // ------------------------------------------------------------
         // LOOP MISURE
         // ------------------------------------------------------------
+        console.log(`🔄 Starting measure loop for ${section.measures} measures`);
+        
         for (let m = 0; m < section.measures; m++) {
             const t0 = section.startTime + m * measureDur;
+            console.log(`📐 Measure ${m}/${section.measures}, t0=${t0.toFixed(3)}`);
 
             // CRASH all'inizio sezione
             if (m === 0) {
@@ -406,6 +478,8 @@ export function scheduleDanceRhythm(
             // PAD: accordi per misura
             if (padA && padA.inst) {
                 const chordA = buildChord(safeRootForPad, padA.name);
+                console.log(`🎹 PadA chord at t0=${t0}: ${chordA.join(", ")}`);
+                
                 Tone.Transport.schedule(time => {
                     chordA.forEach(n => {
                         safeTrigger(padA.inst, n, measureDur * 0.95, time, padGain, padA.name);
@@ -416,6 +490,8 @@ export function scheduleDanceRhythm(
             
             if (padB && padB.inst) {
                 const chordB = buildChord(safeRootForPad, padB.name);
+                console.log(`🎹 PadB chord at t0=${t0}: ${chordB.join(", ")}`);
+                
                 Tone.Transport.schedule(time => {
                     chordB.forEach(n => {
                         safeTrigger(padB.inst, n, measureDur * 0.95, time, padGain * 0.8, padB.name);
@@ -425,14 +501,17 @@ export function scheduleDanceRhythm(
             
             // BASSLINE
             try {
+                console.log(`🎸 Scheduling bassline at t0=${t0}`);
                 bassFn(safeRootForBass, t0, sixteenth, bass, score, section.name);
             } catch (e) {
                 console.warn("⚠️ Bassline failed:", e.message);
             }
         }
+        
+        console.log(`✅ [scheduleDanceRhythm] END section: ${section.name}`);
+        
     } catch (outerError) {
-        console.error("❌ FATAL ERROR in scheduleDanceRhythm:", outerError);
+        console.error(`❌ FATAL ERROR in scheduleDanceRhythm for section ${section?.name}:`, outerError);
         console.trace();
     }
 }
-
