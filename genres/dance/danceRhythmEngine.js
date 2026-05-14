@@ -1,7 +1,7 @@
 // danceRhythmEngine.js — Kick/Clap/Hat + Bassline + Pad + FX
 import * as Tone from "https://esm.sh/tone";
 
-console.log("danceRhythmEngine.js ver. 002.1 loaded");
+console.log("danceRhythmEngine.js ver. 002.3 loaded");
 
 // ------------------------------------------------------------
 //  BASSLINE FUNCTIONS
@@ -125,8 +125,7 @@ export function scheduleDanceRhythm(
     };
     const [padA, padB] = padSets[style] || [warmPad, wavePad];
 
-    const rootNote = params.harmony.tonalCenter.replace(/[0-9]/g, "");
-    const scaleType = params.harmony.scaleProfile;
+    const scaleType = params?.scaleType || params?.imageParams?.scaleType || "naturalMinor";
 
     const triads = {
         naturalMinor:  [0, 3, 7],
@@ -146,6 +145,24 @@ export function scheduleDanceRhythm(
     if (isDrop)  padGain = 0.7;
     if (isBreak) padGain = 0.1;
     if (isChorus) padGain = 0.6;
+
+// ------------------------------------------------------------
+// TONAL CENTER FIX (robusto e coerente)
+// ------------------------------------------------------------
+let tonal = params?.tonalCenter ?? params?.imageParams?.tonalCenter ?? "C4";
+
+// fallback se formato invalido
+if (typeof tonal !== "string" || tonal.length < 2) {
+    tonal = "C4";
+}
+
+// estrai nota e ottava (es. "F#3" → "F#", "3")
+const match = tonal.match(/^([A-G][#b]?)(\d)$/);
+const rootNote = match ? match[1] : "C";
+const rootOct  = match ? match[2] : "4";
+
+// radice sicura per bassline
+const safeRoot = rootNote;
 
     const chord = buildChord(rootNote);
 
@@ -256,27 +273,12 @@ export function scheduleDanceRhythm(
                 if (score) score.addNote("Pad", n, section.name);
             });
         }, t0);
-
-        // ------------------------------------------------------------
-// TONAL CENTER FIX (evita errori null → setValueAtTime)
-// ------------------------------------------------------------
-let tonal = params.harmony.tonalCenter;
-
-// fallback sicuro se tonalCenter è null/undefined/vuoto
-if (!tonal || typeof tonal !== "string" || tonal.length < 1) {
-    tonal = "C3";
-}
-
-// estrai la nota senza l’ottava (es. "F#3" → "F#")
-const root = tonal.replace(/[0-9]/g, "");
-
-// fallback finale se qualcosa va storto
-const safeRoot = root || "C";
-
+        
 // ------------------------------------------------------------
 // BASSLINE
 // ------------------------------------------------------------
 bassFn(safeRoot, t0, sixteenth, bass, score, section.name);
+
 
     }
 }

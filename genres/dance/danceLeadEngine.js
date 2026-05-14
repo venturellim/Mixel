@@ -35,9 +35,20 @@ export function scheduleDanceLead(
     const sixteenth = measureDur / 16;
     const eighth = measureDur / 8;
 
-    // Tonalità
-    const root = params.harmony.tonalCenter.replace(/[0-9]/g, "");
-    const scaleType = params.harmony.scaleProfile;
+    // ------------------------------------------------------------
+// TONAL CENTER FIX (robusto e coerente)
+// ------------------------------------------------------------
+let tonal = params?.tonalCenter ?? params?.imageParams?.tonalCenter ?? "C4";
+
+if (typeof tonal !== "string" || tonal.length < 2) {
+    tonal = "C4";
+}
+
+const match = tonal.match(/^([A-G][#b]?)(\d)$/);
+const rootNote = match ? match[1] : "C";
+const rootOct  = match ? match[2] : "4";
+
+    const scaleType = params?.scaleType || params?.imageParams?.scaleType || "naturalMinor";
 
     // Scala (semplice)
     const scales = {
@@ -47,10 +58,11 @@ export function scheduleDanceLead(
     const intervals = scales[scaleType] || scales.naturalMinor;
 
     function scaleNote(degree, octave = 4) {
-        const base = Tone.Frequency(root + octave).toMidi();
-        const semi = intervals[degree % intervals.length];
-        return Tone.Frequency(base + semi, "midi").toNote();
-    }
+    const base = Tone.Frequency(rootNote + octave).toMidi();
+    const semi = intervals[degree % intervals.length];
+    return Tone.Frequency(base + semi, "midi").toNote();
+}
+
 
     // ------------------------------------------------------------
     // 1. PATTERN LEAD PER STILE

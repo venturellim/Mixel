@@ -10,7 +10,7 @@ import { scheduleDanceLead } from "./danceLeadEngine.js";
 
 import { waitForInstruments } from "../../common.js";
 
-console.log("danceEngine.js ver. 001 loaded");
+console.log("danceEngine.js ver. 001.1 loaded");
 
 // ------------------------------------------------------------
 //  WAIT FOR INSTRUMENTS
@@ -34,8 +34,6 @@ function createSeededRandom(seed) {
 //  MAIN ENGINE
 // ------------------------------------------------------------
 export function createDanceEngine(params, score) {
-console.log("Tonal center:", params.harmony.tonalCenter);
-
     // Random deterministico
     const rand = createSeededRandom(params.dna);
 
