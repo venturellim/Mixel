@@ -253,8 +253,10 @@ export async function waitForInstruments(genres) {
     hideWin11UI();
 }
 
+let count = 0;
+
 export function registerInstrumentLoaded(instrument) {
-    console.log(`📦 instrument: ${instrument} loaded`);
+    console.log(`${count}. 📦 instrument: ${instrument} loaded`);
 }
 
 // ======================================================
