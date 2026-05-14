@@ -31,7 +31,7 @@ export const piano = new Tone.Sampler({
     baseUrl: "Samples/Piano/",
     //baseUrl: "https://tonejs.github.io/audio/salamander/",
     onload: () => {
-        registerInstrumentLoaded("Piano");
+        registerInstrumentLoaded("Pianoforte");
     }
 }).connect(pianoReverb);
 
