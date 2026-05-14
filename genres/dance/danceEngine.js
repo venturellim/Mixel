@@ -1,28 +1,20 @@
-// danceEngine.js — ver. 001 (complete)
+// danceEngine.js — versione corretta
 import * as Tone from "https://esm.sh/tone";
 
 import { chooseDanceStyle } from "./chooseDanceStyle.js";
 import { buildDanceParams } from "./danceParams.js";
-
 import { danceInstruments, danceVolumeMap } from "./danceInstruments.js";
 import { scheduleDanceRhythm } from "./danceRhythmEngine.js";
 import { scheduleDanceLead } from "./danceLeadEngine.js";
-
 import { waitForInstruments } from "../../common.js";
 
-console.log("danceEngine.js ver. 001.1 loaded");
+console.log("danceEngine.js ver. 002 FIXED loaded");
 
-// ------------------------------------------------------------
-//  WAIT FOR INSTRUMENTS
-// ------------------------------------------------------------
 export async function waitDanceInstruments() {
     const total = Object.keys(danceInstruments).length;
     await waitForInstruments(total, "Dance");
 }
 
-// ------------------------------------------------------------
-//  SEED RANDOM (deterministico, come nel metal)
-// ------------------------------------------------------------
 function createSeededRandom(seed) {
     return function () {
         seed = (seed * 16807) % 2147483647;
@@ -30,27 +22,19 @@ function createSeededRandom(seed) {
     };
 }
 
-// ------------------------------------------------------------
-//  MAIN ENGINE
-// ------------------------------------------------------------
 export function createDanceEngine(params, score) {
-    // Random deterministico
     const rand = createSeededRandom(params.dna);
-
-    // Stile dance (Gigi / Prezioso / Eiffel65 / GabryPonte)
     const style = chooseDanceStyle(params.dna, params.global);
-
-    // Parametri dance (BPM, tonalità, scala, densità…)
     const danceParams = buildDanceParams(rand, params.global);
 
-    // Reset transport
+    // RESET COMPLETO del Transport
     Tone.Transport.stop();
-    Tone.Transport.cancel();
+    Tone.Transport.cancel(0);  // ← cancella TUTTO
     Tone.Transport.bpm.value = danceParams.bpm;
-
-    // ------------------------------------------------------------
-    //  STRUTTURA DEL BRANO (intro → build → drop → break → chorus → outro)
-    // ------------------------------------------------------------
+    
+    // IMPORTANTE: resetta i parametri interni
+    Tone.Transport.seconds = 0;
+    
     const structure = [
         { name: "intro",  measures: 4 },
         { name: "build",  measures: 4 },
@@ -60,7 +44,6 @@ export function createDanceEngine(params, score) {
         { name: "outro",  measures: 4 }
     ];
 
-    // Calcolo startTime per ogni sezione
     let currentTime = 0;
     const measureDur = (60 / danceParams.bpm) * 4;
 
@@ -69,56 +52,69 @@ export function createDanceEngine(params, score) {
         currentTime += sec.measures * measureDur;
     });
 
-    // ------------------------------------------------------------
-    //  SCHEDULAZIONE SEZIONI
-    // ------------------------------------------------------------
-    structure.forEach(sec => {
+    // Verifica che gli strumenti siano pronti PRIMA di schedulare
+    const allInstrumentsReady = () => {
+        const instruments = [
+            danceInstruments.percussion,
+            danceInstruments.bass,
+            danceInstruments.leadSaw,
+            danceInstruments.leadSynthBrass1,
+            danceInstruments.leadSynthBrass2,
+            danceInstruments.piano
+        ];
+        
+        for (const inst of instruments) {
+            if (!inst) {
+                console.warn("⚠️ Instrument not ready:", inst);
+                return false;
+            }
+            // Per i sampler, controlla se hanno loaded
+            if (inst.loaded === false) {
+                console.warn("⚠️ Sampler not loaded yet");
+                return false;
+            }
+        }
+        return true;
+    };
+    
+    if (!allInstrumentsReady()) {
+        console.warn("⚠️ Not all instruments ready, scheduling might fail");
+    }
 
-        // Log visivo (come nel metal)
+    structure.forEach(sec => {
         Tone.Transport.schedule(() => {
-            console.log(
-                `%c ▶ DANCE | ${sec.name.toUpperCase()} | STYLE: ${style}`,
-                "color:#ff1493; font-weight:bold;"
-            );
+            console.log(`%c ▶ DANCE | ${sec.name.toUpperCase()} | STYLE: ${style}`, "color:#ff1493; font-weight:bold;");
         }, sec.startTime);
 
-        // Ritmica (kick, clap, hat, bassline, pad, FX)
-        scheduleDanceRhythm(
-            sec,
-            danceInstruments,
-            danceParams,
-            style,
-            score,
-            rand
-        );
-
-        // Lead melodici/ritmici
-        scheduleDanceLead(
-            sec,
-            danceInstruments,
-            danceParams,
-            style,
-            score,
-            rand
-        );
+        scheduleDanceRhythm(sec, danceInstruments, danceParams, style, score, rand);
+        scheduleDanceLead(sec, danceInstruments, danceParams, style, score, rand);
     });
 
-    // ------------------------------------------------------------
-    //  API PUBBLICA (identica al metalEngine)
-    // ------------------------------------------------------------
     return {
         totalDuration: currentTime,
 
-        play: () => {
-            if (Tone.context.state !== "running") Tone.context.resume();
+        play: async () => {
+            // Attendi che il contesto sia attivo
+            if (Tone.context.state !== "running") {
+                console.log("🎵 Avvio contesto audio...");
+                await Tone.context.resume();
+            }
+            
+            // Piccolo delay per garantire che tutto sia pronto
+            await new Promise(r => setTimeout(r, 50));
+            
+            // Avvia il transport
             Tone.Transport.start("+0.1");
+            console.log("🎵 Transport avviato");
         },
 
-        pause: () => Tone.Transport.pause(),
+        pause: () => {
+            Tone.Transport.pause();
+        },
 
         stop: () => {
             Tone.Transport.stop();
-            Tone.Transport.cancel();
+            Tone.Transport.cancel(0);
             Tone.Transport.seconds = 0;
         },
 
