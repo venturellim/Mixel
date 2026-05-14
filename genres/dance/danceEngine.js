@@ -8,20 +8,8 @@ import { scheduleDanceRhythm } from "./danceRhythmEngine.js";
 import { scheduleDanceLead } from "./danceLeadEngine.js";
 import { waitForInstruments } from "../../common.js";
 
-console.log("danceEngine.js ver. 003 RIFATTO loaded");
+console.log("danceEngine.js ver. 004 loaded");
 
-// ------------------------------------------------------------
-// WAIT FOR INSTRUMENTS
-// ------------------------------------------------------------
-export async function waitDanceInstruments() {
-    // Crea un oggetto con i contatori degli strumenti Dance
-    const danceInstrumentCount = {
-        dance: 19  // ← numero totale di strumenti dance
-    };
-    console.log("🎵 Attendo caricamento strumenti Dance...");
-    await waitForInstruments(danceInstrumentCount);
-    console.log("✅ Strumenti Dance pronti!");
-}
 // ------------------------------------------------------------
 // SEED RANDOM
 // ------------------------------------------------------------
@@ -37,9 +25,6 @@ function createSeededRandom(seed) {
 // ------------------------------------------------------------
 export async function createDanceEngine(params, score) {
     console.log("🎬 createDanceEngine START");
-    
-    // 1. ASPETTA che gli strumenti siano pronti
-    await waitDanceInstruments();
     
     // 2. Verifica che Tone.context sia avviato
     if (Tone.context.state !== "running") {
