@@ -1,130 +1,162 @@
-// danceEngine.js — versione corretta
+// danceRhythmEngine.js — ver. 007 FINALE
 import * as Tone from "https://esm.sh/tone";
+import { normalizeNote } from "./danceInstruments.js";
 
-import { chooseDanceStyle } from "./chooseDanceStyle.js";
-import { buildDanceParams } from "./danceParams.js";
-import { danceInstruments, danceVolumeMap } from "./danceInstruments.js";
-import { scheduleDanceRhythm } from "./danceRhythmEngine.js";
-import { scheduleDanceLead } from "./danceLeadEngine.js";
-import { waitForInstruments } from "../../common.js";
+console.log("danceRhythmEngine.js ver. 007 FINALE loaded");
 
-console.log("danceEngine.js ver. 002 FIXED loaded");
-
-export async function waitDanceInstruments() {
-    const total = Object.keys(danceInstruments).length;
-    await waitForInstruments(total, "Dance");
-}
-
-function createSeededRandom(seed) {
-    return function () {
-        seed = (seed * 16807) % 2147483647;
-        return (seed - 1) / 2147483646;
-    };
-}
-
-export function createDanceEngine(params, score) {
-    const rand = createSeededRandom(params.dna);
-    const style = chooseDanceStyle(params.dna, params.global);
-    const danceParams = buildDanceParams(rand, params.global);
-
-    // RESET COMPLETO del Transport
-    Tone.Transport.stop();
-    Tone.Transport.cancel(0);  // ← cancella TUTTO
-    Tone.Transport.bpm.value = danceParams.bpm;
+// ------------------------------------------------------------
+// SAFE TRIGGER
+// ------------------------------------------------------------
+function safeTrigger(instrument, note, duration, time, velocity = 0.5, name = "unknown") {
+    if (!instrument) return false;
+    if (typeof instrument.triggerAttackRelease !== 'function') return false;
+    if (!note || typeof note !== 'string') return false;
+    if (time === undefined || time === null || isNaN(time)) return false;
     
-    // IMPORTANTE: resetta i parametri interni
-    Tone.Transport.seconds = 0;
-    
-    const structure = [
-        { name: "intro",  measures: 4 },
-        { name: "build",  measures: 4 },
-        { name: "drop",   measures: 8 },
-        { name: "break",  measures: 4 },
-        { name: "chorus", measures: 8 },
-        { name: "outro",  measures: 4 }
-    ];
-
-    let currentTime = 0;
-    const measureDur = (60 / danceParams.bpm) * 4;
-
-    structure.forEach(sec => {
-        sec.startTime = currentTime;
-        currentTime += sec.measures * measureDur;
-    });
-
-    // Verifica che gli strumenti siano pronti PRIMA di schedulare
-    const allInstrumentsReady = () => {
-        const instruments = [
-            danceInstruments.percussion,
-            danceInstruments.bass,
-            danceInstruments.leadSaw,
-            danceInstruments.leadSynthBrass1,
-            danceInstruments.leadSynthBrass2,
-            danceInstruments.piano
-        ];
-        
-        for (const inst of instruments) {
-            if (!inst) {
-                console.warn("⚠️ Instrument not ready:", inst);
-                return false;
-            }
-            // Per i sampler, controlla se hanno loaded
-            if (inst.loaded === false) {
-                console.warn("⚠️ Sampler not loaded yet");
-                return false;
-            }
-        }
-        return true;
-    };
-    
-    if (!allInstrumentsReady()) {
-        console.warn("⚠️ Not all instruments ready, scheduling might fail");
+    // Validazione duration
+    let safeDuration = duration;
+    if (duration === undefined || duration === null || isNaN(duration)) {
+        safeDuration = "8n";
     }
+    
+    try {
+        instrument.triggerAttackRelease(note, safeDuration, time, velocity);
+        return true;
+    } catch (e) {
+        console.warn(`⚠️ ${name} failed:`, e.message);
+        return false;
+    }
+}
 
-    structure.forEach(sec => {
-        Tone.Transport.schedule(() => {
-            console.log(`%c ▶ DANCE | ${sec.name.toUpperCase()} | STYLE: ${style}`, "color:#ff1493; font-weight:bold;");
-        }, sec.startTime);
+function safePercussion(perc, sound, time, score, section) {
+    if (!perc || !perc.player) return;
+    const player = perc.player(sound);
+    if (!player) return;
+    if (time === undefined || isNaN(time)) return;
+    
+    try {
+        player.start(time);
+        if (score) score.addNote("Drums", sound, section);
+    } catch (e) {}
+}
 
-        scheduleDanceRhythm(sec, danceInstruments, danceParams, style, score, rand);
-        scheduleDanceLead(sec, danceInstruments, danceParams, style, score, rand);
-    });
+// ------------------------------------------------------------
+// BASSLINE
+// ------------------------------------------------------------
+function getBassOctave(root) {
+    const octave2 = ["C", "E"];
+    const octave3 = ["C", "F#"];
+    if (octave2.includes(root)) return "2";
+    if (octave3.includes(root)) return "3";
+    return "2";
+}
 
-    return {
-        totalDuration: currentTime,
+function bassPrezioso(root, t0, eighth, bass, score, section) {
+    const note = root + getBassOctave(root);
+    for (let i = 0; i < 8; i++) {
+        const t = t0 + i * eighth;
+        Tone.Transport.schedule(time => {
+            safeTrigger(bass, note, "16n", time, 0.6, "Bass");
+            if (score) score.addNote("Bass", note, section);
+        }, t);
+    }
+}
 
-        play: async () => {
-            // Attendi che il contesto sia attivo
-            if (Tone.context.state !== "running") {
-                console.log("🎵 Avvio contesto audio...");
-                await Tone.context.resume();
+const styleBass = { Prezioso: bassPrezioso, Gigi: bassPrezioso, Eiffel65: bassPrezioso, GabryPonte: bassPrezioso };
+
+// ------------------------------------------------------------
+// MAIN
+// ------------------------------------------------------------
+export function scheduleDanceRhythm(section, instruments, params, style, score, rand) {
+    try {
+        const { percussion, bass, warmPad, wavePad, glassPad, bellsPad, StStringPad, fxSweep, fxNoise, fxJump, fxFantasy, fxHardFTCore } = instruments;
+        
+        if (!percussion || !bass) return;
+        
+        const bpm = params.bpm;
+        if (!bpm || isNaN(bpm)) return;
+        
+        const measureDur = (60 / bpm) * 4;
+        const step = measureDur / 4;
+        const eighth = measureDur / 8;
+        const sixteenth = measureDur / 16;
+        
+        const isBuild = section.name.includes("build");
+        const isDrop = section.name.includes("drop");
+        const isBreak = section.name.includes("break");
+        const isIntro = section.name.includes("intro");
+        
+        // Tonal center
+        let tonal = params?.tonalCenter ?? "C4";
+        const match = tonal.match(/^([A-G][#b]?)/);
+        const rootRaw = match ? match[1] : "C";
+        const safeRoot = normalizeNote(rootRaw, "bass");
+        
+        // Pad setup
+        const padA = { inst: warmPad, name: "warmPad" };
+        const padB = { inst: wavePad, name: "wavePad" };
+        
+        let padGain = 0.4;
+        if (isIntro) padGain = 0.2;
+        if (isBuild) padGain = 0.15;
+        if (isDrop) padGain = 0.7;
+        if (isBreak) padGain = 0.1;
+        
+        // FX
+        if (isBuild && fxSweep) {
+            Tone.Transport.schedule(time => {
+                safeTrigger(fxSweep, "C4", measureDur * section.measures, time, 0.5, "Sweep");
+            }, section.startTime);
+        }
+        
+        if (isDrop && fxHardFTCore) {
+            Tone.Transport.schedule(time => {
+                safeTrigger(fxHardFTCore, "C4", "2n", time, 0.8, "Impact");
+            }, section.startTime);
+        }
+        
+        // Loop misure
+        for (let m = 0; m < section.measures; m++) {
+            const t0 = section.startTime + m * measureDur;
+            
+            // Crash
+            if (m === 0) {
+                Tone.Transport.schedule(time => safePercussion(percussion, "crash", time, score, section.name), t0);
             }
             
-            // Piccolo delay per garantire che tutto sia pronto
-            await new Promise(r => setTimeout(r, 50));
+            // Kick
+            for (let i = 0; i < 4; i++) {
+                if (isBreak && i !== 0) continue;
+                Tone.Transport.schedule(time => safePercussion(percussion, "bassDrum", time, score, section.name), t0 + i * step);
+            }
             
-            // Avvia il transport
-            Tone.Transport.start("+0.1");
-            console.log("🎵 Transport avviato");
-        },
-
-        pause: () => {
-            Tone.Transport.pause();
-        },
-
-        stop: () => {
-            Tone.Transport.stop();
-            Tone.Transport.cancel(0);
-            Tone.Transport.seconds = 0;
-        },
-
-        seek: s => {
-            Tone.Transport.seconds = s;
-        },
-
-        mixerData: {
-            instruments: danceInstruments,
-            volumeMap: danceVolumeMap
+            // Clap
+            if (!isIntro) {
+                [1, 3].forEach(i => {
+                    Tone.Transport.schedule(time => safePercussion(percussion, "handClap", time, score, section.name), t0 + i * step);
+                });
+            }
+            
+            // Hi-hat
+            for (let i = 0; i < 8; i++) {
+                if (isBuild || isDrop || i % 2 === 0) {
+                    Tone.Transport.schedule(time => safePercussion(percussion, "closedHat", time, score, section.name), t0 + i * eighth);
+                }
+            }
+            
+            // Pad
+            const chordNote = safeRoot + "3";
+            Tone.Transport.schedule(time => {
+                if (padA.inst) safeTrigger(padA.inst, chordNote, measureDur * 0.95, time, padGain, padA.name);
+                if (padB.inst) safeTrigger(padB.inst, chordNote, measureDur * 0.95, time, padGain * 0.8, padB.name);
+                if (score) score.addNote("Pad", chordNote, section.name);
+            }, t0);
+            
+            // Bass
+            const bassFn = styleBass[style] || bassPrezioso;
+            bassFn(safeRoot, t0, sixteenth, bass, score, section.name);
         }
-    };
+    } catch (e) {
+        console.error("❌ scheduleDanceRhythm error:", e);
+    }
 }
