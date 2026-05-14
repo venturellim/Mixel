@@ -14,12 +14,14 @@ console.log("danceEngine.js ver. 003 RIFATTO loaded");
 // WAIT FOR INSTRUMENTS
 // ------------------------------------------------------------
 export async function waitDanceInstruments() {
-    const total = Object.keys(danceInstruments).length;
+    // Crea un oggetto con i contatori degli strumenti Dance
+    const danceInstrumentCount = {
+        dance: 19  // ← numero totale di strumenti dance
+    };
     console.log("🎵 Attendo caricamento strumenti Dance...");
-    await waitForInstruments(total, "Dance");
+    await waitForInstruments(danceInstrumentCount);
     console.log("✅ Strumenti Dance pronti!");
 }
-
 // ------------------------------------------------------------
 // SEED RANDOM
 // ------------------------------------------------------------
