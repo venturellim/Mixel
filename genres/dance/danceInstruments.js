@@ -320,6 +320,8 @@ export function setVolume(busName, dbValue) {
     if (bus) bus.gain.value = Tone.dbToGain(dbValue);
 }
 
+// Aggiungi questa funzione a danceInstruments.js (sostituisci quella esistente)
+
 export function normalizeNote(note, instrument) {
     if (!note || typeof note !== "string") return "C";
 
@@ -327,34 +329,44 @@ export function normalizeNote(note, instrument) {
     const match = note.match(/^([A-G][#b]?)/);
     const root = match ? match[1] : "C";
 
-    // NOTE DISPONIBILI PER OGNI STRUMENTO DANCE
+    // NOTE DISPONIBILI PER OGNI STRUMENTO DANCE (MAPPATURA COMPLETA)
     const availableNotes = {
-        bass:      ["A", "A#", "C", "D#", "E", "F#", "F", "G"],
+        bass:      ["A", "A#", "C", "D#", "E", "F", "F#", "G"],
         pad:       ["C", "E", "F#", "G#", "A"],
         lead:      ["C", "E", "G#"],
         fx:        ["C", "E", "G#"],
         organo:    ["A","A#","B","C","C#","D","D#","E","F","F#","G","G#"],
-        piano:     ["C","F#","A"], // semplificato
+        piano:     ["C", "F#"],  // piano ha molte note, ma principalmente C e F#
+        percussion: ["C"],        // percussioni non usano note melodiche
         default:   ["C","D","E","F","G","A","B"]
     };
 
     const list = availableNotes[instrument] || availableNotes.default;
 
-    // Se la nota è disponibile → OK
+    // Se la nota è già disponibile → OK
     if (list.includes(root)) return root;
 
-    // Altrimenti scegli la più vicina
-    const order = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
-    const idx = order.indexOf(root);
+    // Altrimenti trova la più vicina nella scala cromatica
+    const chromaticScale = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+    const targetIndex = chromaticScale.indexOf(root);
+    
+    // Se la nota non è nella scala cromatica (es. "B#"), fallback a C
+    if (targetIndex === -1) return "C";
 
     let best = list[0];
-    let bestDist = Infinity;
+    let bestDist = 12; // distanza massima possibile
 
-    for (const n of list) {
-        const dist = Math.abs(order.indexOf(n) - idx);
+    for (const candidate of list) {
+        const candidateIndex = chromaticScale.indexOf(candidate);
+        if (candidateIndex === -1) continue;
+        
+        // Distanza circolare (avvolge l'ottava)
+        let dist = Math.abs(candidateIndex - targetIndex);
+        dist = Math.min(dist, 12 - dist);
+        
         if (dist < bestDist) {
             bestDist = dist;
-            best = n;
+            best = candidate;
         }
     }
 
