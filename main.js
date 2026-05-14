@@ -16,7 +16,7 @@ import { createOrchestraEngine } from "./genres/orchestra/orchestraEngine.js";
 import { createDanceEngine } from "./genres/dance/danceEngine.js";
 import { scoreVisualizer } from "./scoreUI.js";
 
-console.log("main.js Ver. 017.1 loaded");
+console.log("main.js Ver. 017.2 loaded");
 
 
 let currentEngine = null;
@@ -33,6 +33,14 @@ const genteInstrument = {
 
 const miniVideo = document.querySelector('.video-mini-wrapper video'); 
 
+// Debug: intercetta l'errore globale
+window.addEventListener('error', function(e) {
+    console.error('Global error:', e.message, e.filename, e.lineno);
+    if (e.message.includes('setValueAtTime')) {
+        console.trace();
+        debugger;  // Si ferma qui
+    }
+});
 
 // -------------------------------------------------------------
 // Error handler globale
