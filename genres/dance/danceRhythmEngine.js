@@ -1,7 +1,7 @@
 // danceRhythmEngine.js — Kick/Clap/Hat + Bassline + Pad + FX
 import * as Tone from "https://esm.sh/tone";
 
-console.log("danceRhythmEngine.js ver. 002 loaded");
+console.log("danceRhythmEngine.js ver. 002.1 loaded");
 
 // ------------------------------------------------------------
 //  BASSLINE FUNCTIONS
@@ -125,8 +125,8 @@ export function scheduleDanceRhythm(
     };
     const [padA, padB] = padSets[style] || [warmPad, wavePad];
 
-    const rootNote = params.tonalCenter.replace(/[0-9]/g, "");
-    const scaleType = params.scaleType;
+    const rootNote = params.harmony.tonalCenter.replace(/[0-9]/g, "");
+    const scaleType = params.harmony.scaleProfile;
 
     const triads = {
         naturalMinor:  [0, 3, 7],
@@ -260,7 +260,7 @@ export function scheduleDanceRhythm(
         // ------------------------------------------------------------
 // TONAL CENTER FIX (evita errori null → setValueAtTime)
 // ------------------------------------------------------------
-let tonal = params.tonalCenter;
+let tonal = params.harmony.tonalCenter;
 
 // fallback sicuro se tonalCenter è null/undefined/vuoto
 if (!tonal || typeof tonal !== "string" || tonal.length < 1) {

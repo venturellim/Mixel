@@ -1,6 +1,8 @@
 // danceLeadEngine.js — Lead ritmici/melodici per Dance Engine
 import * as Tone from "https://esm.sh/tone";
 
+console.log("danceLeadEngine.js ver. 001 loaded");
+
 export function scheduleDanceLead(
     section,
     instruments,
@@ -34,8 +36,8 @@ export function scheduleDanceLead(
     const eighth = measureDur / 8;
 
     // Tonalità
-    const root = params.tonalCenter.replace(/[0-9]/g, "");
-    const scaleType = params.scaleType;
+    const root = params.harmony.tonalCenter.replace(/[0-9]/g, "");
+    const scaleType = params.harmony.scaleProfile;
 
     // Scala (semplice)
     const scales = {
