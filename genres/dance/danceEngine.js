@@ -1,166 +1,79 @@
-// danceEngine.js — ver. 003 COMPLETAMENTE RIFATTO
+// danceEngineNew.js - Versione minimal e funzionante
 import * as Tone from "https://esm.sh/tone";
+import { danceInstruments } from "./danceInstruments.js";
+import { masterEQ } from "../../common.js";
 
-import { chooseDanceStyle } from "./chooseDanceStyle.js";
-import { buildDanceParams } from "./danceParams.js";
-import { danceInstruments, danceVolumeMap } from "./danceInstruments.js";
-import { scheduleDanceRhythm } from "./danceRhythmEngine.js";
-import { scheduleDanceLead } from "./danceLeadEngine.js";
-import { waitForInstruments } from "../../common.js";
+console.log("🎵 DANCE ENGINE NEW - versione minimal");
 
-console.log("danceEngine.js ver. 004 loaded");
+// Connessione diretta al master (senza riverberi complessi)
+Object.values(danceInstruments).forEach(inst => {
+    if (inst && typeof inst.connect === 'function') {
+        try { inst.connect(masterEQ); } catch(e) {}
+    }
+});
 
-// ------------------------------------------------------------
-// SEED RANDOM
-// ------------------------------------------------------------
-function createSeededRandom(seed) {
-    return function () {
-        seed = (seed * 16807) % 2147483647;
-        return (seed - 1) / 2147483646;
+export function createDanceEngine(params, score) {
+    const bpm = 128;
+    const rootNote = "C";
+    const measures = 32; // 32 battute totali
+    
+    Tone.Transport.stop();
+    Tone.Transport.cancel();
+    Tone.Transport.bpm.value = bpm;
+    
+    const measureDur = (60 / bpm) * 4;
+    const totalDuration = measures * measureDur;
+    
+    console.log(`🎵 Dance Engine: BPM=${bpm}, durata=${totalDuration}s`);
+    
+    // SCHEDULA UN SEMPLICE PATTERN 4/4
+    for (let m = 0; m < measures; m++) {
+        const t0 = m * measureDur;
+        
+        // Kick su ogni beat
+        for (let beat = 0; beat < 4; beat++) {
+            const time = t0 + beat * measureDur / 4;
+            Tone.Transport.schedule(() => {
+                danceInstruments.percussion?.player("bassDrum")?.start();
+                if (score) score.addNote("Kick", "beat", "pattern");
+            }, time);
+        }
+        
+        // Bassline semplice (sul primo beat di ogni misura)
+        Tone.Transport.schedule(() => {
+            const bassNote = rootNote + "2";
+            danceInstruments.bass?.triggerAttackRelease(bassNote, "8n");
+            if (score) score.addNote("Bass", bassNote, "pattern");
+        }, t0);
+        
+        // Pad (accordo tenuto)
+        Tone.Transport.schedule(() => {
+            const padNote = rootNote + "3";
+            danceInstruments.warmPad?.triggerAttackRelease(padNote, measureDur * 0.9);
+            if (score) score.addNote("Pad", padNote, "pattern");
+        }, t0);
+    }
+    
+    return {
+        totalDuration,
+        play: () => {
+            if (Tone.context.state !== "running") Tone.context.resume();
+            Tone.Transport.start();
+            console.log("✅ Dance started!");
+        },
+        pause: () => Tone.Transport.pause(),
+        stop: () => {
+            Tone.Transport.stop();
+            Tone.Transport.cancel();
+            Tone.Transport.seconds = 0;
+        },
+        seek: (s) => Tone.Transport.seconds = s,
+        mixerData: { instruments: danceInstruments, volumeMap: {} }
     };
 }
 
-// ------------------------------------------------------------
-// MAIN ENGINE (ASYNC!)
-// ------------------------------------------------------------
-export async function createDanceEngine(params, score) {
-    console.log("🎬 createDanceEngine START");
-    
-    // 2. Verifica che Tone.context sia avviato
-    if (Tone.context.state !== "running") {
-        console.log("🎵 Avvio contesto Tone...");
-        await Tone.context.resume();
-    }
-    
-    // 3. Random deterministico
-    const rand = createSeededRandom(params.dna);
-    
-    // 4. Stile dance
-    const style = chooseDanceStyle(params.dna, params.global);
-    console.log("🎛 Dance style scelto:", style);
-    
-    // 5. Parametri dance
-    const danceParams = buildDanceParams(rand, params.global);
-    console.log("🎵 Dance params:", danceParams);
-    
-    // 6. RESET COMPLETO del Transport
-    Tone.Transport.stop();
-    Tone.Transport.cancel(0);
-    Tone.Transport.seconds = 0;
-    Tone.Transport.bpm.value = danceParams.bpm;
-    
-    console.log("✅ Transport resettato, BPM:", danceParams.bpm);
-    
-    // ------------------------------------------------------------
-    // STRUTTURA DEL BRANO
-    // ------------------------------------------------------------
-    const structure = [
-        { name: "intro",  measures: 4 },
-        { name: "build",  measures: 4 },
-        { name: "drop",   measures: 8 },
-        { name: "break",  measures: 4 },
-        { name: "chorus", measures: 8 },
-        { name: "outro",  measures: 4 }
-    ];
-    
-    // Calcolo startTime per ogni sezione
-    let currentTime = 0;
-    const measureDur = (60 / danceParams.bpm) * 4;
-    
-    structure.forEach(sec => {
-        sec.startTime = currentTime;
-        currentTime += sec.measures * measureDur;
-        console.log(`📐 Sezione ${sec.name}: start=${sec.startTime.toFixed(2)}s, measures=${sec.measures}`);
-    });
-    
-    // ------------------------------------------------------------
-    // SCHEDULAZIONE SEZIONI (con try/catch)
-    // ------------------------------------------------------------
-    structure.forEach(sec => {
-        try {
-            // Log visivo all'inizio di ogni sezione
-            Tone.Transport.schedule(() => {
-                console.log(
-                    `%c ▶ DANCE | ${sec.name.toUpperCase()} | STYLE: ${style} | TIME: ${Tone.Transport.seconds.toFixed(2)}s`,
-                    "color:#ff1493; font-weight:bold;"
-                );
-            }, sec.startTime);
-            
-            // Ritmica (kick, clap, hat, bassline, pad, FX)
-            scheduleDanceRhythm(sec, danceInstruments, danceParams, style, score, rand);
-            
-            // Lead melodici/ritmici
-            scheduleDanceLead(sec, danceInstruments, danceParams, style, score, rand);
-            
-        } catch (e) {
-            console.error(`❌ Errore durante scheduling sezione ${sec.name}:`, e);
-        }
-    });
-    
-    // ------------------------------------------------------------
-    // TIMER DI DEBUG
-    // ------------------------------------------------------------
-    let lastLogTime = 0;
-    Tone.Transport.scheduleRepeat(() => {
-        const now = Tone.Transport.seconds;
-        if (Math.floor(now) > lastLogTime) {
-            lastLogTime = Math.floor(now);
-            console.log(`⏱️ Transport time: ${now.toFixed(1)}s`);
-        }
-    }, 1);
-    
-    // ------------------------------------------------------------
-    // API PUBBLICA
-    // ------------------------------------------------------------
-    return {
-        totalDuration: currentTime,
-        
-        play: async () => {
-            console.log("🎵 play() chiamato");
-            console.log("   - Transport state:", Tone.Transport.state);
-            console.log("   - Transport seconds:", Tone.Transport.seconds);
-            console.log("   - Context state:", Tone.context.state);
-            
-            // Assicura che il contesto sia attivo
-            if (Tone.context.state !== "running") {
-                console.log("🎵 Avvio contesto audio...");
-                await Tone.context.resume();
-                console.log("✅ Contesto audio avviato");
-            }
-            
-            // Piccolo delay per stabilizzare
-            await new Promise(r => setTimeout(r, 50));
-            
-            // Reset finale prima della partenza
-            Tone.Transport.cancel(0);
-            Tone.Transport.seconds = 0;
-            
-            // START SENZA ARGOMENTI (non "+0.1")
-            Tone.Transport.start();
-            console.log("✅ Transport avviato");
-        },
-        
-        pause: () => {
-            console.log("⏸️ Pause");
-            Tone.Transport.pause();
-        },
-        
-        stop: () => {
-            console.log("⏹️ Stop");
-            Tone.Transport.stop();
-            Tone.Transport.cancel(0);
-            Tone.Transport.seconds = 0;
-            if (score) score.hide();
-        },
-        
-        seek: (s) => {
-            console.log(`⏩ Seek to ${s}s`);
-            Tone.Transport.seconds = s;
-        },
-        
-        mixerData: {
-            instruments: danceInstruments,
-            volumeMap: danceVolumeMap
-        }
-    };
+export async function waitDanceInstruments() {
+    console.log("⏳ Attendo strumenti Dance...");
+    await Tone.loaded();
+    console.log("✅ Strumenti Dance pronti!");
 }
