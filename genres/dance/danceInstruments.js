@@ -3,7 +3,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("danceInstruments.js ver. 002.4 loaded");
+console.log("danceInstruments.js ver. 003 loaded");
 
 // --- RIVERBERO ---
 const hallReverb = new Tone.Reverb({
@@ -128,7 +128,7 @@ export const fxJump = new Tone.Sampler({
     onload: () => registerInstrumentLoaded("Jump")
 }).connect(fxBus);
 
-// HARD FIR THE CORE
+// HARD FOR THE CORE
 
 export const fxHardFTCore = new Tone.Sampler({
     urls: { 
@@ -318,6 +318,47 @@ export function setVolume(busName, dbValue) {
     const mixer = { leadSaw: leadBus, leadSynthBrass1: leadBus, leadSynthBrass2: leadBus, fxFantasy: fxBus, fxHeaven: fxBus, fxJump: fxBus, bass: bassBus, fxHardFTCore: fxBus, organo: organoBus, percussion: percussionBus, piano: pianoBus};
     const bus = mixer[busName];
     if (bus) bus.gain.value = Tone.dbToGain(dbValue);
+}
+
+export function normalizeNote(note, instrument) {
+    if (!note || typeof note !== "string") return "C";
+
+    // Estrai nota senza ottava (es. "F#3" → "F#")
+    const match = note.match(/^([A-G][#b]?)/);
+    const root = match ? match[1] : "C";
+
+    // NOTE DISPONIBILI PER OGNI STRUMENTO DANCE
+    const availableNotes = {
+        bass:      ["A", "A#", "C", "D#", "E", "F#", "F", "G"],
+        pad:       ["C", "E", "F#", "G#", "A"],
+        lead:      ["C", "E", "G#"],
+        fx:        ["C", "E", "G#"],
+        organo:    ["A","A#","B","C","C#","D","D#","E","F","F#","G","G#"],
+        piano:     ["C","F#","A"], // semplificato
+        default:   ["C","D","E","F","G","A","B"]
+    };
+
+    const list = availableNotes[instrument] || availableNotes.default;
+
+    // Se la nota è disponibile → OK
+    if (list.includes(root)) return root;
+
+    // Altrimenti scegli la più vicina
+    const order = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+    const idx = order.indexOf(root);
+
+    let best = list[0];
+    let bestDist = Infinity;
+
+    for (const n of list) {
+        const dist = Math.abs(order.indexOf(n) - idx);
+        if (dist < bestDist) {
+            bestDist = dist;
+            best = n;
+        }
+    }
+
+    return best;
 }
 
 setVolume("leadSaw", +6);

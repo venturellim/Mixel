@@ -1,7 +1,9 @@
 // danceRhythmEngine.js — Kick/Clap/Hat + Bassline + Pad + FX
 import * as Tone from "https://esm.sh/tone";
 
-console.log("danceRhythmEngine.js ver. 002.3 loaded");
+import { normalizeNote } from "./danceInstruments.js";
+
+console.log("danceRhythmEngine.js ver. 003 loaded");
 
 // ------------------------------------------------------------
 //  BASSLINE FUNCTIONS
@@ -162,9 +164,10 @@ const rootNote = match ? match[1] : "C";
 const rootOct  = match ? match[2] : "4";
 
 // radice sicura per bassline
-const safeRoot = rootNote;
+const safeRoot = normalizeNote(rootNote, "bass");
 
-    const chord = buildChord(rootNote);
+    const chordRoot = normalizeNote(rootNote, "pad");
+const chord = buildChord(chordRoot);
 
     // ------------------------------------------------------------
     // FX BUILD-UP GLOBALI (una volta per sezione)

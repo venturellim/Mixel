@@ -1,6 +1,8 @@
 // danceLeadEngine.js — Lead ritmici/melodici per Dance Engine
 import * as Tone from "https://esm.sh/tone";
 
+import { normalizeNote } from "./danceInstruments.js";
+
 console.log("danceLeadEngine.js ver. 001 loaded");
 
 export function scheduleDanceLead(
@@ -45,7 +47,7 @@ if (typeof tonal !== "string" || tonal.length < 2) {
 }
 
 const match = tonal.match(/^([A-G][#b]?)(\d)$/);
-const rootNote = match ? match[1] : "C";
+const rootNote = normalizeNote(match ? match[1] : "C", "lead");
 const rootOct  = match ? match[2] : "4";
 
     const scaleType = params?.scaleType || params?.imageParams?.scaleType || "naturalMinor";
