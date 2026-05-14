@@ -1,59 +1,74 @@
-// danceEngineNew.js - Versione minimal e funzionante
+// danceEngineNEW.js - STEP 1: Parametri dinamici dall'immagine
 import * as Tone from "https://esm.sh/tone";
 import { danceInstruments } from "./danceInstruments.js";
+import { scheduleRhythmNEW } from "./danceRhythmEngineNEW.js";
 import { masterEQ } from "../../common.js";
 
-console.log("🎵 DANCE ENGINE NEW - versione minimal");
+console.log("🎵 DANCE ENGINE NEW - STEP 1 (parametri dinamici)");
 
-// Connessione diretta al master (senza riverberi complessi)
+// Connessione semplice al master
 Object.values(danceInstruments).forEach(inst => {
-    if (inst && typeof inst.connect === 'function') {
+    if (inst?.connect) {
         try { inst.connect(masterEQ); } catch(e) {}
     }
 });
 
+export async function waitDanceInstruments() {
+    await Tone.loaded();
+    console.log("✅ Dance instruments ready");
+}
+
 export function createDanceEngine(params, score) {
-    const bpm = 128;
-    const rootNote = "C";
-    const measures = 32; // 32 battute totali
+    // ------------------------------------------------------------
+    // 1. ESTRAI PARAMETRI DALLA FOTO
+    // ------------------------------------------------------------
+    const intensity = params.global?.intensity ?? 0.5;
+    const mood = params.global?.mood ?? 0.5;
+    const complexity = params.global?.complexity ?? 0.5;
     
+    // BPM: da 110 (tranquillo) a 150 (energico)
+    const bpm = Math.round(110 + intensity * 40);
+    
+    // Tonalità: in base alla luminosità/mood
+    const tonics = mood > 0.6 ? ["C", "G", "D"] : ["A", "E", "F"];
+    const tonic = tonics[Math.floor(Math.random() * tonics.length)];
+    const rootNote = tonic;
+    
+    // Scala: maggiore se mood alto, minore se mood basso
+    const scaleType = mood > 0.5 ? "major" : "naturalMinor";
+    
+    // Durata brano: in base alla complessità (32-64 battute)
+    const measures = Math.floor(32 + complexity * 32);
+    const measureDur = (60 / bpm) * 4;
+    const totalDuration = measures * measureDur;
+    
+    console.log("🎵 Parametri Dance dalla foto:");
+    console.log(`   - Intensity: ${intensity.toFixed(2)} → BPM: ${bpm}`);
+    console.log(`   - Mood: ${mood.toFixed(2)} → Tonalità: ${rootNote} ${scaleType}`);
+    console.log(`   - Complexity: ${complexity.toFixed(2)} → Misure: ${measures}`);
+    
+    // ------------------------------------------------------------
+    // 2. RESET TRANSPORT
+    // ------------------------------------------------------------
     Tone.Transport.stop();
     Tone.Transport.cancel();
     Tone.Transport.bpm.value = bpm;
     
-    const measureDur = (60 / bpm) * 4;
-    const totalDuration = measures * measureDur;
+    // ------------------------------------------------------------
+    // 3. SCHEDULA CON PARAMETRI DINAMICI
+    // ------------------------------------------------------------
+    scheduleRhythmNEW(danceInstruments, score, {
+        bpm,
+        rootNote,
+        scaleType,
+        measures,
+        intensity,
+        mood
+    });
     
-    console.log(`🎵 Dance Engine: BPM=${bpm}, durata=${totalDuration}s`);
-    
-    // SCHEDULA UN SEMPLICE PATTERN 4/4
-    for (let m = 0; m < measures; m++) {
-        const t0 = m * measureDur;
-        
-        // Kick su ogni beat
-        for (let beat = 0; beat < 4; beat++) {
-            const time = t0 + beat * measureDur / 4;
-            Tone.Transport.schedule(() => {
-                danceInstruments.percussion?.player("bassDrum")?.start();
-                if (score) score.addNote("Kick", "beat", "pattern");
-            }, time);
-        }
-        
-        // Bassline semplice (sul primo beat di ogni misura)
-        Tone.Transport.schedule(() => {
-            const bassNote = rootNote + "2";
-            danceInstruments.bass?.triggerAttackRelease(bassNote, "8n");
-            if (score) score.addNote("Bass", bassNote, "pattern");
-        }, t0);
-        
-        // Pad (accordo tenuto)
-        Tone.Transport.schedule(() => {
-            const padNote = rootNote + "3";
-            danceInstruments.warmPad?.triggerAttackRelease(padNote, measureDur * 0.9);
-            if (score) score.addNote("Pad", padNote, "pattern");
-        }, t0);
-    }
-    
+    // ------------------------------------------------------------
+    // 4. API
+    // ------------------------------------------------------------
     return {
         totalDuration,
         play: () => {
@@ -70,10 +85,4 @@ export function createDanceEngine(params, score) {
         seek: (s) => Tone.Transport.seconds = s,
         mixerData: { instruments: danceInstruments, volumeMap: {} }
     };
-}
-
-export async function waitDanceInstruments() {
-    console.log("⏳ Attendo strumenti Dance...");
-    await Tone.loaded();
-    console.log("✅ Strumenti Dance pronti!");
 }
