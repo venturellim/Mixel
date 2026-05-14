@@ -34,6 +34,7 @@ function createSeededRandom(seed) {
 //  MAIN ENGINE
 // ------------------------------------------------------------
 export function createDanceEngine(params, score) {
+console.log("Tonal center:", params.tonalCenter);
 
     // Random deterministico
     const rand = createSeededRandom(params.dna);
