@@ -256,6 +256,7 @@ export async function waitForInstruments(genres) {
 let count = 0;
 
 export function registerInstrumentLoaded(instrument) {
+    count++;
     console.log(`${count}. 📦 instrument: ${instrument} loaded`);
 }
 
