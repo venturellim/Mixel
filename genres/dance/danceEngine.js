@@ -1,7 +1,7 @@
 // danceEngineNEW.js - STEP 1: Parametri dinamici dall'immagine
 import * as Tone from "https://esm.sh/tone";
 import { danceInstruments } from "./danceInstruments.js";
-import { scheduleRhythmNEW } from "./danceRhythmEngineNEW.js";
+import { scheduleRhythmNEW } from "./danceRhythmEngine.js";
 import { masterEQ } from "../../common.js";
 
 console.log("🎵 DANCE ENGINE NEW - STEP 1 (parametri dinamici)");
