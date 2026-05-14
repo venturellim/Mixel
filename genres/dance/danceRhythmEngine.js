@@ -1,6 +1,8 @@
 // danceRhythmEngine.js — Kick/Clap/Hat + Bassline + Pad + FX
 import * as Tone from "https://esm.sh/tone";
 
+console.log("danceRhythmEngine.js ver. 002 loaded");
+
 // ------------------------------------------------------------
 //  BASSLINE FUNCTIONS
 // ------------------------------------------------------------
@@ -255,9 +257,27 @@ export function scheduleDanceRhythm(
             });
         }, t0);
 
-        // BASSLINE
-        const root = params.tonalCenter[0]; // es. "E"
-        bassFn(root, t0, sixteenth, bass, score, section.name);
+        // ------------------------------------------------------------
+// TONAL CENTER FIX (evita errori null → setValueAtTime)
+// ------------------------------------------------------------
+let tonal = params.tonalCenter;
+
+// fallback sicuro se tonalCenter è null/undefined/vuoto
+if (!tonal || typeof tonal !== "string" || tonal.length < 1) {
+    tonal = "C3";
+}
+
+// estrai la nota senza l’ottava (es. "F#3" → "F#")
+const root = tonal.replace(/[0-9]/g, "");
+
+// fallback finale se qualcosa va storto
+const safeRoot = root || "C";
+
+// ------------------------------------------------------------
+// BASSLINE
+// ------------------------------------------------------------
+bassFn(safeRoot, t0, sixteenth, bass, score, section.name);
+
     }
 }
 
