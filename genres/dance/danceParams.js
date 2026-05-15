@@ -1,10 +1,14 @@
 // danceParams.js — ver. FUZZY 1.0
-console.log("danceParams.js Ver. 002 loaded");
+console.log("danceParams.js Ver. 002.1 loaded");
+
+function stretch(x) {
+    return Math.min(1, Math.max(0, (x - 0.2) / 0.6));
+}
 
 export function buildDanceParams(rand, globalParams, rhythmParams) {
-    const intensity  = globalParams?.intensity  ?? 0.5;
-    const mood       = globalParams?.mood       ?? 0.5;
-    const complexity = globalParams?.complexity ?? 0.5;
+    const intensity  = stretch(globalParams?.intensity  ?? 0.5);
+const mood       = stretch(globalParams?.mood       ?? 0.5);
+const complexity = stretch(globalParams?.complexity ?? 0.5);
 
     // BPM dalla foto (range dance classico)
     const imageBpm = rhythmParams?.tempoProfile || 130;
