@@ -1,54 +1,83 @@
-// danceParams.js — ver. 005 (compositionMode guida lo stile)
-console.log("danceParams.js ver. 005 loaded");
+// danceParams.js — ver. FUZZY 1.0
+console.log("danceParams.js Ver. 002.2 loaded");
+
+function stretch(x) {
+    return Math.min(1, Math.max(0, (x - 0.2) / 0.6));
+}
+
+function num(x, fallback = 0.5) {
+    const n = Number(x);
+    return isNaN(n) ? fallback : Math.min(1, Math.max(0, n));
+}
 
 export function buildDanceParams(rand, globalParams, rhythmParams) {
-    const intensity = globalParams?.intensity ?? 0.5;
-    const mood = globalParams?.mood ?? 0.5;
-    const complexity = globalParams?.complexity ?? 0.5;
-    
-    // BPM dalla foto (normalizzato)
-    const imageBpm = rhythmParams?.tempoProfile || 130;
-    let bpm;
-    if (imageBpm <= 130) bpm = 130;
-    else if (imageBpm >= 150) bpm = 150;
-    else bpm = 140;
-    
-    // Tonal center e scala
-    const tonalCenter = rhythmParams?.tonalCenter || "C4";
-    const scaleType = rhythmParams?.scaleProfile || "naturalMinor";
-    
-    // DETERMINA LO STILE DANCE IN BASE AI PARAMETRI DELLA FOTO
-    let compositionMode;
-    let style;
-    
-    // GIGI D'AGOSTINO (dream/piano, emotive, bassa intensità)
-    if (intensity < 0.45 && complexity < 0.55) {
-    style = "Gigi";
-}
-else if (complexity > 0.6) {
-    style = "Eiffel65";
-}
-else if (mood > 0.55 && intensity > 0.5) {
-    style = "GabryPonte";
-}
-else {
-    style = "Prezioso";
-}
+    const intensity  = num(globalParams?.intensity, 0.5);
+const mood       = num(globalParams?.mood, 0.5);
+const complexity = num(globalParams?.complexity, 0.5);
 
-    
-    console.log("🎧 Dance style dalla foto:");
-    console.log(`   - Stile: ${style} (${compositionMode})`);
-    console.log(`   - BPM: ${bpm} (originale: ${imageBpm})`);
-    console.log(`   - Tonal center: ${tonalCenter}`);
-    console.log(`   - Scala: ${scaleType}`);
-    console.log(`   - Intensity: ${intensity.toFixed(2)}, Mood: ${mood.toFixed(2)}, Complexity: ${complexity.toFixed(2)}`);
-    
+
+    // BPM dalla foto (range dance classico)
+    const imageBpm = rhythmParams?.tempoProfile || 130;
+    let bpm = Math.min(150, Math.max(130, imageBpm));
+
+    // Tonalità e scala dalla foto
+    const tonalCenter = rhythmParams?.tonalCenter || "C4";
+    const scaleType   = rhythmParams?.scaleProfile || "naturalMinor";
+
+    // ------------------------------------------------------------
+// ⭐ FUZZY SCORING — stile determinato dalla foto (v2)
+// ------------------------------------------------------------
+
+// GIGI: soft, dream, bassa intensità e bassa complessità
+const gigiScore =
+    (1 - intensity)  * 0.4 +
+    (1 - complexity) * 0.3 +
+    (1 - mood)       * 0.3;
+
+// EIFFEL65: robotico, complessità alta, energia medio‑alta
+const eiffelScore =
+    complexity * 0.6 +
+    intensity  * 0.2 +
+    (1 - mood) * 0.2;
+
+// GABRY PONTE: anthem, luminoso, energico
+const gabryScore =
+    mood      * 0.6 +
+    intensity * 0.3 +
+    complexity* 0.1;
+
+// PREZIOSO: centro, mid‑range, default ritmico
+const preziosoScore =
+    0.3 +                      // bias di base
+    (0.4 - Math.abs(intensity  - 0.5)) +   // ama intensità medie
+    (0.3 - Math.abs(complexity - 0.5));    // ama complessità medie
+
+// piccoli bias per evitare dominanze
+const scores = {
+    Gigi:       gigiScore      - 0.05,
+    Eiffel65:   eiffelScore,
+    GabryPonte: gabryScore     + 0.02,
+    Prezioso:   preziosoScore  + 0.03
+};
+
+const style = Object.entries(scores).sort((a,b)=>b[1]-a[1])[0][0];
+
+console.log("🎧 FUZZY STYLE SELECTION v2");
+console.log(`   - Gigi:       ${gigiScore.toFixed(3)}`);
+console.log(`   - Eiffel65:   ${eiffelScore.toFixed(3)}`);
+console.log(`   - GabryPonte: ${gabryScore.toFixed(3)}`);
+console.log(`   - Prezioso:   ${preziosoScore.toFixed(3)}`);
+console.log(`👉 Stile scelto: ${style}`);
+
+    // ------------------------------------------------------------
+    // PARAMETRI MUSICALI
+    // ------------------------------------------------------------
     return {
         tonalCenter,
         scaleType,
         bpm,
-        compositionMode,
-        style,  // ← ora lo stile è determinato dai parametri della foto!
+        style,
+        compositionMode: style,
         kickIntensity: 0.8,
         bassEnergy: 0.7 + intensity * 0.2,
         leadDensity: 0.5 + complexity * 0.3,
