@@ -18,10 +18,6 @@ export function buildDanceParams(rand, globalParams, rhythmParams) {
 // ⭐ FUZZY SCORING — stile determinato dalla foto (v2)
 // ------------------------------------------------------------
 
-const intensity  = globalParams?.intensity  ?? 0.5;
-const mood       = globalParams?.mood       ?? 0.5;
-const complexity = globalParams?.complexity ?? 0.5;
-
 // GIGI: soft, dream, bassa intensità e bassa complessità
 const gigiScore =
     (1 - intensity)  * 0.4 +
