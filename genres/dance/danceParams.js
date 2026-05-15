@@ -1,36 +1,63 @@
-// danceParams.js — ver. 002 (compatibile con altri generi)
-console.log("danceParams.js ver. 002 loaded");
+// danceParams.js — ver. 005 (compositionMode guida lo stile)
+console.log("danceParams.js ver. 005 loaded");
 
-export function buildDanceParams(rand) {
-    // TONAL CENTER (come metal, ma range dance)
-    const TONICS = ["C", "D", "E", "F", "G", "A"];
-    const tonic = TONICS[Math.floor(rand() * TONICS.length)];
-    const octave = 4;
-    const tonalCenter = tonic + octave;
-
-    // SCALE TYPE (stesse del metal)
-    const SCALE_TYPES = ["major", "naturalMinor", "harmonicMinor"];
-    const scaleType = SCALE_TYPES[Math.floor(rand() * SCALE_TYPES.length)];
-
-    // BPM (dance range: 120-150)
-    const bpm = Math.floor(120 + rand() * 30);
-
-    let compositionMode = "dance";
-    if (bpm < 128) compositionMode = "deep";
-    if (bpm > 140) compositionMode = "techno";
-
-    console.log("🎧 Modalità dance:", compositionMode, "BPM:", bpm);
-    console.log("🎧 tonalCenter scelto:", tonalCenter);
-    console.log("🎧 scaleType scelto:", scaleType);
-
+export function buildDanceParams(rand, globalParams, rhythmParams) {
+    const intensity = globalParams?.intensity ?? 0.5;
+    const mood = globalParams?.mood ?? 0.5;
+    const complexity = globalParams?.complexity ?? 0.5;
+    
+    // BPM dalla foto (normalizzato)
+    const imageBpm = rhythmParams?.tempoProfile || 130;
+    let bpm;
+    if (imageBpm <= 130) bpm = 130;
+    else if (imageBpm >= 150) bpm = 150;
+    else bpm = 140;
+    
+    // Tonal center e scala
+    const tonalCenter = rhythmParams?.tonalCenter || "C4";
+    const scaleType = rhythmParams?.scaleProfile || "naturalMinor";
+    
+    // DETERMINA LO STILE DANCE IN BASE AI PARAMETRI DELLA FOTO
+    let compositionMode;
+    let style;
+    
+    // GIGI D'AGOSTINO (dream/piano, emotive, bassa intensità)
+    if (intensity < 0.4 && complexity < 0.5) {
+        compositionMode = "dream";
+        style = "Gigi";
+    }
+    // EIFFEL 65 (robotico, ottave, pattern 16th, alta complessità)
+    else if (complexity > 0.7) {
+        compositionMode = "robotic";
+        style = "Eiffel65";
+    }
+    // GABRY PONTE (melodico, anthem, hook, mood alto)
+    else if (mood > 0.6 && intensity > 0.55) {
+        compositionMode = "anthem";
+        style = "GabryPonte";
+    }
+    // PREZIOSO (ritmico, sincopato, default)
+    else {
+        compositionMode = "rhythmic";
+        style = "Prezioso";
+    }
+    
+    console.log("🎧 Dance style dalla foto:");
+    console.log(`   - Stile: ${style} (${compositionMode})`);
+    console.log(`   - BPM: ${bpm} (originale: ${imageBpm})`);
+    console.log(`   - Tonal center: ${tonalCenter}`);
+    console.log(`   - Scala: ${scaleType}`);
+    console.log(`   - Intensity: ${intensity.toFixed(2)}, Mood: ${mood.toFixed(2)}, Complexity: ${complexity.toFixed(2)}`);
+    
     return {
         tonalCenter,
         scaleType,
         bpm,
         compositionMode,
+        style,  // ← ora lo stile è determinato dai parametri della foto!
         kickIntensity: 0.8,
-        bassEnergy: 0.7,
-        leadDensity: 0.6,
-        fxIntensity: 0.5
+        bassEnergy: 0.7 + intensity * 0.2,
+        leadDensity: 0.5 + complexity * 0.3,
+        fxIntensity: 0.3 + intensity * 0.4
     };
 }

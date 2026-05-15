@@ -1,9 +1,9 @@
-// danceLeadEngine.js — ver. 008 (mask-based, come metal)
+// danceLeadEngine.js — ver. 009 (stile-specific instruments)
 import * as Tone from "https://esm.sh/tone";
 import { danceMelodicLibrary, danceRhythmLibrary } from "./danceMasks.js";
 import { applyLeadEnhancer, computeLeadVelocity, shapeBridgeSolo } from "../../utils/leadEnhancers.js";
 
-console.log("danceLeadEngine.js ver. 008 loaded");
+console.log("danceLeadEngine.js ver. 009 loaded");
 
 function getStrictScale(root, isMinor) {
     const allNotes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
@@ -16,10 +16,22 @@ function getStrictScale(root, isMinor) {
     return intervals.map(i => allNotes[(idx + i) % 12]);
 }
 
-function getMelodyFamily(isPreChorus, isChorus, isSolo, energy, brightness, complexity) {
+function getMelodyFamily(isPreChorus, isChorus, isSolo, style, energy, brightness, complexity) {
+    // STILE-SPECIFIC melody families
+    if (style === "Gigi") {
+        if (isSolo) return { name: "EMOTIONAL 💧", data: danceMelodicLibrary.emotional };
+        return { name: "ARPEGGIO 🎸", data: danceMelodicLibrary.arpeggio };
+    }
+    if (style === "Eiffel65") {
+        if (isChorus) return { name: "STACCATO 🎹", data: danceMelodicLibrary.staccato };
+        return { name: "ACTIVE ⚡", data: danceMelodicLibrary.active };
+    }
+    if (style === "GabryPonte") {
+        return { name: "EPIC 🏰", data: danceMelodicLibrary.epic };
+    }
+    // Prezioso (default)
     if (isSolo) {
         if (complexity > 0.6 || energy > 0.7) return { name: "ACTIVE ⚡", data: danceMelodicLibrary.active };
-        if (brightness > 0.5) return { name: "EPIC 🏰", data: danceMelodicLibrary.epic };
         return { name: "STACCATO 🎹", data: danceMelodicLibrary.staccato };
     }
     if (isPreChorus) return { name: "PRE-CHORUS 📈", data: danceMelodicLibrary.prechorus };
@@ -28,17 +40,32 @@ function getMelodyFamily(isPreChorus, isChorus, isSolo, energy, brightness, comp
             ? { name: "EPIC 🏰", data: danceMelodicLibrary.epic }
             : { name: "EMOTIONAL 💧", data: danceMelodicLibrary.emotional };
     }
-    if (energy > 0.7) return { name: "ACTIVE ⚡", data: danceMelodicLibrary.active };
-    if (complexity > 0.6) return { name: "ARPEGGIO 🎸", data: danceMelodicLibrary.arpeggio };
-    return { name: "STACCATO 🎹", data: danceMelodicLibrary.staccato };
+    return { name: "ARPEGGIO 🎸", data: danceMelodicLibrary.arpeggio };
 }
 
+// STILE-SPECIFIC LEAD INSTRUMENTS
+const leadInstruments = {
+    Gigi: (instr) => instr.piano,           // Gigi usa piano
+    Prezioso: (instr) => instr.leadSaw,     // Prezioso usa leadSaw
+    Eiffel65: (instr) => instr.leadSynthBrass1, // Eiffel65 synth robotico
+    GabryPonte: (instr) => instr.leadSynthBrass2 // Gabry synth anthem
+};
+
+// STILE-SPECIFIC OCTAVE
+const leadOctave = {
+    Gigi: 4,           // piano range medio
+    Prezioso: 4,       // saw range medio
+    Eiffel65: 5,       // robotico acuto
+    GabryPonte: 5      // anthem acuto
+};
+
 export function scheduleDanceLead(section, progression, instruments, params, rand, measureDur, score) {
-    const { leadSaw, leadSynthBrass1, leadSynthBrass2, piano, leadBus } = instruments;
+    const style = params?.style || "Prezioso";
     
-    // Scegli lead instrument in base al brightness
-    const brightness = params?.imageParams?.brightness || 0.5;
-    const leadInstrument = brightness > 0.6 ? leadSynthBrass1 : (brightness > 0.4 ? leadSaw : leadSynthBrass2);
+    // Scegli lead instrument in base allo stile
+    const getInstrument = leadInstruments[style] || leadInstruments.Prezioso;
+    const leadInstrument = getInstrument(instruments);
+    const defaultOctave = leadOctave[style] || 4;
     
     if (!leadInstrument) return;
 
@@ -49,8 +76,8 @@ export function scheduleDanceLead(section, progression, instruments, params, ran
     const isSolo = name.includes("solo") || name.includes("bridge");
 
     const stepTime = measureDur / 16;
-    const { energy = 0.5, brightness: imgBrightness = 0.5, complexity = 0.5 } = params?.imageParams || {};
-    const enhancerContext = { energy, brightness: imgBrightness, complexity };
+    const { energy = 0.5, brightness = 0.5, complexity = 0.5 } = params?.imageParams || {};
+    const enhancerContext = { energy, brightness, complexity };
 
     const tonalCenter = params?.tonalCenter || "C4";
     const scaleType = params?.scaleType || "naturalMinor";
@@ -61,7 +88,7 @@ export function scheduleDanceLead(section, progression, instruments, params, ran
     
     const getPattern = (type) => {
         const family = danceRhythmLibrary[type] || danceRhythmLibrary.verse;
-        const dnaScore = (energy * 400) + (imgBrightness * 30) + (complexity * 2);
+        const dnaScore = (energy * 400) + (brightness * 30) + (complexity * 2);
         const index = Math.floor(Math.abs(dnaScore)) % family.length;
         return [...family[index]];
     };
@@ -73,22 +100,23 @@ export function scheduleDanceLead(section, progression, instruments, params, ran
         let pattern = getPattern("solo");
         pattern = applyLeadEnhancer(pattern, "enhanceRhythmPattern", enhancerContext);
         
-        const soloFamily = getMelodyFamily(false, false, true, energy, imgBrightness, complexity);
+        const soloFamily = getMelodyFamily(false, false, true, style, energy, brightness, complexity);
         const melodyIndex = Math.floor(energy * soloFamily.data.length) % soloFamily.data.length;
         let baseMelody = soloFamily.data[melodyIndex];
         
-        const enhancers = ["enhanceMelodyMicroVariation", "addTrills", "addEchoEffect", "addOctaveDoubling"];
-        for (let enh of enhancers) {
-            if (Math.random() < 0.4) {
-                baseMelody = applyLeadEnhancer(baseMelody, enh, enhancerContext);
-            }
+        // Enhancer specifici per stile
+        if (style === "Eiffel65") {
+            baseMelody = applyLeadEnhancer(baseMelody, "addOctaveDoubling", enhancerContext);
+        }
+        if (style === "GabryPonte") {
+            baseMelody = applyLeadEnhancer(baseMelody, "addEchoEffect", enhancerContext);
         }
         
         currentMelody = baseMelody;
         currentPattern = pattern;
     } else {
         currentPattern = getPattern(sectionType);
-        const mood = getMelodyFamily(isPreChorus, isChorus, false, energy, imgBrightness, complexity);
+        const mood = getMelodyFamily(isPreChorus, isChorus, false, style, energy, brightness, complexity);
         const melodyIndex = Math.floor(energy * mood.data.length) % mood.data.length;
         currentMelody = mood.data[melodyIndex];
         
@@ -96,6 +124,8 @@ export function scheduleDanceLead(section, progression, instruments, params, ran
             currentMelody = applyLeadEnhancer(currentMelody, "enhanceMelodyMicroVariation", enhancerContext);
         }
     }
+
+    console.log(`🎹 ${section.name} | Stile: ${style} | Pattern: ${currentPattern.length} note | Melody: ${currentMelody.length} note`);
 
     for (let m = 0; m < section.measures; m++) {
         const measureStartTime = section.startTime + m * measureDur;
@@ -111,9 +141,13 @@ export function scheduleDanceLead(section, progression, instruments, params, ran
             
             const noteIdxRaw = currentMelody[i % currentMelody.length];
             const noteIdx = ((noteIdxRaw % 7) + 7) % 7;
-            const octave = (isChorus || isSolo) ? 5 : 4;
-            const pitch = currentScale[noteIdx];
             
+            // Ottava in base allo stile e sezione
+            let octave = defaultOctave;
+            if (isChorus && style !== "Gigi") octave++;
+            if (isSolo && style === "GabryPonte") octave++;
+            
+            const pitch = currentScale[noteIdx];
             if (!pitch) continue;
             
             const noteName = `${pitch}${octave}`;

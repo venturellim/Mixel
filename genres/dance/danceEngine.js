@@ -15,9 +15,15 @@ export async function waitDanceInstruments() {
     await waitForInstruments(19, "Dance");
 }
 
+// danceEngine.js — usa stile da danceParams
 export function createDanceEngine(params, score) {
     const rand = createSeededRandom(params.dna);
-    const danceParams = buildDanceParams(rand);
+    const danceParams = buildDanceParams(rand, params.global, params.rhythm);
+    
+    // Lo stile è già in danceParams.style!
+    const style = danceParams.style;
+    
+    console.log(`🎬 DANCE ENGINE | Stile: ${style} | BPM: ${danceParams.bpm}`);
 
     Tone.Transport.stop();
     Tone.Transport.cancel();
