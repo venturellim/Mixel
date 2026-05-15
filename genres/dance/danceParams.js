@@ -1,5 +1,5 @@
 // danceParams.js — ver. FUZZY 1.0
-console.log("danceParams.js Ver. 002.2 loaded");
+console.log("danceParams.js Ver. 002.3 loaded");
 
 function stretch(x) {
     return Math.min(1, Math.max(0, (x - 0.2) / 0.6));
@@ -48,16 +48,15 @@ const gabryScore =
 
 // PREZIOSO: centro, mid‑range, default ritmico
 const preziosoScore =
-    0.3 +                      // bias di base
-    (0.4 - Math.abs(intensity  - 0.5)) +   // ama intensità medie
-    (0.3 - Math.abs(complexity - 0.5));    // ama complessità medie
+    0.8 - (Math.abs(intensity - 0.5) * 0.8 + Math.abs(complexity - 0.5) * 0.8);
+
 
 // piccoli bias per evitare dominanze
 const scores = {
     Gigi:       gigiScore      - 0.05,
     Eiffel65:   eiffelScore,
     GabryPonte: gabryScore     + 0.02,
-    Prezioso:   preziosoScore  + 0.03
+    Prezioso:   preziosoScore  //+ 0.03
 };
 
 const style = Object.entries(scores).sort((a,b)=>b[1]-a[1])[0][0];
