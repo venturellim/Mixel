@@ -1,158 +1,128 @@
-// danceLeadEngine.js — ver. 005 COMPLETA E CORRETTA
+// danceLeadEngine.js — ver. 008 (mask-based, come metal)
 import * as Tone from "https://esm.sh/tone";
-import { normalizeNote } from "./danceInstruments.js";
+import { danceMelodicLibrary, danceRhythmLibrary } from "./danceMasks.js";
+import { applyLeadEnhancer, computeLeadVelocity, shapeBridgeSolo } from "../../utils/leadEnhancers.js";
 
-console.log("danceLeadEngine.js ver. 005 COMPLETA loaded");
+console.log("danceLeadEngine.js ver. 008 loaded");
 
-// ------------------------------------------------------------
-// SAFE TRIGGER
-// ------------------------------------------------------------
-function safeTrigger(instrument, note, duration, time, velocity = 0.5, name = "Lead") {
-    if (!instrument) return false;
-    if (typeof instrument.triggerAttackRelease !== 'function') return false;
-    if (!note || typeof note !== 'string') return false;
-    if (time === undefined || time === null || isNaN(time)) return false;
-    
-    try {
-        instrument.triggerAttackRelease(note, duration, time, velocity);
-        return true;
-    } catch (e) {
-        console.warn(`⚠️ ${name} failed:`, e.message);
-        return false;
-    }
+function getStrictScale(root, isMinor) {
+    const allNotes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+    let cleanRoot = root.replace(/[0-9]/g, "").toUpperCase();
+    const alt = { DB: "C#", EB: "D#", GB: "F#", AB: "G#", BB: "A#" };
+    cleanRoot = alt[cleanRoot] || cleanRoot;
+    let idx = allNotes.indexOf(cleanRoot);
+    if (idx === -1) idx = 9;
+    const intervals = isMinor ? [0, 2, 3, 5, 7, 8, 10] : [0, 2, 4, 5, 7, 9, 11];
+    return intervals.map(i => allNotes[(idx + i) % 12]);
 }
 
-// ------------------------------------------------------------
-// FUNZIONE PRINCIPALE
-// ------------------------------------------------------------
-export function scheduleDanceLead(section, instruments, params, style, score, rand) {
-    try {
-        const name = section.name.toLowerCase();
-        const isIntro = name.includes("intro");
-        const isBuild = name.includes("build");
-        const isDrop = name.includes("drop");
-        const isBreak = name.includes("break");
-        const isChorus = name.includes("chorus");
+function getMelodyFamily(isPreChorus, isChorus, isSolo, energy, brightness, complexity) {
+    if (isSolo) {
+        if (complexity > 0.6 || energy > 0.7) return { name: "ACTIVE ⚡", data: danceMelodicLibrary.active };
+        if (brightness > 0.5) return { name: "EPIC 🏰", data: danceMelodicLibrary.epic };
+        return { name: "STACCATO 🎹", data: danceMelodicLibrary.staccato };
+    }
+    if (isPreChorus) return { name: "PRE-CHORUS 📈", data: danceMelodicLibrary.prechorus };
+    if (isChorus) {
+        return brightness > 0.5
+            ? { name: "EPIC 🏰", data: danceMelodicLibrary.epic }
+            : { name: "EMOTIONAL 💧", data: danceMelodicLibrary.emotional };
+    }
+    if (energy > 0.7) return { name: "ACTIVE ⚡", data: danceMelodicLibrary.active };
+    if (complexity > 0.6) return { name: "ARPEGGIO 🎸", data: danceMelodicLibrary.arpeggio };
+    return { name: "STACCATO 🎹", data: danceMelodicLibrary.staccato };
+}
 
-        // Lead disponibili
-        const { leadSaw, leadSynthBrass1, leadSynthBrass2, piano } = instruments;
+export function scheduleDanceLead(section, progression, instruments, params, rand, measureDur, score) {
+    const { leadSaw, leadSynthBrass1, leadSynthBrass2, piano, leadBus } = instruments;
+    
+    // Scegli lead instrument in base al brightness
+    const brightness = params?.imageParams?.brightness || 0.5;
+    const leadInstrument = brightness > 0.6 ? leadSynthBrass1 : (brightness > 0.4 ? leadSaw : leadSynthBrass2);
+    
+    if (!leadInstrument) return;
 
-        // Sezione senza lead
-        if (isIntro || isBreak) {
-            console.log(`🎵 No lead per sezione: ${section.name}`);
-            return;
-        }
+    const name = section?.name?.toLowerCase() || "";
+    const isChorus = name.includes("chorus") && !name.includes("pre");
+    const isPreChorus = name.includes("pre");
+    const isIntro = name.includes("intro") || name.includes("outro");
+    const isSolo = name.includes("solo") || name.includes("bridge");
 
-        // BPM e timing
-        const bpm = params.bpm;
-        if (!bpm || isNaN(bpm)) {
-            console.warn("⚠️ Invalid BPM in danceLeadEngine:", bpm);
-            return;
-        }
+    const stepTime = measureDur / 16;
+    const { energy = 0.5, brightness: imgBrightness = 0.5, complexity = 0.5 } = params?.imageParams || {};
+    const enhancerContext = { energy, brightness: imgBrightness, complexity };
+
+    const tonalCenter = params?.tonalCenter || "C4";
+    const scaleType = params?.scaleType || "naturalMinor";
+    const rootNote = tonalCenter.replace(/[0-9]/g, "");
+    const isMinor = scaleType.includes("minor");
+
+    let sectionType = isIntro ? "intro" : (isPreChorus ? "prechorus" : (isChorus ? "chorus" : (isSolo ? "solo" : "verse")));
+    
+    const getPattern = (type) => {
+        const family = danceRhythmLibrary[type] || danceRhythmLibrary.verse;
+        const dnaScore = (energy * 400) + (imgBrightness * 30) + (complexity * 2);
+        const index = Math.floor(Math.abs(dnaScore)) % family.length;
+        return [...family[index]];
+    };
+
+    let currentPattern;
+    let currentMelody;
+
+    if (isSolo) {
+        let pattern = getPattern("solo");
+        pattern = applyLeadEnhancer(pattern, "enhanceRhythmPattern", enhancerContext);
         
-        const measureDur = (60 / bpm) * 4;
-        const eighth = measureDur / 8;
-        const sixteenth = measureDur / 16;
+        const soloFamily = getMelodyFamily(false, false, true, energy, imgBrightness, complexity);
+        const melodyIndex = Math.floor(energy * soloFamily.data.length) % soloFamily.data.length;
+        let baseMelody = soloFamily.data[melodyIndex];
         
-        console.log(`🎵 Lead timing: bpm=${bpm}, measureDur=${measureDur}, eighth=${eighth}`);
-
-        // TONAL CENTER
-        let tonal = params?.tonalCenter ?? "C4";
-        if (typeof tonal !== "string" || tonal.length < 2) {
-            tonal = "C4";
-        }
-
-        const match = tonal.match(/^([A-G][#b]?)(\d)$/);
-        let rootNoteRaw = match ? match[1] : "C";
-        
-        console.log(`🎵 Tonal center: ${tonal}, root: ${rootNoteRaw}`);
-
-        const scaleType = params?.scaleType || "naturalMinor";
-
-        // Scale disponibili
-        const scales = {
-            naturalMinor: [0, 2, 3, 5, 7, 8, 10],
-            harmonicMinor: [0, 2, 3, 5, 7, 8, 11]
-        };
-        const intervals = scales[scaleType] || scales.naturalMinor;
-        
-        console.log(`🎵 Scale: ${scaleType}, intervals: ${intervals}`);
-
-        // PATTERN LEAD PER STILE
-        const leadPatterns = {
-            Gigi: [0, 2, 4, 5, 4, 2, 0, null],
-            Prezioso: [0, null, 2, null, 4, null, 2, null],
-            Eiffel65: [0, 0, 4, 4, 0, 0, 4, 4],
-            GabryPonte: [0, 3, 4, 2, 0, 5, 4, 3]
-        };
-
-        let pattern = leadPatterns[style] || leadPatterns.Prezioso;
-        
-        // Pattern più lungo per drop
-        if (isDrop) {
-            pattern = [...pattern, ...pattern];
-        }
-
-        // SCELTA STRUMENTO LEAD
-        const leadInstrument = {
-            Gigi: piano,
-            Prezioso: leadSaw,
-            Eiffel65: leadSynthBrass1,
-            GabryPonte: leadSynthBrass2
-        }[style] || leadSaw;
-        
-        console.log(`🎹 Lead instrument: ${style} → ${leadInstrument ? "OK" : "MISSING"}`);
-
-        // VOLUME LEAD
-        let leadGain = 0.5;
-        if (isBuild) leadGain = 0.3;
-        if (isDrop) leadGain = 0.85;
-        if (isChorus) leadGain = 0.75;
-
-        // FUNZIONE PER NOTE SICURE
-        function getScaleNote(degree, octave = 4) {
-            try {
-                const base = Tone.Frequency(rootNoteRaw + octave).toMidi();
-                const semi = intervals[degree % intervals.length];
-                const midiNote = base + semi;
-                let rawNote = Tone.Frequency(midiNote, "midi").toNote();
-                
-                // Normalizza la nota
-                const noteMatch = rawNote.match(/^([A-G][#b]?)(\d+)$/);
-                if (!noteMatch) return rootNoteRaw + octave;
-                
-                const noteRoot = noteMatch[1];
-                const safeRoot = normalizeNote(noteRoot, "lead");
-                
-                return safeRoot + octave;
-            } catch (e) {
-                console.warn("⚠️ getScaleNote failed:", e.message);
-                return rootNoteRaw + octave;
+        const enhancers = ["enhanceMelodyMicroVariation", "addTrills", "addEchoEffect", "addOctaveDoubling"];
+        for (let enh of enhancers) {
+            if (Math.random() < 0.4) {
+                baseMelody = applyLeadEnhancer(baseMelody, enh, enhancerContext);
             }
         }
-
-        // SCHEDULAZIONE LEAD
-        for (let m = 0; m < section.measures; m++) {
-            const t0 = section.startTime + m * measureDur;
-            
-            pattern.forEach((degree, i) => {
-                if (degree === null) return;
-                
-                const t = t0 + i * eighth;
-                // Usa ottava 4 per lead (sicura)
-                const note = getScaleNote(degree, 4);
-                
-                Tone.Transport.schedule(time => {
-                    safeTrigger(leadInstrument, note, "8n", time, leadGain, "Lead");
-                    if (score) score.addNote("Lead", note, section.name);
-                }, t);
-            });
+        
+        currentMelody = baseMelody;
+        currentPattern = pattern;
+    } else {
+        currentPattern = getPattern(sectionType);
+        const mood = getMelodyFamily(isPreChorus, isChorus, false, energy, imgBrightness, complexity);
+        const melodyIndex = Math.floor(energy * mood.data.length) % mood.data.length;
+        currentMelody = mood.data[melodyIndex];
+        
+        if (!isIntro && energy > 0.5) {
+            currentMelody = applyLeadEnhancer(currentMelody, "enhanceMelodyMicroVariation", enhancerContext);
         }
-        
-        console.log(`✅ Lead scheduled per ${section.name}`);
-        
-    } catch (error) {
-        console.error("❌ FATAL ERROR in scheduleDanceLead:", error);
-        console.trace();
+    }
+
+    for (let m = 0; m < section.measures; m++) {
+        const measureStartTime = section.startTime + m * measureDur;
+        const currentScale = getStrictScale(progression[m % progression.length] || rootNote, isMinor);
+
+        for (let i = 0; i < currentPattern.length; i++) {
+            const s = currentPattern[i];
+            if (s === undefined || s === null) continue;
+            
+            const absoluteTime = measureStartTime + s * stepTime;
+            const nextStep = currentPattern[i + 1] ?? 16;
+            const duration = (nextStep - s) * stepTime;
+            
+            const noteIdxRaw = currentMelody[i % currentMelody.length];
+            const noteIdx = ((noteIdxRaw % 7) + 7) % 7;
+            const octave = (isChorus || isSolo) ? 5 : 4;
+            const pitch = currentScale[noteIdx];
+            
+            if (!pitch) continue;
+            
+            const noteName = `${pitch}${octave}`;
+            const velocity = computeLeadVelocity(noteIdx, duration, isSolo, name.includes("bridge"));
+
+            Tone.Transport.schedule(time => {
+                leadInstrument.triggerAttackRelease(noteName, duration, time, velocity);
+                if (score) score.addNote("Lead", noteName, section.name);
+            }, absoluteTime);
+        }
     }
 }

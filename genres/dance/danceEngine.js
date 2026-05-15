@@ -1,80 +1,126 @@
-// danceEngineNEW.js - STEP 1: Parametri dinamici dall'immagine
+// danceEngine.js — ver. 008 (architettura compatibile con metal/orchestra/piano)
 import * as Tone from "https://esm.sh/tone";
-import { danceInstruments } from "./danceInstruments.js";
-import { scheduleRhythmNEW } from "./danceRhythmEngine.js";
-import { masterEQ } from "../../common.js";
+import { buildDanceParams } from "./danceParams.js";
+import { buildSongStructure } from "../../utils/structureUtils.js";
+import { createSeededRandom } from "../../utils/randomUtils.js";
+import { generateSongProgressions, degreeToRoot } from "../../utils/musicTheory.js";
+import { danceInstruments, danceVolumeMap } from "./danceInstruments.js";
+import { scheduleDanceRhythm } from "./danceRhythmEngine.js";
+import { scheduleDanceLead } from "./danceLeadEngine.js";
+import { waitForInstruments } from "../../common.js";
 
-console.log("🎵 DANCE ENGINE NEW - STEP 1 (parametri dinamici)");
-
-// Connessione semplice al master
-Object.values(danceInstruments).forEach(inst => {
-    if (inst?.connect) {
-        try { inst.connect(masterEQ); } catch(e) {}
-    }
-});
+console.log("danceEngine.js ver. 008 loaded");
 
 export async function waitDanceInstruments() {
-    await Tone.loaded();
-    console.log("✅ Dance instruments ready");
+    await waitForInstruments(19, "Dance");
 }
 
 export function createDanceEngine(params, score) {
-    // ------------------------------------------------------------
-    // 1. ESTRAI PARAMETRI DALLA FOTO
-    // ------------------------------------------------------------
-    const intensity = params.global?.intensity ?? 0.5;
-    const mood = params.global?.mood ?? 0.5;
-    const complexity = params.global?.complexity ?? 0.5;
-    
-    // BPM: da 110 (tranquillo) a 150 (energico)
-    const bpm = Math.round(110 + intensity * 40);
-    
-    // Tonalità: in base alla luminosità/mood
-    const tonics = mood > 0.6 ? ["C", "G", "D"] : ["A", "E", "F"];
-    const tonic = tonics[Math.floor(Math.random() * tonics.length)];
-    const rootNote = tonic;
-    
-    // Scala: maggiore se mood alto, minore se mood basso
-    const scaleType = mood > 0.5 ? "major" : "naturalMinor";
-    
-    // Durata brano: in base alla complessità (32-64 battute)
-    const measures = Math.floor(32 + complexity * 32);
-    const measureDur = (60 / bpm) * 4;
-    const totalDuration = measures * measureDur;
-    
-    console.log("🎵 Parametri Dance dalla foto:");
-    console.log(`   - Intensity: ${intensity.toFixed(2)} → BPM: ${bpm}`);
-    console.log(`   - Mood: ${mood.toFixed(2)} → Tonalità: ${rootNote} ${scaleType}`);
-    console.log(`   - Complexity: ${complexity.toFixed(2)} → Misure: ${measures}`);
-    
-    // ------------------------------------------------------------
-    // 2. RESET TRANSPORT
-    // ------------------------------------------------------------
+    const rand = createSeededRandom(params.dna);
+    const danceParams = buildDanceParams(rand);
+
     Tone.Transport.stop();
     Tone.Transport.cancel();
-    Tone.Transport.bpm.value = bpm;
-    
-    // ------------------------------------------------------------
-    // 3. SCHEDULA CON PARAMETRI DINAMICI
-    // ------------------------------------------------------------
-    scheduleRhythmNEW(danceInstruments, score, {
-        bpm,
-        rootNote,
-        scaleType,
-        measures,
-        intensity,
-        mood
+    Tone.Transport.bpm.value = danceParams.bpm;
+
+    const hasPreChorus = params.imageParams.energy > 0.3;
+    const preChorusWeight = hasPreChorus ? 4 : 0;
+    const hasBridge = params.imageParams.complexity > 0.4;
+    const hasSolo = params.imageParams.complexity > 0.6;
+
+    const rawStructure = [
+        { name: "intro",     weight: 4 + (rand() * 4) },
+        { name: "verse",     weight: 8 },
+        { name: "prechorus", weight: preChorusWeight },
+        { name: "chorus",    weight: 8 },
+        { name: "verse",     weight: 4 },
+        { name: "chorus",    weight: 4 },
+        { name: "solo",      weight: hasSolo ? 8 : 0 },
+        { name: "bridge",    weight: hasBridge ? preChorusWeight : 0 },
+        { name: "chorus",    weight: 8 },
+        { name: "outro",     weight: 4 }
+    ];
+
+    const finalStructure = rawStructure.map(s => {
+        let m = Math.floor(s.weight);
+        if (m > 0) {
+            if (["intro", "verse", "chorus", "solo"].includes(s.name)) {
+                m = Math.ceil(m / 4) * 4;
+            } else {
+                m = Math.ceil(m / 2) * 2;
+            }
+        }
+        return { name: s.name, measures: m };
+    }).filter(s => s.measures > 0);
+
+    const structure = buildSongStructure(finalStructure, danceParams.bpm);
+    const progressions = generateSongProgressions(structure, params.imageParams, danceParams.tonalCenter, rand);
+
+    // BRIDGE usa progressione del prechorus
+    const preChorusSection = structure.sections.find(s => s.name === "prechorus");
+    const bridgeSection = structure.sections.find(s => s.name === "bridge");
+    const chorusSection = structure.sections.find(s => s.name === "chorus");
+    const soloSection = structure.sections.find(s => s.name === "solo");
+
+    if (bridgeSection && preChorusSection) {
+        const preChorusProg = progressions["prechorus"];
+        if (preChorusProg) {
+            progressions["bridge"] = {
+                root: preChorusProg.root,
+                progression: preChorusProg.progression
+            };
+            console.log("🌉 DANCE BRIDGE usa progressione del PRECHORUS →", preChorusProg.progression);
+        }
+    }
+
+    // SOLO usa progressione del chorus
+    if (soloSection && chorusSection) {
+        const chorusProg = progressions["chorus"];
+        if (chorusProg) {
+            progressions["solo"] = {
+                root: chorusProg.root,
+                progression: chorusProg.progression
+            };
+            console.log("🎧 DANCE SOLO usa progressione del CHORUS →", chorusProg.progression);
+        }
+    }
+
+    const measureDur = (60 / danceParams.bpm) * 4;
+
+    const combinedParams = {
+        ...danceParams,
+        imageParams: params.imageParams
+    };
+
+    structure.sections.forEach((sec, index) => {
+        const info = progressions[sec.name];
+        const sectionRoot = info?.root || danceParams.tonalCenter[0] || "C";
+        const degrees = info?.progression || ["i"];
+
+        let fullProgression = [];
+        while (fullProgression.length < sec.measures) {
+            fullProgression = fullProgression.concat(degrees);
+        }
+        fullProgression = fullProgression.slice(0, sec.measures);
+
+        const realNotes = fullProgression.map(d => degreeToRoot(d, sectionRoot));
+
+        const nextSec = structure.sections[index + 1];
+        const nextSectionRoot = nextSec ? (progressions[nextSec.name]?.root || sectionRoot) : sectionRoot;
+
+        Tone.Transport.schedule(() => {
+            console.log(`%c ▶ DANCE ${sec.name.toUpperCase()}`, "color: #FF1493; font-weight: bold;");
+        }, sec.startTime);
+
+        scheduleDanceRhythm(sec, realNotes, danceInstruments, combinedParams, rand, measureDur, nextSectionRoot, score);
+        scheduleDanceLead(sec, realNotes, danceInstruments, combinedParams, rand, measureDur, score);
     });
-    
-    // ------------------------------------------------------------
-    // 4. API
-    // ------------------------------------------------------------
+
     return {
-        totalDuration,
+        totalDuration: structure.totalDuration,
         play: () => {
-            if (Tone.context.state !== "running") Tone.context.resume();
-            Tone.Transport.start();
-            console.log("✅ Dance started!");
+            if (Tone.context.state !== 'running') Tone.context.resume();
+            Tone.Transport.start("+0.1");
         },
         pause: () => Tone.Transport.pause(),
         stop: () => {
@@ -83,6 +129,6 @@ export function createDanceEngine(params, score) {
             Tone.Transport.seconds = 0;
         },
         seek: (s) => Tone.Transport.seconds = s,
-        mixerData: { instruments: danceInstruments, volumeMap: {} }
+        mixerData: { instruments: danceInstruments, volumeMap: danceVolumeMap }
     };
 }

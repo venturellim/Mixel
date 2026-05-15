@@ -1,109 +1,116 @@
-// danceRhythmEngineNEW.js - STEP 1: Pattern con parametri dinamici
+// danceRhythmEngine.js — ver. 008 (groove-based, come metal)
 import * as Tone from "https://esm.sh/tone";
+import { getDanceGroove, grooveCharacteristics } from "./danceGrooves.js";
 
-console.log("🎵 DANCE RHYTHM NEW - STEP 1");
+console.log("danceRhythmEngine.js ver. 008 loaded");
 
-export function scheduleRhythmNEW(instruments, score, options) {
-    const {
-        bpm = 130,
-        rootNote = "C",
-        scaleType = "naturalMinor",
-        measures = 32,
-        intensity = 0.5,
-        mood = 0.5
-    } = options || {};
-    
-    const { percussion, bass, warmPad, wavePad } = instruments;
-    
-    const measureDur = (60 / bpm) * 4;
-    const beatDur = measureDur / 4;
-    const eighthDur = measureDur / 8;
-    
-    console.log(`🎵 Scheduling ${measures} misure, root=${rootNote}, scale=${scaleType}`);
-    
-    // Determina l'ottava del basso in base alla nota
-    const getBassOctave = (note) => {
-        const lowNotes = ["C", "C#", "D", "D#", "E"];
-        return lowNotes.includes(note) ? "2" : "1";
-    };
-    const bassNote = rootNote + getBassOctave(rootNote);
-    
-    // Scegli il pad in base al mood
-    const selectedPad = mood > 0.5 ? wavePad : warmPad;
-    const padNote = rootNote + "3";
-    
-    // Densità dell'hi-hat in base all'intensità
-    const hatDensity = intensity > 0.6 ? 0.5 : 0.25;
-    
-    for (let m = 0; m < measures; m++) {
-        const t0 = m * measureDur;
+function safeNote(note, defaultOctave = "2") {
+    if (!note || typeof note !== "string") return null;
+    const validated = /\d/.test(note) ? note : `${note}${defaultOctave}`;
+    return isNaN(Tone.Frequency(validated).toMidi()) ? null : validated;
+}
+
+function getRootPitch(root) {
+    if (!root || typeof root !== "string") return "C";
+    const match = root.toUpperCase().match(/^([A-G](#|B)?)/);
+    return match ? match[1] : "C";
+}
+
+export function scheduleDanceRhythm(section, progression, instruments, params, rand, measureDur, nextSectionRoot, score) {
+    const { percussion, bass, warmPad, wavePad, bassBus } = instruments;
+    if (!percussion || !bass) return;
+
+    const name = section?.name?.toLowerCase() || "";
+    const isChorus = name.includes("chorus") && !name.includes("pre");
+    const isPreChorus = name.includes("pre") || name.includes("bridge");
+    const isIntro = name.includes("intro") || name.includes("outro");
+    const isSolo = name.includes("solo");
+
+    const stepTime = measureDur / 16;
+    const { energy = 0.5, brightness = 0.5, complexity = 0.5 } = params?.imageParams || {};
+
+    const sectionType = isIntro ? "intro" : (isPreChorus ? "prechorus" : (isChorus ? "chorus" : (isSolo ? "solo" : "verse")));
+    const currentGroove = getDanceGroove(sectionType, energy, brightness, complexity);
+    const groove = grooveCharacteristics[currentGroove];
+
+    console.log(`🥁 ${section.name} → groove: ${currentGroove} | energy=${energy.toFixed(2)}`);
+
+    // Pattern base dal groove
+    let pattern = groove?.pattern || [0, 4, 8, 12];
+
+    for (let m = 0; m < section.measures; m++) {
+        const measureStartTime = section.startTime + (m * measureDur);
+        const currentRoot = progression[m % progression.length];
+        const pitchRoot = getRootPitch(currentRoot);
         
-        // --- KICK (sempre su ogni beat) ---
-        for (let i = 0; i < 4; i++) {
-            Tone.Transport.schedule(() => {
-                percussion?.player("bassDrum")?.start();
-                score?.addNote("Kick", "beat", "loop");
-            }, t0 + i * beatDur);
-        }
+        // Nota basso (ottava 2)
+        const bassNote = safeNote(pitchRoot, "2");
         
-        // --- SNARE/CLAP (sul 2 e 4) ---
-        [1, 3].forEach(i => {
-            Tone.Transport.schedule(() => {
-                percussion?.player("handClap")?.start();
-                score?.addNote("Snare", "beat", "loop");
-            }, t0 + i * beatDur);
-        });
+        // Accordo pad (basato sulla scala minore naturale)
+        const padRoot = safeNote(pitchRoot, "3");
+        const padThird = safeNote(Tone.Frequency(pitchRoot + "3").transpose(3).toNote(), "3");
+        const padFifth = safeNote(Tone.Frequency(pitchRoot + "3").transpose(7).toNote(), "3");
         
-        // --- HI-HAT (pattern in base all'intensità) ---
-        for (let i = 0; i < 8; i++) {
-            if (Math.random() < hatDensity || i % 2 === 0) {
-                Tone.Transport.schedule(() => {
-                    percussion?.player("closedHat")?.start();
-                    score?.addNote("Hat", "beat", "loop");
-                }, t0 + i * eighthDur);
+        // Scegli pad in base al brightness
+        const selectedPad = brightness > 0.5 ? wavePad : warmPad;
+        
+        let isBuildUp = currentGroove.includes("build") || currentGroove.includes("riser");
+        let isDrop = currentGroove === "anthem_drop" || currentGroove === "full_power" || currentGroove === "big_room";
+
+        for (let s of pattern) {
+            const absoluteTime = measureStartTime + s * stepTime;
+            
+            // KICK (sempre sul pattern)
+            Tone.Transport.schedule(t => {
+                percussion?.player("bassDrum")?.start(t);
+                if (score) score.addNote("Drums", "Kick", section.name);
+            }, absoluteTime);
+            
+            // SNARE/CLAP (sul 2 e 4, ma solo se non è intro/build)
+            if (!isIntro && !isBuildUp && (s === 4 || s === 12 || (pattern.length > 8 && s % 4 === 1))) {
+                Tone.Transport.schedule(t => {
+                    percussion?.player("handClap")?.start(t);
+                    if (score) score.addNote("Drums", "Snare", section.name);
+                }, absoluteTime);
+            }
+            
+            // HI-HAT (pattern denso in drop/chorus)
+            if (isDrop || isChorus || s % 2 === 0) {
+                Tone.Transport.schedule(t => {
+                    percussion?.player("closedHat")?.start(t);
+                    if (score) score.addNote("Drums", "HiHat", section.name);
+                }, absoluteTime);
+            }
+            
+            // BASSLINE (sul primo beat o su pattern specifico)
+            if (s === 0 || (isDrop && s % 4 === 0) || (energy > 0.7 && s % 2 === 0)) {
+                Tone.Transport.schedule(t => {
+                    if (bassNote) {
+                        bass.triggerAttackRelease(bassNote, "8n", t);
+                        if (score) score.addNote("Bass", bassNote, section.name);
+                    }
+                }, absoluteTime);
+            }
+            
+            // CRASH all'inizio sezione
+            if (s === 0 && m === 0) {
+                Tone.Transport.schedule(t => {
+                    percussion?.player("crash")?.start(t);
+                    if (score) score.addNote("Drums", "Crash", section.name);
+                }, absoluteTime);
             }
         }
         
-        // --- BASS (pattern in base all'intensità) ---
-        if (intensity > 0.7) {
-            // Bass più fitto: su ogni beat
-            for (let i = 0; i < 4; i++) {
-                Tone.Transport.schedule(() => {
-                    bass?.triggerAttackRelease(bassNote, "8n");
-                    score?.addNote("Bass", bassNote, "loop");
-                }, t0 + i * beatDur);
+        // PAD (accordi lunghi, una volta per misura)
+        Tone.Transport.schedule(t => {
+            if (selectedPad) {
+                selectedPad.triggerAttackRelease([padRoot, padThird, padFifth], measureDur * 0.9, t);
+                if (score) {
+                    score.addNote("Pad", padRoot, section.name);
+                    score.addNote("Pad", padThird, section.name);
+                    score.addNote("Pad", padFifth, section.name);
+                }
             }
-        } else {
-            // Bass semplice: solo sul primo beat
-            Tone.Transport.schedule(() => {
-                bass?.triggerAttackRelease(bassNote, "4n");
-                score?.addNote("Bass", bassNote, "loop");
-            }, t0);
-        }
-        
-        // --- PAD (accordi in base alla scala) ---
-        // Costruisci un accordo semplice
-        const getChordNote = (offset) => {
-            if (scaleType === "major") {
-                const majorIntervals = [0, 4, 7];
-                const semi = majorIntervals[offset % majorIntervals.length];
-                return Tone.Frequency(rootNote + "3").transpose(semi).toNote();
-            } else {
-                const minorIntervals = [0, 3, 7];
-                const semi = minorIntervals[offset % minorIntervals.length];
-                return Tone.Frequency(rootNote + "3").transpose(semi).toNote();
-            }
-        };
-        
-        Tone.Transport.schedule(() => {
-            // Accordo di 3 note
-            const chordNotes = [0, 1, 2].map(i => getChordNote(i));
-            chordNotes.forEach(note => {
-                selectedPad?.triggerAttackRelease(note, measureDur * 0.9);
-                score?.addNote("Pad", note, "loop");
-            });
-        }, t0);
+        }, measureStartTime);
     }
-    
-    console.log("✅ Rhythm scheduling completato");
 }
