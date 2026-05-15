@@ -1,60 +1,67 @@
-// danceParams.js — ver. 005 (compositionMode guida lo stile)
-console.log("danceParams.js ver. 005 loaded");
+// danceParams.js — ver. FUZZY 1.0
+console.log("danceParams.js ver. FUZZY 1.0 loaded");
 
 export function buildDanceParams(rand, globalParams, rhythmParams) {
-    const intensity = globalParams?.intensity ?? 0.5;
-    const mood = globalParams?.mood ?? 0.5;
+    const intensity  = globalParams?.intensity  ?? 0.5;
+    const mood       = globalParams?.mood       ?? 0.5;
     const complexity = globalParams?.complexity ?? 0.5;
-    
-    // BPM dalla foto (normalizzato)
+
+    // BPM dalla foto (range dance classico)
     const imageBpm = rhythmParams?.tempoProfile || 130;
-    let bpm;
-    if (imageBpm <= 130) bpm = 130;
-    else if (imageBpm >= 150) bpm = 150;
-    else bpm = 140;
-    
-    // Tonal center e scala
+    let bpm = Math.min(150, Math.max(130, imageBpm));
+
+    // Tonalità e scala dalla foto
     const tonalCenter = rhythmParams?.tonalCenter || "C4";
-    const scaleType = rhythmParams?.scaleProfile || "naturalMinor";
-    
-    // DETERMINA LO STILE DANCE IN BASE AI PARAMETRI DELLA FOTO
-    let compositionMode;
-    let style;
-    
-    // GIGI D'AGOSTINO (dream/piano, emotive, bassa intensità)
-    if (intensity < 0.4 && complexity < 0.5) {
-        compositionMode = "dream";
-        style = "Gigi";
-    }
-    // EIFFEL 65 (robotico, ottave, pattern 16th, alta complessità)
-    else if (complexity > 0.7) {
-        compositionMode = "robotic";
-        style = "Eiffel65";
-    }
-    // GABRY PONTE (melodico, anthem, hook, mood alto)
-    else if (mood > 0.6 && intensity > 0.55) {
-        compositionMode = "anthem";
-        style = "GabryPonte";
-    }
-    // PREZIOSO (ritmico, sincopato, default)
-    else {
-        compositionMode = "rhythmic";
-        style = "Prezioso";
-    }
-    
-    console.log("🎧 Dance style dalla foto:");
-    console.log(`   - Stile: ${style} (${compositionMode})`);
-    console.log(`   - BPM: ${bpm} (originale: ${imageBpm})`);
-    console.log(`   - Tonal center: ${tonalCenter}`);
-    console.log(`   - Scala: ${scaleType}`);
-    console.log(`   - Intensity: ${intensity.toFixed(2)}, Mood: ${mood.toFixed(2)}, Complexity: ${complexity.toFixed(2)}`);
-    
+    const scaleType   = rhythmParams?.scaleProfile || "naturalMinor";
+
+    // ------------------------------------------------------------
+    // ⭐ FUZZY SCORING — stile determinato dalla foto
+    // ------------------------------------------------------------
+
+    // GIGI: soft, dream, bassa intensità e bassa complessità
+    const gigiScore =
+        (1 - intensity)  * 0.6 +
+        (1 - complexity) * 0.4;
+
+    // EIFFEL65: robotico, complessità alta, energia media
+    const eiffelScore =
+        complexity * 0.7 +
+        intensity  * 0.3;
+
+    // GABRY PONTE: anthem, luminoso, energico
+    const gabryScore =
+        mood      * 0.5 +
+        intensity * 0.5;
+
+    // PREZIOSO: ritmico, sincopato, mid‑range
+    const preziosoScore =
+        0.5 + (0.5 - Math.abs(intensity - 0.5));
+
+    const scores = {
+        Gigi: gigiScore,
+        Eiffel65: eiffelScore,
+        GabryPonte: gabryScore,
+        Prezioso: preziosoScore
+    };
+
+    const style = Object.entries(scores).sort((a,b)=>b[1]-a[1])[0][0];
+
+    console.log("🎧 FUZZY STYLE SELECTION");
+    console.log(`   - Gigi:       ${gigiScore.toFixed(3)}`);
+    console.log(`   - Eiffel65:   ${eiffelScore.toFixed(3)}`);
+    console.log(`   - GabryPonte: ${gabryScore.toFixed(3)}`);
+    console.log(`   - Prezioso:   ${preziosoScore.toFixed(3)}`);
+    console.log(`👉 Stile scelto: ${style}`);
+
+    // ------------------------------------------------------------
+    // PARAMETRI MUSICALI
+    // ------------------------------------------------------------
     return {
         tonalCenter,
         scaleType,
         bpm,
-        compositionMode,
-        style,  // ← ora lo stile è determinato dai parametri della foto!
+        style,
+        compositionMode: style,
         kickIntensity: 0.8,
         bassEnergy: 0.7 + intensity * 0.2,
         leadDensity: 0.5 + complexity * 0.3,
