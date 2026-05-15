@@ -20,6 +20,21 @@ export const pianoBus = new Tone.Gain(1);
 export const fxBus = new Tone.Gain(1);
 export const percussionBus = new Tone.Gain(1);
 
+// SIDECHAIN DUCKING
+
+export const duckGain = new Tone.Gain(1).toDestination();
+padBus.connect(duckGain);
+bassBus.connect(duckGain);
+
+export const duckEnv = new Tone.Envelope({
+    attack: 0.001,
+    decay: 0.12,
+    sustain: 1,
+    release: 0.1
+});
+duckEnv.connect(duckGain.gain);
+
+
 const leadEQ = new Tone.EQ3({ low: -4, mid: 2, high: 3 });
 const padEQ = new Tone.EQ3({ low: -2, mid: -1, high: 2 });
 const bassEQ = new Tone.EQ3({ low: 4, mid: -2, high: -4 });
