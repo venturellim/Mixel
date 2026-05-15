@@ -1,5 +1,5 @@
 // danceParams.js — ver. FUZZY 1.0
-console.log("danceParams.js ver. FUZZY 1.0 loaded");
+console.log("danceParams.js Ver. 002 loaded");
 
 export function buildDanceParams(rand, globalParams, rhythmParams) {
     const intensity  = globalParams?.intensity  ?? 0.5;
@@ -15,43 +15,53 @@ export function buildDanceParams(rand, globalParams, rhythmParams) {
     const scaleType   = rhythmParams?.scaleProfile || "naturalMinor";
 
     // ------------------------------------------------------------
-    // ⭐ FUZZY SCORING — stile determinato dalla foto
-    // ------------------------------------------------------------
+// ⭐ FUZZY SCORING — stile determinato dalla foto (v2)
+// ------------------------------------------------------------
 
-    // GIGI: soft, dream, bassa intensità e bassa complessità
-    const gigiScore =
-        (1 - intensity)  * 0.6 +
-        (1 - complexity) * 0.4;
+const intensity  = globalParams?.intensity  ?? 0.5;
+const mood       = globalParams?.mood       ?? 0.5;
+const complexity = globalParams?.complexity ?? 0.5;
 
-    // EIFFEL65: robotico, complessità alta, energia media
-    const eiffelScore =
-        complexity * 0.7 +
-        intensity  * 0.3;
+// GIGI: soft, dream, bassa intensità e bassa complessità
+const gigiScore =
+    (1 - intensity)  * 0.4 +
+    (1 - complexity) * 0.3 +
+    (1 - mood)       * 0.3;
 
-    // GABRY PONTE: anthem, luminoso, energico
-    const gabryScore =
-        mood      * 0.5 +
-        intensity * 0.5;
+// EIFFEL65: robotico, complessità alta, energia medio‑alta
+const eiffelScore =
+    complexity * 0.6 +
+    intensity  * 0.2 +
+    (1 - mood) * 0.2;
 
-    // PREZIOSO: ritmico, sincopato, mid‑range
-    const preziosoScore =
-        0.5 + (0.5 - Math.abs(intensity - 0.5));
+// GABRY PONTE: anthem, luminoso, energico
+const gabryScore =
+    mood      * 0.6 +
+    intensity * 0.3 +
+    complexity* 0.1;
 
-    const scores = {
-        Gigi: gigiScore,
-        Eiffel65: eiffelScore,
-        GabryPonte: gabryScore,
-        Prezioso: preziosoScore
-    };
+// PREZIOSO: centro, mid‑range, default ritmico
+const preziosoScore =
+    0.3 +                      // bias di base
+    (0.4 - Math.abs(intensity  - 0.5)) +   // ama intensità medie
+    (0.3 - Math.abs(complexity - 0.5));    // ama complessità medie
 
-    const style = Object.entries(scores).sort((a,b)=>b[1]-a[1])[0][0];
+// piccoli bias per evitare dominanze
+const scores = {
+    Gigi:       gigiScore      - 0.05,
+    Eiffel65:   eiffelScore,
+    GabryPonte: gabryScore     + 0.02,
+    Prezioso:   preziosoScore  + 0.03
+};
 
-    console.log("🎧 FUZZY STYLE SELECTION");
-    console.log(`   - Gigi:       ${gigiScore.toFixed(3)}`);
-    console.log(`   - Eiffel65:   ${eiffelScore.toFixed(3)}`);
-    console.log(`   - GabryPonte: ${gabryScore.toFixed(3)}`);
-    console.log(`   - Prezioso:   ${preziosoScore.toFixed(3)}`);
-    console.log(`👉 Stile scelto: ${style}`);
+const style = Object.entries(scores).sort((a,b)=>b[1]-a[1])[0][0];
+
+console.log("🎧 FUZZY STYLE SELECTION v2");
+console.log(`   - Gigi:       ${gigiScore.toFixed(3)}`);
+console.log(`   - Eiffel65:   ${eiffelScore.toFixed(3)}`);
+console.log(`   - GabryPonte: ${gabryScore.toFixed(3)}`);
+console.log(`   - Prezioso:   ${preziosoScore.toFixed(3)}`);
+console.log(`👉 Stile scelto: ${style}`);
 
     // ------------------------------------------------------------
     // PARAMETRI MUSICALI
