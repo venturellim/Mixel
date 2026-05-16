@@ -8,6 +8,7 @@ import { danceInstruments, danceVolumeMap } from "./danceInstruments.js";
 import { scheduleDanceRhythm } from "./danceRhythmEngine.js";
 import { scheduleDanceLead } from "./danceLeadEngine.js";
 import { waitForInstruments } from "../../common.js";
+import { scheduleDanceFx } from "./danceFxEngine.js";
 
 console.log("danceEngine.js ver. 008 loaded");
 
@@ -128,6 +129,7 @@ export function createDanceEngine(params, score) {
 
         scheduleDanceRhythm(sec, realNotes, danceInstruments, combinedParams, rand, measureDur, nextSectionRoot, score);
         scheduleDanceLead(sec, realNotes, danceInstruments, combinedParams, rand, measureDur, score);
+        scheduleDanceFx(sec, danceInstruments, combinedParams, measureDur, score);
     });
 
     return {
