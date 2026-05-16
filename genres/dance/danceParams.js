@@ -1,85 +1,74 @@
-// danceParams.js — ver. FUZZY 1.0
-console.log("danceParams.js Ver. 002.3 loaded");
-
-function stretch(x) {
-    return Math.min(1, Math.max(0, (x - 0.2) / 0.6));
-}
-
-function num(x, fallback = 0.5) {
-    const n = Number(x);
-    return isNaN(n) ? fallback : Math.min(1, Math.max(0, n));
-}
+// danceParams.js — ver. 007 (debug estremo)
+console.log("danceParams.js ver. 007 loaded");
 
 export function buildDanceParams(rand, globalParams, rhythmParams) {
-    const intensity  = num(globalParams?.intensity, 0.5);
-const mood       = num(globalParams?.mood, 0.5);
-const complexity = num(globalParams?.complexity, 0.5);
-
-
-    // BPM dalla foto (range dance classico)
+    // DEBUG: stampa TUTTO quello che ricevi
+    console.log("🔍🔍🔍 DANCE PARAMS RAW INPUT:");
+    console.log("   globalParams:", JSON.stringify(globalParams));
+    console.log("   rhythmParams:", JSON.stringify(rhythmParams));
+    
+    // ESTRAI PARAMETRI - usa valori di default SOLO se undefined
+    let intensity = globalParams?.intensity;
+    let mood = globalParams?.mood;
+    let complexity = globalParams?.complexity;
+    
+    // Se sono undefined, usa 0.5, ma se sono NaN, usa 0.5
+    if (intensity === undefined || isNaN(intensity)) intensity = 0.5;
+    if (mood === undefined || isNaN(mood)) mood = 0.5;
+    if (complexity === undefined || isNaN(complexity)) complexity = 0.5;
+    
+    console.log(`🔍 Valori estratti: intensity=${intensity}, mood=${mood}, complexity=${complexity}`);
+    
+    // BPM
     const imageBpm = rhythmParams?.tempoProfile || 130;
-    let bpm = Math.min(150, Math.max(130, imageBpm));
-
-    // Tonalità e scala dalla foto
+    let bpm;
+    if (imageBpm <= 130) bpm = 130;
+    else if (imageBpm >= 150) bpm = 150;
+    else bpm = 140;
+    
     const tonalCenter = rhythmParams?.tonalCenter || "C4";
-    const scaleType   = rhythmParams?.scaleProfile || "naturalMinor";
-
-    // ------------------------------------------------------------
-// ⭐ FUZZY SCORING — stile determinato dalla foto (v2)
-// ------------------------------------------------------------
-
-// GIGI: soft, dream, bassa intensità e bassa complessità
-const gigiScore =
-    (1 - intensity)  * 0.4 +
-    (1 - complexity) * 0.3 +
-    (1 - mood)       * 0.3;
-
-// EIFFEL65: robotico, complessità alta, energia medio‑alta
-const eiffelScore =
-    complexity * 0.6 +
-    intensity  * 0.2 +
-    (1 - mood) * 0.2;
-
-// GABRY PONTE: anthem, luminoso, energico
-const gabryScore =
-    mood      * 0.6 +
-    intensity * 0.3 +
-    complexity* 0.1;
-
-// PREZIOSO: centro, mid‑range, default ritmico
-const preziosoScore =
-    0.8 - (Math.abs(intensity - 0.5) * 0.8 + Math.abs(complexity - 0.5) * 0.8);
-
-
-// piccoli bias per evitare dominanze
-const scores = {
-    Gigi:       gigiScore      - 0.05,
-    Eiffel65:   eiffelScore,
-    GabryPonte: gabryScore     + 0.02,
-    Prezioso:   preziosoScore  //+ 0.03
-};
-
-const style = Object.entries(scores).sort((a,b)=>b[1]-a[1])[0][0];
-
-console.log("🎧 FUZZY STYLE SELECTION v2");
-console.log(`   - Gigi:       ${gigiScore.toFixed(3)}`);
-console.log(`   - Eiffel65:   ${eiffelScore.toFixed(3)}`);
-console.log(`   - GabryPonte: ${gabryScore.toFixed(3)}`);
-console.log(`   - Prezioso:   ${preziosoScore.toFixed(3)}`);
-console.log(`👉 Stile scelto: ${style}`);
-
-    // ------------------------------------------------------------
-    // PARAMETRI MUSICALI
-    // ------------------------------------------------------------
+    const scaleType = rhythmParams?.scaleProfile || "naturalMinor";
+    
+    // DETERMINA LO STILE (soglie diverse per test)
+    let style;
+    let compositionMode;
+    
+    console.log(`🔍 Test condizioni: intensity<0.4? ${intensity < 0.4}, complexity<0.5? ${complexity < 0.5}`);
+    console.log(`🔍 Test condizioni: complexity>0.65? ${complexity > 0.65}`);
+    console.log(`🔍 Test condizioni: mood>0.6 && intensity>0.55? ${mood > 0.6 && intensity > 0.55}`);
+    
+    // GIGI
+    if (intensity < 0.4 && complexity < 0.5) {
+        style = "Gigi";
+        compositionMode = "dream";
+    }
+    // EIFFEL65
+    else if (complexity > 0.65) {
+        style = "Eiffel65";
+        compositionMode = "robotic";
+    }
+    // GABRY PONTE
+    else if (mood > 0.6 && intensity > 0.55) {
+        style = "GabryPonte";
+        compositionMode = "anthem";
+    }
+    // PREZIOSO
+    else {
+        style = "Prezioso";
+        compositionMode = "rhythmic";
+    }
+    
+    console.log(`🎧 STILE SCELTO: ${style} (${compositionMode})`);
+    
     return {
         tonalCenter,
         scaleType,
         bpm,
+        compositionMode,
         style,
-        compositionMode: style,
         kickIntensity: 0.8,
-        bassEnergy: 0.7 + intensity * 0.2,
-        leadDensity: 0.5 + complexity * 0.3,
-        fxIntensity: 0.3 + intensity * 0.4
+        bassEnergy: 0.7,
+        leadDensity: 0.6,
+        fxIntensity: 0.5
     };
 }

@@ -18,6 +18,11 @@ export async function waitDanceInstruments() {
 // danceEngine.js — usa stile da danceParams
 export function createDanceEngine(params, score) {
     const rand = createSeededRandom(params.dna);
+    
+    params.global = { intensity: 0.3, mood: 0.5, complexity: 0.4 }; // → Gigi
+    // params.global = { intensity: 0.7, mood: 0.5, complexity: 0.8 }; // → Eiffel65
+    // params.global = { intensity: 0.7, mood: 0.7, complexity: 0.5 }; // → GabryPonte
+    
     const danceParams = buildDanceParams(rand, params.global, params.rhythm);
     
     // Lo stile è già in danceParams.style!
