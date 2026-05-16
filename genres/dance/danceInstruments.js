@@ -26,7 +26,7 @@ const bassEQ = new Tone.EQ3({ low: 4, mid: -2, high: -4 });
 const organoEQ = new Tone.EQ3({ low: -4, mid: 2, high: 3 });
 const pianoEQ = new Tone.EQ3({ low: -4, mid: 2, high: 3 });
 const fxEQ   = new Tone.EQ3({ low: 4, mid: -2, high: -4 });
-const percussionEQ   = new Tone.EQ3({ low: 2, mid: 1, high: 3 });
+const percussionEQ   = new Tone.EQ3({ low: 6, mid: 1, high: 3 });
 
 // Routing bus → EQ → master
 leadBus.connect(leadEQ).connect(hallReverb).connect(masterEQ);
@@ -444,16 +444,16 @@ export { hallReverb };
 // Alla fine del file, dopo le esportazioni:
 
 // BOOST BASS (entra nel petto!)
-bassBus.gain.value = Tone.dbToGain(16);  // +18dB
+bassBus.gain.value = Tone.dbToGain(18);  // +18dB
 
 // BOOST PERCUSSION (kick e snare potenti)
-percussionBus.gain.value = Tone.dbToGain(22); // +20dB
+percussionBus.gain.value = Tone.dbToGain(24); // +20dB
 
 // LEAD leggermente più presenti
-leadBus.gain.value = Tone.dbToGain(10);
+leadBus.gain.value = Tone.dbToGain(8);
 
 // PAD più presenti (ma non coprono il basso)
-padBus.gain.value = Tone.dbToGain(6);
+padBus.gain.value = Tone.dbToGain(4);
 
 // FX normali
-fxBus.gain.value = Tone.dbToGain(8);
+fxBus.gain.value = Tone.dbToGain(6);
