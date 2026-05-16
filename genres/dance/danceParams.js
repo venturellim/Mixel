@@ -79,6 +79,8 @@ export function buildDanceParams(rand, globalParams, rhythmParams) {
         kickIntensity: 0.8,
         bassEnergy: 0.7,
         leadDensity: 0.6,
-        fxIntensity: 0.5
+        fxIntensity: 0.5,
+        swing: 0.15 + complexity * 0.35
+
     };
 }

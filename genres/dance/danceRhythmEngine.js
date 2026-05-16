@@ -1,8 +1,70 @@
 // danceRhythmEngine.js — ver. 011 (più ritmico, meno "lento")
 import * as Tone from "https://esm.sh/tone";
 import { getDanceGroove, grooveCharacteristics } from "./danceGrooves.js";
+import { duckEnv } from "./danceInstruments.js";
+
 
 console.log("danceRhythmEngine.js ver. 011 loaded");
+
+function getPreziosoVelocity(step, isDrop) {
+    const base = {
+        2: 0.90,
+        6: 0.75,
+        10: 0.85,
+        14: 0.70
+    }[step] ?? 0.7;
+
+    return isDrop ? base + 0.05 : base;
+}
+
+function shouldPlayGhost(rand) {
+    // 20% di probabilità
+    return rand() < 0.20;
+}
+
+function getGhostVelocity() {
+    return 0.20 + Math.random() * 0.15; // 0.20–0.35
+}
+
+function getGhostDuration() {
+    return "16n"; // corta e non invadente
+}
+
+function chance(rand, p) {
+    return rand() < p;
+}
+
+function swingOffset(s, stepTime, swingAmount = 0.0) {
+    // swingAmount: 0 = dritto, 1 = molto swing
+    if (s % 2 === 1) return 0; // swing solo sui sedicesimi pari
+    return stepTime * 0.3 * swingAmount; 
+}
+
+function microTimingOffset(s, style, rand) {
+    const early = [-0.005, -0.008, -0.010, -0.012];
+    const late  = [0.005, 0.010, 0.012, 0.015];
+
+    switch (style) {
+        case "Prezioso":
+            if (s === 4 || s === 12) return late[Math.floor(rand()*late.length)]; // clap late
+            if (s % 2 === 1) return early[Math.floor(rand()*early.length)];       // hat early
+            return 0;
+
+        case "GabryPonte":
+            if (s === 4 || s === 12) return 0.012; // clap fisso late
+            if (s % 2 === 1) return early[Math.floor(rand()*early.length)];
+            return 0;
+
+        case "Gigi":
+            return late[Math.floor(rand()*late.length)]; // dreamy → leggermente late
+
+        case "Eiffel65":
+            return 0; // robotico → niente microtiming
+
+        default:
+            return 0;
+    }
+}
 
 function safeNote(note, defaultOctave = "2") {
     if (!note || typeof note !== "string") return null;
@@ -76,17 +138,27 @@ export function scheduleDanceRhythm(section, progression, instruments, params, r
         const padFifth = safeNote(Tone.Frequency(pitchRoot + "3").transpose(7).toNote(), "3");
 
         for (let s of pattern) {
-            const absoluteTime = measureStartTime + s * stepTime;
+            //const absoluteTime = measureStartTime + s * stepTime;
+            //const absoluteTime = measureStartTime + s * stepTime + swingOffset(s, stepTime, params.swing || 0);
+            const absoluteTime =
+    measureStartTime +
+    s * stepTime +
+    swingOffset(s, stepTime, params.swing || 0) +
+    microTimingOffset(s, style, rand);
             
             // KICK (più fitta in drop)
             let playKick = true;
             if (!isDrop && !isChorus && s % 4 !== 0) playKick = false;
             if (playKick) {
                 Tone.Transport.schedule(t => {
-                    percussion?.player("kick")?.start(t);
-                    if (score) score.addNote("Drums", "Kick", section.name);
-                }, absoluteTime);
-            }
+    percussion?.player("kick")?.start(t);
+
+    // SIDECHAIN DUCKING
+    duckEnv.triggerAttackRelease("16n", t);
+
+    if (score) score.addNote("Drums", "Kick", section.name);
+}, absoluteTime);
+
             
             // SNARE/CLAP
             if (!isIntro && (s === 4 || s === 12)) {
@@ -118,11 +190,75 @@ export function scheduleDanceRhythm(section, progression, instruments, params, r
             // BASSLINE
             if (bassShouldPlay(s, isDrop) && bassNote) {
                 Tone.Transport.schedule(t => {
-                    bass.triggerAttackRelease(bassNote, "16n", t);
+                    let vel = 0.8;
+
+// ACCENTI STILE PREZIOSO
+if (style === "Prezioso") {
+    vel = getPreziosoVelocity(s, isDrop);
+}
+
+//bass.triggerAttackRelease(bassNote, "8n", t, vel);
+// MID-BASS (il tuo basso principale)
+bass.triggerAttackRelease(bassNote, "8n", t, vel);
+
+// SUB (un’ottava sotto)
+const subNote = Tone.Frequency(bassNote).transpose(-12).toNote();
+subBass.triggerAttackRelease(subNote, "8n", t, 0.6);
+
+// ATTACK (transient)
+bassAttack.triggerAttackRelease(bassNote, "32n", t, 0.4);
+
+
                     if (score) score.addNote("Bass", bassNote, section.name);
-                }, absoluteTime);
-            }
+               }, absoluteTime);
             
+            // GHOST NOTES (solo se il basso NON suona qui)
+else if ([1, 5, 9, 13].includes(s) && bassNote && shouldPlayGhost(rand)) {
+    Tone.Transport.schedule(t => {
+        const vel = getGhostVelocity();
+        const dur = getGhostDuration();
+        bass.triggerAttackRelease(bassNote, dur, t, vel);
+        if (score) score.addNote("BassGhost", bassNote, section.name);
+    }, absoluteTime - 0.015);
+}
+// ------------------------------------------------------------
+// VARIAZIONI RANDOM CONTROLLATE
+// ------------------------------------------------------------
+
+// 1) HI-HAT EXTRA (15% probabilità)
+if (chance(rand, 0.15) && !isIntro && s % 2 === 1) {
+    Tone.Transport.schedule(t => {
+        percussion?.player("closedHat")?.start(t);
+        if (score) score.addNote("HiHatExtra", "Hat", section.name);
+    }, absoluteTime + stepTime * 0.1);
+}
+
+// 2) CLAP ANTICIPATO (solo su 4, 10% probabilità)
+if (s === 12 && chance(rand, 0.10) && !isIntro) {
+    Tone.Transport.schedule(t => {
+        percussion?.player("handClap")?.start(t);
+        if (score) score.addNote("ClapEarly", "Snare", section.name);
+    }, absoluteTime - stepTime * 0.2);
+}
+
+// 3) BASS DOUBLE HIT (solo nel drop, 20% probabilità)
+// 3) BASS DOUBLE HIT (solo nel drop, 20% probabilità)
+if (isDrop && bassShouldPlay(s, isDrop) && chance(rand, 0.20)) {
+    Tone.Transport.schedule(t => {
+        bass.triggerAttackRelease(bassNote, "32n", t, 0.5);
+        if (score) score.addNote("BassDouble", bassNote, section.name);
+    }, absoluteTime + stepTime * 0.25);
+}
+
+
+// 4) MINI FX FILL (ogni 4 misure)
+if (m % 4 === 3 && s === 15 && chance(rand, 0.25) && fxNoise) {
+    Tone.Transport.schedule(t => {
+        fxNoise.triggerAttackRelease("C4", "16n", t, 0.4);
+        if (score) score.addNote("FXFill", "Noise", section.name);
+    }, absoluteTime);
+}
+
             // CRASH
             if (s === 0 && m === 0) {
                 Tone.Transport.schedule(t => {

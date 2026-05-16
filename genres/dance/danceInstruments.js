@@ -3,7 +3,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("danceInstruments.js ver. 003 loaded");
+console.log("danceInstruments.js ver. 004 loaded");
 
 // --- RIVERBERO ---
 const hallReverb = new Tone.Reverb({
@@ -11,6 +11,20 @@ const hallReverb = new Tone.Reverb({
     preDelay: 0.01,
     wet: 0.35
 }).toDestination();
+
+// SIDECHAIN DUCKING
+
+export const duckGain = new Tone.Gain(1).toDestination();
+padBus.connect(duckGain);
+bassBus.connect(duckGain);
+
+export const duckEnv = new Tone.Envelope({
+    attack: 0.001,
+    decay: 0.12,
+    sustain: 1,
+    release: 0.1
+});
+duckEnv.connect(duckGain.gain);
 
 export const leadBus = new Tone.Gain(1);
 export const padBus = new Tone.Gain(1);
@@ -36,6 +50,17 @@ organoBus.connect(organoEQ).connect(hallReverb).connect(masterEQ);
 pianoBus.connect(pianoEQ).connect(hallReverb).connect(masterEQ);
 fxBus.connect(fxEQ).connect(hallReverb).connect(masterEQ);
 percussionBus.connect(percussionEQ).connect(hallReverb).connect(masterEQ);
+
+export const subBass = new Tone.Synth({
+    oscillator: { type: "sine" },
+    envelope: { attack: 0.001, decay: 0.15, sustain: 0.8, release: 0.2 }
+}).connect(bassBus);
+
+export const bassAttack = new Tone.Synth({
+    oscillator: { type: "square" },
+    envelope: { attack: 0.001, decay: 0.05, sustain: 0, release: 0.05 }
+}).connect(bassBus);
+
 
 // --- LEAD SAW ---
 export const leadSaw = new Tone.Sampler({
@@ -406,6 +431,8 @@ export const danceInstruments = {
     piano,
     bass,
     percussion,
+    subBass,
+    bassAttack,
     leadBus,
     padBus,
     fxBus,
@@ -414,7 +441,7 @@ export const danceInstruments = {
     pianoBus,
     percussionBus,
     setVolume
-};
+};g
 
 export const danceVolumeMap = {
     leadSaw: "Saw", 
@@ -447,13 +474,13 @@ export { hallReverb };
 bassBus.gain.value = Tone.dbToGain(18);  // +18dB
 
 // BOOST PERCUSSION (kick e snare potenti)
-percussionBus.gain.value = Tone.dbToGain(30); // +20dB
+percussionBus.gain.value = Tone.dbToGain(28); // +20dB
 
 // LEAD leggermente più presenti
-leadBus.gain.value = Tone.dbToGain(8);
+leadBus.gain.value = Tone.dbToGain(10);
 
 // PAD più presenti (ma non coprono il basso)
-padBus.gain.value = Tone.dbToGain(4);
+padBus.gain.value = Tone.dbToGain(6);
 
 // FX normali
 fxBus.gain.value = Tone.dbToGain(6);
