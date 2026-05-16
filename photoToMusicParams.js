@@ -1,71 +1,44 @@
-// ============================================================
-// photoToMusicParams.js
-// ------------------------------------------------------------
-// Questo modulo è il "cervello emotivo" del sistema.
-// NON genera musica. NON è legato a un genere specifico.
-// Produce parametri emotivi e musicali astratti che ogni
-// genere interpreterà a modo suo (power metal, piano, ambient…).
-// ============================================================
-
-
-// ------------------------------------------------------------
-// 1. PARAMETRI EMOTIVI (continui, universali)
-// ------------------------------------------------------------
-
-// Intensità generale del brano (0–1)
-// Combina luminosità, contrasto, complessità e texture.
-// È il parametro più importante: guida BPM, densità, energia.
-
-console.log("photoToMusicParams.js ver. 001.1 loaded");
+// photoToMusicParams.js — ver. 002 (con validazione robusta)
+console.log("photoToMusicParams.js ver. 002 loaded");
 
 function computeIntensity(analysis) {
-    const { brightness, energy, entropy, edges } = analysis;
+    const brightness = analysis.brightness ?? 0.5;
+    const energy = analysis.energy ?? 0.5;
+    const entropy = analysis.entropy ?? 0.5;
+    const edges = analysis.edges ?? 0.5;
 
-    // Formula bilanciata (Stratovarius-friendly)
-    let intensity =
-        0.35 * brightness +
-        0.35 * energy +
-        0.20 * entropy +
-        0.10 * edges;
-
+    let intensity = 0.35 * brightness + 0.35 * energy + 0.20 * entropy + 0.10 * edges;
+    
+    // Assicura che sia un numero valido
+    if (isNaN(intensity)) intensity = 0.5;
+    
     return Math.min(1, Math.max(0, intensity));
 }
 
-
-// Mood (0 = dark, 1 = bright)
-// Serve per generi futuri (piano, ambient, synthwave…)
 function computeMood(analysis) {
-    return analysis.brightness; // semplice ma efficace
+    const brightness = analysis.brightness ?? 0.5;
+    return isNaN(brightness) ? 0.5 : brightness;
 }
 
-
-// Complessità (0 = semplice, 1 = complesso)
-// Deriva dall'entropia dell'immagine
 function computeComplexity(analysis) {
-    return analysis.entropy;
+    const entropy = analysis.entropy ?? 0.5;
+    return isNaN(entropy) ? 0.5 : entropy;
 }
 
-
-// Texture (0 = smooth, 1 = rough)
-// Deriva dalla quantità di edges
 function computeTexture(analysis) {
-    return analysis.edges;
+    const edges = analysis.edges ?? 0.5;
+    return isNaN(edges) ? 0.5 : edges;
 }
 
-
-// Motion (-1 = discendente, 0 = neutro, +1 = ascendente)
-// Deriva dalla direzione visiva dell'immagine
 function computeMotion(analysis) {
-    return analysis.direction; // già normalizzato
+    const direction = analysis.direction ?? 0;
+    return isNaN(direction) ? 0 : direction;
 }
 
-
-// Temperatura colore (0 = warm, 1 = cold)
 function computeColorTemperature(analysis) {
-    return analysis.colorTemperature ?? 0.5;
+    const ct = analysis.colorTemperature ?? 0.5;
+    return isNaN(ct) ? 0.5 : ct;
 }
-
-
 
 // ------------------------------------------------------------
 // 2. PARAMETRI MUSICALI ASTRATTI (universali)
@@ -145,21 +118,20 @@ function computeStructureProfile(intensity) {
     };
 }
 
-
-
-// ------------------------------------------------------------
-// 3. FUNZIONE PRINCIPALE
-// ------------------------------------------------------------
-
 export function photoToMusicParams(analysis) {
+    console.log("🔍 photoToMusicParams - analysis ricevuta:", analysis);
 
-    // --- Parametri emotivi ---
+    // --- Parametri emotivi (già validati dalle funzioni) ---
     const intensity = computeIntensity(analysis);
     const mood = computeMood(analysis);
     const complexity = computeComplexity(analysis);
     const texture = computeTexture(analysis);
     const motion = computeMotion(analysis);
     const colorTemperature = computeColorTemperature(analysis);
+
+    console.log("📊 photoToMusicParams - valori calcolati:", {
+        intensity, mood, complexity, texture, motion, colorTemperature
+    });
 
     // --- Parametri musicali astratti ---
     const tonalCenter = computeTonalCenter(analysis, intensity);
@@ -170,15 +142,15 @@ export function photoToMusicParams(analysis) {
 
     // --- DNA deterministico ---
     const dna = hashStringToNumber(JSON.stringify(analysis));
+    
     const imageParams = {
-    brightness: analysis.brightness,
-    energy: analysis.energy,
-    texture: analysis.texture,
-    complexity: analysis.complexity,
-    direction: analysis.direction,
-    colorTemperature: analysis.colorTemperature
-};
-
+        brightness: analysis.brightness ?? 0.5,
+        energy: analysis.energy ?? 0.5,
+        texture: analysis.texture ?? 0.5,
+        complexity: analysis.complexity ?? 0.5,
+        direction: analysis.direction ?? 0,
+        colorTemperature: analysis.colorTemperature ?? 0.5
+    };
 
     return {
         dna,   
@@ -200,7 +172,6 @@ export function photoToMusicParams(analysis) {
             timeSignature
         },
         structure: structureProfile,
-
         genreParams: {}
     };
 }
@@ -212,5 +183,3 @@ function hashStringToNumber(str) {
     }
     return h;
 }
-
-
