@@ -12,6 +12,14 @@ const hallReverb = new Tone.Reverb({
     wet: 0.35
 }).toDestination();
 
+export const leadBus = new Tone.Gain(1);
+export const padBus = new Tone.Gain(1);
+export const bassBus = new Tone.Gain(1);
+export const organoBus = new Tone.Gain(1);
+export const pianoBus = new Tone.Gain(1);
+export const fxBus = new Tone.Gain(1);
+export const percussionBus = new Tone.Gain(1);
+
 // SIDECHAIN DUCKING
 
 export const duckGain = new Tone.Gain(1).toDestination();
@@ -26,13 +34,6 @@ export const duckEnv = new Tone.Envelope({
 });
 duckEnv.connect(duckGain.gain);
 
-export const leadBus = new Tone.Gain(1);
-export const padBus = new Tone.Gain(1);
-export const bassBus = new Tone.Gain(1);
-export const organoBus = new Tone.Gain(1);
-export const pianoBus = new Tone.Gain(1);
-export const fxBus = new Tone.Gain(1);
-export const percussionBus = new Tone.Gain(1);
 
 const leadEQ = new Tone.EQ3({ low: -4, mid: 2, high: 3 });
 const padEQ = new Tone.EQ3({ low: -2, mid: -1, high: 2 });
