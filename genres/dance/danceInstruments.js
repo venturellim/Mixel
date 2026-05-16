@@ -447,7 +447,7 @@ export { hallReverb };
 bassBus.gain.value = Tone.dbToGain(18);  // +18dB
 
 // BOOST PERCUSSION (kick e snare potenti)
-percussionBus.gain.value = Tone.dbToGain(24); // +20dB
+percussionBus.gain.value = Tone.dbToGain(30); // +20dB
 
 // LEAD leggermente più presenti
 leadBus.gain.value = Tone.dbToGain(8);
