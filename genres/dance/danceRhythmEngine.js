@@ -81,7 +81,7 @@ export function scheduleDanceRhythm(section, progression, instruments, params, r
             // KICK: solo sui quarti (1,2,3,4)
             if (isQuarter) {
                 Tone.Transport.schedule(t => {
-                    percussion?.player("Kick")?.start(t);
+                    percussion?.player("kick")?.start(t);
                     if (score) score.addNote("Drums", "Kick", section.name);
                 }, absoluteTime);
             }
