@@ -101,7 +101,7 @@ export function scheduleDanceRhythm(section, progression, instruments, params, r
             
             // KICK
             Tone.Transport.schedule(t => {
-                percussion?.player("bassDrum")?.start(t);
+                percussion?.player("kick")?.start(t);
                 if (score) score.addNote("Drums", "Kick", section.name);
             }, absoluteTime);
             
