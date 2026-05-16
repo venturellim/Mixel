@@ -442,7 +442,7 @@ export const danceInstruments = {
     pianoBus,
     percussionBus,
     setVolume
-};g
+};
 
 export const danceVolumeMap = {
     leadSaw: "Saw", 
