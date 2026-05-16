@@ -41,7 +41,7 @@ const bassEQ = new Tone.EQ3({ low: 4, mid: -2, high: -4 });
 const organoEQ = new Tone.EQ3({ low: -4, mid: 2, high: 3 });
 const pianoEQ = new Tone.EQ3({ low: -4, mid: 2, high: 3 });
 const fxEQ   = new Tone.EQ3({ low: 4, mid: -2, high: -4 });
-const percussionEQ   = new Tone.EQ3({ low: 6, mid: 1, high: 3 });
+const percussionEQ   = new Tone.EQ3({ low: 2, mid: 1, high: 3 });
 
 // Routing bus → EQ → master
 leadBus.connect(leadEQ).connect(hallReverb).connect(masterEQ);
