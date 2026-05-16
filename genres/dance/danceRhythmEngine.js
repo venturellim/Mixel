@@ -208,12 +208,10 @@ subBass.triggerAttackRelease(subNote, "8n", t, 0.6);
 // ATTACK (transient)
 bassAttack.triggerAttackRelease(bassNote, "32n", t, 0.4);
 
-
                     if (score) score.addNote("Bass", bassNote, section.name);
                }, absoluteTime);
-            
-            // GHOST NOTES (solo se il basso NON suona qui)
-else if ([1, 5, 9, 13].includes(s) && bassNote && shouldPlayGhost(rand)) {
+            } else if ([1, 5, 9, 13].includes(s) && bassNote && shouldPlayGhost(rand)) {
+// GHOST NOTES (solo se il basso NON suona qui)
     Tone.Transport.schedule(t => {
         const vel = getGhostVelocity();
         const dur = getGhostDuration();
