@@ -1,15 +1,19 @@
-// photoToMusicParams.js — ver. 002 (con validazione robusta)
-console.log("photoToMusicParams.js ver. 002 loaded");
+// photoToMusicParams.js — ver. 003 (semplificata e robusta)
+console.log("photoToMusicParams.js ver. 003 loaded");
+
+// ------------------------------------------------------------
+// 1. PARAMETRI EMOTIVI (continui, universali)
+// ------------------------------------------------------------
 
 function computeIntensity(analysis) {
+    // Usa i campi che esistono in imageAnalysis
     const brightness = analysis.brightness ?? 0.5;
     const energy = analysis.energy ?? 0.5;
-    const entropy = analysis.entropy ?? 0.5;
-    const edges = analysis.edges ?? 0.5;
+    const texture = analysis.texture ?? 0.5;
+    const complexity = analysis.complexity ?? 0.5;
 
-    let intensity = 0.35 * brightness + 0.35 * energy + 0.20 * entropy + 0.10 * edges;
+    let intensity = 0.4 * brightness + 0.3 * energy + 0.15 * texture + 0.15 * complexity;
     
-    // Assicura che sia un numero valido
     if (isNaN(intensity)) intensity = 0.5;
     
     return Math.min(1, Math.max(0, intensity));
@@ -21,13 +25,13 @@ function computeMood(analysis) {
 }
 
 function computeComplexity(analysis) {
-    const entropy = analysis.entropy ?? 0.5;
-    return isNaN(entropy) ? 0.5 : entropy;
+    const complexity = analysis.complexity ?? 0.5;
+    return isNaN(complexity) ? 0.5 : complexity;
 }
 
 function computeTexture(analysis) {
-    const edges = analysis.edges ?? 0.5;
-    return isNaN(edges) ? 0.5 : edges;
+    const texture = analysis.texture ?? 0.5;
+    return isNaN(texture) ? 0.5 : texture;
 }
 
 function computeMotion(analysis) {
@@ -44,10 +48,6 @@ function computeColorTemperature(analysis) {
 // 2. PARAMETRI MUSICALI ASTRATTI (universali)
 // ------------------------------------------------------------
 
-// Tonalità minori naturali compatibili con i tuoi sample
-const VALID_TONICS = ["C", "D", "E", "F", "G", "A"];
-
-// Mappa note → semitoni per calcolare la vicinanza
 const NOTE_TO_SEMITONE = {
     "C": 0, "C#": 1, "Db": 1,
     "D": 2, "D#": 3, "Eb": 3,
@@ -58,19 +58,15 @@ const NOTE_TO_SEMITONE = {
     "B": 11
 };
 
-// Trova la nota naturale più vicina alla tonalità dell'immagine
 function computeTonalCenter(analysis, intensity) {
-    const imageKey = analysis.key || "E"; // fallback
+    const imageKey = analysis.key || "C";
+    const semitone = NOTE_TO_SEMITONE[imageKey] ?? 4;
 
-    const semitone = NOTE_TO_SEMITONE[imageKey] ?? 4; // fallback E
-
-    // Cluster per intensità
     let cluster;
     if (intensity < 0.33) cluster = ["C", "D"];
     else if (intensity < 0.66) cluster = ["E", "F"];
     else cluster = ["G", "A"];
 
-    // Trova la nota del cluster più vicina alla tonalità dell'immagine
     let best = cluster[0];
     let bestDist = Infinity;
 
@@ -82,32 +78,23 @@ function computeTonalCenter(analysis, intensity) {
         }
     }
 
-    return best; // sempre naturale, sempre compatibile
+    return best;
 }
 
-
-// Profilo scala (minore naturale o armonica)
 function computeScaleProfile(intensity) {
     if (intensity > 0.66) return "harmonicMinor";
     return "naturalMinor";
 }
 
-
-// Profilo tempo (range BPM)
 function computeTempoProfile(intensity) {
-    // 90–160 BPM
     const bpm = 90 + intensity * 70;
     return Math.round(bpm);
 }
 
-
-// Time signature
 function computeTimeSignature(intensity) {
     return intensity < 0.33 ? "6/8" : "4/4";
 }
 
-
-// Profilo struttura (lunghezza sezioni)
 function computeStructureProfile(intensity) {
     return {
         intro: intensity < 0.33 ? 8 : intensity < 0.66 ? 4 : 2,
@@ -118,10 +105,20 @@ function computeStructureProfile(intensity) {
     };
 }
 
-export function photoToMusicParams(analysis) {
-    console.log("🔍 photoToMusicParams - analysis ricevuta:", analysis);
+// ------------------------------------------------------------
+// 3. FUNZIONE PRINCIPALE
+// ------------------------------------------------------------
 
-    // --- Parametri emotivi (già validati dalle funzioni) ---
+export function photoToMusicParams(analysis) {
+    console.log("🔍 photoToMusicParams - analysis ricevuta:", {
+        brightness: analysis.brightness,
+        energy: analysis.energy,
+        texture: analysis.texture,
+        complexity: analysis.complexity,
+        direction: analysis.direction,
+        key: analysis.key
+    });
+
     const intensity = computeIntensity(analysis);
     const mood = computeMood(analysis);
     const complexity = computeComplexity(analysis);
@@ -130,17 +127,18 @@ export function photoToMusicParams(analysis) {
     const colorTemperature = computeColorTemperature(analysis);
 
     console.log("📊 photoToMusicParams - valori calcolati:", {
-        intensity, mood, complexity, texture, motion, colorTemperature
+        intensity: intensity.toFixed(3),
+        mood: mood.toFixed(3),
+        complexity: complexity.toFixed(3),
+        texture: texture.toFixed(3)
     });
 
-    // --- Parametri musicali astratti ---
     const tonalCenter = computeTonalCenter(analysis, intensity);
     const scaleProfile = computeScaleProfile(intensity);
     const tempoProfile = computeTempoProfile(intensity);
     const timeSignature = computeTimeSignature(intensity);
     const structureProfile = computeStructureProfile(intensity);
 
-    // --- DNA deterministico ---
     const dna = hashStringToNumber(JSON.stringify(analysis));
     
     const imageParams = {
