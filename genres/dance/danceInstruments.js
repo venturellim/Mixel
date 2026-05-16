@@ -468,20 +468,17 @@ export const danceVolumeMap = {
 
 export { hallReverb };
 
-// Invece di setVolume, modifica direttamente i gain dei bus
-// Alla fine del file, dopo le esportazioni:
+// BASS: presente ma non devastante
+bassBus.gain.value = Tone.dbToGain(4);      // +4 dB
 
-// BOOST BASS (entra nel petto!)
-bassBus.gain.value = Tone.dbToGain(18);  // +18dB
+// PERCUSSION: in faccia, ma umane
+percussionBus.gain.value = Tone.dbToGain(6); // +6 dB
 
-// BOOST PERCUSSION (kick e snare potenti)
-percussionBus.gain.value = Tone.dbToGain(28); // +20dB
+// LEAD: sopra il tappeto ma non urlato
+leadBus.gain.value = Tone.dbToGain(2);      // +2 dB
 
-// LEAD leggermente più presenti
-leadBus.gain.value = Tone.dbToGain(10);
+// PAD: tappeto, non protagonista
+padBus.gain.value = Tone.dbToGain(0);       // 0 dB
 
-// PAD più presenti (ma non coprono il basso)
-padBus.gain.value = Tone.dbToGain(6);
-
-// FX normali
-fxBus.gain.value = Tone.dbToGain(6);
+// FX: decorativi, non dominanti
+fxBus.gain.value = Tone.dbToGain(0);        // 0 dB
