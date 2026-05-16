@@ -97,7 +97,7 @@ function initWin11Loader() {
                 '<div class="win11-genre-progress-bar" id="win11-genre-progress-bar"></div>' +
             '</div>' +
             '<div class="win11-genre-percent" id="win11-genre-percent">0%</div>' +
-            '<div class="win11-instrument-label">🎸 Strumento corrente</div>' +
+            '<div class="win11-instrument-label">Strumento corrente: </div>' +
             '<div class="win11-instrument-name" id="win11-instrument-name">-</div>' +
             '<div class="win11-status" id="win11-status">Inizializzazione</div>' +
         '</div>';
@@ -166,17 +166,6 @@ function hideWin11UI() {
 // 📦 CARICAMENTO STRUMENTI CON LISTE DINAMICHE
 // ======================================================
 
-/**
- * Carica gli strumenti usando le liste passate dal main.js
- * @param {Object} genreInstruments - Oggetto con generi e array di strumenti
- * Esempio:
- * {
- *   metal: ["Lead Guitar", "Rhythm Open", "Rhythm Palm", "Bass", "Drums"],
- *   dance: ["Kick", "Snare", "Hat", "Synth Bass", "Lead Synth", "Pad", ...],
- *   orchestra: ["Violins", "Violas", "Cellos", "Basses", "Flutes", "Horns", "Timpani"],
- *   piano: ["Grand Piano"]
- * }
- */
 export async function waitForInstruments(genreInstruments) {
     initWin11Loader();
     
