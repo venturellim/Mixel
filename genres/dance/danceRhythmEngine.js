@@ -219,6 +219,7 @@ bassAttack.triggerAttackRelease(bassNote, "32n", t, 0.4);
         if (score) score.addNote("BassGhost", bassNote, section.name);
     }, absoluteTime - 0.015);
 }
+}
 // ------------------------------------------------------------
 // VARIAZIONI RANDOM CONTROLLATE
 // ------------------------------------------------------------
