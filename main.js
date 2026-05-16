@@ -16,7 +16,7 @@ import { createOrchestraEngine } from "./genres/orchestra/orchestraEngine.js";
 import { createDanceEngine } from "./genres/dance/danceEngine.js";
 import { scoreVisualizer } from "./scoreUI.js";
 
-console.log("main.js Ver. 017.1 loaded");
+console.log("main.js Ver. 017.2 loaded");
 
 
 let currentEngine = null;
@@ -24,11 +24,12 @@ let currentGenre = null;
 let firstStart = 1;
 let scoreUI = null;
 
-const genteInstrument = {
-    dance: 19,
-    metal: 5,
-    orchestra: 5,
-    piano: 1
+// ✅ L'array DEFINE già il numero (la lunghezza dell'array)
+const genreInstruments = {
+    dance: ["Bells Pad", "Fantasy Fx", "Glass Pad",  "Hard for the Core Fx", "Heaven Fx", "Jump Fx", "Synth Bass", "Lead Synth", "Noise Fx", "Organo", "Percussions", "Saw", "Shaku Pad", "So True Strig Pad", "Sweet Fx", "Synth Brass 1", "Synth Brass 2","Warm Pad", "Wave Pad"],  // 19 strumenti
+    metal: ["Bass", "Drums", "Lead Guitar", "Rhythm Guitar Open", "Rhythm Guitar Palm"],  // 5 strumenti
+    orchestra: ["Basses", "Cellos", "Violas", "Violins",    "Timpani"],  // 5 strumenti
+    piano: ["Grand Piano"]  // 1 strumento
 };
 
 const miniVideo = document.querySelector('.video-mini-wrapper video'); 
@@ -131,7 +132,7 @@ function initGenrePanel() {
             resetAudio();
             firstStart = 0;
         } else {
-        await waitForInstruments(genteInstrument);
+        await waitForInstruments(genreInstruments);
         firstStart = 0;
         }
         
