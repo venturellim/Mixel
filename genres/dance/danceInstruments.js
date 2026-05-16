@@ -374,17 +374,17 @@ export function normalizeNote(note, instrument) {
     return best;
 }
 
-setVolume("leadSaw", +4);
-setVolume("leadSynthBrass1", +4);
-setVolume("leadSynthBrass2", +4);
-setVolume("fxFantasy", +4);
-setVolume("fxHeaven", +4);
-setVolume("fxJump", +4);
-setVolume("fxHardFTCore", +4);
-setVolume("piano", +2);
-setVolume("organo", +2);
-setVolume("bass", +10);
-setVolume("percussion", +12);
+//setVolume("leadSaw", +4);
+//setVolume("leadSynthBrass1", +4);
+//setVolume("leadSynthBrass2", +4);
+//setVolume("fxFantasy", +4);
+//setVolume("fxHeaven", +4);
+//setVolume("fxJump", +4);
+//setVolume("fxHardFTCore", +4);
+//setVolume("piano", +2);
+//setVolume("organo", +2);
+//setVolume("bass", +10);
+//setVolume("percussion", +12);
 
 export const danceInstruments = {
     leadSaw,
