@@ -384,7 +384,7 @@ setVolume("fxHardFTCore", +4);
 setVolume("piano", +2);
 setVolume("organo", +2);
 setVolume("bass", +4);
-setVolume("percussion", +6);
+setVolume("percussion", +12);
 
 export const danceInstruments = {
     leadSaw,
