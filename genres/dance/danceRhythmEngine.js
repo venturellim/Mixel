@@ -2,7 +2,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { getDanceGroove, grooveCharacteristics } from "./danceGrooves.js";
 
-console.log("danceRhythmEngine.js ver. 014 loaded");
+console.log("danceRhythmEngine.js ver. 015 loaded");
 
 function safeNote(note, defaultOctave = "2") {
     if (!note || typeof note !== "string") return null;
@@ -21,7 +21,10 @@ const bassPatterns = {
     Gigi: (s) => s % 2 === 1,
     Prezioso: (s) => s % 2 === 1,
     Eiffel65: (s) => s % 2 === 1,
-    GabryPonte: (s) => s % 2 === 1
+    GabryPonte: (s) => s % 2 === 1,
+
+    // MOLELLA: rolling bass (tipico dance 2000)
+    Molella: (s) => [1, 3, 6, 10, 12, 15].includes(s)
 };
 
 // HI-HAT: ogni 8th (non ogni 16th!)
@@ -55,11 +58,13 @@ export function scheduleDanceRhythm(section, progression, instruments, params, r
     let useOrgano = false;
     
     switch(style) {
-        case "Gigi": selectedPad = warmPad; useOrgano = true; break;
-        case "Eiffel65": selectedPad = glassPad; break;
-        case "GabryPonte": selectedPad = bellsPad; break;
-        default: selectedPad = wavePad;
-    }
+    case "Gigi":       selectedPad = warmPad; useOrgano = true; break;
+    case "Eiffel65":   selectedPad = glassPad; break;
+    case "GabryPonte": selectedPad = bellsPad; break;
+    case "Molella":    selectedPad = warmPad; break; // pad trancey
+    default:           selectedPad = wavePad;
+}
+
 
     for (let m = 0; m < section.measures; m++) {
         const measureStartTime = section.startTime + (m * measureDur);

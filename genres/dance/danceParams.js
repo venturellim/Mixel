@@ -1,5 +1,5 @@
 // danceParams.js — ver. 014 (BPM più estremi)
-console.log("danceParams.js ver. 014 loaded");
+console.log("danceParams.js ver. 015 loaded");
 
 export function buildDanceParams(rand, globalParams, rhythmParams) {
     let intensity = parseFloat(globalParams?.intensity);
@@ -28,11 +28,13 @@ export function buildDanceParams(rand, globalParams, rhythmParams) {
     
     // Calcola punteggi
     let scores = {
-        Gigi: 0,
-        Prezioso: 0,
-        Eiffel65: 0,
-        GabryPonte: 0
-    };
+    Gigi: 0,
+    Prezioso: 0,
+    Eiffel65: 0,
+    GabryPonte: 0,
+    Molella: 0
+};
+
     
     // GIGI: lento, scuro, calmo
     scores.Gigi = (1 - intensity) * 0.3 + (1 - mood) * 0.25 + (1 - texture) * 0.25 + (1 - bpmClamped) * 0.2;
@@ -49,7 +51,13 @@ export function buildDanceParams(rand, globalParams, rhythmParams) {
     
     // GABRY PONTE: energico, luminoso, veloce
     scores.GabryPonte = intensity * 0.35 + mood * 0.35 + bpmClamped * 0.3;
-    
+    // MOLELLA: melodico, rolling, trancey, medio BPM
+scores.Molella =
+    (1 - complexity) * 0.3 +
+    mood * 0.3 +
+    (1 - texture) * 0.2 +
+    (1 - Math.abs(bpmClamped - 0.4)) * 0.2;
+
     console.log("🎧 Punteggi:", {
         Gigi: scores.Gigi.toFixed(3),
         Prezioso: scores.Prezioso.toFixed(3),
@@ -62,11 +70,19 @@ export function buildDanceParams(rand, globalParams, rhythmParams) {
     if (scores.Gigi > maxScore) { style = "Gigi"; maxScore = scores.Gigi; }
     if (scores.Eiffel65 > maxScore) { style = "Eiffel65"; maxScore = scores.Eiffel65; }
     if (scores.GabryPonte > maxScore) { style = "GabryPonte"; maxScore = scores.GabryPonte; }
+if (scores.Molella > maxScore) { style = "Molella"; maxScore = scores.Molella; }
     
     const tonalCenter = rhythmParams?.tonalCenter || "C4";
     const scaleType = rhythmParams?.scaleProfile || "naturalMinor";
     
-    let compositionMode = { Gigi: "dream", Prezioso: "rhythmic", Eiffel65: "robotic", GabryPonte: "anthem" }[style];
+    let compositionMode = {
+    Gigi: "dream",
+    Prezioso: "rhythmic",
+    Eiffel65: "robotic",
+    GabryPonte: "anthem",
+    Molella: "melodic"
+}[style];
+
     
     console.log(`🎧 STILE: ${style} | BPM: ${bpm} | originale: ${rawBpm}`);
     

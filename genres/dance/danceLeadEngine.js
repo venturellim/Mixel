@@ -113,18 +113,22 @@ function getEnhancersForStyle(style, energy, complexity, isSolo, isChorus, isDro
 // ============================================================
 
 const leadInstruments = {
-    Gigi: (instr) => instr.piano,
-    Prezioso: (instr) => instr.leadSaw,
-    Eiffel65: (instr) => instr.leadSynthBrass1,
-    GabryPonte: (instr) => instr.leadSynthBrass2
+    Gigi:       (instr) => instr.piano,
+    Prezioso:   (instr) => instr.leadSaw,
+    Eiffel65:   (instr) => instr.leadSynthBrass1,
+    GabryPonte: (instr) => instr.leadSynthBrass2,
+    Molella:    (instr) => instr.leadSaw // saw morbido, trancey
 };
+
 
 const leadOctave = {
     Gigi: 4,
     Prezioso: 4,
     Eiffel65: 5,
-    GabryPonte: 5
+    GabryPonte: 5,
+    Molella: 4
 };
+
 
 // ============================================================
 // PATTERN RITMICO
@@ -135,6 +139,15 @@ function getPattern(sectionType, energy, brightness, complexity) {
     const dnaScore = (energy * 400) + (brightness * 30) + (complexity * 2);
     const index = Math.floor(Math.abs(dnaScore)) % family.length;
     return [...family[index]];
+}
+
+function generateEiffelArpeggio(root, third, fifth, octave) {
+    return [
+        `${root}${octave+1}`,
+        `${third}${octave}`,
+        `${fifth}${octave+1}`,
+        `${third}${octave}`
+    ];
 }
 
 // ============================================================
@@ -203,7 +216,23 @@ export function scheduleDanceLead(section, progression, instruments, params, ran
             }
         }
     }
-    
+    // ============================================================
+// ARPEGGIATORE EIFFEL65 (solo in chorus/solo)
+// ============================================================
+if (style === "Eiffel65" && (isChorus || isSolo)) {
+
+    const root = getRootPitch(progression[0]);
+    const third = getRootPitch(progression[0]) + "#";   // semplice terza maggiore
+    const fifth = getRootPitch(progression[0]) + "5";   // quinta
+
+    currentMelody = generateEiffelArpeggio(root, third, fifth, defaultOctave);
+
+    // pattern 16-step robotico
+    currentPattern = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15];
+
+    console.log("🤖 ARP EIFFEL65 ATTIVO →", currentMelody);
+}
+
     // Assicura che pattern e melodia abbiano la stessa lunghezza approssimativa
     while (currentPattern.length < currentMelody.length) {
         currentPattern = [...currentPattern, ...currentPattern];
