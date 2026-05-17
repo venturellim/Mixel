@@ -216,6 +216,13 @@ export function scheduleDanceLead(section, progression, instruments, params, ran
             }
         }
     }
+    
+    // Assicura che pattern e melodia abbiano la stessa lunghezza approssimativa
+    while (currentPattern.length < currentMelody.length) {
+        currentPattern = [...currentPattern, ...currentPattern];
+    }
+    currentPattern = currentPattern.slice(0, currentMelody.length);
+    
     // ============================================================
 // ARPEGGIATORE EIFFEL65 (solo in chorus/solo)
 // ============================================================
@@ -232,12 +239,6 @@ if (style === "Eiffel65" && (isChorus || isSolo)) {
 
     console.log("🤖 ARP EIFFEL65 ATTIVO →", currentMelody);
 }
-
-    // Assicura che pattern e melodia abbiano la stessa lunghezza approssimativa
-    while (currentPattern.length < currentMelody.length) {
-        currentPattern = [...currentPattern, ...currentPattern];
-    }
-    currentPattern = currentPattern.slice(0, currentMelody.length);
     
     console.log(`🎹 ${section.name} | Stile: ${style} | Enhancers: ${getEnhancersForStyle(style, energy, complexity, isSolo, isChorus, isDrop).join(", ")}`);
     
