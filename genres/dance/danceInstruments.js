@@ -475,10 +475,10 @@ bassBus.gain.value = Tone.dbToGain(8);      // +4 dB
 percussionBus.gain.value = Tone.dbToGain(10); // +6 dB
 
 // LEAD: sopra il tappeto ma non urlato
-leadBus.gain.value = Tone.dbToGain(2);      // +2 dB
+leadBus.gain.value = Tone.dbToGain(-2);      // +2 dB
 
 // PAD: tappeto, non protagonista
-padBus.gain.value = Tone.dbToGain(0);       // 0 dB
+padBus.gain.value = Tone.dbToGain(-2);       // 0 dB
 
 // FX: decorativi, non dominanti
-fxBus.gain.value = Tone.dbToGain(0);        // 0 dB
+fxBus.gain.value = Tone.dbToGain(-2);        // 0 dB
