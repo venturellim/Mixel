@@ -469,10 +469,10 @@ export const danceVolumeMap = {
 export { hallReverb };
 
 // BASS: presente ma non devastante
-bassBus.gain.value = Tone.dbToGain(6);      // +4 dB
+bassBus.gain.value = Tone.dbToGain(8);      // +4 dB
 
 // PERCUSSION: in faccia, ma umane
-percussionBus.gain.value = Tone.dbToGain(8); // +6 dB
+percussionBus.gain.value = Tone.dbToGain(10); // +6 dB
 
 // LEAD: sopra il tappeto ma non urlato
 leadBus.gain.value = Tone.dbToGain(2);      // +2 dB
