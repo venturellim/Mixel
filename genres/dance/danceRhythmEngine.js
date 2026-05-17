@@ -1,70 +1,8 @@
-// danceRhythmEngine.js — ver. 011 (più ritmico, meno "lento")
+// danceRhythmEngine.js — ver. 014 (BILANCIATA - come la dance vera)
 import * as Tone from "https://esm.sh/tone";
 import { getDanceGroove, grooveCharacteristics } from "./danceGrooves.js";
-import { duckEnv } from "./danceInstruments.js";
 
-
-console.log("danceRhythmEngine.js ver. 011 loaded");
-
-function getPreziosoVelocity(step, isDrop) {
-    const base = {
-        2: 0.90,
-        6: 0.75,
-        10: 0.85,
-        14: 0.70
-    }[step] ?? 0.7;
-
-    return isDrop ? base + 0.05 : base;
-}
-
-function shouldPlayGhost(rand) {
-    // 20% di probabilità
-    return rand() < 0.20;
-}
-
-function getGhostVelocity() {
-    return 0.20 + Math.random() * 0.15; // 0.20–0.35
-}
-
-function getGhostDuration() {
-    return "16n"; // corta e non invadente
-}
-
-function chance(rand, p) {
-    return rand() < p;
-}
-
-function swingOffset(s, stepTime, swingAmount = 0.0) {
-    // swingAmount: 0 = dritto, 1 = molto swing
-    if (s % 2 === 1) return 0; // swing solo sui sedicesimi pari
-    return stepTime * 0.3 * swingAmount; 
-}
-
-function microTimingOffset(s, style, rand) {
-    const early = [-0.005, -0.008, -0.010, -0.012];
-    const late  = [0.005, 0.010, 0.012, 0.015];
-
-    switch (style) {
-        case "Prezioso":
-            if (s === 4 || s === 12) return late[Math.floor(rand()*late.length)]; // clap late
-            if (s % 2 === 1) return early[Math.floor(rand()*early.length)];       // hat early
-            return 0;
-
-        case "GabryPonte":
-            if (s === 4 || s === 12) return 0.012; // clap fisso late
-            if (s % 2 === 1) return early[Math.floor(rand()*early.length)];
-            return 0;
-
-        case "Gigi":
-            return late[Math.floor(rand()*late.length)]; // dreamy → leggermente late
-
-        case "Eiffel65":
-            return 0; // robotico → niente microtiming
-
-        default:
-            return 0;
-    }
-}
+console.log("danceRhythmEngine.js ver. 014 loaded");
 
 function safeNote(note, defaultOctave = "2") {
     if (!note || typeof note !== "string") return null;
@@ -78,22 +16,24 @@ function getRootPitch(root) {
     return match ? match[1] : "C";
 }
 
+// BASSO: solo sui controbeat (1e2e3e4e)
 const bassPatterns = {
-    Gigi: (s, isDrop) => isDrop ? [4,6,12,14].includes(s) : [4,12].includes(s),
-    Prezioso: (s, isDrop) => isDrop ? [2,4,6,10,12,14].includes(s) : [2,4,6,10,12,14].includes(s),
-    Eiffel65: (s, isDrop) => s % 2 === 1,
-    GabryPonte: (s, isDrop) => isDrop ? [4,6,12,14].includes(s) : [4,12].includes(s)
+    Gigi: (s) => s % 2 === 1,
+    Prezioso: (s) => s % 2 === 1,
+    Eiffel65: (s) => s % 2 === 1,
+    GabryPonte: (s) => s % 2 === 1
 };
 
+// HI-HAT: ogni 8th (non ogni 16th!)
 const hatDensity = {
-    Gigi: 0.6,      // aumentato
-    Prezioso: 0.8,  // aumentato
-    Eiffel65: 0.9,  // aumentato
-    GabryPonte: 0.7 // aumentato
+    Gigi: 0.5,      // solo sui quarti
+    Prezioso: 0.6,  // un po' più fitto
+    Eiffel65: 0.7,
+    GabryPonte: 0.6
 };
 
 export function scheduleDanceRhythm(section, progression, instruments, params, rand, measureDur, nextSectionRoot, score) {
-    const { percussion, bass, warmPad, wavePad, glassPad, bellsPad, StStringPad, organo, piano } = instruments;
+    const { percussion, bass, warmPad, wavePad, glassPad, bellsPad, organo } = instruments;
     if (!percussion || !bass) return;
 
     const name = section?.name?.toLowerCase() || "";
@@ -107,16 +47,10 @@ export function scheduleDanceRhythm(section, progression, instruments, params, r
     const style = params?.style || "Prezioso";
     const isDrop = isChorus || isSolo;
 
-    const sectionType = isIntro ? "intro" : (isPreChorus ? "prechorus" : (isChorus ? "chorus" : (isSolo ? "solo" : "verse")));
-    const currentGroove = getDanceGroove(sectionType, energy, brightness, complexity);
-    const groove = grooveCharacteristics[currentGroove];
-
-    console.log(`🥁 ${section.name} | Stile: ${style} | Groove: ${currentGroove}`);
-
-    let pattern = groove?.pattern || [0,4,8,12];
     const bassShouldPlay = bassPatterns[style] || bassPatterns.Prezioso;
-    const hatProb = hatDensity[style] || 0.7;
+    const hatProb = hatDensity[style] || 0.6;
 
+    // Selezione pad
     let selectedPad;
     let useOrgano = false;
     
@@ -137,30 +71,22 @@ export function scheduleDanceRhythm(section, progression, instruments, params, r
         const padThird = safeNote(Tone.Frequency(pitchRoot + "3").transpose(3).toNote(), "3");
         const padFifth = safeNote(Tone.Frequency(pitchRoot + "3").transpose(7).toNote(), "3");
 
-        for (let s of pattern) {
-            //const absoluteTime = measureStartTime + s * stepTime;
-            //const absoluteTime = measureStartTime + s * stepTime + swingOffset(s, stepTime, params.swing || 0);
-            const absoluteTime =
-    measureStartTime +
-    s * stepTime +
-    swingOffset(s, stepTime, params.swing || 0) +
-    microTimingOffset(s, style, rand);
+        // PERCORRE TUTTI I 16 SEDICESIMI
+        for (let s = 0; s < 16; s++) {
+            const absoluteTime = measureStartTime + s * stepTime;
+            const isQuarter = (s === 0 || s === 4 || s === 8 || s === 12);
+            const isEighth = (s % 2 === 0);
+            const isOffBeat = (s % 2 === 1);
             
-            // KICK (più fitta in drop)
-            let playKick = true;
-            if (!isDrop && !isChorus && s % 4 !== 0) playKick = false;
-            if (playKick) {
+            // KICK: solo sui quarti (1,2,3,4)
+            if (isQuarter) {
                 Tone.Transport.schedule(t => {
-    percussion?.player("kick")?.start(t);
-
-    // SIDECHAIN DUCKING
-    duckEnv.triggerAttackRelease("16n", t);
-
-    if (score) score.addNote("Drums", "Kick", section.name);
-}, absoluteTime);
-
+                    percussion?.player("kick")?.start(t);
+                    if (score) score.addNote("Drums", "Kick", section.name);
+                }, absoluteTime);
+            }
             
-            // SNARE/CLAP
+            // SNARE: sul 2 e 4 (sedicesimi 4 e 12)
             if (!isIntro && (s === 4 || s === 12)) {
                 Tone.Transport.schedule(t => {
                     percussion?.player("handClap")?.start(t);
@@ -168,111 +94,29 @@ export function scheduleDanceRhythm(section, progression, instruments, params, r
                 }, absoluteTime);
             }
             
-            // HI-HAT (molto più fitto)
-            if (isDrop || isChorus || Math.random() < hatProb || s % 2 === 0) {
-                // Alterna closed e open hat per più movimento
-                const useOpenHat = (isDrop && s % 4 === 2) || (Math.random() < 0.2);
-                const hatSound = useOpenHat ? "openHat" : "closedHat";
+            // HI-HAT: ogni 8th (sui quarti e mezzi)
+            if (isEighth && (isDrop || Math.random() < hatProb)) {
                 Tone.Transport.schedule(t => {
-                    percussion?.player(hatSound)?.start(t);
-                    if (score) score.addNote("Drums", hatSound === "openHat" ? "OpenHat" : "HiHat", section.name);
+                    percussion?.player("closedHat")?.start(t);
+                    if (score) score.addNote("Drums", "HiHat", section.name);
                 }, absoluteTime);
             }
             
-            // RIDE aggiuntivo in drop per più brillantezza
-            if (isDrop && (s === 0 || s === 8)) {
+            // BASSO: su OGNI controbeat (e, e, e, e)
+            if (isOffBeat && bassNote) {
                 Tone.Transport.schedule(t => {
-                    percussion?.player("ride")?.start(t);
-                    if (score) score.addNote("Drums", "Ride", section.name);
-                }, absoluteTime);
-            }
-            
-            // BASSLINE
-            if (bassShouldPlay(s, isDrop) && bassNote) {
-                Tone.Transport.schedule(t => {
-                    let vel = 0.8;
-
-// ACCENTI STILE PREZIOSO
-if (style === "Prezioso") {
-    vel = getPreziosoVelocity(s, isDrop);
-}
-
-//bass.triggerAttackRelease(bassNote, "8n", t, vel);
-// MID-BASS (il tuo basso principale)
-bass.triggerAttackRelease(bassNote, "8n", t, vel);
-
-// SUB (un’ottava sotto)
-const subNote = Tone.Frequency(bassNote).transpose(-12).toNote();
-subBass.triggerAttackRelease(subNote, "8n", t, 0.6);
-
-// ATTACK (transient)
-bassAttack.triggerAttackRelease(bassNote, "32n", t, 0.4);
-
+                    bass.triggerAttackRelease(bassNote, "16n", t);
                     if (score) score.addNote("Bass", bassNote, section.name);
-               }, absoluteTime);
-            } else if ([1, 5, 9, 13].includes(s) && bassNote && shouldPlayGhost(rand)) {
-// GHOST NOTES (solo se il basso NON suona qui)
-    Tone.Transport.schedule(t => {
-        const vel = getGhostVelocity();
-        const dur = getGhostDuration();
-        bass.triggerAttackRelease(bassNote, dur, t, vel);
-        if (score) score.addNote("BassGhost", bassNote, section.name);
-    }, absoluteTime - 0.015);
-}
-}
-// ------------------------------------------------------------
-// VARIAZIONI RANDOM CONTROLLATE
-// ------------------------------------------------------------
-
-// 1) HI-HAT EXTRA (15% probabilità)
-if (chance(rand, 0.15) && !isIntro && s % 2 === 1) {
-    Tone.Transport.schedule(t => {
-        percussion?.player("closedHat")?.start(t);
-        if (score) score.addNote("HiHatExtra", "Hat", section.name);
-    }, absoluteTime + stepTime * 0.1);
-}
-
-// 2) CLAP ANTICIPATO (solo su 4, 10% probabilità)
-if (s === 12 && chance(rand, 0.10) && !isIntro) {
-    Tone.Transport.schedule(t => {
-        percussion?.player("handClap")?.start(t);
-        if (score) score.addNote("ClapEarly", "Snare", section.name);
-    }, absoluteTime - stepTime * 0.2);
-}
-
-// 3) BASS DOUBLE HIT (solo nel drop, 20% probabilità)
-// 3) BASS DOUBLE HIT (solo nel drop, 20% probabilità)
-if (isDrop && bassShouldPlay(s, isDrop) && chance(rand, 0.20)) {
-    Tone.Transport.schedule(t => {
-        bass.triggerAttackRelease(bassNote, "32n", t, 0.5);
-        if (score) score.addNote("BassDouble", bassNote, section.name);
-    }, absoluteTime + stepTime * 0.25);
-}
-
-
-// 4) MINI FX FILL (ogni 4 misure)
-if (m % 4 === 3 && s === 15 && chance(rand, 0.25) && fxNoise) {
-    Tone.Transport.schedule(t => {
-        fxNoise.triggerAttackRelease("C4", "16n", t, 0.4);
-        if (score) score.addNote("FXFill", "Noise", section.name);
-    }, absoluteTime);
-}
-
-            // CRASH
-            if (s === 0 && m === 0) {
+                }, absoluteTime);
+            }
+            
+            // CRASH all'inizio
+            if (s === 0 && m === 0 && !isIntro) {
                 Tone.Transport.schedule(t => {
                     percussion?.player("crash")?.start(t);
                     if (score) score.addNote("Drums", "Crash", section.name);
                 }, absoluteTime);
             }
-        }
-        
-        // ORGANO per Gigi
-        if (useOrgano && organo && !isIntro) {
-            Tone.Transport.schedule(t => {
-                organo.triggerAttackRelease(padRoot, measureDur * 0.9, t);
-                if (score) score.addNote("Organo", padRoot, section.name);
-            }, measureStartTime);
         }
         
         // PAD
@@ -284,6 +128,14 @@ if (m % 4 === 3 && s === 15 && chance(rand, 0.25) && fxNoise) {
                     score.addNote("Pad", padThird, section.name);
                     score.addNote("Pad", padFifth, section.name);
                 }
+            }, measureStartTime);
+        }
+        
+        // ORGANO per Gigi
+        if (useOrgano && organo && !isIntro) {
+            Tone.Transport.schedule(t => {
+                organo.triggerAttackRelease(padRoot, measureDur * 0.9, t);
+                if (score) score.addNote("Organo", padRoot, section.name);
             }, measureStartTime);
         }
     }
