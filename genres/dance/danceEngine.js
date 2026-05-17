@@ -129,7 +129,7 @@ export function createDanceEngine(params, score) {
 
         scheduleDanceRhythm(sec, realNotes, danceInstruments, combinedParams, rand, measureDur, nextSectionRoot, score);
         scheduleDanceLead(sec, realNotes, danceInstruments, combinedParams, rand, measureDur, score);
-        scheduleDanceFx(sec, danceInstruments, combinedParams, measureDur, score);
+        //scheduleDanceFx(sec, danceInstruments, combinedParams, measureDur, score);
     });
 
     return {
