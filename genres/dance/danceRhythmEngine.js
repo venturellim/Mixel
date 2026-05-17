@@ -108,8 +108,9 @@ export function scheduleDanceRhythm(section, progression, instruments, params, r
             }
             
             // BASSO: su OGNI controbeat (e, e, e, e)
-            if (isOffBeat && bassNote) {
-                Tone.Transport.schedule(t => {
+            //if (isOffBeat && bassNote) {
+            if (bassShouldPlay(s) && bassNote) {
+               Tone.Transport.schedule(t => {
                     bass.triggerAttackRelease(bassNote, "16n", t);
                     if (score) score.addNote("Bass", bassNote, section.name);
                 }, absoluteTime);
