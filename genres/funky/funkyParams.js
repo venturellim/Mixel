@@ -1,5 +1,5 @@
 // funkyParams.js — ver. 001
-console.log("funkyParams.js ver. 001 loaded");
+console.log("funkyParams.js ver. 001.1 loaded");
 
 export function buildFunkyParams(rand, globalParams, rhythmParams) {
     let intensity = parseFloat(globalParams?.intensity);
@@ -51,6 +51,6 @@ export function buildFunkyParams(rand, globalParams, rhythmParams) {
         style,
         bassEnergy: 0.6 + intensity * 0.3,
         brassDensity: 0.4 + complexity * 0.4,
-        guitarDensity: 0.5 + energy * 0.3
+        guitarDensity: 0.5 + (intensity + mood) / 2 * 0.3
     };
 }
