@@ -7,16 +7,10 @@ import { generateSongProgressions, degreeToRoot } from "../../utils/musicTheory.
 import { funkyInstruments, funkyVolumeMap } from "./funkyInstruments.js";
 import { scheduleFunkyRhythm } from "./funkyRhythmEngine.js";
 import { scheduleFunkyLead } from "./funkyLeadEngine.js";
-import { waitForInstruments } from "../../common.js";
 
 console.log("funkyEngine.js ver. 001 loaded");
 
-export async function waitFunkyInstruments() {
-    const total = Object.keys(funkyInstruments).length;
-    await waitForInstruments(total, "Funky");
-}
-
-export function createFunkyEngine(params, score) {
+export async function createFunkyEngine(params, score) {
     const rand = createSeededRandom(params.dna);
     const funkyParams = buildFunkyParams(rand, params.global, params.rhythm);
     const style = funkyParams.style;
