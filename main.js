@@ -17,7 +17,7 @@ import { createDanceEngine } from "./genres/dance/danceEngine.js";
 import { createFunkyEngine } from "./genres/funky/funkyEngine.js";
 import { scoreVisualizer } from "./scoreUI.js";
 
-console.log("main.js Ver. 018 loaded");
+console.log("main.js Ver. 018.1 loaded");
 
 
 let currentEngine = null;
