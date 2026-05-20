@@ -31,39 +31,42 @@ const keysEQ = new Tone.EQ3({ low: -4, mid: 2, high: 5 });
 const drumsEQ = new Tone.EQ3({ low: 4, mid: -2, high: 3 });
 
 // ============================================================
-// EFFETTI FUNKY
+// EFFETTI FUNKY (CORRETTA)
 // ============================================================
 
 // AutoWah per chitarra funk
 export const autoWah = new Tone.AutoWah({
-    baseFrequency: 300,
+    baseFrequency: 180,
     octaves: 6,
     sensitivity: -30,
-    Q: 4,
-    gain: 2
+    Q: 8,
+    gain: 6
 });
 
-// Delay con ottavo puntato (dotted eighth)
+// Delay con ottavo puntato
 export const dottedDelay = new Tone.FeedbackDelay({
     delayTime: "8n.",
-    feedback: 0.4,
-    wet: 0.3
+    feedback: 0.5,
+    wet: 0.4
 });
 
 // Compressore per basso slap
 export const slapCompressor = new Tone.Compressor({
-    threshold: -15,
-    ratio: 4,
-    attack: 0.003,
-    release: 0.1
+    threshold: -18,
+    ratio: 6,
+    attack: 0.002,
+    release: 0.08
 });
+
+// EQ boost per chitarra (PRIMA del routing)
+const guitarBoostEQ = new Tone.EQ3({ low: -3, mid: 6, high: 4 });
 
 // ============================================================
 // ROUTING BUS → EQ → EFFETTI → MASTER
 // ============================================================
 
 brassBus.connect(brassEQ).connect(masterEQ);
-guitarBus.connect(guitarEQ).connect(autoWah).connect(dottedDelay).connect(masterEQ);
+guitarBus.connect(guitarEQ).connect(guitarBoostEQ).connect(autoWah).connect(dottedDelay).connect(masterEQ);
 bassBus.connect(bassEQ).connect(slapCompressor).connect(masterEQ);
 keysBus.connect(keysEQ).connect(masterEQ);
 drumsBus.connect(drumsEQ).connect(masterEQ);
