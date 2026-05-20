@@ -14,9 +14,10 @@ import { createPianoEngine } from "./genres/piano/pianoEngine.js";
 import { createMetalEngine } from "./genres/metal/metalEngine.js";
 import { createOrchestraEngine } from "./genres/orchestra/orchestraEngine.js";
 import { createDanceEngine } from "./genres/dance/danceEngine.js";
+import { createFunkyEngine } from "./genres/dance/funkyEngine.js";
 import { scoreVisualizer } from "./scoreUI.js";
 
-console.log("main.js Ver. 017.2 loaded");
+console.log("main.js Ver. 018 loaded");
 
 
 let currentEngine = null;
