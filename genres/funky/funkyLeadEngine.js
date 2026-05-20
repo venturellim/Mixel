@@ -1,10 +1,10 @@
-// funkyLeadEngine.js — ver. 001
+// funkyLeadEngine.js — ver. 002 (corretto)
 import * as Tone from "https://esm.sh/tone";
 import { funkyMelodicLibrary, funkyRhythmLibrary } from "./funkyMasks.js";
 import { normalizeNote } from "./funkyInstruments.js";
 import { applyLeadEnhancer, computeLeadVelocity } from "../../utils/leadEnhancers.js";
 
-console.log("funkyLeadEngine.js ver. 001 loaded");
+console.log("funkyLeadEngine.js ver. 002 loaded");
 
 function getStrictScale(root, isMajor) {
     const allNotes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
@@ -18,12 +18,14 @@ function getStrictScale(root, isMajor) {
 }
 
 function getMelodyFamily(isChorus, isSolo, style, energy, brightness) {
+    // Per JazzFunk, in chorus usa ACTIVE invece di SOULFUL
     if (isSolo) {
         if (style === "JazzFunk") return { name: "ACTIVE ⚡", data: funkyMelodicLibrary.active };
         if (style === "SoulFunk") return { name: "SOULFUL 💧", data: funkyMelodicLibrary.soulful };
         return { name: "EPIC 🏰", data: funkyMelodicLibrary.epic };
     }
     if (isChorus) {
+        if (style === "JazzFunk") return { name: "ACTIVE ⚡", data: funkyMelodicLibrary.active };
         if (brightness > 0.6) return { name: "EPIC 🏰", data: funkyMelodicLibrary.epic };
         return { name: "SOULFUL 💧", data: funkyMelodicLibrary.soulful };
     }
@@ -33,10 +35,10 @@ function getMelodyFamily(isChorus, isSolo, style, energy, brightness) {
 
 // Assegna strumenti fiati in base allo stile
 const brassInstruments = {
-    SoulFunk: (instr) => instr.saxAlto,     // sax più espressivo
-    ClassicFunk: (instr) => instr.trumpet,   // tromba classica
-    JazzFunk: (instr) => instr.saxAlto,      // sax per jazz
-    PartyFunk: (instr) => instr.trumpet      // tromba brillante
+    SoulFunk: (instr) => instr.saxAlto,
+    ClassicFunk: (instr) => instr.trumpet,
+    JazzFunk: (instr) => instr.saxAlto,  // JazzFunk usa sax
+    PartyFunk: (instr) => instr.trumpet
 };
 
 export function scheduleFunkyLead(section, progression, instruments, params, rand, measureDur, score) {
@@ -44,7 +46,10 @@ export function scheduleFunkyLead(section, progression, instruments, params, ran
     const getBrass = brassInstruments[style] || brassInstruments.ClassicFunk;
     const brassLead = getBrass(instruments);
     
-    if (!brassLead) return;
+    if (!brassLead) {
+        console.warn("⚠️ Nessuno strumento fiati trovato per lo stile:", style);
+        return;
+    }
 
     const name = section?.name?.toLowerCase() || "";
     const isChorus = name.includes("chorus") && !name.includes("pre");
@@ -78,6 +83,8 @@ export function scheduleFunkyLead(section, progression, instruments, params, ran
     const mood = getMelodyFamily(isChorus, isSolo, style, energy, brightness);
     const melodyIndex = Math.floor(energy * mood.data.length) % mood.data.length;
     currentMelody = mood.data[melodyIndex];
+    
+    console.log(`🎺 ${section.name} | Stile: ${style} | Melodia: ${mood.name} | pattern length: ${currentPattern.length} | melody length: ${currentMelody.length}`);
 
     // Applica enhancer in chorus/solo
     if (!isIntro && (isChorus || isSolo)) {
@@ -97,12 +104,19 @@ export function scheduleFunkyLead(section, progression, instruments, params, ran
         currentPattern = [...currentPattern, ...currentPattern];
     }
     currentPattern = currentPattern.slice(0, currentMelody.length);
-
-    console.log(`🎺 ${section.name} | Stile: ${style} | Melodia: ${mood.name}`);
+    
+    // DEBUG: stampa le prime note della melodia
+    console.log(`🎵 Melodia (primi 8 gradi): ${currentMelody.slice(0, 8).join(", ")}`);
 
     for (let m = 0; m < section.measures; m++) {
         const measureStartTime = section.startTime + m * measureDur;
-        const currentScale = getStrictScale(progression[m % progression.length] || rootNote, isMajor);
+        const chordRoot = progression[m % progression.length] || rootNote;
+        const currentScale = getStrictScale(chordRoot, isMajor);
+        
+        // DEBUG: stampa la scala per la prima misura
+        if (m === 0) {
+            console.log(`🎵 Scala per ${chordRoot}: ${currentScale.slice(0, 7).join(", ")}`);
+        }
         
         for (let i = 0; i < currentPattern.length; i++) {
             const s = currentPattern[i];
@@ -121,11 +135,19 @@ export function scheduleFunkyLead(section, progression, instruments, params, ran
             if (isSolo && style === "JazzFunk") octave = 5;
             
             const pitch = currentScale[noteIdx];
-            if (!pitch) continue;
+            if (!pitch) {
+                console.warn(`⚠️ pitch null per noteIdx=${noteIdx}, scala=${currentScale}`);
+                continue;
+            }
             
             const rawNote = `${pitch}${octave}`;
-            const instrumentType = style === "SoulFunk" ? "saxAlto" : "trumpet";
+            const instrumentType = style === "SoulFunk" ? "saxAlto" : (style === "JazzFunk" ? "saxAlto" : "trumpet");
             const safeNote = normalizeNote(rawNote, instrumentType);
+            
+            // DEBUG: stampa le prime note suonate
+            if (m === 0 && i < 4) {
+                console.log(`🎺 Nota ${i}: degree=${noteIdx}, pitch=${pitch}, raw=${rawNote}, safe=${safeNote}`);
+            }
             
             const velocity = computeLeadVelocity(noteIdx, duration, isSolo, name.includes("bridge"));
 
