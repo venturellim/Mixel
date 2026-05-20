@@ -189,7 +189,7 @@ export const noisy = new Tone.Players({
         "F#6": "Samples/Noisy/Fs6.mp3"
     },
     release: 0.5,
-    onload: () => registerInstrumentLoaded("KorgNoise")
+    onload: () => registerInstrumentLoaded("Noisy")
 }).connect(keysBus);
 
 // ============================================================
