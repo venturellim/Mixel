@@ -281,9 +281,9 @@ export const drumFunky = new Tone.Players({
 // VOLUMI DI DEFAULT
 // ============================================================
 
-brassBus.gain.value = Tone.dbToGain(2);   // Fiati presenti
-guitarBus.gain.value = Tone.dbToGain(0);  // Chitarra ritmica
-bassBus.gain.value = Tone.dbToGain(4);    // Basso protagonista
+brassBus.gain.value = Tone.dbToGain(0);   // Fiati presenti
+guitarBus.gain.value = Tone.dbToGain(4);  // Chitarra ritmica
+bassBus.gain.value = Tone.dbToGain(6);    // Basso protagonista
 keysBus.gain.value = Tone.dbToGain(-2);   // Clavinet in sottofondo
 drumsBus.gain.value = Tone.dbToGain(0);   // Batteria
 
