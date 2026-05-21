@@ -230,6 +230,46 @@ export const bassAttack = new Tone.Synth({
 });
 
 // ======================
+// 🎹 LEADS (DANCE)
+// ======================
+
+export const leadSaw = new Tone.Sampler({
+    urls: { 
+        C3: "Synth/LeadSaw/C3.mp3", 
+        C4: "Synth/LeadSaw/C4.mp3",
+        E3: "Synth/LeadSaw/E3.mp3", 
+        E4: "Synth/LeadSaw/E4.mp3"
+    },
+    baseUrl: BASE,
+    release: 1.2,
+    onload: () => registerInstrumentLoaded("leadSaw")
+});
+
+export const leadSynthBrass1 = new Tone.Sampler({
+    urls: { 
+        C3: "Synth/LeadSynthBrass1/C3.mp3", 
+        C4: "Synth/LeadSynthBrass1/C4.mp3",
+        "F#3": "Synth/LeadSynthBrass1/Fs3.mp3",
+        "F#4": "Synth/LeadSynthBrass1/Fs4.mp3"
+    },
+    baseUrl: BASE,
+    release: 1.2,
+    onload: () => registerInstrumentLoaded("leadSynthBrass1")
+});
+
+export const leadSynthBrass2 = new Tone.Sampler({
+    urls: { 
+        C3: "Synth/LeadSynthBrass2/C3.mp3", 
+        C4: "Synth/LeadSynthBrass2/C4.mp3",
+        "F#3": "Synth/LeadSynthBrass2/Fs3.mp3",
+        "F#4": "Synth/LeadSynthBrass2/Fs4.mp3"
+    },
+    baseUrl: BASE,
+    release: 1.2,
+    onload: () => registerInstrumentLoaded("leadSynthBrass2")
+});
+
+// ======================
 // 🎷 BRASS
 // ======================
 
@@ -502,7 +542,15 @@ const availableNotesMap = {
 ],
     guitarMute: ["E3","F#3","G3","A3","C4","D4","A#4","D5","F5","A#5"],
     guitarClean: ["F#2","C3","F#3","C4","F#4","C5","F#5","C6"],
-
+    // 🎻 STRINGS 
+    violin: ["A2","A3","B2","B4","C4","D3","D5","E4","F#3","G2","G4"
+],
+viola: ["A3","B2","C2","C4","D2","D3","D5","E2","E4","G2","G4"
+],
+cello: ["A2","B1","B3","C1","C3","D2","D4","E1","E3","F2","F4","G1","G3"
+],
+doubleBass: ["A#0","A1","B2","C#2","C1","D1","E1","E2","F#0","F#1","G#1","G#2","G0"
+],
     // 🎚 BASS
     bassMetal: ["C1","C#1","D1","D#1","E1","F1","F#1","G1","G#1","A1","A#1","B1","C2"],
     bassSlap: ["E0","G0","D1","A1","B1","F#1","E2","F2","A3","D3","E4","G5"],
@@ -512,6 +560,10 @@ const availableNotesMap = {
     // Synth bass (sub/attack) → non ha note reali
     subBass: ["C"],
     bassAttack: ["C"],
+    // 🎹 LEADS
+leadSaw: ["C3","C4","E3","E4"],
+leadSynthBrass1: ["C3","C4","F#3","F#4"],
+leadSynthBrass2: ["C3","C4","F#3","F#4"],
 
     // 🎷 BRASS
     brassTrumpet: ["A2","F2","C3","D#3","G3","A#3","D4","F4","A4","C5"],
