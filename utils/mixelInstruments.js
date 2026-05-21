@@ -497,10 +497,27 @@ export function normalizeNote(note, instrumentName) {
         targetMidi = Tone.Frequency("C3").toMidi();
     }
 
+    // ============================================================
+// NORMALIZE NOTE CENTRALIZZATA (con note reali) - PARTE FINALE
+// ============================================================
+
     let bestNote = available[0];
     let bestDist = Infinity;
 
     for (const n of available) {
         try {
             const noteWithOctave = /\d/.test(n) ? n : n + targetOct;
-            const midi = Tone.Frequency(noteWithOctave).toM
+            const midi = Tone.Frequency(noteWithOctave).toMidi();
+            const dist = Math.abs(midi - targetMidi);
+            if (dist < bestDist) {
+                bestDist = dist;
+                bestNote = n;
+            }
+        } catch(e) {
+            console.warn(`Nota non valida: ${n} per ${instrumentName}`);
+        }
+    }
+
+    return bestNote;
+}
+}
