@@ -1,10 +1,10 @@
-// funkyRhythmEngine.js — ver. 003 (con fill che silenziano i piatti)
+// funkyRhythmEngine.js — ver. 004 (corretto)
 import * as Tone from "https://esm.sh/tone";
 import { getFunkyGroove, grooveCharacteristics } from "./funkyGrooves.js";
 import { normalizeNote } from "./funkyInstruments.js";
 import { scheduleFunkyFill, scheduleTransitionFill } from "./funkyFills.js";
 
-console.log("funkyRhythmEngine.js ver. 003 loaded");
+console.log("funkyRhythmEngine.js ver. 004 loaded");
 
 function getRootPitch(root) {
     if (!root || typeof root !== "string") return "C";
@@ -70,10 +70,6 @@ export function scheduleFunkyRhythm(section, progression, instruments, params, r
         // Determina se questa misura ha un fill
         const hasFillAtEnd = (m % 2 === 1) && (m < section.measures - 1);
         const hasTransitionFill = (m === section.measures - 1 && nextSectionRoot);
-        
-        // Zone di fill (ultimi 2 sedicesimi della misura per il fill)
-        const isFillZone = hasFillAtEnd && (s >= 12);
-        const isTransitionZone = hasTransitionFill && (s >= 12);
 
         for (let s = 0; s < 16; s++) {
             const absoluteTime = measureStartTime + s * stepTime;
@@ -85,7 +81,6 @@ export function scheduleFunkyRhythm(section, progression, instruments, params, r
             // === KICK ===
             let playKick = isQuarter;
             if (isDrop && (s === 2 || s === 6 || s === 10 || s === 14)) playKick = true;
-            // Durante i fill, kick più presenti
             if (isFillActive && (s === 12 || s === 14)) playKick = true;
             
             if (playKick) {
@@ -97,7 +92,6 @@ export function scheduleFunkyRhythm(section, progression, instruments, params, r
             
             // === SNARE ===
             let playSnare = !isIntro && (s === 4 || s === 12);
-            // Durante i fill, snare più presente
             if (isFillActive && (s === 13 || s === 15)) playSnare = true;
             
             if (playSnare) {
@@ -168,7 +162,7 @@ export function scheduleFunkyRhythm(section, progression, instruments, params, r
             }, measureStartTime);
         }
         
-        // === FILL DI BATTERIA (solo se non c'è già un fill attivo) ===
+        // === FILL DI BATTERIA ===
         if (hasFillAtEnd) {
             const fillStartTime = measureStartTime + measureDur - 0.5;
             scheduleFunkyFill(drumFunky, fillStartTime, section.name, energy, score, section.name);
