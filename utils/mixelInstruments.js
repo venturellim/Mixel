@@ -36,21 +36,30 @@ export const guitarOpen = new Tone.Sampler({
 
 export const guitarLead = new Tone.Sampler({
     urls: {
-        C2:"Guitar/C2.mp3","C#2":"Guitar/Cs2.mp3",D2:"Guitar/D2.mp3","D#2":"Guitar/Ds2.mp3",
-        E2:"Guitar/E2.mp3",F2:"Guitar/F2.mp3","F#2":"Guitar/Fs2.mp3",G2:"Guitar/G2.mp3",
-        "G#2":"Guitar/Gs2.mp3",A2:"Guitar/A2.mp3","A#2":"Guitar/As2.mp3",B2:"Guitar/B2.mp3",
-        C3:"Guitar/C3.mp3","C#3":"Guitar/Cs3.mp3",D3:"Guitar/D3.mp3","D#3":"Guitar/Ds3.mp3",
-        E3:"Guitar/E3.mp3",F3:"Guitar/F3.mp3","F#3":"Guitar/Fs3.mp3",G3:"Guitar/G3.mp3",
-        "G#3":"Guitar/Gs3.mp3",A3:"Guitar/A3.mp3","A#3":"Guitar/As3.mp3",B3:"Guitar/B3.mp3",
-        C4:"Guitar/C4.mp3","C#4":"Guitar/Cs4.mp3",D4:"Guitar/D4.mp3","D#4":"Guitar/Ds4.mp3",
-        E4:"Guitar/E4.mp3",F4:"Guitar/F4.mp3","F#4":"Guitar/Fs4.mp3",G4:"Guitar/G4.mp3",
-        "G#4":"Guitar/Gs4.mp3",A4:"Guitar/A4.mp3","A#4":"Guitar/As4.mp3",B4:"Guitar/B4.mp3",
-        C5:"Guitar/C5.mp3","C#5":"Guitar/Cs5.mp3",D5:"Guitar/D5.mp3","D#5":"Guitar/Ds5.mp3",
-        E5:"Guitar/E5.mp3",F5:"Guitar/F5.mp3","F#5":"Guitar/Fs5.mp3",G5:"Guitar/G5.mp3",
-        "G#5":"Guitar/Gs5.mp3",A5:"Guitar/A5.mp3","A#5":"Guitar/As5.mp3",B5:"Guitar/B5.mp3",
-        C6:"Guitar/C6.mp3"
+        D2: "Lead/D2.mp3",
+        F2: "Lead/F2.mp3",
+        "G#2": "Lead/Gs2.mp3",
+        B2: "Lead/B2.mp3",
+
+        D3: "Lead/D3.mp3",
+        F3: "Lead/F3.mp3",
+        "G#3": "Lead/Gs3.mp3",
+        B3: "Lead/B3.mp3",
+
+        D4: "Lead/D4.mp3",
+        F4: "Lead/F4.mp3",
+        "G#4": "Lead/Gs4.mp3",
+        B4: "Lead/B4.mp3",
+
+        D5: "Lead/D5.mp3",
+        F5: "Lead/F5.mp3",
+        "G#5": "Lead/Gs5.mp3",
+        B5: "Lead/B5.mp3",
+
+        D6: "Lead/D6.mp3"
     },
     baseUrl: BASE,
+    attack: 0.02,
     release: 0.8,
     onload: () => registerInstrumentLoaded("guitarLead")
 });
@@ -401,12 +410,12 @@ const availableNotesMap = {
     guitarPalm: ["C2","D2","E2","F2","G2","A2","B2"],
     guitarOpen: ["C2","D2","E2","F2","G2","A2","B2"],
     guitarLead: [
-        "C2","C#2","D2","D#2","E2","F2","F#2","G2","G#2","A2","A#2","B2",
-        "C3","C#3","D3","D#3","E3","F3","F#3","G3","G#3","A3","A#3","B3",
-        "C4","C#4","D4","D#4","E4","F4","F#4","G4","G#4","A4","A#4","B4",
-        "C5","C#5","D5","D#5","E5","F5","F#5","G5","G#5","A5","A#5","B5",
-        "C6"
-    ],
+    "D2","F2","G#2","B2",
+    "D3","F3","G#3","B3",
+    "D4","F4","G#4","B4",
+    "D5","F5","G#5","B5",
+    "D6"
+],
     guitarMute: ["E3","F#3","G3","A3","C4","D4","A#4","D5","F5","A#5"],
     guitarClean: ["F#2","C3","F#3","C4","F#4","C5","F#5","C6"],
 
