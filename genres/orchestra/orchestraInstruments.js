@@ -1,15 +1,18 @@
-// orchestraInstruments.js — ORCHESTRA ENGINE (nuova architettura B2)
+// orchestraInstruments.js — ORCHESTRA ENGINE (nuova architettura B2 corretta)
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ } from "../../common.js";
 
-// Import strumenti unificati
+// Import strumenti unificati (RAW)
 import {
-    violin, viola, cello, doubleBass,
+    violin,
+    viola,
+    cello,
+    doubleBass,
     timpani,
     normalizeNote
 } from "../../utils/mixelInstruments.js";
 
-console.log("orchestraInstruments.js — unified version loaded");
+console.log("orchestraInstruments.js — unified version (fixed) loaded");
 
 // ============================================================================
 // 🎚 BUS ORCHESTRA
@@ -23,7 +26,7 @@ export const percussionBus = new Tone.Gain(1);
 // ============================================================================
 // 🎧 RIVERBERO ORCHESTRA
 // ============================================================================
-const hallReverb = new Tone.Reverb({
+export const hallReverb = new Tone.Reverb({
     decay: 2.8,
     preDelay: 0.01,
     wet: 0.35
@@ -39,13 +42,28 @@ const doubleBassEQ = new Tone.EQ3({ low: 4, mid: -2, high: -4 });
 const percussionEQ = new Tone.EQ3({ low: 2, mid: 1, high: 3 });
 
 // ============================================================================
-// 🔌 ROUTING STRUMENTI → BUS
+// 🔌 ROUTING STRUMENTI → BUS (CORRETTO!)
 // ============================================================================
-violin.disconnect().connect(violinBus);
-viola.disconnect().connect(violaBus);
-cello.disconnect().connect(celloBus);
-doubleBass.disconnect().connect(doubleBassBus);
-timpani.disconnect().connect(percussionBus);
+
+// Violino
+violin.disconnect();
+violin.connect(violinBus);
+
+// Viola
+viola.disconnect();
+viola.connect(violaBus);
+
+// Cello
+cello.disconnect();
+cello.connect(celloBus);
+
+// Contrabbasso
+doubleBass.disconnect();
+doubleBass.connect(doubleBassBus);
+
+// Percussioni (timpani)
+timpani.disconnect();
+timpani.connect(percussionBus);
 
 // ============================================================================
 // 🔊 ROUTING BUS → EQ → REVERB → MASTER
@@ -82,12 +100,19 @@ export function setVolume(busName, dbValue) {
 }
 
 // ============================================================================
-// 📦 EXPORT
+// 📦 EXPORT (CORRETTO!)
 // ============================================================================
 export const orchestraInstruments = {
-    violin, viola, cello, doubleBass,
+    violin,
+    viola,
+    cello,
+    doubleBass,
     timpani,
-    violinBus, violaBus, celloBus, doubleBassBus, percussionBus,
+    violinBus,
+    violaBus,
+    celloBus,
+    doubleBassBus,
+    percussionBus,
     setVolume
 };
 
@@ -99,4 +124,4 @@ export const orchestraVolumeMap = {
     timpani: "Percussioni"
 };
 
-export { hallReverb, normalizeNote };
+export { normalizeNote };
