@@ -206,10 +206,19 @@ export function setVolume(busName, dbValue) {
     if (bus) bus.gain.value = Tone.dbToGain(dbValue);
 }
 
-setVolume("guitar", -2);
-setVolume("bass", 0);
-setVolume("drums", -8);
-setVolume("lead", 0);
+//setVolume("guitar", -2);
+//setVolume("bass", 0);
+//setVolume("drums", -8);
+//setVolume("lead", 0);
+
+// ============================================================
+// VOLUMI DI DEFAULT
+// ============================================================
+
+guitarBus.gain.value = Tone.dbToGain(0);  // Chitarra ritmica
+bassBus.gain.value = Tone.dbToGain(2);    // Basso
+leadBus.gain.value = Tone.dbToGain(2);   // Lead
+drumBus.gain.value = Tone.dbToGain(-6);   // Batteria
 
 export function normalizeNote(note, instrument) {
     if (!note || typeof note !== "string") return "A";
