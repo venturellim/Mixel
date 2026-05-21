@@ -1,10 +1,10 @@
-// funkyLeadEngine.js — ver. 003 (con enhancer per solo e bridge)
+// funkyLeadEngine.js — ver. 004 (con soloPt1 e soloPt2)
 import * as Tone from "https://esm.sh/tone";
 import { funkyMelodicLibrary, funkyRhythmLibrary } from "./funkyMasks.js";
 import { normalizeNote } from "./funkyInstruments.js";
 import { applyLeadEnhancer, computeLeadVelocity } from "../../utils/leadEnhancers.js";
 
-console.log("funkyLeadEngine.js ver. 003 loaded");
+console.log("funkyLeadEngine.js ver. 004 loaded");
 
 function getStrictScale(root, isMajor) {
     const allNotes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
@@ -17,11 +17,19 @@ function getStrictScale(root, isMajor) {
     return intervals.map(i => allNotes[(idx + i) % 12]);
 }
 
-function getMelodyFamily(isChorus, isSolo, style, energy, brightness) {
+function getMelodyFamily(isChorus, isSolo, style, energy, brightness, isSoloPt2) {
     if (isSolo) {
-        if (style === "JazzFunk") return { name: "ACTIVE ⚡", data: funkyMelodicLibrary.active };
-        if (style === "SoulFunk") return { name: "SOULFUL 💧", data: funkyMelodicLibrary.soulful };
-        return { name: "EPIC 🏰", data: funkyMelodicLibrary.epic };
+        if (isSoloPt2) {
+            // Seconda parte dell'assolo: più intensa e complessa
+            if (style === "JazzFunk") return { name: "SOLO ACTIVE ⚡⚡", data: funkyMelodicLibrary.active };
+            if (style === "SoulFunk") return { name: "SOLO EPIC 🏰", data: funkyMelodicLibrary.epic };
+            return { name: "SOLO ACTIVE ⚡⚡", data: funkyMelodicLibrary.active };
+        } else {
+            // Prima parte dell'assolo
+            if (style === "JazzFunk") return { name: "SOLO JAZZ 🎺", data: funkyMelodicLibrary.active };
+            if (style === "SoulFunk") return { name: "SOLO SOUL 💧", data: funkyMelodicLibrary.soulful };
+            return { name: "SOLO EPIC 🏰", data: funkyMelodicLibrary.epic };
+        }
     }
     if (isChorus) {
         if (style === "JazzFunk") return { name: "ACTIVE ⚡", data: funkyMelodicLibrary.active };
@@ -33,60 +41,98 @@ function getMelodyFamily(isChorus, isSolo, style, energy, brightness) {
 }
 
 // ============================================================
-// ENHANCER SPECIFICI PER SOLO E BRIDGE
+// ENHANCER PER SOLO PT1 (introduzione assolo)
 // ============================================================
-
-function applySoloEnhancers(melody, pattern, style, energy, complexity) {
+function applySoloPt1Enhancers(melody, pattern, style, energy, complexity) {
     let newMelody = [...melody];
     let newPattern = [...pattern];
     
-    // 1. Allunga le note (più sustain)
-    const enhancerContext = { energy, complexity, brightness: 0.7, texture: 0.6 };
+    const enhancerContext = { energy, complexity, brightness: 0.6, texture: 0.5 };
     
-    // 2. Aggiungi scale runs (virtuosismo)
+    console.log("🎺 SOLO PT1: enhancer introduttivi");
+    
+    // 1. Micro variazioni per interesse
     if (Math.random() < 0.6) {
-        newMelody = applyLeadEnhancer(newMelody, "addScaleRunBetweenPeaks", enhancerContext);
-        console.log("🎺 SOLO: aggiunte scale runs");
+        newMelody = applyLeadEnhancer(newMelody, "enhanceMelodyMicroVariation", enhancerContext);
     }
     
-    // 3. Aggiungi trilli (tipico del funky)
-    if (Math.random() < 0.5 && style === "JazzFunk") {
-        newMelody = applyLeadEnhancer(newMelody, "addTrills", enhancerContext);
-        console.log("🎺 SOLO: aggiunti trilli");
+    // 2. Aggiungi anticipazioni
+    if (Math.random() < 0.5) {
+        newPattern = applyLeadEnhancer(newPattern, "addAnticipation", enhancerContext);
     }
     
-    // 4. Aggiungi ottave (più pieno)
-    if (Math.random() < 0.4) {
+    // 3. Slide effect per carattere funky
+    if (Math.random() < 0.4 && style !== "JazzFunk") {
+        newMelody = applyLeadEnhancer(newMelody, "addSlideEffect", enhancerContext);
+    }
+    
+    // 4. Ottave occasionali
+    if (Math.random() < 0.3) {
         newMelody = applyLeadEnhancer(newMelody, "addOctaveDoubling", enhancerContext);
-        console.log("🎺 SOLO: aggiunte ottave");
-    }
-    
-    // 5. Raddoppia il pattern ritmico per più note
-    if (energy > 0.6) {
-        newPattern = [...pattern, ...pattern.map(s => s + 16)];
-        console.log("🎺 SOLO: pattern raddoppiato");
-    }
-    
-    // 6. Aggiungi echo per profondità
-    if (style === "SoulFunk") {
-        newMelody = applyLeadEnhancer(newMelody, "addEchoEffect", enhancerContext);
-        console.log("🎺 SOLO: aggiunto echo");
-    }
-    
-    // 7. Mirror inversion per contrasto
-    if (complexity > 0.7) {
-        newMelody = applyLeadEnhancer(newMelody, "addMirrorInversion", enhancerContext);
-        console.log("🎺 SOLO: mirror inversion");
     }
     
     return { melody: newMelody, pattern: newPattern };
 }
 
+// ============================================================
+// ENHANCER PER SOLO PT2 (virtuosismo, picco dell'assolo)
+// ============================================================
+function applySoloPt2Enhancers(melody, pattern, style, energy, complexity) {
+    let newMelody = [...melody];
+    let newPattern = [...pattern];
+    
+    const enhancerContext = { energy, complexity, brightness: 0.8, texture: 0.7 };
+    
+    console.log("🎺 SOLO PT2: enhancer virtuosistici!");
+    
+    // 1. Scale runs (virtuosismo)
+    if (Math.random() < 0.7) {
+        newMelody = applyLeadEnhancer(newMelody, "addScaleRunBetweenPeaks", enhancerContext);
+    }
+    
+    // 2. Trilli intensi
+    if (Math.random() < 0.6) {
+        newMelody = applyLeadEnhancer(newMelody, "addTrills", enhancerContext);
+    }
+    
+    // 3. Raddoppio ottave
+    if (Math.random() < 0.5) {
+        newMelody = applyLeadEnhancer(newMelody, "addOctaveDoubling", enhancerContext);
+    }
+    
+    // 4. Mirror inversion per contrasto
+    if (Math.random() < 0.4 && complexity > 0.6) {
+        newMelody = applyLeadEnhancer(newMelody, "addMirrorInversion", enhancerContext);
+    }
+    
+    // 5. Echo per profondità
+    if (Math.random() < 0.4) {
+        newMelody = applyLeadEnhancer(newMelody, "addEchoEffect", enhancerContext);
+    }
+    
+    // 6. Pattern più denso
+    if (energy > 0.6) {
+        newPattern = [...pattern, ...pattern.map(s => s + 16)];
+    }
+    
+    // 7. Ghost accents per groove
+    if (Math.random() < 0.5) {
+        newPattern = applyLeadEnhancer(newPattern, "addGhostAccent", enhancerContext);
+    }
+    
+    return { melody: newMelody, pattern: newPattern };
+}
+
+// ============================================================
+// ENHANCER PER BRIDGE
+// ============================================================
 function applyBridgeEnhancers(melody, pattern, energy, texture) {
     let newMelody = [...melody];
     let newPattern = [...pattern];
     
     const enhancerContext = { energy, texture, brightness: 0.4, complexity: 0.5 };
+    
+    console.log("🌉 BRIDGE: enhancer atmosferici");
     
     // 1. Bridge più atmosferico, meno note
     newPattern = newPattern.filter((_, i) => i % 2 === 0);
@@ -94,19 +140,16 @@ function applyBridgeEnhancers(melody, pattern, energy, texture) {
     // 2. Aggiungi chromatic passing per tensione
     if (Math.random() < 0.5) {
         newMelody = applyLeadEnhancer(newMelody, "enhanceChromaticPassing", enhancerContext);
-        console.log("🎺 BRIDGE: chromatic passing");
     }
     
     // 3. Aggiungi slide per effetto "lamentoso"
     if (Math.random() < 0.4) {
         newMelody = applyLeadEnhancer(newMelody, "addSlideEffect", enhancerContext);
-        console.log("🎺 BRIDGE: slide effect");
     }
     
     // 4. Aggiungi pause strategiche per respiro
     if (Math.random() < 0.4) {
         newPattern = applyLeadEnhancer(newPattern, "addStrategicPause", enhancerContext);
-        console.log("🎺 BRIDGE: strategic pause");
     }
     
     return { melody: newMelody, pattern: newPattern };
@@ -135,6 +178,8 @@ export function scheduleFunkyLead(section, progression, instruments, params, ran
     const isPreChorus = name.includes("pre");
     const isIntro = name.includes("intro") || name.includes("outro");
     const isSolo = name.includes("solo");
+    const isSoloPt1 = name.includes("solopt1");
+    const isSoloPt2 = name.includes("solopt2");
     const isBridge = name.includes("bridge");
 
     const stepTime = measureDur / 16;
@@ -159,28 +204,35 @@ export function scheduleFunkyLead(section, progression, instruments, params, ran
     let currentPattern = getPattern(sectionType);
     let currentMelody;
 
-    // Melodia base
-    const mood = getMelodyFamily(isChorus, isSolo, style, energy, brightness);
+    // Melodia base in base alla sezione
+    const mood = getMelodyFamily(isChorus, isSolo, style, energy, brightness, isSoloPt2);
     const melodyIndex = Math.floor(energy * mood.data.length) % mood.data.length;
     currentMelody = mood.data[melodyIndex];
     
     console.log(`🎺 ${section.name} | Stile: ${style} | Melodia: ${mood.name}`);
 
     // ============================================================
-    // APPLICA ENHANCER PER SOLO E BRIDGE
+    // APPLICA ENHANCER IN BASE ALLA SEZIONE
     // ============================================================
-    if (isSolo && !isBridge) {
-        const enhanced = applySoloEnhancers(currentMelody, currentPattern, style, energy, complexity);
+    if (isSoloPt1) {
+        const enhanced = applySoloPt1Enhancers(currentMelody, currentPattern, style, energy, complexity);
         currentMelody = enhanced.melody;
         currentPattern = enhanced.pattern;
-        console.log(`🎸 SOLO ENHANCER applicati a ${section.name}`);
+        console.log(`🎸 SOLO PT1 - introduzione`);
+    }
+    
+    if (isSoloPt2) {
+        const enhanced = applySoloPt2Enhancers(currentMelody, currentPattern, style, energy, complexity);
+        currentMelody = enhanced.melody;
+        currentPattern = enhanced.pattern;
+        console.log(`🎸 SOLO PT2 - climax!`);
     }
     
     if (isBridge) {
         const enhanced = applyBridgeEnhancers(currentMelody, currentPattern, energy, texture);
         currentMelody = enhanced.melody;
         currentPattern = enhanced.pattern;
-        console.log(`🌉 BRIDGE ENHANCER applicati a ${section.name}`);
+        console.log(`🌉 BRIDGE - tensione`);
     }
     
     // Enhancer standard per chorus
@@ -217,10 +269,11 @@ export function scheduleFunkyLead(section, progression, instruments, params, ran
             const noteIdxRaw = currentMelody[i % currentMelody.length];
             const noteIdx = ((noteIdxRaw % 7) + 7) % 7;
             
-            // Ottava: più alta per solo
+            // Ottava in base alla sezione
             let octave = 4;
             if (isChorus) octave = 5;
-            if (isSolo && !isBridge) octave = 5;
+            if (isSoloPt2) octave = 5;      // Pt2 più acuta
+            if (isSoloPt1) octave = 4;      // Pt1 media
             if (isBridge) octave = 4;
             
             const pitch = currentScale[noteIdx];
@@ -230,9 +283,10 @@ export function scheduleFunkyLead(section, progression, instruments, params, ran
             const instrumentType = (style === "SoulFunk" || style === "JazzFunk") ? "saxAlto" : "trumpet";
             const safeNote = normalizeNote(rawNote, instrumentType);
             
-            // Velocity più alta per solo
+            // Velocity in base alla sezione
             let velocity = computeLeadVelocity(noteIdx, duration, isSolo, isBridge);
-            if (isSolo && !isBridge) velocity = Math.min(1, velocity * 1.2);
+            if (isSoloPt2) velocity = Math.min(1, velocity * 1.3);  // Pt2 più forte
+            if (isSoloPt1) velocity = Math.min(1, velocity * 1.1);  // Pt1 leggermente più forte
             
             Tone.Transport.schedule(time => {
                 brassLead.triggerAttackRelease(safeNote, duration, time, velocity);

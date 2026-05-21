@@ -282,7 +282,7 @@ export const drumFunky = new Tone.Players({
 // ============================================================
 
 brassBus.gain.value = Tone.dbToGain(0);   // Fiati presenti
-guitarBus.gain.value = Tone.dbToGain(4);  // Chitarra ritmica
+guitarBus.gain.value = Tone.dbToGain(8);  // Chitarra ritmica
 bassBus.gain.value = Tone.dbToGain(6);    // Basso protagonista
 keysBus.gain.value = Tone.dbToGain(-2);   // Clavinet in sottofondo
 drumsBus.gain.value = Tone.dbToGain(0);   // Batteria
@@ -348,11 +348,6 @@ export function normalizeNote(note, instrument) {
             console.warn(`Nota non valida: ${n} per ${instrument}`);
         }
     }
-
-    // Log opzionale per debug (commenta in produzione)
-    // if (bestDist > 5) {
-    //     console.log(`🎵 ${instrument}: ${targetRoot}${targetOct} → ${bestNote} (dist: ${bestDist} semitoni)`);
-    // }
 
     return bestNote;
 }

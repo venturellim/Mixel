@@ -33,7 +33,8 @@ export async function createFunkyEngine(params, score) {
         { name: "chorus",    weight: 8 },
         { name: "verse",     weight: 4 },
         { name: "chorus",    weight: 4 },
-        { name: "solo",      weight: hasSolo ? 8 : 0 },
+        { name: "soloPt1",      weight: hasSolo ? 4 : 0 },
+        { name: "soloPt2",      weight: hasSolo ? 4 : 0 },
         { name: "bridge",    weight: hasBridge ? preChorusWeight : 0 },
         { name: "chorus",    weight: 8 },
         { name: "outro",     weight: 4 }

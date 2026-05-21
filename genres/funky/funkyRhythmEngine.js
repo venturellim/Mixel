@@ -1,10 +1,10 @@
-// funkyRhythmEngine.js — ver. 002 (con fill di batteria)
+// funkyRhythmEngine.js — ver. 003 (con fill che silenziano i piatti)
 import * as Tone from "https://esm.sh/tone";
 import { getFunkyGroove, grooveCharacteristics } from "./funkyGrooves.js";
 import { normalizeNote } from "./funkyInstruments.js";
 import { scheduleFunkyFill, scheduleTransitionFill } from "./funkyFills.js";
 
-console.log("funkyRhythmEngine.js ver. 002 loaded");
+console.log("funkyRhythmEngine.js ver. 003 loaded");
 
 function getRootPitch(root) {
     if (!root || typeof root !== "string") return "C";
@@ -53,7 +53,6 @@ export function scheduleFunkyRhythm(section, progression, instruments, params, r
     const bassShouldPlay = bassPatterns[style] || bassPatterns.ClassicFunk;
     const guitarShouldPlay = guitarPatterns[style] || guitarPatterns.ClassicFunk;
 
-    // Clavinet per accordi (solo in chorus/drop)
     const useClavinet = isChorus || isSolo || isPreChorus;
 
     for (let m = 0; m < section.measures; m++) {
@@ -61,7 +60,6 @@ export function scheduleFunkyRhythm(section, progression, instruments, params, r
         const currentRoot = progression[m % progression.length];
         const pitchRoot = getRootPitch(currentRoot);
         
-        // Note per basso e clavinet
         const bassNoteRaw = pitchRoot + "1";
         const bassNote = normalizeNote(bassNoteRaw, "bassSlap");
         
@@ -69,16 +67,27 @@ export function scheduleFunkyRhythm(section, progression, instruments, params, r
         const chordThird = Tone.Frequency(chordRoot).transpose(4).toNote();
         const chordFifth = Tone.Frequency(chordRoot).transpose(7).toNote();
 
-        // ============================================================
-        // LOOP SEDICESIMI
-        // ============================================================
+        // Determina se questa misura ha un fill
+        const hasFillAtEnd = (m % 2 === 1) && (m < section.measures - 1);
+        const hasTransitionFill = (m === section.measures - 1 && nextSectionRoot);
+        
+        // Zone di fill (ultimi 2 sedicesimi della misura per il fill)
+        const isFillZone = hasFillAtEnd && (s >= 12);
+        const isTransitionZone = hasTransitionFill && (s >= 12);
+
         for (let s = 0; s < 16; s++) {
             const absoluteTime = measureStartTime + s * stepTime;
             const isQuarter = (s === 0 || s === 4 || s === 8 || s === 12);
             
-            // KICK
+            // === FILL ATTIVO? ===
+            const isFillActive = (hasFillAtEnd && s >= 12) || (hasTransitionFill && s >= 12);
+            
+            // === KICK ===
             let playKick = isQuarter;
             if (isDrop && (s === 2 || s === 6 || s === 10 || s === 14)) playKick = true;
+            // Durante i fill, kick più presenti
+            if (isFillActive && (s === 12 || s === 14)) playKick = true;
+            
             if (playKick) {
                 Tone.Transport.schedule(t => {
                     drumFunky?.player("kick")?.start(t);
@@ -86,16 +95,22 @@ export function scheduleFunkyRhythm(section, progression, instruments, params, r
                 }, absoluteTime);
             }
             
-            // SNARE
-            if (!isIntro && (s === 4 || s === 12)) {
+            // === SNARE ===
+            let playSnare = !isIntro && (s === 4 || s === 12);
+            // Durante i fill, snare più presente
+            if (isFillActive && (s === 13 || s === 15)) playSnare = true;
+            
+            if (playSnare) {
                 Tone.Transport.schedule(t => {
                     drumFunky?.player("snare")?.start(t);
                     if (score) score.addNote("Drums", "Snare", section.name);
                 }, absoluteTime);
             }
             
-            // HI-HAT
-            if (!isIntro || (isIntro && s % 2 === 0)) {
+            // === HI-HAT (SILENZIATO DURANTE I FILL!) ===
+            const shouldPlayHat = !isFillActive && (!isIntro || (isIntro && s % 2 === 0));
+            
+            if (shouldPlayHat) {
                 const useOpenHat = (isDrop && s % 4 === 2) || (s === 6 || s === 14);
                 const hatSound = useOpenHat ? "hihatopen" : "hihatclose";
                 Tone.Transport.schedule(t => {
@@ -104,24 +119,26 @@ export function scheduleFunkyRhythm(section, progression, instruments, params, r
                 }, absoluteTime);
             }
             
-            // RIDE in chorus
-            if (isChorus && (s === 0 || s === 8)) {
+            // === RIDE (SILENZIATO DURANTE I FILL!) ===
+            const shouldPlayRide = !isFillActive && isChorus && (s === 0 || s === 8);
+            
+            if (shouldPlayRide) {
                 Tone.Transport.schedule(t => {
                     drumFunky?.player("ride")?.start(t);
                     if (score) score.addNote("Drums", "Ride", section.name);
                 }, absoluteTime);
             }
             
-            // BASSO SLAP
-            if (bassShouldPlay(s, isDrop) && bassNote) {
+            // === BASSO SLAP ===
+            if (bassShouldPlay(s, isDrop) && bassNote && !isFillActive) {
                 Tone.Transport.schedule(t => {
                     bassSlap.triggerAttackRelease(bassNote, "16n", t);
                     if (score) score.addNote("Bass", bassNote, section.name);
                 }, absoluteTime);
             }
             
-            // CHITARRA MUTE
-            if (guitarShouldPlay(s) && guitarMute) {
+            // === CHITARRA MUTE ===
+            if (guitarShouldPlay(s) && guitarMute && !isFillActive) {
                 const guitarNoteRaw = pitchRoot + "3";
                 const guitarNote = normalizeNote(guitarNoteRaw, "guitarMute");
                 Tone.Transport.schedule(t => {
@@ -130,7 +147,7 @@ export function scheduleFunkyRhythm(section, progression, instruments, params, r
                 }, absoluteTime);
             }
             
-            // CRASH all'inizio
+            // === CRASH all'inizio ===
             if (s === 0 && m === 0 && !isIntro) {
                 Tone.Transport.schedule(t => {
                     drumFunky?.player("crash")?.start(t);
@@ -139,9 +156,7 @@ export function scheduleFunkyRhythm(section, progression, instruments, params, r
             }
         }
         
-        // ============================================================
-        // CLAVINET (accordi)
-        // ============================================================
+        // === CLAVINET ===
         if (useClavinet && clavinet) {
             const chordNotes = [chordRoot, chordThird, chordFifth];
             Tone.Transport.schedule(t => {
@@ -153,18 +168,13 @@ export function scheduleFunkyRhythm(section, progression, instruments, params, r
             }, measureStartTime);
         }
         
-        // ============================================================
-        // FILL DI BATTERIA
-        // ============================================================
-        
-        // Fill alla fine di ogni 2 misure (esclusa l'ultima misura della sezione)
-        if ((m % 2 === 1) && (m < section.measures - 1)) {
+        // === FILL DI BATTERIA (solo se non c'è già un fill attivo) ===
+        if (hasFillAtEnd) {
             const fillStartTime = measureStartTime + measureDur - 0.5;
             scheduleFunkyFill(drumFunky, fillStartTime, section.name, energy, score, section.name);
         }
         
-        // Fill di transizione all'ultima misura della sezione
-        if (m === section.measures - 1 && nextSectionRoot) {
+        if (hasTransitionFill) {
             const fillEndTime = measureStartTime + measureDur;
             scheduleTransitionFill(drumFunky, fillEndTime, energy, score, section.name);
         }
