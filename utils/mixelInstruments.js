@@ -36,23 +36,23 @@ export const guitarOpen = new Tone.Sampler({
 
 export const guitarLead = new Tone.Sampler({
     urls: {
-        C2: "Lead/C2.mp3", Db2: "Lead/Db2.mp3", D2: "Lead/D2.mp3",
-        Eb2: "Lead/Eb2.mp3", E2: "Lead/E2.mp3", F2: "Lead/F2.mp3",
-        Gb2: "Lead/Gb2.mp3", G2: "Lead/G2.mp3", Ab2: "Lead/Ab2.mp3",
-        A2: "Lead/A2.mp3", Bb2: "Lead/Bb2.mp3", B2: "Lead/B2.mp3",
-        C3: "Lead/C3.mp3", Db3: "Lead/Db3.mp3", D3: "Lead/D3.mp3",
-        Eb3: "Lead/Eb3.mp3", E3: "Lead/E3.mp3", F3: "Lead/F3.mp3",
-        Gb3: "Lead/Gb3.mp3", G3: "Lead/G3.mp3", Ab3: "Lead/Ab3.mp3",
-        A3: "Lead/A3.mp3", Bb3: "Lead/Bb3.mp3", B3: "Lead/B3.mp3",
-        C4: "Lead/C4.mp3", Db4: "Lead/Db4.mp3", D4: "Lead/D4.mp3",
-        Eb4: "Lead/Eb4.mp3", E4: "Lead/E4.mp3", F4: "Lead/F4.mp3",
-        Gb4: "Lead/Gb4.mp3", G4: "Lead/G4.mp3", Ab4: "Lead/Ab4.mp3",
-        A4: "Lead/A4.mp3", Bb4: "Lead/Bb4.mp3", B4: "Lead/B4.mp3",
-        C5: "Lead/C5.mp3", Db5: "Lead/Db5.mp3", D5: "Lead/D5.mp3",
-        Eb5: "Lead/Eb5.mp3", E5: "Lead/E5.mp3", F5: "Lead/F5.mp3",
-        Gb5: "Lead/Gb5.mp3", G5: "Lead/G5.mp3", Ab5: "Lead/Ab5.mp3",
-        A5: "Lead/A5.mp3", Bb5: "Lead/Bb5.mp3", B5: "Lead/B5.mp3",
-        C6: "Lead/C6.mp3"
+        D2: "Lead/D2.mp3",
+        F2: "Lead/F2.mp3",
+        "G#2": "Lead/Gs2.mp3",     
+        B2: "Lead/B2.mp3",
+        D3: "Lead/D3.mp3",
+        F3: "Lead/F3.mp3",
+        "G#3": "Lead/Gs3.mp3",     
+        B3: "Lead/B3.mp3",
+        D4: "Lead/D4.mp3",
+        F4: "Lead/F4.mp3",
+        "G#4": "Lead/Gs4.mp3",     
+        B4: "Lead/B4.mp3",
+        D5: "Lead/D5.mp3",
+        F5: "Lead/F5.mp3",
+        "G#5": "Lead/Gs5.mp3",     
+        B5: "Lead/B5.mp3",
+        D6: "Lead/D6.mp3"
     },
     baseUrl: GUITAR_BASE,
     attack: 0.02, release: 0.8,
@@ -455,7 +455,7 @@ export function normalizeNote(note, instrumentName) {
         guitarClean: ["F#2", "C3", "F#3", "C4", "F#4", "C5", "F#5", "C6"],
         guitarPalm: ["C", "D", "E", "F", "G", "A", "B"],
         guitarOpen: ["C", "D", "E", "F", "G", "A", "B"],
-        guitarLead: ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"],
+        guitarLead: ["D2", "F2", "G#2", "B2", "D3", "F3", "G#3", "B3", "D4", "F4", "G#4", "B4", "D5", "F5", "G#5", "B5", "D6"],
         
         // Bassi
         bassMetal: ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"],
@@ -519,5 +519,4 @@ export function normalizeNote(note, instrumentName) {
     }
 
     return bestNote;
-}
 }
