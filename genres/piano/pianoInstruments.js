@@ -1,37 +1,56 @@
-// pianoInstruments.js — ver. 002 (solo routing e volumi)
+// pianoInstruments.js — PIANO ENGINE (nuova architettura B2)
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ } from "../../common.js";
-import { piano, normalizeNote } from "../../utils/mixelInstruments.js";
 
-console.log("pianoInstruments.js ver. 002 loaded");
+// Import strumenti unificati
+import {
+    pianoSalamander,
+    normalizeNote
+} from "../../utils/mixelInstruments.js";
 
-// ============================================================
-// BUS PIANO
-// ============================================================
+console.log("pianoInstruments.js — unified version loaded");
+
+// ============================================================================
+// 🎚 BUS PIANO
+// ============================================================================
+
+// Bus principale → Master
 export const pianoBus = new Tone.Gain(1).connect(masterEQ);
+
+// Bus separati per mano sinistra e destra
 export const lhBus = new Tone.Gain(1).connect(pianoBus);
 export const rhBus = new Tone.Gain(1).connect(pianoBus);
 
+// ============================================================================
+// 🎧 RIVERBERO PIANO
+// ============================================================================
 const pianoReverb = new Tone.Reverb({
-    decay: 3.5, wet: 0.35
+    decay: 3.5,
+    wet: 0.35
 }).connect(pianoBus);
 
-// ============================================================
-// RICONNETTI PIANO AL BUS
-// ============================================================
-piano.disconnect().connect(pianoReverb);
+// ============================================================================
+// 🔌 ROUTING STRUMENTO → BUS
+// ============================================================================
+pianoSalamander.disconnect().connect(pianoReverb);
 
-// ============================================================
-// SET VOLUME
-// ============================================================
+// ============================================================================
+// 🎚 SET VOLUME (per UI)
+// ============================================================================
+export function setVolume(busName, dbValue) {
+    const gain = Tone.dbToGain(dbValue);
+
+    if (busName === "pianoLH") lhBus.gain.rampTo(gain, 0.1);
+    if (busName === "pianoRH") rhBus.gain.rampTo(gain, 0.1);
+}
+
+// ============================================================================
+// 📦 EXPORT
+// ============================================================================
 export const pianoInstruments = {
-    piano,
+    pianoSalamander,
     pianoBus, lhBus, rhBus,
-    setVolume: (busName, dbValue) => {
-        const gain = Tone.dbToGain(dbValue);
-        if (busName === "pianoLH") lhBus.gain.rampTo(gain, 0.1);
-        if (busName === "pianoRH") rhBus.gain.rampTo(gain, 0.1);
-    }
+    setVolume
 };
 
 export const pianoVolumeMap = {
