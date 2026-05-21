@@ -87,6 +87,90 @@ export const guitarClean = new Tone.Sampler({
 });
 
 // ======================
+// 🎻 STRINGS (ORCHESTRA)
+// ======================
+
+export const violin = new Tone.Sampler({
+    urls: { 
+        A2: "Violin/A2.mp3", 
+        A3: "Violin/A3.mp3",
+        B2: "Violin/B2.mp3", 
+        B4: "Violin/B4.mp3",
+        C4: "Violin/C4.mp3", 
+        D3: "Violin/D3.mp3",
+        D5: "Violin/D5.mp3", 
+        E4: "Violin/E4.mp3",
+        "F#3": "Violin/Fs3.mp3",
+        G2: "Violin/G2.mp3", 
+        G4: "Violin/G4.mp3"
+    },
+    baseUrl: BASE,
+    release: 1.2,
+    onload: () => registerInstrumentLoaded("violin")
+});
+
+export const viola = new Tone.Sampler({
+    urls: {  
+        A3: "Viola/A3.mp3",
+        B2: "Viola/B2.mp3", 
+        C2: "Viola/C2.mp3",
+        C4: "Viola/C4.mp3", 
+        D2: "Viola/D2.mp3",
+        D3: "Viola/D3.mp3",
+        D5: "Viola/D5.mp3",
+        E2: "Viola/E2.mp3",
+        E4: "Viola/E4.mp3",
+        G2: "Viola/G2.mp3", 
+        G4: "Viola/G4.mp3"
+    },
+    baseUrl: BASE,
+    release: 1.2,
+    onload: () => registerInstrumentLoaded("viola")
+});
+
+export const cello = new Tone.Sampler({
+    urls: { 
+        A2: "Cello/A2.mp3",
+        B1: "Cello/B1.mp3",
+        B3: "Cello/B3.mp3",
+        C1: "Cello/C1.mp3",
+        C3: "Cello/C3.mp3",
+        D2: "Cello/D2.mp3",
+        D4: "Cello/D4.mp3",
+        E1: "Cello/E1.mp3",
+        E3: "Cello/E3.mp3",
+        F2: "Cello/F2.mp3",
+        F4: "Cello/F4.mp3",
+        G1: "Cello/G1.mp3",
+        G3: "Cello/G3.mp3"
+    },
+    baseUrl: BASE,
+    release: 1.5,
+    onload: () => registerInstrumentLoaded("cello")
+});
+
+export const doubleBass = new Tone.Sampler({
+    urls: { 
+        "A#0": "DoubleBass/As0.mp3",
+        A1: "DoubleBass/A1.mp3",
+        B2: "DoubleBass/B2.mp3",
+        "C#2": "DoubleBass/Cs2.mp3",
+        C1: "DoubleBass/C1.mp3",
+        D1: "DoubleBass/D1.mp3",
+        E1: "DoubleBass/E1.mp3",
+        E2: "DoubleBass/E2.mp3",
+        "F#0": "DoubleBass/Fs0.mp3",
+        "F#1": "DoubleBass/Fs1.mp3",
+        "G#1": "DoubleBass/Gs1.mp3",
+        "G#2": "DoubleBass/Gs2.mp3",
+        G0: "DoubleBass/G0.mp3"
+    },
+    baseUrl: BASE,
+    release: 2,
+    onload: () => registerInstrumentLoaded("doubleBass")
+});
+
+// ======================
 // 🎚 BASS
 // ======================
 
