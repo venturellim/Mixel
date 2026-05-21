@@ -58,4 +58,6 @@ export const pianoVolumeMap = {
     pianoRH: "Piano (Melodia/DX)"
 };
 
-export { normalizeNote, pianoSalamander};
+export { pianoSalamander };
+
+export { normalizeNote };
