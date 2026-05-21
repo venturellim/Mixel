@@ -92,7 +92,7 @@ export function createPianoEngine(params, score) {
         schedulePianoRhythm(
     sec, 
     realNotes, 
-    { piano: pianoSalamander, lhBus, rhBus }, 
+    { pianoSalamander, lhBus, rhBus }, 
     combinedParams, 
     rand, 
     measureDur, 
@@ -103,12 +103,13 @@ export function createPianoEngine(params, score) {
 schedulePianoLead(
     sec, 
     realNotes, 
-    { piano: pianoSalamander, lhBus, rhBus }, 
+    { pianoSalamander, lhBus, rhBus }, 
     combinedParams, 
     rand, 
     measureDur, 
     score
 );
+});
 
     return {
         totalDuration: structure.totalDuration,
