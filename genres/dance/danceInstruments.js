@@ -42,7 +42,7 @@ const fxEQ = new Tone.EQ3({ low: 4, mid: -2, high: -4 });
 const percussionEQ = new Tone.EQ3({ low: 2, mid: 1, high: 3 });
 
 // Riverbero dance
-export const hallReverb = new Tone.Reverb({
+const hallReverb = new Tone.Reverb({
     decay: 2.8, preDelay: 0.01, wet: 0.35
 }).toDestination();
 
