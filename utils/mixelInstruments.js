@@ -402,11 +402,11 @@ export const fxSweep = new Tone.Sampler({
     onload: () => registerInstrumentLoaded("FxSweep")
 });
 
-export const fxNoise = new Tone.Sampler({
-    urls: { C4: "FxNoise/C4.mp3" },
+export const noisy = new Tone.Sampler({
+    urls: { C4: "Noisy/C4.mp3" },
     baseUrl: FX_BASE,
     release: 1.2,
-    onload: () => registerInstrumentLoaded("FxNoise")
+    onload: () => registerInstrumentLoaded("Noisy")
 });
 
 export const fxFantasy = new Tone.Sampler({
@@ -443,82 +443,83 @@ export const fxHardFTCore = new Tone.Sampler({
 export function normalizeNote(note, instrumentName) {
     if (!note || typeof note !== "string") return "C3";
 
+    // Parsing nota richiesta
     const match = note.match(/^([A-G][#b]?)(\d+)?$/);
     if (!match) return "C3";
 
     const targetRoot = match[1];
     const targetOct = match[2] ? parseInt(match[2]) : 3;
 
+    // Mappa note disponibili (corrette)
     const availableNotesMap = {
-        // Chitarre
-        guitarMute: ["E3", "F#3", "G3", "A3", "C4", "D4", "A#4", "D5", "F5", "A#5"],
-        guitarClean: ["F#2", "C3", "F#3", "C4", "F#4", "C5", "F#5", "C6"],
-        guitarPalm: ["C", "D", "E", "F", "G", "A", "B"],
-        guitarOpen: ["C", "D", "E", "F", "G", "A", "B"],
-        guitarLead: ["D2", "F2", "G#2", "B2", "D3", "F3", "G#3", "B3", "D4", "F4", "G#4", "B4", "D5", "F5", "G#5", "B5", "D6"],
-        
-        // Bassi
-        bassMetal: ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"],
-        bassSlap: ["E0", "G0", "D1", "A1", "B1", "F#1", "E2", "F2", "A3", "D3", "E4", "G5"],
-        bassSynth: ["A", "A#", "C", "D#", "E", "F", "F#", "G"],
-        
-        // Fiati
-        trumpet: ["A2", "F2", "C3", "D#3", "G3", "A#3", "D4", "F4", "A4", "C5"],
-        trombone: ["A#0", "D#1", "F1", "D2", "F2", "A#1", "C3", "C#3", "D#3", "F3"],
-        saxAlto: ["G2","A2","B2","C3","D3","E3","F3","G3","A3","B3","C4","D4","E4","F4","G4","A4","B4","C5","D5","E5","F5","G5","A5","B5"],
-        
-        // Tastiere
-        clavinet: ["C3","C#3","D3","D#3","E3","F3","F#3","G3","G#3","A3","A#3","B3","C4","C#4","D4","D#4","E4","F4","F#4","G4","G#4","A4","A#4","B4","C5"],
-        piano: ["C","F#"],
+        guitarPalm: ["C2","D2","E2","F2","G2","A2","B2"],
+        guitarOpen: ["C2","D2","E2","F2","G2","A2","B2"],
+        guitarMute: ["E3","F#3","G3","A3","C4","D4","A#4","D5","F5","A#5"],
+        guitarClean: ["F#2","C3","F#3","C4","F#4","C5","F#5","C6"],
+        guitarLead: ["D2","F2","G#2","B2","D3","F3","G#3","B3","D4","F4","G#4","B4","D5","F5","G#5","B5","D6"],
+
+        bassMetal: ["C1","Db1","D1","Eb1","E1","F1","Gb1","G1","Ab1","A1","Bb1","B1","C2"],
+        bassSlap: ["E0","G0","D1","A1","B1","F#1","E2","F2","A3","D3","E4","G5"],
+        bassSynth: ["C2","E2","C3","F#3"],
+
+        trumpet: ["A2","F2","C3","D#3","G3","A#3","D4","F4","A4","C5"],
+        trombone: ["A#0","D#1","F1","A#1","D2","F2","C3","C#3","D#3","F3"],
+        saxAlto: [
+            "G2","A2","B2","C3","D3","E3","F3","G3","A3","B3",
+            "C4","D4","E4","F4","G4","A4","B4","C5","D5","E5","F5","G5","A5","B5"
+        ],
+
+        clavinet: [
+            "C3","C#3","D3","D#3","E3","F3","F#3","G3","G#3","A3","A#3","B3",
+            "C4","C#4","D4","D#4","E4","F4","F#4","G4","G#4","A4","A#4","B4","C5"
+        ],
+        piano: [
+            "A0","C1","D#1","F#1","A1","C2","D#2","F#2","A2","C3","D#3","F#3",
+            "A3","C4","D#4","F#4","A4","C5","D#5","F#5","A5","C6","D#6","F#6",
+            "A7","C8"
+        ],
         organo: ["A","A#","B","C","C#","D","D#","E","F","F#","G","G#"],
-        
-        // Synth
-        leadSaw: ["C", "E"],
-        leadSynthBrass1: ["C", "F#"],
-        leadSynthBrass2: ["C", "F#"],
-        
-        // Pad
-        bellsPad: ["C"],
-        glassPad: ["C"],
-        warmPad: ["C", "F#"],
-        wavePad: ["C", "E"],
-        StStringPad: ["C"],
-        
-        // Default
-        default: ["C", "D", "E", "F", "G", "A", "B"]
+
+        leadSaw: ["C3","E3","C4","E4"],
+        leadSynthBrass1: ["C3","F#3","C4","F#4"],
+        leadSynthBrass2: ["C3","F#3","C4","F#4"],
+
+        bellsPad: ["C2","C3","C4","C5"],
+        glassPad: ["C2","C3","C4"],
+        warmPad: ["C3","F#3","C4","F#4"],
+        wavePad: ["C3","E3","C4","E4"],
+        StStringPad: ["C2","C3","C4","C5"],
+
+        default: ["C3"]
     };
 
     const available = availableNotesMap[instrumentName] || availableNotesMap.default;
-    
+
+    // MIDI target
     let targetMidi;
     try {
         targetMidi = Tone.Frequency(`${targetRoot}${targetOct}`).toMidi();
-    } catch(e) {
+    } catch {
         targetMidi = Tone.Frequency("C3").toMidi();
     }
 
-    // ============================================================
-// NORMALIZE NOTE CENTRALIZZATA (con note reali) - PARTE FINALE
-// ============================================================
-
+    // Trova la nota più vicina
     let bestNote = available[0];
     let bestDist = Infinity;
 
     for (const n of available) {
         try {
-            const noteWithOctave = /\d/.test(n) ? n : n + targetOct;
-            const midi = Tone.Frequency(noteWithOctave).toMidi();
+            const midi = Tone.Frequency(n).toMidi();
             const dist = Math.abs(midi - targetMidi);
             if (dist < bestDist) {
                 bestDist = dist;
                 bestNote = n;
             }
-        } catch(e) {
+        } catch {
             console.warn(`Nota non valida: ${n} per ${instrumentName}`);
         }
     }
 
     return bestNote;
-    
-    console.log("✅ mixelInstruments.js caricato completamente");
 }
+
