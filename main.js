@@ -25,14 +25,38 @@ let currentGenre = null;
 let firstStart = 1;
 let scoreUI = null;
 
-// ✅ L'array DEFINE già il numero (la lunghezza dell'array)
-const genreInstruments = {
-    dance: ["Bells Pad", "Fantasy Fx", "Glass Pad",  "Hard for the Core Fx", "Heaven Fx", "Jump Fx", "Synth Bass", "Lead Synth", "Noise Fx", "Organo", "Percussions", "Saw", "Shaku Pad", "So True Strig Pad", "Sweet Fx", "Synth Brass 1", "Synth Brass 2","Warm Pad", "Wave Pad"],  // 19 strumenti
-    funky: ["Clavinet", "Funky Drum", "Guitar Clean", "Guitar Mute", "Noisy", "Sax Alto", "Slap Bass", "Trombone", "Trumpet"], // 9 strumenti 
-    metal: ["Bass", "Drums", "Lead Guitar", "Rhythm Guitar Open", "Rhythm Guitar Palm"],  // 5 strumenti
-    orchestra: ["Basses", "Cellos", "Violas", "Violins",    "Timpani"],  // 5 strumenti
-    piano: ["Grand Piano"]  // 1 strumento
+const instrumentsByType = {
+    chitarre: [
+        "Guitar Palm Mute", "Guitar Open", "Guitar Lead",
+        "Guitar Mute", "Guitar Clean"
+    ],
+    bassi: [
+        "Bass Metal", "Bass Slap", "Bass Synth"
+    ],
+    batterie: [
+        "Drum Metal", "Drum Funky", "Timpani"
+    ],
+    tastiere: [
+        "Piano", "Clavinet", "Organo", "Korg Synth"
+    ],
+    fiati: [
+        "Trumpet", "Trombone", "Sax Alto"
+    ],
+    archi: [
+        "Violin", "Viola", "Cello", "Double Bass"
+    ],
+    synth: [
+        "Lead Saw", "Lead Synth Brass 1", "Lead Synth Brass 2",
+        "Sub Bass", "Bass Attack"
+    ],
+    pads: [
+        "Bells Pad", "Glass Pad", "Warm Pad", "Wave Pad", "StString Pad"
+    ],
+    fx: [
+        "Sweep", "Noise", "Fantasy", "Heaven", "Jump", "Hard For The Core"
+    ]
 };
+
 
 const miniVideo = document.querySelector('.video-mini-wrapper video'); 
 
@@ -134,7 +158,7 @@ function initGenrePanel() {
             resetAudio();
             firstStart = 0;
         } else {
-        await waitForInstruments(genreInstruments);
+        await waitForInstruments(instrumentsByType);
         firstStart = 0;
         }
         
