@@ -43,7 +43,7 @@ export async function createFunkyEngine(params, score) {
     const finalStructure = rawStructure.map(s => {
         let m = Math.floor(s.weight);
         if (m > 0) {
-            if (["intro", "verse", "chorus", "solo"].includes(s.name)) {
+            if (["intro", "verse", "chorus", "soloPt1", "soloPt2"].includes(s.name)) {
                 m = Math.ceil(m / 4) * 4;
             } else {
                 m = Math.ceil(m / 2) * 2;
@@ -58,7 +58,7 @@ export async function createFunkyEngine(params, score) {
     const preChorusSection = structure.sections.find(s => s.name === "prechorus");
     const bridgeSection = structure.sections.find(s => s.name === "bridge");
     const chorusSection = structure.sections.find(s => s.name === "chorus");
-    const soloSection = structure.sections.find(s => s.name === "solo");
+const soloSection = structure.sections.find(s => s.name === "soloPt1" || s.name === "soloPt2");
 
     if (bridgeSection && preChorusSection) {
         const preChorusProg = progressions["prechorus"];
@@ -71,14 +71,18 @@ export async function createFunkyEngine(params, score) {
     }
 
     if (soloSection && chorusSection) {
-        const chorusProg = progressions["chorus"];
-        if (chorusProg) {
-            progressions["solo"] = {
-                root: chorusProg.root,
-                progression: chorusProg.progression
-            };
-        }
+    const chorusProg = progressions["chorus"];
+    if (chorusProg) {
+        progressions["soloPt1"] = {
+            root: chorusProg.root,
+            progression: chorusProg.progression
+        };
+        progressions["soloPt2"] = {
+            root: chorusProg.root,
+            progression: chorusProg.progression
+        };
     }
+}
 
     const measureDur = (60 / funkyParams.bpm) * 4;
 
