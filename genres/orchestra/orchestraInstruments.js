@@ -18,7 +18,7 @@ export const celloBus = new Tone.Gain(1);
 export const doubleBassBus = new Tone.Gain(1);
 export const percussionBus = new Tone.Gain(1);
 
-export const hallReverb = new Tone.Reverb({
+const hallReverb = new Tone.Reverb({
     decay: 2.8, preDelay: 0.01, wet: 0.35
 }).toDestination();
 
