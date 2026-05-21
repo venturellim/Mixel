@@ -519,4 +519,6 @@ export function normalizeNote(note, instrumentName) {
     }
 
     return bestNote;
+    
+    console.log("✅ mixelInstruments.js caricato completamente");
 }
