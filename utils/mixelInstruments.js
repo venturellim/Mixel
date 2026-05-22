@@ -207,17 +207,6 @@ export const bassSynth = new Tone.Sampler({
     onload: () => registerInstrumentLoaded("bassSynth")
 });
 
-// Dance bass (Lately)
-export const bassDance = new Tone.Sampler({
-    urls: {
-        C2:"Synth/Bass/C2.mp3",C3:"Synth/Bass/C3.mp3",
-        E2:"Synth/Bass/E2.mp3","F#3":"Synth/Bass/Fs3.mp3"
-    },
-    baseUrl: BASE,
-    release: 2,
-    onload: () => registerInstrumentLoaded("bassDance")
-});
-
 // Sub + Attack (Dance)
 export const subBass = new Tone.Synth({
     oscillator: { type: "sine" },
@@ -332,14 +321,14 @@ export const keysClavinet = new Tone.Sampler({
 
 export const keysOrgan = new Tone.Sampler({
     urls: {
-        "A#1":"Organo/As1.mp3","A#2":"Organo/As2.mp3",A1:"Organo/A1.mp3",A2:"Organo/A2.mp3",
-        B1:"Organo/B1.mp3",B2:"Organo/B2.mp3","C#1":"Organo/Cs1.mp3","C#2":"Organo/Cs2.mp3",
-        "C#3":"Organo/Cs3.mp3",C1:"Organo/C1.mp3",C2:"Organo/C2.mp3",C3:"Organo/C3.mp3",
-        D1:"Organo/D1.mp3",D2:"Organo/D2.mp3",D3:"Organo/D3.mp3","D#1":"Organo/Ds1.mp3",
-        "D#2":"Organo/Ds2.mp3","D#3":"Organo/Ds3.mp3",E1:"Organo/E1.mp3",E2:"Organo/E2.mp3",
-        E3:"Organo/E3.mp3","F#1":"Organo/Fs1.mp3","F#2":"Organo/Fs2.mp3","F#3":"Organo/Fs3.mp3",
-        F1:"Organo/F1.mp3",F2:"Organo/F2.mp3",F3:"Organo/F3.mp3","G#1":"Organo/Gs1.mp3",
-        "G#2":"Organo/Gs2.mp3",G1:"Organo/G1.mp3",G2:"Organo/G2.mp3",G3:"Organo/G3.mp3"
+        "A#1":"Synth/Organo/As1.mp3","A#2":"Synth/Organo/As2.mp3",A1:"Synth/Organo/A1.mp3",A2:"Synth/Organo/A2.mp3",
+        B1:"Synth/Organo/B1.mp3",B2:"Synth/Organo/B2.mp3","C#1":"Synth/Organo/Cs1.mp3","C#2":"Synth/Organo/Cs2.mp3",
+        "C#3":"Synth/Organo/Cs3.mp3",C1:"Synth/Organo/C1.mp3",C2:"Synth/Organo/C2.mp3",C3:"Synth/Organo/C3.mp3",
+        D1:"Synth/Organo/D1.mp3",D2:"Synth/Organo/D2.mp3",D3:"Synth/Organo/D3.mp3","D#1":"Synth/Organo/Ds1.mp3",
+        "D#2":"Synth/Organo/Ds2.mp3","D#3":"Synth/Organo/Ds3.mp3",E1:"Synth/Organo/E1.mp3",E2:"Synth/Organo/E2.mp3",
+        E3:"Synth/Organo/E3.mp3","F#1":"Synth/Organo/Fs1.mp3","F#2":"Synth/Organo/Fs2.mp3","F#3":"Synth/Organo/Fs3.mp3",
+        F1:"Synth/Organo/F1.mp3",F2:"Synth/Organo/F2.mp3",F3:"Synth/Organo/F3.mp3","G#1":"Synth/Organo/Gs1.mp3",
+        "G#2":"Synth/Organo/Gs2.mp3",G1:"Synth/Organo/G1.mp3",G2:"Synth/Organo/G2.mp3",G3:"Synth/Organo/G3.mp3"
     },
     baseUrl: BASE,
     release: 1.2,
@@ -351,42 +340,42 @@ export const keysOrgan = new Tone.Sampler({
 // ======================
 
 export const padBells = new Tone.Sampler({
-    urls: { C2:"BellsPad/C2.mp3",C3:"BellsPad/C3.mp3",C4:"BellsPad/C4.mp3",C5:"BellsPad/C5.mp3" },
+    urls: { C2:"Synth/BellsPad/C2.mp3",C3:"Synth/BellsPad/C3.mp3",C4:"Synth/BellsPad/C4.mp3",C5:"Synth/BellsPad/C5.mp3" },
     baseUrl: BASE,
     release: 1.2,
     onload: () => registerInstrumentLoaded("padBells")
 });
 
 export const padGlass = new Tone.Sampler({
-    urls: { C2:"GlassPad/C2.mp3",C3:"GlassPad/C3.mp3",C4:"GlassPad/C4.mp3" },
+    urls: { C2:"Synth/GlassPad/C2.mp3",C3:"Synth/GlassPad/C3.mp3",C4:"Synth/GlassPad/C4.mp3" },
     baseUrl: BASE,
     release: 1.2,
     onload: () => registerInstrumentLoaded("padGlass")
 });
 
 export const padWarm = new Tone.Sampler({
-    urls: { C3:"WarmPad/C3.mp3","F#3":"WarmPad/Fs3.mp3",C4:"WarmPad/C4.mp3","F#4":"WarmPad/Fs4.mp3" },
+    urls: { C3:"Synth/WarmPad/C3.mp3","F#3":"Synth/WarmPad/Fs3.mp3",C4:"Synth/WarmPad/C4.mp3","F#4":"Synth/WarmPad/Fs4.mp3" },
     baseUrl: BASE,
     release: 1.2,
     onload: () => registerInstrumentLoaded("padWarm")
 });
 
 export const padWave = new Tone.Sampler({
-    urls: { C3:"WavePad/C3.mp3",E3:"WavePad/E3.mp3",C4:"WavePad/C4.mp3",E4:"WavePad/E4.mp3" },
+    urls: { C3:"Synth/WavePad/C3.mp3",E3:"Synth/WavePad/E3.mp3",C4:"Synth/WavePad/C4.mp3",E4:"Synth/WavePad/E4.mp3" },
     baseUrl: BASE,
     release: 1.2,
     onload: () => registerInstrumentLoaded("padWave")
 });
 
 export const padShaku = new Tone.Sampler({
-    urls: { C3:"ShakuPad/C3.mp3","F#3":"ShakuPad/Fs3.mp3",C4:"ShakuPad/C4.mp3","F#4":"ShakuPad/Fs4.mp3" },
+    urls: { C3:"Synth/ShakuPad/C3.mp3","F#3":"Synth/ShakuPad/Fs3.mp3",C4:"Synth/ShakuPad/C4.mp3","F#4":"Synth/ShakuPad/Fs4.mp3" },
     baseUrl: BASE,
     release: 1.2,
     onload: () => registerInstrumentLoaded("padShaku")
 });
 
 export const padString = new Tone.Sampler({
-    urls: { C2:"StStringPad/C2.mp3",C3:"StStringPad/C3.mp3",C4:"StStringPad/C4.mp3",C5:"StStringPad/C5.mp3" },
+    urls: { C2:"Synth/StStringPad/C2.mp3",C3:"Synth/StStringPad/C3.mp3",C4:"Synth/StStringPad/C4.mp3",C5:"Synth/StStringPad/C5.mp3" },
     baseUrl: BASE,
     release: 1.2,
     onload: () => registerInstrumentLoaded("padString")
@@ -397,42 +386,42 @@ export const padString = new Tone.Sampler({
 // ======================
 
 export const fxSweep = new Tone.Sampler({
-    urls: { C4:"FxSweep/C4.mp3" },
+    urls: { C4:"Synth/FxSweep/C4.mp3" },
     baseUrl: BASE,
     release: 1.2,
     onload: () => registerInstrumentLoaded("fxSweep")
 });
 
 export const fxNoise = new Tone.Sampler({
-    urls: { C4:"FxNoise/C4.mp3" },
+    urls: { C4:"Synth/FxNoise/C4.mp3" },
     baseUrl: BASE,
     release: 1.2,
     onload: () => registerInstrumentLoaded("fxNoise")
 });
 
 export const fxFantasy = new Tone.Sampler({
-    urls: { C3:"FxFantasy/C3.mp3",C4:"FxFantasy/C4.mp3",C5:"FxFantasy/C5.mp3" },
+    urls: { C3:"Synth/FxFantasy/C3.mp3",C4:"Synth/FxFantasy/C4.mp3",C5:"Synth/FxFantasy/C5.mp3" },
     baseUrl: BASE,
     release: 1.2,
     onload: () => registerInstrumentLoaded("fxFantasy")
 });
 
 export const fxHeaven = new Tone.Sampler({
-    urls: { C3:"FxHeaven/C3.mp3",C4:"FxHeaven/C4.mp3",C5:"FxHeaven/C5.mp3" },
+    urls: { C3:"Synth/FxHeaven/C3.mp3",C4:"Synth/FxHeaven/C4.mp3",C5:"Synth/FxHeaven/C5.mp3" },
     baseUrl: BASE,
     release: 1.2,
     onload: () => registerInstrumentLoaded("fxHeaven")
 });
 
 export const fxJump = new Tone.Sampler({
-    urls: { C3:"FxJump/C3.mp3",C4:"FxJump/C4.mp3",C5:"FxJump/C5.mp3",E3:"FxJump/E3.mp3",E4:"FxJump/E4.mp3" },
+    urls: { C3:"Synth/FxJump/C3.mp3",C4:"Synth/FxJump/C4.mp3",C5:"Synth/FxJump/C5.mp3",E3:"Synth/FxJump/E3.mp3",E4:"Synth/FxJump/E4.mp3" },
     baseUrl: BASE,
     release: 1.2,
     onload: () => registerInstrumentLoaded("fxJump")
 });
 
-export const fxHardCore = new Tone.Sampler({
-    urls: { C2:"FxHardFTCore/C2.mp3",C4:"FxHardFTCore/C4.mp3",C5:"FxHardFTCore/C5.mp3",E3:"FxHardFTCore/E3.mp3",E4:"FxHardFTCore/E4.mp3" },
+export const fxHardFTCore = new Tone.Sampler({
+    urls: { C2:"Synth/FxHardFTCore/C2.mp3",C4:"Synth/FxHardFTCore/C4.mp3",C5:"Synth/FxHardFTCore/C5.mp3",E3:"Synth/FxHardFTCore/E3.mp3",E4:"Synth/FxHardFTCore/E4.mp3" },
     baseUrl: BASE,
     release: 1.2,
     onload: () => registerInstrumentLoaded("fxHardCore")
@@ -479,12 +468,12 @@ export const drumsFunky = new Tone.Players({
 
 export const drumsDance = new Tone.Players({
     urls: {
-        bassDrum:"Percussion/BassDrum.mp3",kick:"Percussion/Kick.mp3",
-        closedHat:"Percussion/ClosedHat.mp3",crash:"Percussion/Crash.mp3",
-        handClap:"Percussion/HandClap.mp3",hiTom:"Percussion/HiTom.mp3",
-        lowTom:"Percussion/LowTom.mp3",midTom:"Percussion/MidTom.mp3",
-        openHat:"Percussion/OpenHat.mp3",ride:"Percussion/Ride.mp3",
-        rimShot:"Percussion/RimShot.mp3",snareDrum:"Percussion/SnareDrum.mp3"
+        bassDrum:"Synth/Percussion/BassDrum.mp3",kick:"Synth/Percussion/Kick.mp3",
+        closedHat:"Synth/Percussion/ClosedHat.mp3",crash:"Synth/Percussion/Crash.mp3",
+        handClap:"Synth/Percussion/HandClap.mp3",hiTom:"Synth/Percussion/HiTom.mp3",
+        lowTom:"Synth/Percussion/LowTom.mp3",midTom:"Synth/Percussion/MidTom.mp3",
+        openHat:"Synth/Percussion/OpenHat.mp3",ride:"Synth/Percussion/Ride.mp3",
+        rimShot:"Synth/Percussion/RimShot.mp3",snareDrum:"Synth/Percussion/SnareDrum.mp3"
     },
     baseUrl: BASE,
     onload: () => registerInstrumentLoaded("drumsDance")
@@ -509,7 +498,7 @@ export const timpani = new Tone.Players({
 // 🎹 PIANO
 // ======================
 
-export const pianoSalamander = new Tone.Sampler({
+export const grandPiano = new Tone.Sampler({
     urls: {
         "A0":"Piano/A0.mp3", "C1":"Piano/C1.mp3", "D#1":"Piano/Ds1.mp3", "F#1":"Piano/Fs1.mp3",
         "A1":"Piano/A1.mp3", "C2":"Piano/C2.mp3", "D#2":"Piano/Ds2.mp3", "F#2":"Piano/Fs2.mp3",
@@ -522,6 +511,29 @@ export const pianoSalamander = new Tone.Sampler({
     baseUrl: BASE,
     release: 1.2,
     onload: () => registerInstrumentLoaded("pianoSalamander")
+});
+
+export const pianoSynth = new Tone.Sampler({
+    urls: { 
+    C0: "Samples/Synth/Piano/C0.mp3",
+    C1: "Samples/Synth/Piano/C1.mp3",
+   C2: "Samples/Synth/Piano/C2.mp3",
+    C3: "Samples/Synth/Piano/C3.mp3", 
+    C4: "Samples/Synth/Piano/C4.mp3",
+    C5: "Samples/Synth/Piano/C5.mp3", 
+    C6: "Samples/Synth/Piano/C6.mp3",
+    C7: "Samples/Synth/Piano/C7.mp3", 
+    "F#0": "Samples/Synth/Piano/Fs0.mp3",
+    "F#1": "Samples/Synth/Piano/Fs1.mp3",
+    "F#2": "Samples/Synth/Piano/Fs2.mp3",
+    "F#3": "Samples/Synth/Piano/Fs3.mp3",
+    "F#4": "Samples/Synth/Piano/Fs4.mp3",
+    "F#5": "Samples/Synth/Piano/Fs5.mp3",
+    "F#6": "Samples/Synth/Piano/Fs6.mp3",
+    "F#7": "Samples/Synth/Piano/Fs7.mp3"
+    },
+    release: 1.5,
+onload: () => registerInstrumentLoaded("Piano")
 });
 
 // ============================================================================
@@ -555,7 +567,6 @@ doubleBass: ["A#0","A1","B2","C#2","C1","D1","E1","E2","F#0","F#1","G#1","G#2","
     bassMetal: ["C1","C#1","D1","D#1","E1","F1","F#1","G1","G#1","A1","A#1","B1","C2"],
     bassSlap: ["E0","G0","D1","A1","B1","F#1","E2","F2","A3","D3","E4","G5"],
     bassSynth: ["C2","E2","C3","F#3"],
-    bassDance: ["C2","E2","C3","F#3"],
 
     // Synth bass (sub/attack) → non ha note reali
     subBass: ["C"],
@@ -588,7 +599,7 @@ leadSynthBrass2: ["C3","C4","F#3","F#4"],
     ],
 
     // 🎹 PIANO
-    pianoSalamander: [
+    grandPiano: [
         "A0","C1","D#1","F#1",
         "A1","C2","D#2","F#2",
         "A2","C3","D#3","F#3",
@@ -598,6 +609,7 @@ leadSynthBrass2: ["C3","C4","F#3","F#4"],
         "A7","C8"
     ],
 
+    pianoSynth: ["C0","C1","C2","C3","C4","C5", "C6", "C7","F#0","F#1","F#2","F#3","F#4","F#5", "F#6", "F#7"
     // 🎼 PADS
     padBells: ["C2","C3","C4","C5"],
     padGlass: ["C2","C3","C4"],
@@ -612,7 +624,7 @@ leadSynthBrass2: ["C3","C4","F#3","F#4"],
     fxFantasy: ["C3","C4","C5"],
     fxHeaven: ["C3","C4","C5"],
     fxJump: ["C3","E3","C4","E4","C5"],
-    fxHardCore: ["C2","E3","C4","E4","C5"],
+    fxHardFTCore: ["C2","E3","C4","E4","C5"],
     fxNoisy: ["C4","E4","A4","C#5","A5","D6","F#6"],
 
     // fallback
@@ -646,7 +658,7 @@ export function normalizeNote(note, instrumentName) {
         fxFantasy: true,
         fxHeaven: true,
         fxJump: true,
-        fxHardCore: true
+        fxHardFTCore: true
     };
 
     if (rootOnly[instrumentName]) {
