@@ -5,7 +5,7 @@ import { buildSongStructure } from "../../utils/structureUtils.js";
 import { createSeededRandom } from "../../utils/randomUtils.js";
 import { generateSongProgressions, degreeToRoot } from "../../utils/musicTheory.js";
 import { 
-    pianoSalamander, 
+    grandPiano, 
     lhBus, 
     rhBus, 
     pianoInstruments, 
@@ -92,7 +92,7 @@ export function createPianoEngine(params, score) {
         schedulePianoRhythm(
     sec, 
     realNotes, 
-    { pianoSalamander, lhBus, rhBus }, 
+    { grandPiano, lhBus, rhBus }, 
     combinedParams, 
     rand, 
     measureDur, 
@@ -103,7 +103,7 @@ export function createPianoEngine(params, score) {
 schedulePianoLead(
     sec, 
     realNotes, 
-    { pianoSalamander, lhBus, rhBus }, 
+    { grandPiano, lhBus, rhBus }, 
     combinedParams, 
     rand, 
     measureDur, 

@@ -4,7 +4,7 @@ import { masterEQ } from "../../common.js";
 
 // Import strumenti unificati
 import {
-    pianoSalamander,
+    grandPiano,
     normalizeNote
 } from "../../utils/mixelInstruments.js";
 
@@ -32,7 +32,7 @@ const pianoReverb = new Tone.Reverb({
 // ============================================================================
 // 🔌 ROUTING STRUMENTO → BUS
 // ============================================================================
-pianoSalamander.disconnect().connect(pianoReverb);
+grandPiano.disconnect().connect(pianoReverb);
 
 // ============================================================================
 // 🎚 SET VOLUME (per UI)
@@ -48,7 +48,7 @@ export function setVolume(busName, dbValue) {
 // 📦 EXPORT
 // ============================================================================
 export const pianoInstruments = {
-    pianoSalamander,
+    grandPiano,
     pianoBus, lhBus, rhBus,
     setVolume
 };
@@ -58,6 +58,6 @@ export const pianoVolumeMap = {
     pianoRH: "Piano (Melodia/DX)"
 };
 
-export { pianoSalamander };
+export { grandPiano };
 
 export { normalizeNote };

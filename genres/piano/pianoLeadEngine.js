@@ -129,8 +129,8 @@ export function schedulePianoLead(
     measureDur,
     score
 ) {
-    const { piano, rhBus } = instruments;
-    if (!piano) return;
+    const { grandPiano, rhBus } = instruments;
+    if (!grandPiano) return;
 
     const name = section?.name?.toLowerCase() || "";
     const isChorus = name.includes("chorus") && !name.includes("pre");
@@ -249,7 +249,7 @@ export function schedulePianoLead(
 
             Tone.Transport.schedule(time => {
                 const velocity = computeLeadVelocity(noteIdx, duration, isSolo, name.includes("bridge"));
-                piano.triggerAttackRelease(noteName, duration, time, velocity, rhBus);
+                grandPiano.triggerAttackRelease(noteName, duration, time, velocity, rhBus);
                 
                 Tone.Draw.schedule(() => {
                     if (score) score.addNote("Lead", noteName, section.name);
