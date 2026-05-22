@@ -36,8 +36,8 @@ const hatDensity = {
 };
 
 export function scheduleDanceRhythm(section, progression, instruments, params, rand, measureDur, nextSectionRoot, score) {
-    const { percussion, bass, warmPad, wavePad, glassPad, bellsPad, organo } = instruments;
-    if (!percussion || !bass) return;
+    const { drumsDance, bassSynth, padWarm, padWave, padGlass, padBells, keysOrgan } = instruments;
+    if (!drumsDance || !bass) return;
 
     const name = section?.name?.toLowerCase() || "";
     const isChorus = name.includes("chorus") && !name.includes("pre");
@@ -58,11 +58,11 @@ export function scheduleDanceRhythm(section, progression, instruments, params, r
     let useOrgano = false;
     
     switch(style) {
-    case "Gigi":       selectedPad = warmPad; useOrgano = true; break;
-    case "Eiffel65":   selectedPad = glassPad; break;
-    case "GabryPonte": selectedPad = bellsPad; break;
-    case "Molella":    selectedPad = warmPad; break; // pad trancey
-    default:           selectedPad = wavePad;
+    case "Gigi":       selectedPad = padWarm; useOrgano = true; break;
+    case "Eiffel65":   selectedPad = padGlass; break;
+    case "GabryPonte": selectedPad = padBells; break;
+    case "Molella":    selectedPad = padWarm; break; // pad trancey
+    default:           selectedPad = padWave;
 }
 
 
@@ -138,7 +138,7 @@ export function scheduleDanceRhythm(section, progression, instruments, params, r
         }
         
         // ORGANO per Gigi
-        if (useOrgano && organo && !isIntro) {
+        if (useOrgano && keysOrgan && !isIntro) {
             Tone.Transport.schedule(t => {
                 organo.triggerAttackRelease(padRoot, measureDur * 0.9, t);
                 if (score) score.addNote("Organo", padRoot, section.name);

@@ -6,9 +6,9 @@ import { masterEQ } from "../../common.js";
 import {
     leadSaw, leadSynthBrass1, leadSynthBrass2,
     padBells, padGlass, padWarm, padWave, padShaku, padString,
-    keysOrgan, pianoSalamander,
-    bassDance, subBass, bassAttack,
-    fxSweep, fxNoise, fxFantasy, fxHeaven, fxJump, fxHardCore,
+    keysOrgan, pianoSynth,
+    bassSynth, subBass, bassAttack,
+    fxSweep, fxNoise, fxFantasy, fxHeaven, fxJump, fxHardFTCore,
     drumsDance,
     normalizeNote
 } from "../../utils/mixelInstruments.js";
@@ -80,10 +80,10 @@ padString.disconnect().connect(padBus);
 
 // Organo & Piano
 keysOrgan.disconnect().connect(organBus);
-pianoSalamander.disconnect().connect(pianoBus);
+pianoSynth.disconnect().connect(pianoBus);
 
 // Bass
-bassDance.disconnect().connect(bassBus);
+bassSynth.disconnect().connect(bassBus);
 subBass.disconnect().connect(bassBus);
 bassAttack.disconnect().connect(bassBus);
 
@@ -93,7 +93,7 @@ fxNoise.disconnect().connect(fxBus);
 fxFantasy.disconnect().connect(fxBus);
 fxHeaven.disconnect().connect(fxBus);
 fxJump.disconnect().connect(fxBus);
-fxHardCore.disconnect().connect(fxBus);
+fxHardFTCore.disconnect().connect(fxBus);
 
 // Drums
 drumsDance.disconnect().connect(drumsBus);
@@ -183,9 +183,9 @@ export const danceVolumeMap = {
     padString: "String",
 
     keysOrgan: "Organo",
-    pianoSalamander: "Piano",
+    pianoSynth: "Piano",
 
-    bassDance: "Basso",
+    bassSynth: "Basso",
     subBass: "SubBass",
     bassAttack: "BassAttack",
 
@@ -194,7 +194,7 @@ export const danceVolumeMap = {
     fxFantasy: "Fantasy",
     fxHeaven: "Heaven",
     fxJump: "Jump",
-    fxHardCore: "HardCore",
+    fxHardFTCore: "HardCore",
 
     drumsDance: "Percussioni"
 };
