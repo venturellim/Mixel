@@ -510,7 +510,7 @@ export const grandPiano = new Tone.Sampler({
     },
     baseUrl: BASE,
     release: 1.2,
-    onload: () => registerInstrumentLoaded("pianoSalamander")
+    onload: () => registerInstrumentLoaded("grandPiano")
 });
 
 export const pianoSynth = new Tone.Sampler({
