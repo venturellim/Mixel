@@ -438,7 +438,7 @@ export const fxHardCore = new Tone.Sampler({
     onload: () => registerInstrumentLoaded("fxHardCore")
 });
 
-export const fxNoisy = new Tone.Players({
+export const fxNoisy = new Tone.Sampler({
     urls: {
         A4:"Noisy/A4.mp3",A5:"Noisy/A5.mp3",C4:"Noisy/C4.mp3","C#5":"Noisy/Cs5.mp3",
         D6:"Noisy/D6.mp3",E4:"Noisy/E4.mp3","F#6":"Noisy/Fs6.mp3"
@@ -615,12 +615,6 @@ leadSynthBrass2: ["C3","C4","F#3","F#4"],
     fxHardCore: ["C2","E3","C4","E4","C5"],
     fxNoisy: ["C4","E4","A4","C#5","A5","D6","F#6"],
 
-    // 🥁 DRUMS (percussioni → sempre C)
-    drumsMetal: ["C"],
-    drumsFunky: ["C"],
-    drumsDance: ["C"],
-    timpani: ["C"],
-
     // fallback
     default: ["C3"]
 };
@@ -634,20 +628,51 @@ export function normalizeNote(note, instrumentName) {
     // Fallback sicuro
     if (!note || typeof note !== "string") return "C3";
 
-    // Parsing nota richiesta
+    // Estrai root + ottava
     const match = note.match(/^([A-G][#b]?)(\d+)?$/);
-    if (!match) return "C3";
+    const targetRoot = match ? match[1] : "C";
+    const targetOct = match && match[2] ? parseInt(match[2]) : 3;
 
-    const targetRoot = match[1];
-    const targetOct = match[2] ? parseInt(match[2]) : 3;
+    // ---------------------------------------------------------
+    // 1) ROOT-ONLY → strumenti che storicamente ignoravano l’ottava
+    // ---------------------------------------------------------
+    const rootOnly = {
+        guitarPalm: true,
+        guitarOpen: true,
+        leadSaw: true,
+        bassDance: true,
+        fxSweep: true,
+        fxNoise: true,
+        fxFantasy: true,
+        fxHeaven: true,
+        fxJump: true,
+        fxHardCore: true
+    };
 
-    // Recupera note disponibili
+    if (rootOnly[instrumentName]) {
+        return targetRoot + "3"; // root-only con ottava sicura
+    }
+
+    // ---------------------------------------------------------
+    // 2) METAL-FLAT → SOLO bassMetal (# → b)
+    // ---------------------------------------------------------
+    const metalFlatMap = {
+        "C#": "Db", "D#": "Eb", "F#": "Gb", "G#": "Ab", "A#": "Bb"
+    };
+
+    if (instrumentName === "bassMetal") {
+        if (targetRoot.endsWith("#")) {
+            const flat = metalFlatMap[targetRoot];
+            if (flat) return flat + targetOct;
+        }
+        return targetRoot + targetOct;
+    }
+
+    // ---------------------------------------------------------
+    // 3) MIDI DISTANCE → tutti gli altri strumenti melodici
+    // ---------------------------------------------------------
     const available = availableNotesMap[instrumentName] || availableNotesMap.default;
 
-    // Strumenti percussivi → sempre C
-    if (available.length === 1 && available[0] === "C") return "C";
-
-    // Converte target in MIDI
     let targetMidi;
     try {
         targetMidi = Tone.Frequency(`${targetRoot}${targetOct}`).toMidi();
@@ -655,7 +680,6 @@ export function normalizeNote(note, instrumentName) {
         targetMidi = Tone.Frequency("C3").toMidi();
     }
 
-    // Trova la nota più vicina
     let bestNote = available[0];
     let bestDist = Infinity;
 
@@ -667,9 +691,14 @@ export function normalizeNote(note, instrumentName) {
                 bestDist = dist;
                 bestNote = n;
             }
-        } catch {
-            console.warn(`Nota non valida: ${n} per ${instrumentName}`);
-        }
+        } catch {}
+    }
+
+    // ---------------------------------------------------------
+    // 4) Se la nota non ha ottava → aggiungi "3"
+    // ---------------------------------------------------------
+    if (!/\d$/.test(bestNote)) {
+        return bestNote + "3";
     }
 
     return bestNote;
