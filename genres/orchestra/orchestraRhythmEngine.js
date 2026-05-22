@@ -26,8 +26,8 @@ function getRootPitch(root) {
 // ------------------------------------------------------------
 // SMART TIMPANI ROLL (corretto)
 // ------------------------------------------------------------
-function smartTimpaniRoll(startTime, percussion, score, lastMidi, nextMidi, rand, sectionName) {
-    if (!percussion || !percussion.player) return;
+function smartTimpaniRoll(startTime, timpani, score, lastMidi, nextMidi, rand, sectionName) {
+    if (!timpani || !timpani.player) return;
 
     let sequence;
 
@@ -43,7 +43,7 @@ function smartTimpaniRoll(startTime, percussion, score, lastMidi, nextMidi, rand
 
     sequence.forEach((key, idx) => {
         Tone.Transport.schedule(t => {
-            const player = percussion.player(key);
+            const player = timpani.player(key);
             if (player) {
                 player.start(t);
                 if (score) score.addNote("Percussion", "Timpani", sectionName);
@@ -54,7 +54,7 @@ function smartTimpaniRoll(startTime, percussion, score, lastMidi, nextMidi, rand
     const lastHitTime = startTime + (sequence.length - 1) * interval;
 
     Tone.Transport.schedule(t => {
-        const gong = percussion.player("gong");
+        const gong = timpani.player("gong");
         if (gong) {
             gong.start(t);
             if (score) score.addNote("Drums", "Crash", sectionName);
@@ -65,12 +65,12 @@ function smartTimpaniRoll(startTime, percussion, score, lastMidi, nextMidi, rand
 // ------------------------------------------------------------
 // TIMPANI SINGOLO
 // ------------------------------------------------------------
-function playTimpaniHit(time, percussion, score, sectionName, energy) {
-    if (!percussion || !percussion.player) return;
+function playTimpaniHit(time, timpani, score, sectionName, energy) {
+    if (!timpani || !timpani.player) return;
     
     // Timpano diverso in base all'energia
     const timpanoKey = energy > 0.6 ? "timpano5" : "timpano3";
-    const player = percussion.player(timpanoKey);
+    const player = timpani.player(timpanoKey);
     if (player) {
         Tone.Transport.schedule(t => {
             player.start(t);
@@ -84,8 +84,8 @@ function playTimpaniHit(time, percussion, score, sectionName, energy) {
 // ------------------------------------------------------------
 export function scheduleOrchestraRhythm(section, progression, instruments, params, rand, measureDur, nextSectionRoot, score) {
 
-    const { cello, doubleBass, percussion } = instruments;
-    if (!cello || !doubleBass || !percussion) return;
+    const { cello, doubleBass, timpani } = instruments;
+    if (!cello || !doubleBass || !timpani) return;
 
     const name = section?.name?.toLowerCase() || "";
     const isChorus = name.includes("chorus");
@@ -146,7 +146,7 @@ export function scheduleOrchestraRhythm(section, progression, instruments, param
             const fillStartTime = measureStartTime;
             smartTimpaniRoll(
                 fillStartTime,
-                percussion,
+                timpani,
                 score,
                 prevMidi,
                 nextMidi,
@@ -257,7 +257,7 @@ export function scheduleOrchestraRhythm(section, progression, instruments, param
             }
 
             if (playTimpani) {
-                playTimpaniHit(absoluteTime, percussion, score, section.name, energy);
+                playTimpaniHit(absoluteTime, timpani, score, section.name, energy);
             }
         }
     }
