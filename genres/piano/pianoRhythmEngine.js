@@ -259,8 +259,9 @@ export function schedulePianoRhythm(
                         score.addNote("Rhythm", thirdNote, section.name);
                         score.addNote("Rhythm", fifthNote, section.name);
                     }
-                }, absolute
-triadIndex++;
+                }, absoluteTime);
+                
+                triadIndex++;
             }
         }
     }
