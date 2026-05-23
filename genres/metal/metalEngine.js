@@ -1,6 +1,6 @@
 // metalEngine.js — ver. 015 (con Bridge support)
 import * as Tone from "https://esm.sh/tone";
-import { buildMetalParams } from "./metalParams.js";
+import { buildPowerMetalParams } from "./powerMetalParams.js";
 import { buildSongStructure } from "../../utils/structureUtils.js";
 import { createSeededRandom } from "../../utils/randomUtils.js";
 import { generateSongProgressions, degreeToRoot } from "../../utils/musicTheory.js";
@@ -19,7 +19,7 @@ export async function waitMetalInstruments() {
 
 export function createMetalEngine(params, score) {
     const rand = createSeededRandom(params.dna);
-    const metalParams = buildMetalParams(rand, params.global, params.rhythm);
+    const metalParams = buildPowerMetalParams(rand);
     
     Tone.Transport.stop();
     Tone.Transport.cancel(); 
