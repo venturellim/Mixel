@@ -36,27 +36,27 @@ export const guitarOpen = new Tone.Sampler({
 
 export const guitarLead = new Tone.Sampler({
     urls: {
-        D2: "Lead/D2.mp3",
-        F2: "Lead/F2.mp3",
-        "G#2": "Lead/Gs2.mp3",
-        B2: "Lead/B2.mp3",
+        D2: "GuitarLead/D2.mp3",
+        F2: "GuitarLead/F2.mp3",
+        "G#2": "GuitarLead/Gs2.mp3",
+        B2: "GuitarLead/B2.mp3",
 
-        D3: "Lead/D3.mp3",
-        F3: "Lead/F3.mp3",
-        "G#3": "Lead/Gs3.mp3",
-        B3: "Lead/B3.mp3",
+        D3: "GuitarLead/D3.mp3",
+        F3: "GuitarLead/F3.mp3",
+        "G#3": "GuitarLead/Gs3.mp3",
+        B3: "GuitarLead/B3.mp3",
 
-        D4: "Lead/D4.mp3",
-        F4: "Lead/F4.mp3",
-        "G#4": "Lead/Gs4.mp3",
-        B4: "Lead/B4.mp3",
+        D4: "GuitarLead/D4.mp3",
+        F4: "GuitarLead/F4.mp3",
+        "G#4": "GuitarLead/Gs4.mp3",
+        B4: "GuitarLead/B4.mp3",
 
-        D5: "Lead/D5.mp3",
-        F5: "Lead/F5.mp3",
-        "G#5": "Lead/Gs5.mp3",
-        B5: "Lead/B5.mp3",
+        D5: "GuitarLead/D5.mp3",
+        F5: "GuitarLead/F5.mp3",
+        "G#5": "GuitarLead/Gs5.mp3",
+        B5: "GuitarLead/B5.mp3",
 
-        D6: "Lead/D6.mp3"
+        D6: "GuitarLead/D6.mp3"
     },
     baseUrl: BASE,
     attack: 0.02,
@@ -176,10 +176,11 @@ export const doubleBass = new Tone.Sampler({
 
 export const bassMetal = new Tone.Sampler({
     urls: {
-        C1:"Bass/C1.mp3","C#1":"Bass/Cs1.mp3",D1:"Bass/D1.mp3","D#1":"Bass/Ds1.mp3",
-        E1:"Bass/E1.mp3",F1:"Bass/F1.mp3","F#1":"Bass/Fs1.mp3",G1:"Bass/G1.mp3",
-        "G#1":"Bass/Gs1.mp3",A1:"Bass/A1.mp3","A#1":"Bass/As1.mp3",B1:"Bass/B1.mp3",
-        C2:"Bass/C2.mp3"
+        C1: "Bass/C1.mp3", Db1: "Bass/Db1.mp3", D1: "Bass/D1.mp3",
+        Eb1: "Bass/Eb1.mp3", E1: "Bass/E1.mp3", F1: "Bass/F1.mp3",
+        Gb1: "Bass/Gb1.mp3", G1: "Bass/G1.mp3", Ab1: "Bass/Ab1.mp3",
+        A1: "Bass/A1.mp3", Bb1: "Bass/Bb1.mp3", B1: "Bass/B1.mp3",
+        C2: "Bass/C2.mp3"
     },
     baseUrl: BASE,
     onload: () => registerInstrumentLoaded("bassMetal")
@@ -306,7 +307,7 @@ export const brassSaxAlto = new Tone.Sampler({
 
 export const keysClavinet = new Tone.Sampler({
     urls: {
-        C3:"Clavinet/C3.mp3","C#3":"Clavinet/Cs3.mp3",D3:"Clavinet/D3.mp3","D#3":"Clavinet/Ds3.mp3",
+        C3:"Clavinet/C3.mp3",D3:"Clavinet/D3.mp3","D#3":"Clavinet/Ds3.mp3",
         E3:"Clavinet/E3.mp3",F3:"Clavinet/F3.mp3","F#3":"Clavinet/Fs3.mp3",G3:"Clavinet/G3.mp3",
         "G#3":"Clavinet/Gs3.mp3",A3:"Clavinet/A3.mp3","A#3":"Clavinet/As3.mp3",B3:"Clavinet/B3.mp3",
         C4:"Clavinet/C4.mp3","C#4":"Clavinet/Cs4.mp3",D4:"Clavinet/D4.mp3","D#4":"Clavinet/Ds4.mp3",
