@@ -312,7 +312,7 @@ export const keysClavinet = new Tone.Sampler({
         "G#3":"Clavinet/Gs3.mp3",A3:"Clavinet/A3.mp3","A#3":"Clavinet/As3.mp3",B3:"Clavinet/B3.mp3",
         C4:"Clavinet/C4.mp3","C#4":"Clavinet/Cs4.mp3",D4:"Clavinet/D4.mp3","D#4":"Clavinet/Ds4.mp3",
         E4:"Clavinet/E4.mp3",F4:"Clavinet/F4.mp3","F#4":"Clavinet/Fs4.mp3",G4:"Clavinet/G4.mp3",
-        "G#4":"Clavinet/Gs4.mp3",A4:"Clavinet/A4.mp3","A#4":"Clavinet/As4.mp3",B4:"Clavinet/B4.mp3",
+        "G#4":"Clavinet/Gs4.mp3","A#4":"Clavinet/As4.mp3",B4:"Clavinet/B4.mp3",
         C5:"Clavinet/C5.mp3"
     },
     baseUrl: BASE,
