@@ -5,8 +5,8 @@ import { normalizeNote } from "./metalInstruments.js";
 console.log("metalRhythmEngine.js ver. 015.3 loaded");
 
 export function scheduleRhythm(section, progression, instruments, params, rand, measureDur, nextSectionRoot, score) {
-    const { drumMetal, guitarPalm, guitarOpen, bassMetal } = instruments;
-    if (!drumMetal || !guitarPalm || !bassMetal) return;
+    const { drums, guitarPalm, guitarOpen, bass } = instruments;
+    if (!drums || !guitarPalm || !bass) return;
 
     const name = section?.name?.toLowerCase() || "";
     const isChorus = name.includes("chorus") ||
@@ -422,7 +422,7 @@ case "djent":
             if (playGuitar) {
                 const rootToUse = customNote || currentRoot;
                 const gNote = normalizeNote(rootToUse, inst === guitarOpen ? "guitarOpen" : "guitarPalm") + "2";
-                const bNote = normalizeNote(rootToUse, "bassMetal") + "1";
+                const bNote = normalizeNote(rootToUse, "bass") + "1";
                 const palmLen = texture < 0.3 ? "8n" : "16n";
 
                 Tone.Transport.schedule(t => {
@@ -443,7 +443,7 @@ inst.triggerAttackRelease(
 );
 
                     //inst.triggerAttackRelease(gNote, sustain ? "1n" : palmLen, t);
-                    bassMetal.triggerAttackRelease(bNote, sustain ? "1n" : "16n", t);
+                    bass.triggerAttackRelease(bNote, sustain ? "1n" : "16n", t);
 
                     Tone.Draw.schedule(() => {
                         if (score) {
@@ -460,26 +460,26 @@ inst.triggerAttackRelease(
                 let playedRide = false;
                 let playedCrash = false;
 
-                if (kick) drumMetal.player("kick").start(time);
-                if (snare) drumMetal.player("snare").start(time);
+                if (kick) drums.player("kick").start(time);
+                if (snare) drums.player("snare").start(time);
                 
                 // Piatti (Hihat / Ride)
                 if (s % 2 === 0 && !isLastMeasure) {
                     try { 
                         const cymbal = (isChorus || energy > 0.7) ? "ride" : "hihat";
-                        drumMetal.player(cymbal).start(time); 
+                        drums.player(cymbal).start(time); 
                         if (cymbal === "ride") playedRide = true; else playedHiHat = true;
                     } catch(e) {}
                 }
                 
                 // Crash iniziale di sezione
                 if (s === 0 && m === 0) { 
-                    try { drumMetal.player("crash1").start(time); playedCrash = true; } catch(e) {} 
+                    try { drums.player("crash1").start(time); playedCrash = true; } catch(e) {} 
                 }
 
                 // Tom del Fill
                 if (isFillZone) { 
-                    try { drumMetal.player("tom" + (s - 11)).start(time); } catch(e) {} 
+                    try { drums.player("tom" + (s - 11)).start(time); } catch(e) {} 
                 }
 
                 // --- AGGIORNAMENTO VISIVO BATTERIA (MAPPATURA CORRETTA) ---
