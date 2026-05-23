@@ -13,7 +13,7 @@ import {
     shapeBridgeSolo
 } from "../../utils/leadEnhancers.js";
 
-console.log("pianoLeadEngine.js ver. 011.1 loaded");
+console.log("pianoLeadEngine.js ver. 011.1 (wrapper) loaded");
 
 // ============================================================
 // SCALA STRICT
@@ -46,7 +46,6 @@ function expandPatternToMatchMelody(pattern, melodyLength) {
         }
     }
     
-    // Ordina e rimuovi duplicati consecutivi
     expanded.sort((a, b) => a - b);
     return expanded.filter((step, idx, arr) => idx === 0 || step !== arr[idx - 1]);
 }
@@ -118,7 +117,7 @@ function getEnhancersForEnergy(energy) {
 }
 
 // ============================================================
-// PIANO LEAD ENGINE
+// PIANO LEAD ENGINE (AGGIORNATO AL WRAPPER)
 // ============================================================
 export function schedulePianoLead(
     section,
@@ -129,8 +128,9 @@ export function schedulePianoLead(
     measureDur,
     score
 ) {
-    const { grandPiano, rhBus } = instruments;
-    if (!grandPiano) return;
+    // ⬇️ CAMBIATO: ora usa instruments.piano
+    const { piano, rhBus } = instruments;
+    if (!piano) return;
 
     const name = section?.name?.toLowerCase() || "";
     const isChorus = name.includes("chorus") && !name.includes("pre");
@@ -175,7 +175,6 @@ export function schedulePianoLead(
     let currentMelody;
 
     if (isSolo) {
-        // ASSOLO: pattern potenziato
         let pattern = getPattern("chorus");
         pattern = applyLeadEnhancer(pattern, "enhanceRhythmPattern", enhancerContext);
         pattern = applyLeadEnhancer(pattern, "addAnticipation", enhancerContext);
@@ -195,26 +194,23 @@ export function schedulePianoLead(
         currentPattern = expandPatternToMatchMelody(pattern, currentMelody.length);
 
     } else {
-    // SEZIONI NORMALI
-    currentPattern = getPattern(sectionType);
-    const mood = getMelodyFamily(isPreChorus, isChorus, energy, brightness, complexity, texture);
-    const melodyIndex = Math.floor(energy * mood.data.length) % mood.data.length;
-    let baseMelody = mood.data[melodyIndex];
+        currentPattern = getPattern(sectionType);
+        const mood = getMelodyFamily(isPreChorus, isChorus, energy, brightness, complexity, texture);
+        const melodyIndex = Math.floor(energy * mood.data.length) % mood.data.length;
+        let baseMelody = mood.data[melodyIndex];
 
-    // DEBUG: controlla i valori
-    console.log(`🔍 DEBUG ${section.name}: pattern=${JSON.stringify(currentPattern)} | melody=${JSON.stringify(baseMelody)} | energy=${energy}`);
+        console.log(`🔍 DEBUG ${section.name}: pattern=${JSON.stringify(currentPattern)} | melody=${JSON.stringify(baseMelody)} | energy=${energy}`);
 
-    // Applica enhancer in base all'energia
-    const enhancersToApply = getEnhancersForEnergy(energy);
-    for (let enh of enhancersToApply) {
-        baseMelody = applyLeadEnhancer(baseMelody, enh, enhancerContext);
+        const enhancersToApply = getEnhancersForEnergy(energy);
+        for (let enh of enhancersToApply) {
+            baseMelody = applyLeadEnhancer(baseMelody, enh, enhancerContext);
+        }
+        
+        currentMelody = baseMelody;
+        currentPattern = expandPatternToMatchMelody(currentPattern, currentMelody.length);
+        
+        console.log(`🔍 DOPO ESPANSIONE: pattern=${JSON.stringify(currentPattern)} | melody=${JSON.stringify(currentMelody)}`);
     }
-    
-    currentMelody = baseMelody;
-    currentPattern = expandPatternToMatchMelody(currentPattern, currentMelody.length);
-    
-    console.log(`🔍 DOPO ESPANSIONE: pattern=${JSON.stringify(currentPattern)} | melody=${JSON.stringify(currentMelody)}`);
-}
 
     // ============================================================
     // LOOP MISURE
@@ -249,7 +245,9 @@ export function schedulePianoLead(
 
             Tone.Transport.schedule(time => {
                 const velocity = computeLeadVelocity(noteIdx, duration, isSolo, name.includes("bridge"));
-                grandPiano.triggerAttackRelease(noteName, duration, time, velocity, rhBus);
+
+                // ⬇️ CAMBIATO: ora usa piano invece di grandPiano
+                piano.triggerAttackRelease(noteName, duration, time, velocity, rhBus);
                 
                 Tone.Draw.schedule(() => {
                     if (score) score.addNote("Lead", noteName, section.name);
