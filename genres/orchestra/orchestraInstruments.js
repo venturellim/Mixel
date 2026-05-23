@@ -1,113 +1,147 @@
-// orchestraInstruments.js — ORCHESTRA ENGINE (nuova architettura B2 corretta)
+// orchestraInstruments.js — ver. 002 (Full Baroque Orchestra + Timpani)
 import * as Tone from "https://esm.sh/tone";
-import { masterEQ } from "../../common.js";
+import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-// Import strumenti unificati (RAW)
-import {
-    violin,
-    viola,
-    cello,
-    doubleBass,
-    timpani,
-    normalizeNote
-} from "../../utils/mixelInstruments.js";
+console.log("orchestraInstruments.js ver. 003.2 loaded");
 
-console.log("orchestraInstruments.js — unified version (fixed) loaded");
+// --- RIVERBERO ---
+const hallReverb = new Tone.Reverb({
+    decay: 2.8,
+    preDelay: 0.01,
+    wet: 0.35
+}).toDestination();
 
-// ============================================================================
-// 🎚 BUS ORCHESTRA
-// ============================================================================
 export const violinBus = new Tone.Gain(1);
 export const violaBus = new Tone.Gain(1);
 export const celloBus = new Tone.Gain(1);
 export const doubleBassBus = new Tone.Gain(1);
 export const percussionBus = new Tone.Gain(1);
 
-// ============================================================================
-// 🎧 RIVERBERO ORCHESTRA
-// ============================================================================
-export const hallReverb = new Tone.Reverb({
-    decay: 2.8,
-    preDelay: 0.01,
-    wet: 0.35
-}).toDestination();
-
-// ============================================================================
-// 🎚 EQ ORCHESTRA
-// ============================================================================
 const violinEQ = new Tone.EQ3({ low: -4, mid: 2, high: 3 });
 const violaEQ = new Tone.EQ3({ low: -4, mid: 2, high: 3 });
-const celloEQ = new Tone.EQ3({ low: -3, mid: 2, high: 6 });
-const doubleBassEQ = new Tone.EQ3({ low: 4, mid: -2, high: -4 });
-const percussionEQ = new Tone.EQ3({ low: 2, mid: 1, high: 3 });
+const doubleBassEQ   = new Tone.EQ3({ low: 4, mid: -2, high: -4 });
+const percussionEQ   = new Tone.EQ3({ low: 2, mid: 1, high: 3 });
+const celloEQ   = new Tone.EQ3({ low: -3, mid: 2, high: 6 });
 
-// ============================================================================
-// 🔌 ROUTING STRUMENTI → BUS (CORRETTO!)
-// ============================================================================
-
-// Violino
-violin.disconnect();
-violin.connect(violinBus);
-
-// Viola
-viola.disconnect();
-viola.connect(violaBus);
-
-// Cello
-cello.disconnect();
-cello.connect(celloBus);
-
-// Contrabbasso
-doubleBass.disconnect();
-doubleBass.connect(doubleBassBus);
-
-// Percussioni (timpani)
-timpani.disconnect();
-timpani.connect(percussionBus);
-
-// ============================================================================
-// 🔊 ROUTING BUS → EQ → REVERB → MASTER
-// ============================================================================
+// Routing bus → EQ → master
 violinBus.connect(violinEQ).connect(hallReverb).connect(masterEQ);
 violaBus.connect(violaEQ).connect(hallReverb).connect(masterEQ);
-celloBus.connect(celloEQ).connect(hallReverb).connect(masterEQ);
 doubleBassBus.connect(doubleBassEQ).connect(hallReverb).connect(masterEQ);
 percussionBus.connect(percussionEQ).connect(hallReverb).connect(masterEQ);
+celloBus.connect(celloEQ).connect(hallReverb).connect(masterEQ);
 
-// ============================================================================
-// 🎚 VOLUMI DI DEFAULT
-// ============================================================================
-violinBus.gain.value = Tone.dbToGain(8);
-violaBus.gain.value = Tone.dbToGain(2);
-celloBus.gain.value = Tone.dbToGain(-6);
-doubleBassBus.gain.value = Tone.dbToGain(2);
-percussionBus.gain.value = Tone.dbToGain(6);
+// --- VIOLIN ---
+export const violin = new Tone.Sampler({
+    urls: { 
+    A2: "Samples/Violin/A2.mp3", 
+    A3: "Samples/Violin/A3.mp3",
+    B2: "Samples/Violin/B2.mp3", 
+    B4: "Samples/Violin/B4.mp3",
+    C4: "Samples/Violin/C4.mp3", 
+    D3: "Samples/Violin/D3.mp3",
+    D5: "Samples/Violin/D5.mp3", 
+    E4: "Samples/Violin/E4.mp3",
+    "F#3": "Samples/Violin/Fs3.mp3",
+    G2: "Samples/Violin/G2.mp3", 
+    G4: "Samples/Violin/G4.mp3"
+    },
+    release: 1.2,
+    onload: () => registerInstrumentLoaded("Violino")
+}).connect(violinBus);
 
-// ============================================================================
-// 🎚 SET VOLUME (per UI)
-// ============================================================================
+// --- VIOLA ---
+export const viola = new Tone.Sampler({
+    urls: {  
+    A3: "Samples/Viola/A3.mp3",
+    B2: "Samples/Viola/B2.mp3", 
+    C2: "Samples/Viola/C2.mp3",
+    C4: "Samples/Viola/C4.mp3", 
+    D2: "Samples/Viola/D2.mp3",
+    D3: "Samples/Viola/D3.mp3",
+    D5: "Samples/Viola/D5.mp3",
+    E2: "Samples/Viola/E2.mp3",
+    E4: "Samples/Viola/E4.mp3",
+    G2: "Samples/Viola/G2.mp3", 
+    G4: "Samples/Viola/G4.mp3"
+    },
+    release: 1.2,
+    onload: () => registerInstrumentLoaded("Viola")
+}).connect(violaBus);
+
+// --- CELLO ---
+export const cello = new Tone.Sampler({
+    urls: { 
+   A2: "Samples/Cello/A2.mp3",
+   B1: "Samples/Cello/B1.mp3",
+   B3: "Samples/Cello/B3.mp3",
+   C1: "Samples/Cello/C1.mp3",
+   C3: "Samples/Cello/C3.mp3",
+   D2: "Samples/Cello/D2.mp3",
+   D4: "Samples/Cello/D4.mp3",
+   E1: "Samples/Cello/E1.mp3",
+   E3: "Samples/Cello/E3.mp3",
+   F2: "Samples/Cello/F2.mp3",
+   F4: "Samples/Cello/F4.mp3",
+   G1: "Samples/Cello/G1.mp3",
+   G3: "Samples/Cello/G3.mp3"
+    },
+    release: 1.5,
+onload: () => registerInstrumentLoaded("Violoncello")
+}).connect(celloBus);
+
+// --- DOUBLE BASS ---
+export const doubleBass = new Tone.Sampler({
+    urls: { 
+    "A#0": "Samples/DoubleBass/As0.mp3",
+    A1: "Samples/DoubleBass/A1.mp3",
+    B2: "Samples/DoubleBass/B2.mp3",
+    "C#2": "Samples/DoubleBass/Cs2.mp3",
+    C1: "Samples/DoubleBass/C1.mp3",
+    D1: "Samples/DoubleBass/D1.mp3",
+    E1: "Samples/DoubleBass/E1.mp3",
+    E2: "Samples/DoubleBass/E2.mp3",
+    "F#0": "Samples/DoubleBass/Fs0.mp3",
+    "F#1": "Samples/DoubleBass/Fs1.mp3",
+    "G#1": "Samples/DoubleBass/Gs1.mp3",
+    "G#2": "Samples/DoubleBass/Gs2.mp3",
+    G0: "Samples/DoubleBass/G0.mp3"
+    },
+    release: 2,
+onload: () => registerInstrumentLoaded("Contrabbasso")
+}).connect(doubleBassBus);
+
+// --- TIMPANI (The Thunder) ---
+export const percussion = new Tone.Players({
+    urls: { 
+         timpano1: "Samples/Timpani/Timpani1.mp3", 
+         timpano2: "Samples/Timpani/Timpani2.mp3",
+         timpano3: "Samples/Timpani/Timpani3.mp3",
+         timpano4: "Samples/Timpani/Timpani4.mp3",
+         timpano5: "Samples/Timpani/Timpani5.mp3",
+         gong: "Samples/Timpani/Gong.mp3"
+    },
+    release: 3,
+    onload: () => registerInstrumentLoaded("Timpani")
+}).connect(percussionBus);
+
 export function setVolume(busName, dbValue) {
-    const mixer = {
-        violin: violinBus,
-        viola: violaBus,
-        cello: celloBus,
-        doubleBass: doubleBassBus,
-        timpani: percussionBus
-    };
-
+    const mixer = { violin: violinBus, viola: violaBus, doubleBass: doubleBassBus, percussion: percussionBus, cello: celloBus};
     const bus = mixer[busName];
     if (bus) bus.gain.value = Tone.dbToGain(dbValue);
 }
 
-// ============================================================================
-// 📦 EXPORT (CORRETTO!)
-// ============================================================================
+setVolume("violin", +8);
+setVolume("viola", +2);
+setVolume("cello", -6);
+setVolume("doubleBass", +2);
+setVolume("percussion", +6);
+
 export const orchestraInstruments = {
     violin,
     viola,
     cello,
     doubleBass,
-    timpani,
+    percussion,
     violinBus,
     violaBus,
     celloBus,
@@ -119,9 +153,9 @@ export const orchestraInstruments = {
 export const orchestraVolumeMap = {
     violin: "Violino",
     viola: "Viola",
-    cello: "Violoncello",
     doubleBass: "Contrabbasso",
-    timpani: "Percussioni"
+    percussion: "Percussioni",
+    cello: "Violoncello"
 };
 
-export { normalizeNote };
+export { hallReverb };
