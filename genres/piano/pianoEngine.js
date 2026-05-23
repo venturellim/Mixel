@@ -22,6 +22,7 @@ export async function waitPianoInstruments() {
 }
 
 export function createPianoEngine(params, score) {
+console.log(">>> VERSIONE CORRETTA DEL PIANO ENGINE CARICATA <<<");
 
     const rand = createSeededRandom(params.dna);
     const pianoParams = buildPianoParams(rand);
