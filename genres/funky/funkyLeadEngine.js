@@ -157,10 +157,10 @@ function applyBridgeEnhancers(melody, pattern, energy, texture) {
 
 // Assegna strumenti fiati in base allo stile
 const brassInstruments = {
-    SoulFunk: (instr) => instr.brassSaxAlto,
-    ClassicFunk: (instr) => instr.brassTrumpet,
-    JazzFunk: (instr) => instr.brassSaxAlto,
-    PartyFunk: (instr) => instr.brassTrumpet
+    SoulFunk: (instr) => instr.saxAlto,
+    ClassicFunk: (instr) => instr.trumpet,
+    JazzFunk: (instr) => instr.saxAlto,
+    PartyFunk: (instr) => instr.trumpet
 };
 
 export function scheduleFunkyLead(section, progression, instruments, params, rand, measureDur, score) {
@@ -280,7 +280,7 @@ export function scheduleFunkyLead(section, progression, instruments, params, ran
             if (!pitch) continue;
             
             const rawNote = `${pitch}${octave}`;
-            const instrumentType = (style === "SoulFunk" || style === "JazzFunk") ? "brassSaxAlto" : "brassTrumpet";
+            const instrumentType = (style === "SoulFunk" || style === "JazzFunk") ? "saxAlto" : "trumpet";
             const safeNote = normalizeNote(rawNote, instrumentType);
             
             // Velocity in base alla sezione
