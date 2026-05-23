@@ -37,8 +37,8 @@ function buildTriad(root, scaleType = "harmonicMinor") {
 // ------------------------------------------------------------
 // FILL DI CAMBIO SEZIONE (mano sinistra)
 // ------------------------------------------------------------
-function playSectionTransitionFill(absoluteTime, currentRoot, nextRoot, grandPiano, lhBus, score, sectionName) {
-    if (!grandPiano || !currentRoot || !nextRoot) return;
+function playSectionTransitionFill(absoluteTime, currentRoot, nextRoot, piano, lhBus, score, sectionName) {
+    if (!piano || !currentRoot || !nextRoot) return;
     
     const pitchCurrent = getRootPitch(currentRoot);
     const pitchNext = getRootPitch(nextRoot);
@@ -58,7 +58,7 @@ function playSectionTransitionFill(absoluteTime, currentRoot, nextRoot, grandPia
     
     fillNotes.forEach((note, idx) => {
         Tone.Transport.schedule(t => {
-            grandPiano.triggerAttackRelease(note, "8n", t, 0.7, lhBus);
+            piano.triggerAttackRelease(note, "8n", t, 0.7, lhBus);
             if (score) score.addNote("Rhythm", note, sectionName);
         }, absoluteTime + idx * stepTime);
     });
@@ -113,8 +113,8 @@ export function schedulePianoRhythm(
     nextSectionRoot,
     score
 ) {
-    const { grandPiano, lhBus } = instruments;
-    if (!grandPiano || !lhBus) return;
+    const { piano, lhBus } = instruments;
+    if (!piano || !lhBus) return;
 
     const name = section?.name?.toLowerCase() || "";
     const isChorus = name.includes("chorus") || (name.includes("solo") && !name.includes("pre"));
@@ -213,7 +213,7 @@ export function schedulePianoRhythm(
         // FILL DI CAMBIO SEZIONE (solo all'ultima misura, PRIMA della nuova sezione)
         if (isLastMeasure && nextRoot && nextRoot !== currentRoot) {
             const fillStartTime = measureStartTime + measureDur - 0.4; // poco prima della fine
-            playSectionTransitionFill(fillStartTime, currentRoot, nextRoot, grandPiano, lhBus, score, section.name);
+            playSectionTransitionFill(fillStartTime, currentRoot, nextRoot, piano, lhBus, score, section.name);
         }
 
         const pitchRoot = getRootPitch(currentRoot);
@@ -257,7 +257,7 @@ export function schedulePianoRhythm(
             if (isFullChord) {
                 Tone.Transport.schedule(t => {
                     const velocity = 0.6 + (energy * 0.3);
-                    grandPiano.triggerAttackRelease([rootNote, thirdNote, fifthNote], "1n", t, velocity, lhBus);
+                    piano.triggerAttackRelease([rootNote, thirdNote, fifthNote], "1n", t, velocity, lhBus);
                     if (score) {
                         score.addNote("Rhythm", rootNote, section.name);
                         score.addNote("Rhythm", thirdNote, section.name);
@@ -270,7 +270,7 @@ export function schedulePianoRhythm(
                 const velocity = 0.45 + (energy * 0.3);
                 
                 Tone.Transport.schedule(t => {
-                    grandPiano.triggerAttackRelease(note, duration, t, velocity, lhBus);
+                    piano.triggerAttackRelease(note, duration, t, velocity, lhBus);
                     if (score) score.addNote("Rhythm", note, section.name);
                 }, absoluteTime);
                 
