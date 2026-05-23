@@ -37,7 +37,7 @@ const hatDensity = {
 
 export function scheduleDanceRhythm(section, progression, instruments, params, rand, measureDur, nextSectionRoot, score) {
     const { drumsDance, bassSynth, padWarm, padWave, padGlass, padBells, keysOrgan } = instruments;
-    if (!drumsDance || !bass) return;
+    if (!drumsDance || !bassSynth) return;
 
     const name = section?.name?.toLowerCase() || "";
     const isChorus = name.includes("chorus") && !name.includes("pre");
@@ -111,7 +111,7 @@ export function scheduleDanceRhythm(section, progression, instruments, params, r
             //if (isOffBeat && bassNote) {
             if (bassShouldPlay(s) && bassNote) {
                Tone.Transport.schedule(t => {
-                    bass.triggerAttackRelease(bassNote, "16n", t);
+                    bassSynth.triggerAttackRelease(bassNote, "16n", t);
                     if (score) score.addNote("Bass", bassNote, section.name);
                 }, absoluteTime);
             }
