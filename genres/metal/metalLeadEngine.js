@@ -1,7 +1,9 @@
-// metalLeadEngine.js — ver. 088 (semplice, senza stili, con nuovi sample)
+// metalLeadEngine.js — ver. 089 CLEAN
+
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
 
+// Importiamo librerie e enhancer dal tuo utils
 import {
     leadRhythmLibrary,
     leadMelodicLibrary
@@ -13,62 +15,10 @@ import {
     shapeBridgeSolo
 } from "../../utils/leadEnhancers.js";
 
-console.log("metalLeadEngine.js ver. 088 loaded");
+console.log("metalLeadEngine.js ver. 089 loaded");
 
 // ============================================================
-// MAPPA NOTE CHITARRA LEAD (nuovi sample)
-// ============================================================
-// Sample disponibili: D2, F2, G#2, B2, D3, F3, G#3, B3, D4, F4, G#4, B4, D5, F5, G#5, B5, D6
-const GUITAR_LEAD_AVAILABLE = {
-    2: ["D2", "F2", "G#2", "B2"],
-    3: ["D3", "F3", "G#3", "B3"],
-    4: ["D4", "F4", "G#4", "B4"],
-    5: ["D5", "F5", "G#5", "B5"],
-    6: ["D6"]
-};
-
-function mapToGuitarLeadNote(note) {
-    if (!note) return "D4";
-    
-    const match = note.match(/^([A-G][#b]?)(\d+)?$/);
-    if (!match) return "D4";
-    
-    const targetRoot = match[1];
-    const targetOct = match[2] ? parseInt(match[2]) : 4;
-    
-    // Mappa # a b per confronto
-    const normalizeRoot = (r) => {
-        const map = { "C#": "Db", "D#": "Eb", "F#": "Gb", "G#": "Ab", "A#": "Bb" };
-        return map[r] || r;
-    };
-    
-    const available = GUITAR_LEAD_AVAILABLE[targetOct] || GUITAR_LEAD_AVAILABLE[4];
-    const targetRootNorm = normalizeRoot(targetRoot);
-    
-    // Trova la nota più vicina
-    let bestNote = available[0];
-    let bestDist = Infinity;
-    
-    const chromatic = ["C","Db","D","Eb","E","F","Gb","G","Ab","A","Bb","B"];
-    const targetIdx = chromatic.indexOf(targetRootNorm);
-    
-    for (const avail of available) {
-        const availRoot = avail.slice(0, -1);
-        const availRootNorm = normalizeRoot(availRoot);
-        const availIdx = chromatic.indexOf(availRootNorm);
-        let dist = Math.abs(availIdx - targetIdx);
-        dist = Math.min(dist, 12 - dist);
-        if (dist < bestDist) {
-            bestDist = dist;
-            bestNote = avail;
-        }
-    }
-    
-    return bestNote;
-}
-
-// ============================================================
-// FLOYD ROSE (effetti chitarra)
+// FLOYD ROSE (rimane locale al metal)
 // ============================================================
 
 const LeadFloyd = {
@@ -110,7 +60,7 @@ function getSoloMelodyFamily(isSoloPt2, energy, brightness, complexity, texture)
 }
 
 // ============================================================
-// LEAD ENGINE (semplice, originale)
+// LEAD ENGINE (ripulito dagli enhancer locali)
 // ============================================================
 
 const LeadLegacy = {
@@ -222,6 +172,7 @@ const LeadLegacy = {
             } else {
 
                 currentPattern = getPattern(sectionType);
+
                 const mood = getMelodyFamily();
                 const melodyIndex = Math.floor(energy * mood.data.length) % mood.data.length;
                 currentMelody = mood.data[melodyIndex];
@@ -239,12 +190,8 @@ const LeadLegacy = {
                 const nextStep = currentPattern[i + 1] ?? 16;
 
                 const noteIdx = currentMelody[i % currentMelody.length];
-                const scaleNote = currentScale[noteIdx % 7];
                 const octave = isChorus || isSolo ? 5 : 4;
-                
-                // USA LA MAPPA PER I NUOVI SAMPLE
-                const rawNote = scaleNote + octave;
-                const noteName = mapToGuitarLeadNote(rawNote);
+                const noteName = normalizeNote(currentScale[noteIdx % 7], "guitarLead") + octave;
 
                 Tone.Transport.schedule(time => {
 

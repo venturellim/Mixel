@@ -110,31 +110,27 @@ export const guitarOpen = new Tone.Sampler({
 
 export const guitarLead = new Tone.Sampler({
     urls: {
-        D2: "Samples/GuitarLead/D2.mp3",
-        F2: "Samples/GuitarLead/F2.mp3",
-        "G#2": "Samples/GuitarLead/Gs2.mp3",
-        B2: "Samples/GuitarLead/B2.mp3",
-
-        D3: "Samples/GuitarLead/D3.mp3",
-        F3: "Samples/GuitarLead/F3.mp3",
-        "G#3": "Samples/GuitarLead/Gs3.mp3",
-        B3: "Samples/GuitarLead/B3.mp3",
-
-        D4: "Samples/GuitarLead/D4.mp3",
-        F4: "Samples/GuitarLead/F4.mp3",
-        "G#4": "Samples/GuitarLead/Gs4.mp3",
-        B4: "Samples/GuitarLead/B4.mp3",
-
-        D5: "Samples/GuitarLead/D5.mp3",
-        F5: "Samples/GuitarLead/F5.mp3",
-        "G#5": "Samples/GuitarLead/Gs5.mp3",
-        B5: "Samples/GuitarLead/B5.mp3",
-
-        D6: "Samples/GuitarLead/D6.mp3"
+        C2: "Samples/Guitar/C2.mp3", Db2: "Samples/Guitar/Db2.mp3", D2: "Samples/Guitar/D2.mp3",
+        Eb2: "Samples/Guitar/Eb2.mp3", E2: "Samples/Guitar/E2.mp3", F2: "Samples/Guitar/F2.mp3",
+        Gb2: "Samples/Guitar/Gb2.mp3", G2: "Samples/Guitar/G2.mp3", Ab2: "Samples/Guitar/Ab2.mp3",
+        A2: "Samples/Guitar/A2.mp3", Bb2: "Samples/Guitar/Bb2.mp3", B2: "Samples/Guitar/B2.mp3",
+        C3: "Samples/Guitar/C3.mp3", Db3: "Samples/Guitar/Db3.mp3", D3: "Samples/Guitar/D3.mp3",
+        Eb3: "Samples/Guitar/Eb3.mp3", E3: "Samples/Guitar/E3.mp3", F3: "Samples/Guitar/F3.mp3",
+        Gb3: "Samples/Guitar/Gb3.mp3", G3: "Samples/Guitar/G3.mp3", Ab3: "Samples/Guitar/Ab3.mp3",
+        A3: "Samples/Guitar/A3.mp3", Bb3: "Samples/Guitar/Bb3.mp3", B3: "Samples/Guitar/B3.mp3",
+        C4: "Samples/Guitar/C4.mp3", Db4: "Samples/Guitar/Db4.mp3", D4: "Samples/Guitar/D4.mp3",
+        Eb4: "Samples/Guitar/Eb4.mp3", E4: "Samples/Guitar/E4.mp3", F4: "Samples/Guitar/F4.mp3",
+        Gb4: "Samples/Guitar/Gb4.mp3", G4: "Samples/Guitar/G4.mp3", Ab4: "Samples/Guitar/Ab4.mp3",
+        A4: "Samples/Guitar/A4.mp3", Bb4: "Samples/Guitar/Bb4.mp3", B4: "Samples/Guitar/B4.mp3",
+        C5: "Samples/Guitar/C5.mp3", Db5: "Samples/Guitar/Db5.mp3", D5: "Samples/Guitar/D5.mp3",
+        Eb5: "Samples/Guitar/Eb5.mp3", E5: "Samples/Guitar/E5.mp3", F5: "Samples/Guitar/F5.mp3",
+        Gb5: "Samples/Guitar/Gb5.mp3", G5: "Samples/Guitar/G5.mp3", Ab5: "Samples/Guitar/Ab5.mp3",
+        A5: "Samples/Guitar/A5.mp3", Bb5: "Samples/Guitar/Bb5.mp3", B5: "Samples/Guitar/B5.mp3",
+        C6: "Samples/Guitar/C6.mp3"
     },
     attack: 0.02,
     release: 0.8,
-    onload: () => registerInstrumentLoaded("guitarLead")
+    onload: () => registerInstrumentLoaded("Chitarra Lead")
 }).connect(leadVibrato);
 
 export const bass = new Tone.Sampler({
@@ -226,79 +222,16 @@ drumBus.gain.value = Tone.dbToGain(-6);   // Batteria
 
 export function normalizeNote(note, instrument) {
     if (!note || typeof note !== "string") return "A";
-    
-    // Per chitarra lead, usa i nuovi sample (D, F, G#, B)
-    if (instrument === "guitarLead") {
-        const match = note.match(/^([A-G][#b]?)(\d+)?$/);
-        if (!match) return "D3";
-        
-        const targetRoot = match[1];
-        const targetOct = match[2] ? parseInt(match[2]) : 4;
-        
-        // Note disponibili per ottava
-        const availableNotesByOctave = {
-            2: ["D2", "F2", "G#2", "B2"],
-            3: ["D3", "F3", "G#3", "B3"],
-            4: ["D4", "F4", "G#4", "B4"],
-            5: ["D5", "F5", "G#5", "B5"],
-            6: ["D6"]
-        };
-        
-        const available = availableNotesByOctave[targetOct] || availableNotesByOctave[4];
-        
-        // Mappa note con diesis a bemolle per confronto
-        const normalizeRoot = (r) => {
-            const map = { "C#": "Db", "D#": "Eb", "F#": "Gb", "G#": "Ab", "A#": "Bb" };
-            return map[r] || r;
-        };
-        
-        const targetRootNorm = normalizeRoot(targetRoot);
-        
-        // Trova la nota più vicina
-        let bestNote = available[0];
-        let bestDist = Infinity;
-        
-        for (const avail of available) {
-            const availRoot = avail.slice(0, -1);
-            const availRootNorm = normalizeRoot(availRoot);
-            
-            // Distanza circolare nella scala cromatica
-            const chromatic = ["C","C#","Db","D","D#","Eb","E","F","F#","Gb","G","G#","Ab","A","A#","Bb","B"];
-            const targetIdx = chromatic.findIndex(n => n === targetRootNorm);
-            const availIdx = chromatic.findIndex(n => n === availRootNorm);
-            
-            let dist = Math.abs(availIdx - targetIdx);
-            dist = Math.min(dist, 12 - dist);
-            
-            if (dist < bestDist) {
-                bestDist = dist;
-                bestNote = avail;
-            }
-        }
-        
-        return bestNote;
-    }
-    
-    // Chitarre ritmiche (solo root, senza ottava)
-    if (instrument === "guitarPalm" || instrument === "guitarOpen") {
-        const first = note[0].toUpperCase();
-        return first;
-    }
-    
-    // Basso e altri strumenti
-    if (instrument === "bass") {
-        const first = note[0].toUpperCase();
-        const second = note[1];
+    const first = note[0].toUpperCase();
+    const second = note[1];
+    if (instrument === "guitarPalm" || instrument === "guitarOpen") return first; 
+    if (instrument === "guitarLead" || instrument === "bass") {
         if (second === "b") return first + "b";
         if (second === "#") {
             const sharpToFlat = { "C#": "Db", "D#": "Eb", "F#": "Gb", "G#": "Ab", "A#": "Bb" };
             return sharpToFlat[first + "#"] ?? first;
         }
-        return first;
     }
-    
-    // Default
-    const first = note[0].toUpperCase();
     return first;
 }
 
