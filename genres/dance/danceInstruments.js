@@ -146,7 +146,7 @@ export function setVolume(busName, dbValue) {
         fxFantasy: fxBus,
         fxHeaven: fxBus,
         fxJump: fxBus,
-        fxHardCore: fxBus,
+        fxHardFTCore: fxBus,
 
         drumsDance: drumsBus
     };
@@ -163,7 +163,7 @@ export const danceInstruments = {
     padBells, padGlass, padWarm, padWave, padShaku, padString,
     keysOrgan, pianoSynth,
     bassSynth, subBass, bassAttack,
-    fxSweep, fxNoise, fxFantasy, fxHeaven, fxJump, fxHardCore,
+    fxSweep, fxNoise, fxFantasy, fxHeaven, fxJump, fxHardFTCore,
     drumsDance,
     leadBus, padBus, bassBus, organBus, pianoBus, fxBus, drumsBus,
     duckEnv,
