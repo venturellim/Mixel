@@ -36,8 +36,8 @@ const hatDensity = {
 };
 
 export function scheduleDanceRhythm(section, progression, instruments, params, rand, measureDur, nextSectionRoot, score) {
-    const { drumsDance, bassSynth, padWarm, padWave, padGlass, padBells, keysOrgan } = instruments;
-    if (!drumsDance || !bassSynth) return;
+    const { percussion, bass, warmPad, wavePad, glassPad, bellsPad, organo } = instruments;
+    if (!percussion || !bass) return;
 
     const name = section?.name?.toLowerCase() || "";
     const isChorus = name.includes("chorus") && !name.includes("pre");
@@ -58,11 +58,11 @@ export function scheduleDanceRhythm(section, progression, instruments, params, r
     let useOrgano = false;
     
     switch(style) {
-    case "Gigi":       selectedPad = padWarm; useOrgano = true; break;
-    case "Eiffel65":   selectedPad = padGlass; break;
-    case "GabryPonte": selectedPad = padBells; break;
-    case "Molella":    selectedPad = padWarm; break; // pad trancey
-    default:           selectedPad = padWave;
+    case "Gigi":       selectedPad = warmPad; useOrgano = true; break;
+    case "Eiffel65":   selectedPad = glassPad; break;
+    case "GabryPonte": selectedPad = bellsPad; break;
+    case "Molella":    selectedPad = warmPad; break; // pad trancey
+    default:           selectedPad = wavePad;
 }
 
 
@@ -111,7 +111,7 @@ export function scheduleDanceRhythm(section, progression, instruments, params, r
             //if (isOffBeat && bassNote) {
             if (bassShouldPlay(s) && bassNote) {
                Tone.Transport.schedule(t => {
-                    bassSynth.triggerAttackRelease(bassNote, "16n", t);
+                    bass.triggerAttackRelease(bassNote, "16n", t);
                     if (score) score.addNote("Bass", bassNote, section.name);
                 }, absoluteTime);
             }
@@ -138,7 +138,7 @@ export function scheduleDanceRhythm(section, progression, instruments, params, r
         }
         
         // ORGANO per Gigi
-        if (useOrgano && keysOrgan && !isIntro) {
+        if (useOrgano && organo && !isIntro) {
             Tone.Transport.schedule(t => {
                 organo.triggerAttackRelease(padRoot, measureDur * 0.9, t);
                 if (score) score.addNote("Organo", padRoot, section.name);

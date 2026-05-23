@@ -113,7 +113,7 @@ function getEnhancersForStyle(style, energy, complexity, isSolo, isChorus, isDro
 // ============================================================
 
 const leadInstruments = {
-    Gigi:       (instr) => instr.pianoSynth,
+    Gigi:       (instr) => instr.piano,
     Prezioso:   (instr) => instr.leadSaw,
     Eiffel65:   (instr) => instr.leadSynthBrass1,
     GabryPonte: (instr) => instr.leadSynthBrass2,
