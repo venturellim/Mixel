@@ -3,7 +3,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 
-console.log("pianoRhythmEngine.js ver. 006 (wrapper) loaded");
+console.log("pianoRhythmEngine.js ver. 006 loaded");
 
 // ------------------------------------------------------------
 // SAFE NOTE
@@ -46,14 +46,15 @@ function playSectionTransitionFill(absoluteTime, currentRoot, nextRoot, piano, l
     const { triadPattern: patternCurrent } = buildTriad(pitchCurrent, "harmonicMinor");
     const { triadPattern: patternNext } = buildTriad(pitchNext, "harmonicMinor");
     
+    // Fill di 4 note (scala ascendente dalla root corrente alla prossima)
     const fillNotes = [
-        patternCurrent[0],
-        patternCurrent[2],
-        patternNext[1],
-        patternNext[0]
+        patternCurrent[0],  // root corrente
+        patternCurrent[2],  // quinta corrente
+        patternNext[1],     // terza prossima
+        patternNext[0]      // root prossima
     ];
     
-    const stepTime = 0.1;
+    const stepTime = 0.1; // 100ms tra una nota e l'altra
     
     fillNotes.forEach((note, idx) => {
         Tone.Transport.schedule(t => {
@@ -100,7 +101,7 @@ function applyRhythmVariations(originalSteps, energy) {
 }
 
 // ------------------------------------------------------------
-// PIANO RHYTHM ENGINE (AGGIORNATO AL WRAPPER)
+// PIANO RHYTHM ENGINE
 // ------------------------------------------------------------
 export function schedulePianoRhythm(
     section,
@@ -112,7 +113,6 @@ export function schedulePianoRhythm(
     nextSectionRoot,
     score
 ) {
-    // ⬇️ CAMBIATO: ora usa instruments.piano
     const { piano, lhBus } = instruments;
     if (!piano || !lhBus) return;
 
@@ -210,8 +210,9 @@ export function schedulePianoRhythm(
         const nextRoot = progression[(m + 1) % progression.length] || nextSectionRoot;
         const isLastMeasure = (m === section.measures - 1);
 
+        // FILL DI CAMBIO SEZIONE (solo all'ultima misura, PRIMA della nuova sezione)
         if (isLastMeasure && nextRoot && nextRoot !== currentRoot) {
-            const fillStartTime = measureStartTime + measureDur - 0.4;
+            const fillStartTime = measureStartTime + measureDur - 0.4; // poco prima della fine
             playSectionTransitionFill(fillStartTime, currentRoot, nextRoot, piano, lhBus, score, section.name);
         }
 
@@ -219,6 +220,7 @@ export function schedulePianoRhythm(
         const { rootNote, thirdNote, fifthNote, triadPattern } = buildTriad(pitchRoot, "harmonicMinor");
         let triadIndex = 0;
 
+        // Ottieni i pattern base dal groove
         let baseSteps = [];
         switch (currentGroove) {
             case "intro_ambient": baseSteps = [0]; break;
@@ -240,12 +242,14 @@ export function schedulePianoRhythm(
             default: baseSteps = Array.from({length: 16}, (_, i) => i % 2 === 0 ? i : null).filter(v => v !== null); break;
         }
 
+        // Applica variazioni ritmiche in base all'energia
         let currentSteps = applyRhythmVariations(baseSteps, energy);
 
         for (let s of currentSteps) {
             const absoluteTime = measureStartTime + s * stepTime;
             let isFullChord = false;
 
+            // ULTIMA MISURA DELLA SEZIONE: accordo pieno al primo step
             if (isLastMeasure && s === currentSteps[0]) {
                 isFullChord = true;
             }
@@ -259,6 +263,15 @@ export function schedulePianoRhythm(
                         score.addNote("Rhythm", thirdNote, section.name);
                         score.addNote("Rhythm", fifthNote, section.name);
                     }
+                }, absoluteTime);
+            } else {
+                const note = triadPattern[triadIndex % triadPattern.length];
+                const duration = "8n";
+                const velocity = 0.45 + (energy * 0.3);
+                
+                Tone.Transport.schedule(t => {
+                    piano.triggerAttackRelease(note, duration, t, velocity, lhBus);
+                    if (score) score.addNote("Rhythm", note, section.name);
                 }, absoluteTime);
                 
                 triadIndex++;
