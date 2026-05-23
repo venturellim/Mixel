@@ -112,7 +112,7 @@ export const guitarLead = new Tone.Sampler({
     urls: {
         D2: "Samples/GuitarLead/D2.mp3",
         F2: "Samples/GuitarLead/F2.mp3",
-        "G#2": "Ssmples/GuitarLead/Gs2.mp3",
+        "G#2": "Samples/GuitarLead/Gs2.mp3",
         B2: "Samples/GuitarLead/B2.mp3",
 
         D3: "Samples/GuitarLead/D3.mp3",
