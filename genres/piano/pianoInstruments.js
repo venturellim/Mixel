@@ -32,7 +32,11 @@ const pianoReverb = new Tone.Reverb({
 // ============================================================================
 // 🔌 ROUTING STRUMENTO → BUS
 // ============================================================================
-grandPiano.disconnect().connect(pianoReverb);
+grandPiano.onload = () => {
+    grandPiano.disconnect().connect(pianoReverb);
+};
+
+//grandPiano.disconnect().connect(pianoReverb);
 
 // ============================================================================
 // 🎚 SET VOLUME (per UI)
