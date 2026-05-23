@@ -1,4 +1,4 @@
-// metalLeadEngine.js — ver. 090 (con supporto nuovi sample guitarLead)
+// metalLeadEngine.js — ver. 088 (semplice, senza stili, con nuovi sample)
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
 
@@ -13,41 +13,54 @@ import {
     shapeBridgeSolo
 } from "../../utils/leadEnhancers.js";
 
-console.log("metalLeadEngine.js ver. 090 loaded");
+console.log("metalLeadEngine.js ver. 088 loaded");
 
 // ============================================================
-// NOTE DISPONIBILI PER GUITARLEAD (nuovi sample)
+// MAPPA NOTE CHITARRA LEAD (nuovi sample)
 // ============================================================
 // Sample disponibili: D2, F2, G#2, B2, D3, F3, G#3, B3, D4, F4, G#4, B4, D5, F5, G#5, B5, D6
+const GUITAR_LEAD_AVAILABLE = {
+    2: ["D2", "F2", "G#2", "B2"],
+    3: ["D3", "F3", "G#3", "B3"],
+    4: ["D4", "F4", "G#4", "B4"],
+    5: ["D5", "F5", "G#5", "B5"],
+    6: ["D6"]
+};
 
-const GUITAR_LEAD_NOTES = [
-    "D2", "F2", "G#2", "B2",
-    "D3", "F3", "G#3", "B3",
-    "D4", "F4", "G#4", "B4",
-    "D5", "F5", "G#5", "B5",
-    "D6"
-];
-
-// Mappa le note della scala alle note disponibili più vicine
-function mapToAvailableNotes(scaleNote, octave) {
-    const targetNote = scaleNote + octave;
+function mapToGuitarLeadNote(note) {
+    if (!note) return "D4";
     
-    // Se la nota esatta è disponibile, usala
-    if (GUITAR_LEAD_NOTES.includes(targetNote)) {
-        return targetNote;
-    }
+    const match = note.match(/^([A-G][#b]?)(\d+)?$/);
+    if (!match) return "D4";
     
-    // Trova la nota più vicina tra quelle disponibili
-    let bestNote = GUITAR_LEAD_NOTES[0];
+    const targetRoot = match[1];
+    const targetOct = match[2] ? parseInt(match[2]) : 4;
+    
+    // Mappa # a b per confronto
+    const normalizeRoot = (r) => {
+        const map = { "C#": "Db", "D#": "Eb", "F#": "Gb", "G#": "Ab", "A#": "Bb" };
+        return map[r] || r;
+    };
+    
+    const available = GUITAR_LEAD_AVAILABLE[targetOct] || GUITAR_LEAD_AVAILABLE[4];
+    const targetRootNorm = normalizeRoot(targetRoot);
+    
+    // Trova la nota più vicina
+    let bestNote = available[0];
     let bestDist = Infinity;
     
-    for (const available of GUITAR_LEAD_NOTES) {
-        const targetMidi = Tone.Frequency(targetNote).toMidi();
-        const availableMidi = Tone.Frequency(available).toMidi();
-        const dist = Math.abs(availableMidi - targetMidi);
+    const chromatic = ["C","Db","D","Eb","E","F","Gb","G","Ab","A","Bb","B"];
+    const targetIdx = chromatic.indexOf(targetRootNorm);
+    
+    for (const avail of available) {
+        const availRoot = avail.slice(0, -1);
+        const availRootNorm = normalizeRoot(availRoot);
+        const availIdx = chromatic.indexOf(availRootNorm);
+        let dist = Math.abs(availIdx - targetIdx);
+        dist = Math.min(dist, 12 - dist);
         if (dist < bestDist) {
             bestDist = dist;
-            bestNote = available;
+            bestNote = avail;
         }
     }
     
@@ -82,36 +95,7 @@ const LeadFloyd = {
 };
 
 // ============================================================
-// SELEZIONE FAMIGLIA MELODICA PER STILE
-// ============================================================
-
-function getMelodyFamilyByStyle(style, sectionType, energy, brightness, complexity, isSolo, isSoloPt2) {
-    if (isSolo) {
-        if (style === "PowerMetal") return { name: "SOLO EPIC 🏰", data: leadMelodicLibrary.epic };
-        if (style === "ThrashMetal") return { name: "SOLO ACTIVE ⚡", data: leadMelodicLibrary.active };
-        if (style === "DoomMetal") return { name: "SOLO EVIL 😈", data: leadMelodicLibrary.evil };
-        if (style === "ProgressiveMetal") return { name: "SOLO ACTIVE ⚡", data: leadMelodicLibrary.active };
-        if (style === "MelodicDeath") return { name: "SOLO EMOTIONAL 💧", data: leadMelodicLibrary.emotional };
-        return { name: "SOLO EPIC 🏰", data: leadMelodicLibrary.epic };
-    }
-    
-    if (sectionType === "prechorus") return { name: "PRE-CHORUS 📈", data: leadMelodicLibrary.prechorus };
-    if (sectionType === "chorus") {
-        if (style === "PowerMetal" || style === "HeavyMetal") return { name: "EPIC 🏰", data: leadMelodicLibrary.epic };
-        if (style === "ThrashMetal") return { name: "ACTIVE ⚡", data: leadMelodicLibrary.active };
-        if (style === "DoomMetal") return { name: "EVIL 😈", data: leadMelodicLibrary.evil };
-        if (brightness > 0.5) return { name: "EPIC 🏰", data: leadMelodicLibrary.epic };
-        return { name: "EMOTIONAL 💧", data: leadMelodicLibrary.emotional };
-    }
-    
-    if (energy > 0.7 && complexity > 0.6) return { name: "ACTIVE ⚡", data: leadMelodicLibrary.active };
-    if (complexity > 0.7) return { name: "ACTIVE ⚡", data: leadMelodicLibrary.active };
-    if (brightness < 0.4) return { name: "EMOTIONAL 💧", data: leadMelodicLibrary.emotional };
-    return { name: "EPIC 🏰", data: leadMelodicLibrary.epic };
-}
-
-// ============================================================
-// LEAD ENGINE
+// LEAD ENGINE (semplice, originale)
 // ============================================================
 
 const LeadLegacy = {
@@ -126,7 +110,6 @@ const LeadLegacy = {
         const isIntro = name.includes("intro") || name.includes("outro");
         const isSolo = name.includes("solo") || name.includes("bridge");
         const isSoloPt2 = name.includes("solopt2");
-        const style = params?.style || "HeavyMetal";
 
         const stepTime = measureDur / 16;
 
@@ -146,6 +129,19 @@ const LeadLegacy = {
             const dnaScore = (energy * 400) + (brightness * 30) + (complexity * 2);
             const index = Math.floor(Math.abs(dnaScore)) % family.length;
             return family[index];
+        };
+
+        const getMelodyFamily = () => {
+            if (isPreChorus) return { name: "PRE-CHORUS 📈", data: leadMelodicLibrary.prechorus };
+            if (isChorus) {
+                return brightness > 0.5
+                    ? { name: "EPIC 🏰", data: leadMelodicLibrary.epic }
+                    : { name: "EMOTIONAL 💧", data: leadMelodicLibrary.emotional };
+            }
+            if (energy > 0.7 && texture > 0.6) return { name: "EVIL 😈", data: leadMelodicLibrary.evil };
+            if (complexity > 0.7) return { name: "ACTIVE ⚡", data: leadMelodicLibrary.active };
+            if (brightness < 0.4) return { name: "EMOTIONAL 💧", data: leadMelodicLibrary.emotional };
+            return { name: "EPIC 🏰", data: leadMelodicLibrary.epic };
         };
 
         let sectionType =
@@ -185,7 +181,7 @@ const LeadLegacy = {
                 currentPattern = applyLeadEnhancer(currentPattern, "addGentleSwing", enhancerContext);
                 currentPattern = applyLeadEnhancer(currentPattern, "addGhostAccent", enhancerContext);
 
-                const soloFamily = getMelodyFamilyByStyle(style, "solo", energy, brightness, complexity, true, isSoloPt2);
+                const soloFamily = getSoloMelodyFamily(isSoloPt2, energy, brightness, complexity, texture);
                 const melodyIndex = Math.floor(energy * soloFamily.data.length) % soloFamily.data.length;
                 const baseMelody = soloFamily.data[melodyIndex];
 
@@ -211,7 +207,7 @@ const LeadLegacy = {
             } else {
 
                 currentPattern = getPattern(sectionType);
-                const mood = getMelodyFamilyByStyle(style, sectionType, energy, brightness, complexity, false, false);
+                const mood = getMelodyFamily();
                 const melodyIndex = Math.floor(energy * mood.data.length) % mood.data.length;
                 currentMelody = mood.data[melodyIndex];
                 moodName = mood.name;
@@ -229,16 +225,11 @@ const LeadLegacy = {
 
                 const noteIdx = currentMelody[i % currentMelody.length];
                 const scaleNote = currentScale[noteIdx % 7];
+                const octave = isChorus || isSolo ? 5 : 4;
                 
-                // Ottava in base alla sezione e stile
-                let octave = 4;
-                if (isChorus || isSolo) octave = 5;
-                if (style === "PowerMetal" && isChorus) octave = 5;
-                if (style === "DoomMetal") octave = 4;
-                
-                // Mappa la nota della scala alla nota disponibile più vicina
-                const targetNote = scaleNote + octave;
-                const noteName = mapToAvailableNotes(scaleNote, octave);
+                // USA LA MAPPA PER I NUOVI SAMPLE
+                const rawNote = scaleNote + octave;
+                const noteName = mapToGuitarLeadNote(rawNote);
 
                 Tone.Transport.schedule(time => {
 
@@ -246,15 +237,6 @@ const LeadLegacy = {
                     const velocity = computeLeadVelocity(noteIdx, duration, isSolo, name.includes("bridge"));
 
                     guitarLead.triggerAttackRelease(noteName, duration, time, velocity);
-
-                    // Applica effetti Floyd Rose in base allo stile
-                    if (style === "PowerMetal" && isChorus && Math.random() < 0.3) {
-                        LeadFloyd.apply(guitarLead, time, "scoop");
-                    } else if (style === "ThrashMetal" && Math.random() < 0.2) {
-                        LeadFloyd.apply(guitarLead, time, "dive");
-                    } else if (isSolo && !isSoloPt2 && Math.random() < 0.4) {
-                        LeadFloyd.apply(guitarLead, time, "vibrato");
-                    }
 
                     Tone.Draw.schedule(() => {
                         if (score) score.addNote("Lead", noteName, section.name);
