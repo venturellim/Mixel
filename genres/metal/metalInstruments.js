@@ -1,31 +1,20 @@
-// metalInstruments.js — METAL ENGINE (nuova architettura B2)
+// metalInstruments.js — ver. 005
 import * as Tone from "https://esm.sh/tone";
-import { masterEQ } from "../../common.js";
+import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-// Import strumenti unificati
-import {
-    guitarPalm, guitarOpen, guitarLead,
-    bassMetal,
-    drumsMetal,
-    normalizeNote
-} from "../../utils/mixelInstruments.js";
+console.log("metalInstruments.js ver. 005.1 loaded");
 
-console.log("metalInstruments.js — unified version loaded");
-
-// ============================================================================
-// 🎚 BUS METAL
-// ============================================================================
+// ============================================================
+// 🎚 BUS SPECIFICI DEL METAL
+// ============================================================
 export const guitarBus = new Tone.Gain(1);
 export const bassBus = new Tone.Gain(1);
-export const drumsBus = new Tone.Gain(1);
+export const drumBus = new Tone.Gain(1);
 export const leadBus = new Tone.Gain(1);
 
-// ============================================================================
-// 🎚 EQ METAL
-// ============================================================================
 const guitarEQ = new Tone.EQ3({ low: -4, mid: 2, high: 3 });
 const bassEQ   = new Tone.EQ3({ low: 4, mid: -2, high: -4 });
-const drumsEQ  = new Tone.EQ3({ low: 2, mid: 1, high: 3 });
+const drumEQ   = new Tone.EQ3({ low: 2, mid: 1, high: 3 });
 const leadEQ   = new Tone.EQ3({ low: -3, mid: 2, high: 6 });
 
 const drumComp = new Tone.Compressor({
@@ -35,16 +24,22 @@ const drumComp = new Tone.Compressor({
     release: 0.2
 });
 
-// ============================================================================
-// 🎸 CHITARRE METAL — CABINET + HAAS STEREO
-// ============================================================================
+// Routing bus → EQ → master
+guitarBus.connect(guitarEQ).connect(masterEQ);
+bassBus.connect(bassEQ).connect(masterEQ);
+drumBus.connect(drumEQ).connect(drumComp).connect(masterEQ);
+leadBus.connect(leadEQ).connect(masterEQ);
+
+// ============================================================
+// 🎸 FIX CHITARRE RITMICHE: CABINET & STEREO HAAS
+// ============================================================
 const guitarCabinet = new Tone.Filter({
     type: "lowpass",
-    frequency: 4200,
+    frequency: 4200, 
     rolloff: -24
 });
 
-const stereoDelay = new Tone.Delay(0.012);
+const stereoDelay = new Tone.Delay(0.012); 
 const panL = new Tone.Panner(-0.3);
 const panR = new Tone.Panner(0.3);
 
@@ -53,12 +48,12 @@ guitarFX.connect(guitarCabinet);
 guitarCabinet.connect(panL).connect(guitarBus);
 guitarCabinet.connect(stereoDelay).connect(panR).connect(guitarBus);
 
-// ============================================================================
-// 🎸 LEAD METAL — CABINET + DELAY + VIBRATO
-// ============================================================================
+// ============================================================
+// 🎸 FIX CHITARRA LEAD: CABINET, DELAY & VIBRATO
+// ============================================================
 const leadCabinet = new Tone.Filter({
     type: "lowpass",
-    frequency: 5200,
+    frequency: 5200, 
     rolloff: -24
 }).connect(leadBus);
 
@@ -73,72 +68,181 @@ const leadVibrato = new Tone.Vibrato({
     depth: 0.1
 }).connect(leadDelay);
 
-// ============================================================================
-// 🔌 ROUTING STRUMENTI → BUS
-// ============================================================================
+// ============================================================
+// 📦 CONTEGGIO STRUMENTI (per il loader)
+// ============================================================
+// Ogni sampler chiamerà registerInstrumentLoaded() quando caricato
+const TOTAL_INSTRUMENTS = 6; // guitarPalm, guitarOpen, guitarLead, bass, drums + 1 extra
 
-// Chitarre ritmiche
-guitarPalm.disconnect().connect(guitarFX);
-guitarOpen.disconnect().connect(guitarFX);
+// ============================================================
+// 🎸 STRUMENTI (SAMPLERS)
+// ============================================================
 
-// Lead
-guitarLead.disconnect().connect(leadVibrato);
+export const guitarPalm = new Tone.Sampler({
+    urls: {
+        C2: "Samples/GuitarPalm/C.mp3",
+        D2: "Samples/GuitarPalm/D.mp3",
+        E2: "Samples/GuitarPalm/E.mp3",
+        F2: "Samples/GuitarPalm/F.mp3",
+        G2: "Samples/GuitarPalm/G.mp3",
+        A2: "Samples/GuitarPalm/A.mp3",
+        B2: "Samples/GuitarPalm/B.mp3"
+    },
+    attack: 0.015,
+    release: 0.6,
+    onload: () => registerInstrumentLoaded(" Chitarra Palm")
+}).connect(guitarFX);
 
-// Basso
-bassMetal.disconnect().connect(bassBus);
+export const guitarOpen = new Tone.Sampler({
+    urls: {
+        C2: "Samples/GuitarOpen/C.mp3",
+        D2: "Samples/GuitarOpen/D.mp3",
+        E2: "Samples/GuitarOpen/E.mp3",
+        F2: "Samples/GuitarOpen/F.mp3",
+        G2: "Samples/GuitarOpen/G.mp3",
+        A2: "Samples/GuitarOpen/A.mp3",
+        B2: "Samples/GuitarOpen/B.mp3"
+    },
+    attack: 0.02,
+    release: 1.2,
+    onload: () => registerInstrumentLoaded("Chitarra Open")
+}).connect(guitarFX);
 
-// Batteria
-drumsMetal.disconnect().connect(drumsBus);
+export const guitarLead = new Tone.Sampler({
+    urls: {
+        C2: "Samples/Guitar/C2.mp3", Db2: "Samples/Guitar/Db2.mp3", D2: "Samples/Guitar/D2.mp3",
+        Eb2: "Samples/Guitar/Eb2.mp3", E2: "Samples/Guitar/E2.mp3", F2: "Samples/Guitar/F2.mp3",
+        Gb2: "Samples/Guitar/Gb2.mp3", G2: "Samples/Guitar/G2.mp3", Ab2: "Samples/Guitar/Ab2.mp3",
+        A2: "Samples/Guitar/A2.mp3", Bb2: "Samples/Guitar/Bb2.mp3", B2: "Samples/Guitar/B2.mp3",
+        C3: "Samples/Guitar/C3.mp3", Db3: "Samples/Guitar/Db3.mp3", D3: "Samples/Guitar/D3.mp3",
+        Eb3: "Samples/Guitar/Eb3.mp3", E3: "Samples/Guitar/E3.mp3", F3: "Samples/Guitar/F3.mp3",
+        Gb3: "Samples/Guitar/Gb3.mp3", G3: "Samples/Guitar/G3.mp3", Ab3: "Samples/Guitar/Ab3.mp3",
+        A3: "Samples/Guitar/A3.mp3", Bb3: "Samples/Guitar/Bb3.mp3", B3: "Samples/Guitar/B3.mp3",
+        C4: "Samples/Guitar/C4.mp3", Db4: "Samples/Guitar/Db4.mp3", D4: "Samples/Guitar/D4.mp3",
+        Eb4: "Samples/Guitar/Eb4.mp3", E4: "Samples/Guitar/E4.mp3", F4: "Samples/Guitar/F4.mp3",
+        Gb4: "Samples/Guitar/Gb4.mp3", G4: "Samples/Guitar/G4.mp3", Ab4: "Samples/Guitar/Ab4.mp3",
+        A4: "Samples/Guitar/A4.mp3", Bb4: "Samples/Guitar/Bb4.mp3", B4: "Samples/Guitar/B4.mp3",
+        C5: "Samples/Guitar/C5.mp3", Db5: "Samples/Guitar/Db5.mp3", D5: "Samples/Guitar/D5.mp3",
+        Eb5: "Samples/Guitar/Eb5.mp3", E5: "Samples/Guitar/E5.mp3", F5: "Samples/Guitar/F5.mp3",
+        Gb5: "Samples/Guitar/Gb5.mp3", G5: "Samples/Guitar/G5.mp3", Ab5: "Samples/Guitar/Ab5.mp3",
+        A5: "Samples/Guitar/A5.mp3", Bb5: "Samples/Guitar/Bb5.mp3", B5: "Samples/Guitar/B5.mp3",
+        C6: "Samples/Guitar/C6.mp3"
+    },
+    attack: 0.02,
+    release: 0.8,
+    onload: () => registerInstrumentLoaded("Chitarra Lead")
+}).connect(leadVibrato);
 
-// ============================================================================
-// 🔊 ROUTING BUS → EQ → MASTER
-// ============================================================================
-guitarBus.connect(guitarEQ).connect(masterEQ);
-bassBus.connect(bassEQ).connect(masterEQ);
-drumsBus.connect(drumsEQ).connect(drumComp).connect(masterEQ);
-leadBus.connect(leadEQ).connect(masterEQ);
+export const bass = new Tone.Sampler({
+    urls: {
+        C1: "Samples/Bass/C1.mp3", Db1: "Samples/Bass/Db1.mp3", D1: "Samples/Bass/D1.mp3",
+        Eb1: "Samples/Bass/Eb1.mp3", E1: "Samples/Bass/E1.mp3", F1: "Samples/Bass/F1.mp3",
+        Gb1: "Samples/Bass/Gb1.mp3", G1: "Samples/Bass/G1.mp3", Ab1: "Samples/Bass/Ab1.mp3",
+        A1: "Samples/Bass/A1.mp3", Bb1: "Samples/Bass/Bb1.mp3", B1: "Samples/Bass/B1.mp3",
+        C2: "Samples/Bass/C2.mp3"
+    },
+    onload: () => registerInstrumentLoaded("Basso")
+}).connect(bassBus);
 
-// ============================================================================
-// 🎚 VOLUMI DI DEFAULT
-// ============================================================================
-guitarBus.gain.value = Tone.dbToGain(0);
-bassBus.gain.value = Tone.dbToGain(2);
-leadBus.gain.value = Tone.dbToGain(2);
-drumsBus.gain.value = Tone.dbToGain(-6);
+export const drums = new Tone.Players({
+    urls: {
+    kick: "Samples/Drums/kick.mp3", 
+    snare: "Samples/Drums/snare.mp3",
+    ghost: "Samples/Drums/ghost.mp3", 
+    hihat: "Samples/Drums/hihatclosed.mp3",
+    openhat: "Samples/Drums/hihatopen.mp3", 
+    crash1: "Samples/Drums/crash1.mp3",
+    crash2: "Samples/Drums/crash2.mp3", 
+    tom1: "Samples/Drums/tom1.mp3",
+    tom2: "Samples/Drums/tom2.mp3", 
+    tom3: "Samples/Drums/tom3.mp3",
+    tom4: "Samples/Drums/tom4.mp3", 
+    ride: "Samples/Drums/ride.mp3",
+    ridebell: "Samples/Drums/ridebell.mp3", 
+    china: "Samples/Drums/china.mp3"
+},
+    onload: () => registerInstrumentLoaded("Batteria")
+}).connect(drumBus);
 
-// ============================================================================
-// 🎚 SET VOLUME (per UI)
-// ============================================================================
-export function setVolume(busName, dbValue) {
-    const mixer = {
-        guitarPalm: guitarBus,
-        guitarOpen: guitarBus,
-        guitarLead: leadBus,
-        bassMetal: bassBus,
-        drumsMetal: drumsBus
+// ============================================================
+// 🎵 LOGGING & WRAPPING
+// ============================================================
+function wrapSampler(name, sampler) {
+    const orig = sampler.triggerAttackRelease.bind(sampler);
+    sampler.triggerAttackRelease = (note, dur, time) => {
+        logNote(name, note, time);
+        return orig(note, dur, time);
     };
+}
 
+wrapSampler("guitarPalm", guitarPalm);
+wrapSampler("guitarOpen", guitarOpen);
+wrapSampler("guitarLead", guitarLead);
+wrapSampler("bass", bass);
+
+function wrapPlayer(name, player) {
+    const orig = player.start.bind(player);
+    player.start = (time, offset, dur) => {
+        logNote(name, "(sample)", time);
+        return orig(time, offset, dur);
+    };
+}
+
+[
+    "kick","snare","ghost","hihat","openhat",
+    "crash1","crash2","tom1","tom2","tom3","tom4",
+    "ride","ridebell","china"
+].forEach(key => {
+    const p = drums.player(key);
+    if (p) wrapPlayer("drums."+key, p);
+});
+
+// ============================================================
+// ⚙️ FUNZIONI DI UTILITY
+// ============================================================
+export function setVolume(busName, dbValue) {
+    const mixer = { guitar: guitarBus, bass: bassBus, drums: drumBus, lead: leadBus };
     const bus = mixer[busName];
     if (bus) bus.gain.value = Tone.dbToGain(dbValue);
 }
 
-// ============================================================================
-// 📦 EXPORT
-// ============================================================================
+//setVolume("guitar", -2);
+//setVolume("bass", 0);
+//setVolume("drums", -8);
+//setVolume("lead", 0);
+
+// ============================================================
+// VOLUMI DI DEFAULT
+// ============================================================
+
+guitarBus.gain.value = Tone.dbToGain(0);  // Chitarra ritmica
+bassBus.gain.value = Tone.dbToGain(2);    // Basso
+leadBus.gain.value = Tone.dbToGain(2);   // Lead
+drumBus.gain.value = Tone.dbToGain(-6);   // Batteria
+
+export function normalizeNote(note, instrument) {
+    if (!note || typeof note !== "string") return "A";
+    const first = note[0].toUpperCase();
+    const second = note[1];
+    if (instrument === "guitarPalm" || instrument === "guitarOpen") return first; 
+    if (instrument === "guitarLead" || instrument === "bass") {
+        if (second === "b") return first + "b";
+        if (second === "#") {
+            const sharpToFlat = { "C#": "Db", "D#": "Eb", "F#": "Gb", "G#": "Ab", "A#": "Bb" };
+            return sharpToFlat[first + "#"] ?? first;
+        }
+    }
+    return first;
+}
+
 export const metalInstruments = {
-    guitarPalm, guitarOpen, guitarLead,
-    bassMetal,
-    drumsMetal,
-    guitarBus, bassBus, drumsBus, leadBus,
-    setVolume
+    guitarPalm, guitarOpen, guitarLead, bass, drums,
+    guitarBus, bassBus, drumBus, leadBus, setVolume
 };
 
 export const metalVolumeMap = {
-    guitarPalm: "Palm Mute",
-    guitarOpen: "Open Chords",
-    guitarLead: "Lead Solo",
-    bassMetal: "Basso",
-    drumsMetal: "Batteria"
+    guitar: "Chitarre",
+    bass: "Basso",
+    drums: "Batteria",
+    lead: "Lead Solo"
 };
-
-export { normalizeNote };
