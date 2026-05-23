@@ -95,6 +95,21 @@ const LeadFloyd = {
 };
 
 // ============================================================
+// SELEZIONE FAMIGLIA MELODICA PER L'ASSOLO
+// (rimane identica, ma usa leadMelodicLibrary importata)
+// ============================================================
+
+function getSoloMelodyFamily(isSoloPt2, energy, brightness, complexity, texture) {
+    if (!isSoloPt2) {
+        if (brightness > 0.5) return { name: "SOLO EPIC 🏰", data: leadMelodicLibrary.epic };
+        return { name: "SOLO EMOTIONAL 💧", data: leadMelodicLibrary.emotional };
+    } else {
+        if (complexity > 0.6 || energy > 0.7) return { name: "SOLO ACTIVE ⚡", data: leadMelodicLibrary.active };
+        return { name: "SOLO EVIL 😈", data: leadMelodicLibrary.evil };
+    }
+}
+
+// ============================================================
 // LEAD ENGINE (semplice, originale)
 // ============================================================
 
