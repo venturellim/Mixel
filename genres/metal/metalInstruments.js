@@ -132,7 +132,6 @@ export const guitarLead = new Tone.Sampler({
 
         D6: "Samples/GuitarLead/D6.mp3"
     },
-    baseUrl: BASE,
     attack: 0.02,
     release: 0.8,
     onload: () => registerInstrumentLoaded("guitarLead")
