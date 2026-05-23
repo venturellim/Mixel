@@ -29,7 +29,7 @@ const guitarPatterns = {
 };
 
 export function scheduleFunkyRhythm(section, progression, instruments, params, rand, measureDur, nextSectionRoot, score) {
-    const { drumFunky, bassSlap, guitarMute, clavinet } = instruments;
+    const { drumFunky, bassSlap, guitarMute, keysClavinet } = instruments;
     if (!drumFunky || !bassSlap) return;
 
     const name = section?.name?.toLowerCase() || "";
@@ -151,12 +151,12 @@ export function scheduleFunkyRhythm(section, progression, instruments, params, r
         }
         
         // === CLAVINET ===
-        if (useClavinet && clavinet) {
+        if (useClavinet && keysClavinet) {
             const chordNotes = [chordRoot, chordThird, chordFifth];
             Tone.Transport.schedule(t => {
                 chordNotes.forEach(note => {
-                    const safeChordNote = normalizeNote(note, "clavinet");
-                    clavinet.triggerAttackRelease(safeChordNote, measureDur * 0.8, t, 0.5);
+                    const safeChordNote = normalizeNote(note, "keysClavinet");
+                    keysClavinet.triggerAttackRelease(safeChordNote, measureDur * 0.8, t, 0.5);
                     if (score) score.addNote("Clavinet", safeChordNote, section.name);
                 });
             }, measureStartTime);
