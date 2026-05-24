@@ -17,81 +17,32 @@ import {
 
 console.log("metalLeadEngine.js ver. 089 loaded");
 
-const AVAILABLE_GUITAR_NOTES = [
-    "C2","D2","E2","F2","G#2","A2","B2",
+function clampLeadRange(note) {
 
-    "C3","D3","E3","F3","G3","G#3","B3",
-
-    "C#4","D4","E4","F4","G4","G#4","B4",
-
-    "C5","D5","F5","G#5","A#5","B5",
-
-    "C#6","D6"
-];
-
-let lastLeadSample = null;
-
-function findNearestSample(note) {
-
-    const targetMidi = Tone.Frequency(note).toMidi();
-
-    let candidates = AVAILABLE_GUITAR_NOTES.map(n => {
-
-        const midi = Tone.Frequency(n).toMidi();
-
-        return {
-            note: n,
-            midi,
-            distance: Math.abs(midi - targetMidi)
-        };
-    });
+    const midi = Tone.Frequency(note).toMidi();
 
     // =====================================================
-    // Preferisci note vicine al target
+    // RANGE OTTIMIZZATO DELLA LIBRERIA
     // =====================================================
 
-    candidates.sort((a, b) => a.distance - b.distance);
+    const min = Tone.Frequency("C2").toMidi();
+    const max = Tone.Frequency("C6").toMidi();
+
+    let finalMidi = midi;
 
     // =====================================================
-    // Mantieni coerenza melodica
+    // OCTAVE WRAPPING MUSICALE
     // =====================================================
 
-    if (lastLeadSample) {
-
-        const lastMidi = Tone.Frequency(lastLeadSample).toMidi();
-
-        candidates = candidates.map(c => {
-
-            const melodicDistance = Math.abs(c.midi - lastMidi);
-
-            return {
-                ...c,
-                score:
-                    c.distance * 2 +
-                    melodicDistance * 0.7
-            };
-        });
-
-        candidates.sort((a, b) => a.score - b.score);
+    while (finalMidi < min) {
+        finalMidi += 12;
     }
 
-    // =====================================================
-    // Evita pitch estremi
-    // =====================================================
-
-    let best = candidates[0];
-
-    for (const c of candidates) {
-
-        if (c.distance <= 2) {
-            best = c;
-            break;
-        }
+    while (finalMidi > max) {
+        finalMidi -= 12;
     }
 
-    lastLeadSample = best.note;
-
-    return best.note;
+    return Tone.Frequency(finalMidi, "midi").toNote();
 }
 
 // ============================================================
@@ -139,7 +90,6 @@ function getSoloMelodyFamily(isSoloPt2, energy, brightness, complexity, texture)
 // ============================================================
 // LEAD ENGINE (ripulito dagli enhancer locali)
 // ============================================================
-lastLeadSample = null;
 
 const LeadLegacy = {
     schedule(section, progression, instruments, params, rand, measureDur, rootNote, isMinor, scaleType, score) {
@@ -271,18 +221,18 @@ const LeadLegacy = {
                 const octave = isChorus || isSolo ? 5 : 4;
                 //const noteName = normalizeNote(currentScale[noteIdx % 7], "guitarLead") + octave;
                 const rawNote =
-    normalizeNote(currentScale[noteIdx % 7], "bass") + octave;
+    normalizeNote(currentScale[noteIdx % 7], "guitarLead") + octave;
 
-const noteName = findNearestSample(rawNote);
+const noteName = clampLeadRange(rawNote);
                 Tone.Transport.schedule(time => {
 
                     const duration = (nextStep - s) * stepTime;
                     const velocity = computeLeadVelocity(noteIdx, duration, isSolo, name.includes("bridge"));
-                    const microTiming = (Math.random() - 0.5) * 0.01;
+                    const  microTiming = (Math.random() - 0.5) * 0.004;
 const finalTime = time + microTiming;
 
 const dynamicVelocity =
-    velocity * (0.92 + Math.random() * 0.16);
+    velocity * (0.96 + Math.random() * 0.08);
 
                     //guitarLead.triggerAttackRelease(noteName, duration, time, velocity);
 guitarLead.triggerAttackRelease(
