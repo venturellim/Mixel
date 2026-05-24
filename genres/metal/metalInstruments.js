@@ -212,10 +212,10 @@ export function setVolume(busName, dbValue) {
 // VOLUMI DI DEFAULT
 // ============================================================
 
-guitarBus.gain.value = Tone.dbToGain(4);  // Chitarra ritmica
+guitarBus.gain.value = Tone.dbToGain(6);  // Chitarra ritmica
 bassBus.gain.value = Tone.dbToGain(4);    // Basso
 leadBus.gain.value = Tone.dbToGain(0);   // Lead
-drumBus.gain.value = Tone.dbToGain(-2);   // Batteria
+drumBus.gain.value = Tone.dbToGain(0);   // Batteria
 
 export function normalizeNote(note, instrument) {
     if (!note || typeof note !== "string") return "A";
