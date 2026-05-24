@@ -214,7 +214,7 @@ export function setVolume(busName, dbValue) {
 
 guitarBus.gain.value = Tone.dbToGain(4);  // Chitarra ritmica
 bassBus.gain.value = Tone.dbToGain(4);    // Basso
-leadBus.gain.value = Tone.dbToGain(2);   // Lead
+leadBus.gain.value = Tone.dbToGain(0);   // Lead
 drumBus.gain.value = Tone.dbToGain(-2);   // Batteria
 
 export function normalizeNote(note, instrument) {

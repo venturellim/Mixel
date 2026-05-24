@@ -236,8 +236,38 @@ const noteName = clampLeadRange(rawNote, name);
                     const  microTiming = (Math.random() - 0.5) * 0.004;
 const finalTime = time + microTiming;
 
-const dynamicVelocity =
+// 🧠 MICRO-TIMING UMANO AVANZATO — basato sull'altezza della nota
+if (texture > 0.5) {
+    const midi = Tone.Frequency(noteName).toMidi();
+
+    if (midi >= 72) {
+        // note alte → leggero ritardo
+        finalTime += 0.003; // +3ms
+    } else if (midi <= 60) {
+        // note basse → leggero anticipo
+        finalTime -= 0.002; // -2ms
+    }
+}
+
+let dynamicVelocity =
     velocity * (0.96 + Math.random() * 0.08);
+
+// 🥁 ACCENTI RITMICI NEI GALLOP (0-2-3)
+if ((name.includes("verse") || name.includes("chorus")) && duration < 0.25) {
+    const isGallop = currentPattern[i - 1] === 2 && currentPattern[i - 2] === 0;
+
+    if (isGallop) {
+        // Primo colpo del gallop → accento forte
+        if (s === 0 || s === currentPattern[0]) {
+            dynamicVelocity *= 1.12; // +12%
+        }
+
+        // Nota più alta del pattern → accento leggero
+        if (noteIdx === Math.max(...currentMelody)) {
+            dynamicVelocity *= 1.06; // +6%
+        }
+    }
+}
 
                     //guitarLead.triggerAttackRelease(noteName, duration, time, velocity);
 guitarLead.triggerAttackRelease(
@@ -246,6 +276,125 @@ guitarLead.triggerAttackRelease(
     finalTime,
     dynamicVelocity
 );
+
+// 🎸 VIBRATO EPICO — solo per SOLO / BRIDGE / OUTRO
+if ((isSolo || name.includes("bridge") || name.includes("outro")) && duration > 0.3) {
+    try {
+        leadVibrato.depth.rampTo(0.25, 0.05);      // più profondo
+        leadVibrato.frequency.rampTo(6.5, 0.05);   // più veloce
+    } catch (e) {}
+}
+
+// 🎸 MICRO-BENDING — solo per BRIDGE (e SOLO opzionale)
+if ((name.includes("bridge") || isSolo) && duration > 0.25 && complexity > 0.5) {
+    try {
+        const pr = guitarLead.playbackRate;
+        const bendAmount = 1 + ((Math.random() * 0.02) - 0.01); // ±1%
+        const t1 = finalTime + 0.05;
+        const t2 = t1 + 0.08;
+
+        // Piccolo bend iniziale
+        pr.setValueAtTime(bendAmount, t1);
+
+        // Ritorno morbido
+        pr.linearRampToValueAtTime(1.0, t2);
+    } catch (e) {}
+}
+
+// 🎶 ARMONIZZAZIONE POWER METAL — solo nei climax del CHORUS
+if (name.includes("chorus") && energy > 0.7 && duration > 0.3 && (m % 2 === 0)) {
+    try {
+        // intervallo: terza maggiore o minore
+        const interval = Math.random() < 0.5 ? 3 : 4;
+
+        // calcolo nota armonizzata
+        const harmMidi = Tone.Frequency(noteName).toMidi() + interval;
+        const harmNote = Tone.Frequency(harmMidi, "midi").toNote();
+
+        // leggero ritardo per larghezza stereo
+        const harmTime = finalTime + 0.01;
+
+        guitarLead.triggerAttackRelease(
+            harmNote,
+            duration,
+            harmTime,
+            dynamicVelocity * 0.6 // più morbida
+        );
+
+        // logging nello score
+        if (score) score.addNote("Lead", harmNote, section.name + " (harm)");
+    } catch (e) {}
+}
+
+// 🎶 SCALE RUN INTELLIGENTE — Prechorus → Chorus
+if ((name.includes("prechorus") || name.includes("chorus")) 
+    && (i >= currentPattern.length - 2) 
+    && energy > 0.4 
+    && complexity > 0.4) {
+
+    try {
+        const scale = currentScale; // già calcolata nel tuo engine
+        const baseMidi = Tone.Frequency(noteName).toMidi();
+
+        // direzione della run
+        const direction = name.includes("prechorus") ? +1 : -1;
+
+        // 2 note veloci
+        for (let r = 1; r <= 2; r++) {
+            const runMidi = baseMidi + (direction * r * 2); // passi di seconda
+            const runNote = Tone.Frequency(runMidi, "midi").toNote();
+            const runTime = finalTime + (r * 0.05);
+
+            guitarLead.triggerAttackRelease(
+                runNote,
+                duration * 0.4,
+                runTime,
+                dynamicVelocity * 0.85
+            );
+
+            if (score) score.addNote("Lead", runNote, section.name + " (run)");
+        }
+    } catch (e) {}
+}
+
+// 🎤 HEROIC LEAD — solo finale epico
+if (isSolo && section.isLast && energy > 0.6 && complexity > 0.5) {
+    try {
+        // 1) Vibrato più profondo e veloce
+        leadVibrato.depth.rampTo(0.3, 0.05);
+        leadVibrato.frequency.rampTo(7.2, 0.05);
+
+        // 2) Bending più ampio (Floyd Rose)
+        const pr = guitarLead.playbackRate;
+        const bendUp = 1 + (Math.random() * 0.04); // +4%
+        const bendDown = 1 - (Math.random() * 0.03); // -3%
+
+        const t1 = finalTime + 0.04;
+        const t2 = t1 + 0.10;
+        const t3 = t2 + 0.10;
+
+        pr.setValueAtTime(bendUp, t1);
+        pr.linearRampToValueAtTime(bendDown, t2);
+        pr.linearRampToValueAtTime(1.0, t3);
+
+        // 3) Velocity più dinamica
+        dynamicVelocity *= 1.12;
+
+        // 4) Sustain leggermente più lungo
+        // (solo se la nota è già lunga)
+        if (duration > 0.3) {
+            guitarLead.triggerAttackRelease(
+                noteName,
+                duration * 1.2,
+                finalTime,
+                dynamicVelocity * 0.95
+            );
+        }
+
+        // Logging opzionale
+        if (score) score.addNote("Lead", noteName, section.name + " (heroic)");
+    } catch (e) {}
+}
                     Tone.Draw.schedule(() => {
                         if (score) score.addNote("Lead", noteName, section.name);
                     }, time);
@@ -255,6 +404,8 @@ guitarLead.triggerAttackRelease(
         }
     }
 };
+
+
 
 // ============================================================
 // API PUBBLICA
