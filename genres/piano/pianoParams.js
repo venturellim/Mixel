@@ -3,22 +3,15 @@ import { createSeededRandom } from "../../utils/randomUtils.js";
 
 console.log("pianoParams.js ver. 001 loaded");
 
-export function buildPianoParams(rand) {
+export function buildPianoParams(rand, imageParamsFromPhoto) {
 
-    // BPM dinamico come orchestra/metal
-    const bpm = 70 + rand() * 50; // 70–120
+    const bpm = 70 + rand() * 50;
 
-    // Tonicità di base
     const tonalCenters = ["A", "C", "D", "E", "F", "G"];
     const tonalCenter = tonalCenters[(rand() * tonalCenters.length) | 0];
 
-    // Parametri immagine (come orchestra/metal)
-    const imageParams = {
-        energy: rand(),
-        brightness: rand(),
-        complexity: rand(),
-        texture: rand()
-    };
+    // Usa i parametri della foto, NON quelli random
+    const imageParams = imageParamsFromPhoto;
 
     return {
         bpm,
@@ -26,3 +19,4 @@ export function buildPianoParams(rand) {
         imageParams
     };
 }
+

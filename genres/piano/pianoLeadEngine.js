@@ -30,6 +30,52 @@ function getStrictScale(root, isMinor) {
 }
 
 // ============================================================
+// PIANO STYLE SELECTOR — ver. 020 PRO
+// Sceglie automaticamente lo stile pianistico in base ai parametri immagine
+// ============================================================
+
+export function getPianoStyle({ energy, brightness, complexity, texture }) {
+
+    // 1) AMBIENT / CHILL
+    if (energy < 0.30 && brightness < 0.45 && texture > 0.55) {
+        return "ambient";
+    }
+
+    // 2) POP / BALLAD
+    if (brightness > 0.55 && energy < 0.55 && complexity < 0.55) {
+        return "pop_ballad";
+    }
+
+    // 3) CINEMATIC / ORCHESTRAL
+    if (texture > 0.65 && brightness > 0.50 && complexity < 0.70) {
+        return "cinematic";
+    }
+
+    // 4) VIRTUOSO / TECHNICAL
+    if (energy > 0.70 && complexity > 0.65) {
+        return "virtuoso";
+    }
+
+    // 5) DARK / EVIL / DRAMMATICO
+    if (brightness < 0.35 && complexity > 0.50) {
+        return "dark";
+    }
+
+    // 6) JAZZ / SWING
+    if (texture > 0.45 && brightness > 0.40 && energy < 0.60 && complexity > 0.40) {
+        return "jazz";
+    }
+
+    // 7) EDM / DANCE PIANO LEAD
+    if (energy > 0.60 && brightness > 0.60 && texture < 0.50) {
+        return "edm_lead";
+    }
+
+    // DEFAULT
+    return "standard";
+}
+
+// ============================================================
 // FUNZIONE PER ESPANDERE IL PATTERN ALLA LUNGHEZZA DELLA MELODIA
 // ============================================================
 function expandPatternToMatchMelody(pattern, melodyLength) {
@@ -118,6 +164,46 @@ function getEnhancersForEnergy(energy) {
 }
 
 // ============================================================
+// ENHANCER PER STILE PIANISTICO
+// ============================================================
+const STYLE_ENHANCERS = {
+    ambient: [
+        "addEchoEffect",
+        "enhanceMelodyLine"
+    ],
+    pop_ballad: [
+        "enhanceMelodyMicroVariation",
+        "enhanceMelodyLine",
+        "addOctaveDoubling"
+    ],
+    cinematic: [
+        "enhanceMelodyLine",
+        "addEchoEffect",
+        "addScaleRunBetweenPeaks"
+    ],
+    virtuoso: [
+        "enhanceMelodyMicroVariation",
+        "addScaleRunBetweenPeaks",
+        "addOctaveDoubling"
+    ],
+    dark: [
+        "enhanceChromaticPassing",
+        "enhanceMelodyLine"
+    ],
+    jazz: [
+        "enhanceChromaticPassing",
+        "enhanceMelodyMicroVariation"
+    ],
+    edm_lead: [
+        "addOctaveDoubling",
+        "addScaleRunBetweenPeaks"
+    ],
+    standard: [
+        "enhanceMelodyLine"
+    ]
+};
+
+// ============================================================
 // PIANO LEAD ENGINE
 // ============================================================
 export function schedulePianoLead(
@@ -147,6 +233,11 @@ export function schedulePianoLead(
         texture = 0.5,
         complexity = 0.5
     } = params?.imageParams || {};
+    
+    // Determina lo stile pianistico in base alla foto
+const pianoStyle = getPianoStyle({ energy, brightness, complexity, texture });
+console.log("🎹 Piano Style:", pianoStyle);
+
 
     const enhancerContext = { energy, brightness, texture, complexity };
 
@@ -205,10 +296,17 @@ export function schedulePianoLead(
     console.log(`🔍 DEBUG ${section.name}: pattern=${JSON.stringify(currentPattern)} | melody=${JSON.stringify(baseMelody)} | energy=${energy}`);
 
     // Applica enhancer in base all'energia
-    const enhancersToApply = getEnhancersForEnergy(energy);
-    for (let enh of enhancersToApply) {
-        baseMelody = applyLeadEnhancer(baseMelody, enh, enhancerContext);
-    }
+    // 1) Enhancer basati sull'energia
+let enhancersToApply = getEnhancersForEnergy(energy);
+
+// 2) Enhancer basati sullo stile pianistico
+const styleEnhancers = STYLE_ENHANCERS[pianoStyle] || [];
+enhancersToApply = enhancersToApply.concat(styleEnhancers);
+
+// Applica tutti gli enhancer selezionati
+for (let enh of enhancersToApply) {
+    baseMelody = applyLeadEnhancer(baseMelody, enh, enhancerContext);
+}
     
     currentMelody = baseMelody;
     currentPattern = expandPatternToMatchMelody(currentPattern, currentMelody.length);

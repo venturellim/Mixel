@@ -5,6 +5,46 @@ import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
 
 console.log("pianoRhythmEngine.js ver. 006 loaded");
 
+function getPianoStyle({ energy, brightness, complexity, texture }) {
+
+    if (energy < 0.30 && brightness < 0.45 && texture > 0.55)
+        return "ambient";
+
+    if (brightness > 0.55 && energy < 0.55 && complexity < 0.55)
+        return "pop_ballad";
+
+    if (texture > 0.65 && brightness > 0.50 && complexity < 0.70)
+        return "cinematic";
+
+    if (energy > 0.70 && complexity > 0.65)
+        return "virtuoso";
+
+    if (brightness < 0.35 && complexity > 0.50)
+        return "dark";
+
+    if (texture > 0.45 && brightness > 0.40 && energy < 0.60 && complexity > 0.40)
+        return "jazz";
+
+    if (energy > 0.60 && brightness > 0.60 && texture < 0.50)
+        return "edm_lead";
+
+    return "standard";
+}
+
+// ============================================================
+// RHYTHM STYLES — pattern diversi per stile pianistico
+// ============================================================
+const RHYTHM_STYLES = {
+    ambient: ["intro_ambient", "doom_slow", "suspended_tension"],
+    pop_ballad: ["power_ballad", "march_to_war", "chorus_sustain_hit"],
+    cinematic: ["cinematic_buildup", "epic_waltz_feel", "intro_heavy_strikes"],
+    virtuoso: ["gallop_triplet", "technical_sync", "speed_metal"],
+    dark: ["black_tremolo", "death_roll", "thrash_diamond"],
+    jazz: ["driving_eights", "prog_odd", "pre_build_up"],
+    edm_lead: ["power_ride_groove", "double_time_punk", "motorhead_drive"],
+    standard: ["driving_eights"]
+};
+
 // ------------------------------------------------------------
 // SAFE NOTE
 // ------------------------------------------------------------
@@ -123,6 +163,10 @@ export function schedulePianoRhythm(
     const stepTime = measureDur / 16;
     
     const { energy = 0.5, brightness = 0.5, complexity = 0.5, texture = 0.5 } = params?.imageParams || {};
+const pianoStyle = getPianoStyle({ energy, brightness, complexity, texture });
+console.log("🎹 Rhythm Style:", pianoStyle);
+
+
 
     // ============================================================
     // GROOVES (IDENTICO AL METAL)
@@ -195,9 +239,14 @@ export function schedulePianoRhythm(
         return scoredGrooves[0].name;
     };
 
-    const currentGroove = getGroove(
-        isIntro ? "intro" : (isPreChorus ? "prechorus" : (isChorus ? "chorus" : "verse"))
-    );
+    // ============================================================
+// SCEGLI GROOVE IN BASE ALLO STILE PIANISTICO
+// ============================================================
+const styleGrooves = RHYTHM_STYLES[pianoStyle] || RHYTHM_STYLES.standard;
+const currentGroove = styleGrooves[(rand() * styleGrooves.length) | 0];
+
+console.log(`🎹 Groove scelto per stile ${pianoStyle}: ${currentGroove}`);
+
 
     console.log(`🎹 [${section.name}] Piano Rhythm Groove: ${currentGroove} | energy=${energy.toFixed(2)}`);
 
@@ -256,7 +305,33 @@ export function schedulePianoRhythm(
 
             if (isFullChord) {
                 Tone.Transport.schedule(t => {
-                    const velocity = 0.6 + (energy * 0.3);
+                    let velocity = 0.45 + (energy * 0.3);
+
+// Dinamica per stile
+switch (pianoStyle) {
+    case "ambient":
+        velocity *= 0.7;
+        break;
+    case "pop_ballad":
+        velocity *= 0.85;
+        break;
+    case "cinematic":
+        velocity *= 1.1;
+        break;
+    case "virtuoso":
+        velocity *= 1.25;
+        break;
+    case "dark":
+        velocity *= 1.3;
+        break;
+    case "jazz":
+        velocity *= 0.9;
+        break;
+    case "edm_lead":
+        velocity *= 1.35;
+        break;
+}
+
                     piano.triggerAttackRelease([rootNote, thirdNote, fifthNote], "1n", t, velocity, lhBus);
                     if (score) {
                         score.addNote("Rhythm", rootNote, section.name);
@@ -267,10 +342,30 @@ export function schedulePianoRhythm(
             } else {
                 const note = triadPattern[triadIndex % triadPattern.length];
                 const duration = "8n";
-                const velocity = 0.45 + (energy * 0.3);
+                let velocity = 0.45 + (energy * 0.3);
+
+// Dinamica per stile
+switch (pianoStyle) {
+    case "ambient": velocity *= 0.7; break;
+    case "pop_ballad": velocity *= 0.85; break;
+    case "cinematic": velocity *= 1.1; break;
+    case "virtuoso": velocity *= 1.25; break;
+    case "dark": velocity *= 1.3; break;
+    case "jazz": velocity *= 0.9; break;
+    case "edm_lead": velocity *= 1.35; break;
+}
                 
-                Tone.Transport.schedule(t => {
-                    piano.triggerAttackRelease(note, duration, t, velocity, lhBus);
+      Tone.Transport.schedule(t => {
+                 // MICRO-TIMING UMANO
+let micro = (Math.random() - 0.5) * 0.008;
+
+// Stile-based timing
+if (pianoStyle === "ambient") micro += 0.006;
+if (pianoStyle === "virtuoso") micro -= 0.004;
+if (pianoStyle === "jazz") micro += (Math.random() * 0.004);
+
+t += micro;
+
                     if (score) score.addNote("Rhythm", note, section.name);
                 }, absoluteTime);
                 

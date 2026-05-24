@@ -18,7 +18,8 @@ export async function waitPianoInstruments() {
 export function createPianoEngine(params, score) {
 
     const rand = createSeededRandom(params.dna);
-    const pianoParams = buildPianoParams(rand);
+    const pianoParams = buildPianoParams(rand, params.imageParams);
+
 
     Tone.Transport.stop();
     Tone.Transport.cancel();
