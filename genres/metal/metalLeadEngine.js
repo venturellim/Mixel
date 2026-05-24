@@ -17,6 +17,83 @@ import {
 
 console.log("metalLeadEngine.js ver. 089 loaded");
 
+const AVAILABLE_GUITAR_NOTES = [
+    "C2","D2","E2","F2","G#2","A2","B2",
+
+    "C3","D3","E3","F3","G3","G#3","B3",
+
+    "C#4","D4","E4","F4","G4","G#4","B4",
+
+    "C5","D5","F5","G#5","A#5","B5",
+
+    "C#6","D6"
+];
+
+let lastLeadSample = null;
+
+function findNearestSample(note) {
+
+    const targetMidi = Tone.Frequency(note).toMidi();
+
+    let candidates = AVAILABLE_GUITAR_NOTES.map(n => {
+
+        const midi = Tone.Frequency(n).toMidi();
+
+        return {
+            note: n,
+            midi,
+            distance: Math.abs(midi - targetMidi)
+        };
+    });
+
+    // =====================================================
+    // Preferisci note vicine al target
+    // =====================================================
+
+    candidates.sort((a, b) => a.distance - b.distance);
+
+    // =====================================================
+    // Mantieni coerenza melodica
+    // =====================================================
+
+    if (lastLeadSample) {
+
+        const lastMidi = Tone.Frequency(lastLeadSample).toMidi();
+
+        candidates = candidates.map(c => {
+
+            const melodicDistance = Math.abs(c.midi - lastMidi);
+
+            return {
+                ...c,
+                score:
+                    c.distance * 2 +
+                    melodicDistance * 0.7
+            };
+        });
+
+        candidates.sort((a, b) => a.score - b.score);
+    }
+
+    // =====================================================
+    // Evita pitch estremi
+    // =====================================================
+
+    let best = candidates[0];
+
+    for (const c of candidates) {
+
+        if (c.distance <= 2) {
+            best = c;
+            break;
+        }
+    }
+
+    lastLeadSample = best.note;
+
+    return best.note;
+}
+
 // ============================================================
 // FLOYD ROSE (rimane locale al metal)
 // ============================================================
@@ -62,6 +139,7 @@ function getSoloMelodyFamily(isSoloPt2, energy, brightness, complexity, texture)
 // ============================================================
 // LEAD ENGINE (ripulito dagli enhancer locali)
 // ============================================================
+lastLeadSample = null;
 
 const LeadLegacy = {
     schedule(section, progression, instruments, params, rand, measureDur, rootNote, isMinor, scaleType, score) {
@@ -191,15 +269,28 @@ const LeadLegacy = {
 
                 const noteIdx = currentMelody[i % currentMelody.length];
                 const octave = isChorus || isSolo ? 5 : 4;
-                const noteName = normalizeNote(currentScale[noteIdx % 7], "guitarLead") + octave;
+                //const noteName = normalizeNote(currentScale[noteIdx % 7], "guitarLead") + octave;
+                const rawNote =
+    normalizeNote(currentScale[noteIdx % 7], "bass") + octave;
 
+const noteName = findNearestSample(rawNote);
                 Tone.Transport.schedule(time => {
 
                     const duration = (nextStep - s) * stepTime;
                     const velocity = computeLeadVelocity(noteIdx, duration, isSolo, name.includes("bridge"));
+                    const microTiming = (Math.random() - 0.5) * 0.01;
+const finalTime = time + microTiming;
 
-                    guitarLead.triggerAttackRelease(noteName, duration, time, velocity);
+const dynamicVelocity =
+    velocity * (0.92 + Math.random() * 0.16);
 
+                    //guitarLead.triggerAttackRelease(noteName, duration, time, velocity);
+guitarLead.triggerAttackRelease(
+    noteName,
+    duration,
+    finalTime,
+    dynamicVelocity
+);
                     Tone.Draw.schedule(() => {
                         if (score) score.addNote("Lead", noteName, section.name);
                     }, time);
