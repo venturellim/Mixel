@@ -150,8 +150,7 @@ export const saxAlto = new Tone.Sampler({
 // CLAVINET (suono percussivo tipico funk)
 export const clavinet = new Tone.Sampler({
     urls: {
-    C3: "Samples/Clavinet/C3.mp3", 
-    "C#3": "Samples/Clavinet/Cs3.mp3", 
+    C3: "Samples/Clavinet/C3.mp3",  
     D3: "Samples/Clavinet/D3.mp3", 
     "D#3": "Samples/Clavinet/Ds3.mp3",
     E3: "Samples/Clavinet/E3.mp3", 
@@ -171,7 +170,6 @@ export const clavinet = new Tone.Sampler({
     "F#4": "Samples/Clavinet/Fs4.mp3", 
     G4: "Samples/Clavinet/G4.mp3",
     "G#4": "Samples/Clavinet/Gs4.mp3", 
-    A4: "Samples/Clavinet/A4.mp3", 
     "A#4": "Samples/Clavinet/As4.mp3", 
     B4: "Samples/Clavinet/B4.mp3", 
     C5: "Samples/Clavinet/C5.mp3"
