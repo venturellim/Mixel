@@ -366,6 +366,9 @@ if (pianoStyle === "jazz") micro += (Math.random() * 0.004);
 
 t += micro;
 
+piano.triggerAttackRelease(note, duration, t, velocity, lhBus);
+
+
                     if (score) score.addNote("Rhythm", note, section.name);
                 }, absoluteTime);
                 
