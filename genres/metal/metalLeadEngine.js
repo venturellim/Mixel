@@ -15,7 +15,7 @@ import {
     shapeBridgeSolo
 } from "../../utils/leadEnhancers.js";
 
-console.log("metalLeadEngine.js ver. 089 loaded");
+console.log("metalLeadEngine.js ver. 089.1 loaded");
 
 function clampLeadRange(note, sectionName) {
 
