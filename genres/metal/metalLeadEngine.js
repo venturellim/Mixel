@@ -17,30 +17,35 @@ import {
 
 console.log("metalLeadEngine.js ver. 089 loaded");
 
-function clampLeadRange(note) {
+function clampLeadRange(note, sectionName) {
 
     const midi = Tone.Frequency(note).toMidi();
 
-    // =====================================================
-    // RANGE OTTIMIZZATO DELLA LIBRERIA
-    // =====================================================
+    // RANGE DINAMICO IN BASE ALLA SEZIONE
+    const lowSections  = ["verse", "prechorus", "chorus"];
+    const highSections = ["intro", "solo", "bridge", "outro"];
 
-    const min = Tone.Frequency("C2").toMidi();
-    const max = Tone.Frequency("C6").toMidi();
+    let min, max;
+
+    if (lowSections.some(s => sectionName.includes(s))) {
+        // RANGE GRAVE
+        min = Tone.Frequency("C2").toMidi();
+        max = Tone.Frequency("C4").toMidi();
+    } else if (highSections.some(s => sectionName.includes(s))) {
+        // RANGE ACUTO
+        min = Tone.Frequency("C4").toMidi();
+        max = Tone.Frequency("D6").toMidi();
+    } else {
+        // fallback sicuro
+        min = Tone.Frequency("C2").toMidi();
+        max = Tone.Frequency("C6").toMidi();
+    }
 
     let finalMidi = midi;
 
-    // =====================================================
-    // OCTAVE WRAPPING MUSICALE
-    // =====================================================
-
-    while (finalMidi < min) {
-        finalMidi += 12;
-    }
-
-    while (finalMidi > max) {
-        finalMidi -= 12;
-    }
+    // WRAPPING MUSICALE
+    while (finalMidi < min) finalMidi += 12;
+    while (finalMidi > max) finalMidi -= 12;
 
     return Tone.Frequency(finalMidi, "midi").toNote();
 }
@@ -223,7 +228,7 @@ const LeadLegacy = {
                 const rawNote =
     normalizeNote(currentScale[noteIdx % 7], "guitarLead") + octave;
 
-const noteName = clampLeadRange(rawNote);
+const noteName = clampLeadRange(rawNote, name);
                 Tone.Transport.schedule(time => {
 
                     const duration = (nextStep - s) * stepTime;
