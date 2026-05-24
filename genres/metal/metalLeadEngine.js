@@ -277,6 +277,10 @@ guitarLead.triggerAttackRelease(
     dynamicVelocity
 );
 
+// ============================================================
+// ADVANCED MODES
+// ============================================================
+
 // 🎸 VIBRATO EPICO — solo per SOLO / BRIDGE / OUTRO
 if ((isSolo || name.includes("bridge") || name.includes("outro")) && duration > 0.3) {
     try {
@@ -434,7 +438,7 @@ if (isSolo && energy > 0.75 && complexity > 0.7) {
 }
 
 // 🤘 PALM-MUTE INTELLIGENTE — solo in sezioni aggressive
-if ((isSolo || name.includes("bridge")) 
+if (name.includes("solo") 
     && energy > 0.6 
     && texture < 0.4 
     && duration < 0.25) {
