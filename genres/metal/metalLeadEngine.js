@@ -2,6 +2,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
+import { leadVibrato } from "./metalInstruments.js";
 
 // Importiamo librerie e enhancer dal tuo utils
 import {
