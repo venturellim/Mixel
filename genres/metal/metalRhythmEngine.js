@@ -2,7 +2,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
 
-console.log("metalRhythmEngine.js ver. 015.3 loaded");
+console.log("metalRhythmEngine.js ver. 016 loaded");
 
 export function scheduleRhythm(section, progression, instruments, params, rand, measureDur, nextSectionRoot, score) {
     const { drums, guitarPalm, guitarOpen, bass } = instruments;
