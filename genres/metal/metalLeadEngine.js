@@ -15,7 +15,7 @@ import {
     shapeBridgeSolo
 } from "../../utils/leadEnhancers.js";
 
-console.log("metalLeadEngine.js ver. 090.2 loaded");
+console.log("metalLeadEngine.js ver. 090.3 loaded");
 
 function clampLeadRange(note, sectionName) {
 
@@ -267,7 +267,7 @@ try {
                     const duration = (nextStep - s) * stepTime;
                     const velocity = computeLeadVelocity(noteIdx, duration, isSolo, name.includes("bridge"));
                     const  microTiming = (Math.random() - 0.5) * 0.004;
-const finalTime = time + microTiming;
+let finalTime = time + microTiming;
 
 // 🧠 MICRO-TIMING UMANO AVANZATO — basato sull'altezza della nota
 if (texture > 0.5) {
