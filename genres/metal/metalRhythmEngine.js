@@ -2,29 +2,17 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
 
-console.log("metalRhythmEngine.js ver. 016 loaded");
+console.log("metalRhythmEngine.js ver. 015.3 loaded");
 
 export function scheduleRhythm(section, progression, instruments, params, rand, measureDur, nextSectionRoot, score) {
     const { drums, guitarPalm, guitarOpen, bass } = instruments;
     if (!drums || !guitarPalm || !bass) return;
 
     const name = section?.name?.toLowerCase() || "";
-    const isChorus = 
-    name.includes("chorus") ||
-    name.includes("chorus1") ||
-    name.includes("chorus2");
-
-const isPreChorus =
-    name.includes("prechorus") ||
-    name.includes("bridge") ||
-    name.includes("bridge1") ||
-    name.includes("bridge2");
-
-const isSolo =
-    name.includes("solopt1") ||
-    name.includes("solopt2") ||
-    name.includes("solopt3") ||
-    name.includes("solopt4");
+    const isChorus = name.includes("chorus") ||
+name.includes("solo") && !name.includes("pre"); 
+    const isPreChorus = name.includes("pre") ||
+name.includes("bridge");
     const isIntro = name.includes("intro") || name.includes("outro");
     const stepTime = measureDur / 16;
     const { energy = 0.5, brightness = 0.5, complexity = 0.5, texture = 0.5 } = params?.imageParams || {};
@@ -34,20 +22,8 @@ const isSolo =
     verse: ["gallop_classic", "gallop_triplet", "thrash_diamond", "palm_mute_chug", "motorhead_drive", "technical_sync", "meshuggah_ish", "breakdown_heavy", "jump_groove", "double_time_punk", "power_gallop", "groove_metal", "black_tremolo", "speed_metal", "death_roll", "thrash_skank"],
     prechorus: ["pre_build_up", "driving_eights", "march_to_war", "suspended_tension", "epic_buildup", "power_ballad"],
     bridge: ["pre_build_up", "driving_eights", "march_to_war", "suspended_tension", "epic_buildup", "power_ballad"],
-    chorus: ["helloween_speed", "chorus_pure_sustain", "chorus_sustain_hit", "anthem_half_time", "power_ride_groove", "double_kick_wall", "blast_beat_light", "epic_waltz_feel", "symphonic_blast", "power_gallop", "speed_metal", "power_ballad"],
-    solopt3 : ["helloween_speed", "power_ride_groove", "speed_metal"],
-    solopt4 : ["chorus_pure_sustain", "anthem_half_time", "epic_waltz_feel"]
+    chorus: ["helloween_speed", "chorus_pure_sustain", "chorus_sustain_hit", "anthem_half_time", "power_ride_groove", "double_kick_wall", "blast_beat_light", "epic_waltz_feel", "symphonic_blast", "power_gallop", "speed_metal", "power_ballad"]
 };
-
-grooves.solopt1 = grooves.chorus;
-grooves.solopt2 = grooves.chorus;
-
-grooves.bridge1 = grooves.prechorus;
-grooves.bridge2 = grooves.prechorus;
-
-grooves.chorus1 = grooves.chorus;
-grooves.chorus2 = grooves.chorus;
-
 
 // Definizione dei groove con caratteristiche
 const grooveCharacteristics = {
@@ -124,11 +100,7 @@ const grooveCharacteristics = {
 };
 
     const currentGroove = getGroove(
-    isIntro ? "intro" :
-    isSolo ? section.name :
-    isPreChorus ? "prechorus" :
-    isChorus ? "chorus" :
-    "verse",
+    isIntro ? "intro" : (isPreChorus ? "prechorus" : (isChorus ? "chorus" : "verse")),
     energy,
     brightness,
     complexity

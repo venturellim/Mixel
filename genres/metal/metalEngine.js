@@ -30,22 +30,19 @@ export function createMetalEngine(params, score) {
     const hasBridge = params.imageParams.complexity > 0.4; // bridge se complessità > 0.4
 
     const rawStructure = [
-    { name: "intro",     weight: 4 + (rand() * 4) },
-    { name: "verse",     weight: 8 },
-    { name: "prechorus", weight: preChorusWeight },
-    { name: "chorus1",   weight: 8 },
-    { name: "verse",     weight: 4 },
-    { name: "chorus1",   weight: 4 },
-    { name: "soloPt1",   weight: params.imageParams.complexity > 0.6 ? 8 : 0 },
-    { name: "soloPt2",   weight: params.imageParams.complexity > 0.6 ? 8 : 0 },
-    { name: "bridge1",   weight: hasBridge ? preChorusWeight : 0 },
-    { name: "soloPt3",   weight: params.imageParams.energy > 0.5 ? 8 : 0 },
-    { name: "soloPt4",   weight: params.imageParams.energy > 0.5 ? 8 : 0 },
-    { name: "bridge2",   weight: hasBridge ? preChorusWeight : 0 },
-    { name: "chorus2",   weight: 8 },
-    { name: "outro",     weight: 4 }
-];
-
+        { name: "intro",     weight: 4 + (rand() * 4) }, 
+        { name: "verse",     weight: 8 },
+        { name: "prechorus", weight: preChorusWeight },
+        { name: "chorus",    weight: 8 },
+        { name: "verse",     weight: 4 },
+        { name: "chorus",    weight: 4 },
+        { name: "soloPt1",    weight: params.imageParams.complexity > 0.6 ? 8 : 0 },
+        { name: "soloPt2",    weight: params.imageParams.complexity > 0.6 ? 8 : 0 },
+        //{ name: "solo",      weight: params.imageParams.complexity > 0.6 ? 16 : 0 },
+        { name: "bridge",    weight: hasBridge ? preChorusWeight : 0 },  // bridge solo se attivo
+        { name: "chorus",    weight: 8 },
+        { name: "outro",     weight: 4 }
+    ];
 
     // 2. QUADRATURA MUSICALE
     const finalStructure = rawStructure.map(s => {
@@ -67,38 +64,28 @@ export function createMetalEngine(params, score) {
     // FORZA PROGRESSIONE PER BRIDGE (usa la stessa del prechorus)
     // ============================================================
     const preChorusSection = structure.sections.find(s => s.name === "prechorus");
-    const bridgeSection  = structure.sections.find(s => s.name === "bridge"  || s.name === "bridge1" || s.name === "bridge2");
-const chorusSection = structure.sections.find(
-    s => ["chorus", "chorus1", "chorus2"].includes(s.name)
-);
-const soloPt1Section = structure.sections.find(s => s.name === "soloPt1");
+    const bridgeSection = structure.sections.find(s => s.name === "bridge");
+    const chorusSection = structure.sections.find(s => s.name === "chorus");
+    const soloPt1Section = structure.sections.find(s => s.name === "soloPt1");
 const soloPt2Section = structure.sections.find(s => s.name === "soloPt2");
-const soloPt3Section = structure.sections.find(s => s.name === "soloPt3");
-const soloPt4Section = structure.sections.find(s => s.name === "soloPt4");
-
     
-    // 1. Rimuovi le dichiarazioni duplicate di soloPt3Section/soloPt4Section
-// 2. Correggi il blocco bridge:
-if (bridgeSection && preChorusSection) {
-    const preChorusProg = progressions["prechorus"];
-    if (preChorusProg) {
-        ["bridge1", "bridge2"].forEach(bridgeName => {
-            progressions[bridgeName] = {
+    if (bridgeSection && preChorusSection) {
+        // Usa la progressione del prechorus per il bridge
+        const preChorusProg = progressions["prechorus"];
+        if (preChorusProg) {
+            progressions["bridge"] = {
                 root: preChorusProg.root,
                 progression: preChorusProg.progression
             };
-        });
-        console.log("🌉 BRIDGE1/BRIDGE2: usano progressione del PRECHORUS →", preChorusProg.progression);
-    } else {
-        // Fallback
-        ["bridge1", "bridge2"].forEach(bridgeName => {
-            progressions[bridgeName] = {
+            console.log("🌉 BRIDGE: usa progressione del PRECHORUS →", preChorusProg.progression);
+        } else {
+            // Fallback: progressione classica
+            progressions["bridge"] = {
                 root: metalParams.tonalCenter[0] || "A",
                 progression: ["i", "iv", "v", "i", "i", "iv", "v", "i"]
             };
-        });
+        }
     }
-}
 
 // FORZA PROGRESSIONE PER LE PARTI DELL'ASSOLO (usa la stessa del chorus)
 // ============================================================
@@ -126,40 +113,6 @@ if (soloPt1Section && chorusSection) {
         };
     }
 }
-// FORZA PROGRESSIONE PER SOLO PT3/PT4 (usa la stessa del CHORUS)
-if ((soloPt3Section || soloPt4Section) && chorusSection) {
-    const chorusProg = progressions["chorus"];
-    if (chorusProg) {
-        if (soloPt3Section) {
-            progressions["soloPt3"] = {
-                root: chorusProg.root,
-                progression: chorusProg.progression
-            };
-        }
-        if (soloPt4Section) {
-            progressions["soloPt4"] = {
-                root: chorusProg.root,
-                progression: chorusProg.progression
-            };
-        }
-        console.log("🎸 SOLO Pt3/Pt4: usa progressione del CHORUS →", chorusProg.progression);
-    } else {
-        const fallbackProg = ["i", "iv", "v", "vi", "i", "iv", "v", "i"];
-        if (soloPt3Section) {
-            progressions["soloPt3"] = {
-                root: metalParams.tonalCenter[0] || "A",
-                progression: fallbackProg
-            };
-        }
-        if (soloPt4Section) {
-            progressions["soloPt4"] = {
-                root: metalParams.tonalCenter[0] || "A",
-                progression: fallbackProg
-            };
-        }
-    }
-}
-
 
     const measureDur = (60 / metalParams.bpm) * 4;
 
@@ -169,10 +122,7 @@ if ((soloPt3Section || soloPt4Section) && chorusSection) {
     };
 
     structure.sections.forEach((sec, index) => {
-        const info =
-    progressions[sec.name] ||
-    (sec.name === "chorus1" ? progressions["chorus"] : null) ||
-    (sec.name === "chorus2" ? progressions["chorus"] : null);
+        const info = progressions[sec.name];
         const sectionRoot = info?.root || metalParams.tonalCenter[0] || "E";
         const degrees = info?.progression || ["i"];
 
