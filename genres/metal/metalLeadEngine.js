@@ -15,7 +15,7 @@ import {
     shapeBridgeSolo
 } from "../../utils/leadEnhancers.js";
 
-console.log("metalLeadEngine.js ver. 090 loaded");
+console.log("metalLeadEngine.js ver. 090.1 loaded");
 
 function clampLeadRange(note, sectionName) {
 
@@ -222,13 +222,36 @@ const LeadLegacy = {
                 const absoluteTime = measureStartTime + s * stepTime;
                 const nextStep = currentPattern[i + 1] ?? 16;
 
-                const noteIdx = currentMelody[i % currentMelody.length];
-                const octave = isChorus || isSolo ? 5 : 4;
-                //const noteName = normalizeNote(currentScale[noteIdx % 7], "guitarLead") + octave;
-                const rawNote =
-    normalizeNote(currentScale[noteIdx % 7], "guitarLead") + octave;
+                // Se per qualche motivo la melodia è vuota, saltiamo tutta la misura
+if (!currentMelody || currentMelody.length === 0) {
+    console.warn("🎸 Lead: currentMelody vuota in", section.name);
+    return;
+}
 
+const rawIdx = currentMelody[i % currentMelody.length];
+
+// Indice non valido → salta la nota
+if (typeof rawIdx !== "number" || !Number.isFinite(rawIdx)) {
+    console.warn("🎸 Lead: noteIdx non valido", rawIdx, "in", section.name);
+    return;
+}
+
+const noteIdx = rawIdx;
+
+// Nota di scala
+const scaleNote = currentScale[noteIdx % 7];
+
+// Se per qualche motivo è undefined → salta la nota
+if (!scaleNote) {
+    console.warn("🎸 Lead: scaleNote undefined per noteIdx", noteIdx, "in", section.name);
+    return;
+}
+
+const octave = (isChorus || isSolo) ? 5 : 4;
+
+let rawNote = normalizeNote(scaleNote, "guitarLead") + octave;
 const noteName = clampLeadRange(rawNote, name);
+
                 Tone.Transport.schedule(time => {
 
                     const duration = (nextStep - s) * stepTime;
