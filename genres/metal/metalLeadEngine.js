@@ -123,7 +123,12 @@ const LeadLegacy = {
         const isChorus = name.includes("chorus") && !name.includes("pre");
         const isPreChorus = name.includes("pre");
         const isIntro = name.includes("intro") || name.includes("outro");
-        const isSolo = name.includes("soloPt1") || name.includes("soloPt2") || name.includes("bridge");
+        const isSolo =
+    name.includes("solopt1") ||
+    name.includes("solopt2") ||
+    name.includes("solopt3") ||
+    name.includes("solopt4") ||
+    name.includes("bridge");
         const isSoloPt2 = name.includes("solopt2");
         const isSoloPt3 = name.includes("solopt3");
         const isSoloPt4 = name.includes("solopt4");
@@ -188,7 +193,6 @@ const LeadLegacy = {
 
 
 if (isSoloPt3) {
-
     const basePattern = getPattern("chorus");
     currentPattern = applyLeadEnhancer(basePattern, "enhanceRhythmPattern", enhancerContext);
     currentPattern = applyLeadEnhancer(currentPattern, "addAnticipation", enhancerContext);
@@ -206,7 +210,6 @@ if (isSoloPt3) {
 }
 
 else if (isSoloPt4) {
-
     const basePattern = getPattern("prechorus");
     currentPattern = applyLeadEnhancer(basePattern, "enhanceRhythmPattern", enhancerContext);
 
@@ -298,7 +301,10 @@ if (!scaleNote || typeof scaleNote !== "string") {
     return;
 }
 
-const octave = (isChorus || isSolo) ? 5 : 4;
+const octave =
+    (isSoloPt3 || isSoloPt4) ? 5 :
+    (isChorus || isSolo) ? 5 :
+    4;
 
 let rawNote;
 try {
