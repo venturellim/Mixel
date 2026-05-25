@@ -15,7 +15,7 @@ import {
     shapeBridgeSolo
 } from "../../utils/leadEnhancers.js";
 
-console.log("metalLeadEngine.js ver. 090.1 loaded");
+console.log("metalLeadEngine.js ver. 090.2 loaded");
 
 function clampLeadRange(note, sectionName) {
 
@@ -230,7 +230,6 @@ if (!currentMelody || currentMelody.length === 0) {
 
 const rawIdx = currentMelody[i % currentMelody.length];
 
-// Indice non valido → salta la nota
 if (typeof rawIdx !== "number" || !Number.isFinite(rawIdx)) {
     console.warn("🎸 Lead: noteIdx non valido", rawIdx, "in", section.name);
     return;
@@ -238,19 +237,30 @@ if (typeof rawIdx !== "number" || !Number.isFinite(rawIdx)) {
 
 const noteIdx = rawIdx;
 
-// Nota di scala
 const scaleNote = currentScale[noteIdx % 7];
 
-// Se per qualche motivo è undefined → salta la nota
-if (!scaleNote) {
-    console.warn("🎸 Lead: scaleNote undefined per noteIdx", noteIdx, "in", section.name);
+if (!scaleNote || typeof scaleNote !== "string") {
+    console.warn("🎸 Lead: scaleNote undefined/invalid", scaleNote, "per noteIdx", noteIdx, "in", section.name);
     return;
 }
 
 const octave = (isChorus || isSolo) ? 5 : 4;
 
-let rawNote = normalizeNote(scaleNote, "guitarLead") + octave;
-const noteName = clampLeadRange(rawNote, name);
+let rawNote;
+try {
+    rawNote = normalizeNote(scaleNote, "guitarLead") + octave;
+} catch (e) {
+    console.warn("🎸 Lead: normalizeNote ha lanciato", e, "per", scaleNote, "in", section.name);
+    return;
+}
+
+let noteName;
+try {
+    noteName = clampLeadRange(rawNote, name);
+} catch (e) {
+    console.warn("🎸 Lead: clampLeadRange ha lanciato", e, "per", rawNote, "in", section.name);
+    return;
+}
 
                 Tone.Transport.schedule(time => {
 
