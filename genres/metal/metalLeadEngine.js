@@ -15,7 +15,7 @@ import {
     shapeBridgeSolo
 } from "../../utils/leadEnhancers.js";
 
-console.log("metalLeadEngine.js ver. 089.1 loaded");
+console.log("metalLeadEngine.js ver. 090 loaded");
 
 function clampLeadRange(note, sectionName) {
 
@@ -277,6 +277,10 @@ guitarLead.triggerAttackRelease(
     dynamicVelocity
 );
 
+// ============================================================
+// ADVANCED MODES
+// ============================================================
+
 // 🎸 VIBRATO EPICO — solo per SOLO / BRIDGE / OUTRO
 if ((isSolo || name.includes("bridge") || name.includes("outro")) && duration > 0.3) {
     try {
@@ -395,6 +399,320 @@ if (isSolo && section.isLast && energy > 0.6 && complexity > 0.5) {
         if (score) score.addNote("Lead", noteName, section.name + " (heroic)");
     } catch (e) {}
 }
+
+// ⚡ MODALITÀ SHREDDER — solo nei soli molto energici e complessi
+if (isSolo && energy > 0.75 && complexity > 0.7) {
+    try {
+        // 1) Vibrato più veloce e profondo
+        leadVibrato.depth.rampTo(0.28, 0.03);
+        leadVibrato.frequency.rampTo(7.5, 0.03);
+
+        // 2) Micro-bending più aggressivo
+        const pr = guitarLead.playbackRate;
+        const shredBend = 1 + ((Math.random() * 0.05) - 0.025); // ±2.5%
+        const t1s = finalTime + 0.03;
+        const t2s = t1s + 0.06;
+        pr.setValueAtTime(shredBend, t1s);
+        pr.linearRampToValueAtTime(1.0, t2s);
+
+        // 3) Velocity più incisiva
+        dynamicVelocity *= 1.15;
+
+        // 4) Scale-run extra (2 note veloci)
+        const baseMidi = Tone.Frequency(noteName).toMidi();
+        for (let r = 1; r <= 2; r++) {
+            const runMidi = baseMidi + (r * 2); // passi di seconda
+            const runNote = Tone.Frequency(runMidi, "midi").toNote();
+            const runTime = finalTime + (r * 0.035);
+
+            guitarLead.triggerAttackRelease(
+                runNote,
+                duration * 0.35,
+                runTime,
+                dynamicVelocity * 0.9
+            );
+
+            if (score) score.addNote("Lead", runNote, section.name + " (shred)");
+        }
+    } catch (e) {}
+}
+
+// 🤘 PALM-MUTE INTELLIGENTE — solo in sezioni aggressive
+if (name.includes("solo") 
+    && energy > 0.6 
+    && texture < 0.4 
+    && duration < 0.25) {
+
+    try {
+        // 1) Durata più breve (palm-mute)
+        const pmDuration = duration * 0.55;
+
+        // 2) Velocity più secca e incisiva
+        const pmVelocity = dynamicVelocity * 1.18;
+
+        // 3) Attacco più forte (leggero anticipo)
+        const pmTime = finalTime - 0.005;
+
+        guitarLead.triggerAttackRelease(
+            noteName,
+            pmDuration,
+            pmTime,
+            pmVelocity
+        );
+
+        if (score) score.addNote("Lead", noteName, section.name + " (palm)");
+    } catch (e) {}
+}
+
+// 🏰 ARMONIZZAZIONE A QUINTE — solo nei chorus luminosi ed energici
+if (name.includes("chorus") 
+    && energy > 0.6 
+    && brightness > 0.5 
+    && duration > 0.25 
+    && (m % 2 === 1)) {
+
+    try {
+        // intervallo: quinta giusta (+7 semitoni)
+        const interval5 = 7;
+
+        // calcolo nota armonizzata
+        const harmMidi5 = Tone.Frequency(noteName).toMidi() + interval5;
+        const harmNote5 = Tone.Frequency(harmMidi5, "midi").toNote();
+
+        // leggero ritardo per larghezza stereo
+        const harmTime5 = finalTime + 0.012;
+
+        guitarLead.triggerAttackRelease(
+            harmNote5,
+            duration,
+            harmTime5,
+            dynamicVelocity * 0.65 // più morbida
+        );
+
+        if (score) score.addNote("Lead", harmNote5, section.name + " (fifth)");
+    } catch (e) {}
+}
+
+// 🎼 SWEEP-PICKING GENERATOR — solo nei soli molto energici e complessi
+if (isSolo && energy > 0.8 && complexity > 0.7 && duration > 0.25) {
+    try {
+        const baseMidi = Tone.Frequency(noteName).toMidi();
+
+        // Triade: 1 - 3 - 5
+        const intervals = [0, 4, 7]; // maggiore (perfetto per sweep)
+        // Se vuoi minor: [0, 3, 7]
+
+        intervals.forEach((intv, idx) => {
+            const sweepMidi = baseMidi + intv;
+            const sweepNote = Tone.Frequency(sweepMidi, "midi").toNote();
+            const sweepTime = finalTime + (idx * 0.04); // progressivo
+
+            guitarLead.triggerAttackRelease(
+                sweepNote,
+                duration * 0.35,
+                sweepTime,
+                dynamicVelocity * 0.85
+            );
+
+            if (score) score.addNote("Lead", sweepNote, section.name + " (sweep)");
+        });
+    } catch (e) {}
+}
+
+// 🎻 MODALITÀ NEO-CLASSICAL — solo nei soli scuri e drammatici
+if (isSolo && brightness < 0.4 && texture > 0.6 && duration > 0.25) {
+    try {
+        // 1) Vibrato più lento ma profondo (drammatico)
+        leadVibrato.depth.rampTo(0.22, 0.05);
+        leadVibrato.frequency.rampTo(5.2, 0.05);
+
+        // 2) Mini-arpeggio diminuito (1 - ♭3 - ♭5)
+        const baseMidi = Tone.Frequency(noteName).toMidi();
+        const diminished = [0, 3, 6];
+
+        diminished.forEach((intv, idx) => {
+            const neoMidi = baseMidi + intv;
+            const neoNote = Tone.Frequency(neoMidi, "midi").toNote();
+            const neoTime = finalTime + (idx * 0.045);
+
+            guitarLead.triggerAttackRelease(
+                neoNote,
+                duration * 0.35,
+                neoTime,
+                dynamicVelocity * 0.88
+            );
+
+            if (score) score.addNote("Lead", neoNote, section.name + " (neo)");
+        });
+
+        // 3) Cromatismo discendente (tipico Malmsteen)
+        const chromMidi = baseMidi - 1;
+        const chromNote = Tone.Frequency(chromMidi, "midi").toNote();
+        const chromTime = finalTime + 0.14;
+
+        guitarLead.triggerAttackRelease(
+            chromNote,
+            duration * 0.3,
+            chromTime,
+            dynamicVelocity * 0.75
+        );
+
+        if (score) score.addNote("Lead", chromNote, section.name + " (chrom)");
+    } catch (e) {}
+}
+
+// 👻 GHOST-NOTES LEAD — micro-anticipazioni realistiche
+if (duration > 0.3 && energy > 0.4 && !(isSolo && complexity > 0.8)) {
+    try {
+        // 1) Tempo della ghost-note (20–40ms prima)
+        const ghostTime = finalTime - (0.02 + Math.random() * 0.02);
+
+        // 2) Pitch: stessa nota o semitono sotto
+        const baseMidi = Tone.Frequency(noteName).toMidi();
+        const ghostMidi = Math.random() < 0.5 ? baseMidi : baseMidi - 1;
+        const ghostNote = Tone.Frequency(ghostMidi, "midi").toNote();
+
+        // 3) Velocity molto bassa
+        const ghostVel = dynamicVelocity * 0.35;
+
+        // 4) Durata brevissima
+        const ghostDur = duration * 0.25;
+
+        guitarLead.triggerAttackRelease(
+            ghostNote,
+            ghostDur,
+            ghostTime,
+            ghostVel
+        );
+
+        if (score) score.addNote("Lead", ghostNote, section.name + " (ghost)");
+    } catch (e) {}
+}
+
+// 🎸 MODALITÀ TWIN LEAD — call & response + alternanza
+if ((isSolo || name.includes("chorus")) 
+    && energy > 0.5 
+    && duration > 0.25 
+    && (i % 4 === 0)) {
+
+    try {
+        // 1) Risposta leggermente ritardata (call & response)
+        const respTime = finalTime + (0.04 + Math.random() * 0.02);
+
+        // 2) Pitch della risposta: stessa nota o terza sopra
+        const baseMidi = Tone.Frequency(noteName).toMidi();
+        const respMidi = Math.random() < 0.5 ? baseMidi : baseMidi + 4;
+        const respNote = Tone.Frequency(respMidi, "midi").toNote();
+
+        // 3) Velocity più morbida
+        const respVel = dynamicVelocity * 0.7;
+
+        // 4) Durata leggermente più breve
+        const respDur = duration * 0.85;
+
+        guitarLead.triggerAttackRelease(
+            respNote,
+            respDur,
+            respTime,
+            respVel
+        );
+
+        if (score) score.addNote("Lead", respNote, section.name + " (twin)");
+    } catch (e) {}
+}
+
+// 🔥 FINAL BOSS SOLO — climax assoluto dell'ultimo solo
+if (isSolo && section.isLast && energy > 0.7 && complexity > 0.6 && duration > 0.25) {
+    try {
+        // 1) Vibrato profondissimo e lento (drammatico)
+        leadVibrato.depth.rampTo(0.35, 0.05);
+        leadVibrato.frequency.rampTo(5.8, 0.05);
+
+        // 2) Bending larghissimo (Floyd Rose)
+        const pr = guitarLead.playbackRate;
+        const bendUp = 1 + (Math.random() * 0.06);  // +6%
+        const bendDown = 1 - (Math.random() * 0.04); // -4%
+
+        const t1 = finalTime + 0.05;
+        const t2 = t1 + 0.12;
+        const t3 = t2 + 0.12;
+
+        pr.setValueAtTime(bendUp, t1);
+        pr.linearRampToValueAtTime(bendDown, t2);
+        pr.linearRampToValueAtTime(1.0, t3);
+
+        // 3) Velocity più dinamica
+        dynamicVelocity *= 1.18;
+
+        // 4) Sustain più lungo
+        if (duration > 0.3) {
+            guitarLead.triggerAttackRelease(
+                noteName,
+                duration * 1.35,
+                finalTime,
+                dynamicVelocity * 0.92
+            );
+        }
+
+        // 5) Armonizzazione doppia (terza + quinta)
+        const baseMidi = Tone.Frequency(noteName).toMidi();
+        const intervals = [3, 7]; // terza + quinta
+
+        intervals.forEach((intv, idx) => {
+            const harmMidi = baseMidi + intv;
+            const harmNote = Tone.Frequency(harmMidi, "midi").toNote();
+            const harmTime = finalTime + (0.015 + idx * 0.01);
+
+            guitarLead.triggerAttackRelease(
+                harmNote,
+                duration,
+                harmTime,
+                dynamicVelocity * 0.6
+            );
+
+            if (score) score.addNote("Lead", harmNote, section.name + " (boss-harm)");
+        });
+
+        // 6) Scale-run finale (3 note)
+        for (let r = 1; r <= 3; r++) {
+            const runMidi = baseMidi + (r * 2);
+            const runNote = Tone.Frequency(runMidi, "midi").toNote();
+            const runTime = finalTime + (r * 0.045);
+
+            guitarLead.triggerAttackRelease(
+                runNote,
+                duration * 0.3,
+                runTime,
+                dynamicVelocity * 0.85
+            );
+
+            if (score) score.addNote("Lead", runNote, section.name + " (boss-run)");
+        }
+
+        // 7) Sweep finale (triade)
+        const sweep = [0, 4, 7];
+        sweep.forEach((intv, idx) => {
+            const swMidi = baseMidi + intv;
+            const swNote = Tone.Frequency(swMidi, "midi").toNote();
+            const swTime = finalTime + 0.18 + (idx * 0.035);
+
+            guitarLead.triggerAttackRelease(
+                swNote,
+                duration * 0.25,
+                swTime,
+                dynamicVelocity * 0.8
+            );
+
+            if (score) score.addNote("Lead", swNote, section.name + " (boss-sweep)");
+        });
+
+    } catch (e) {}
+}
+
+
+
+
+
                     Tone.Draw.schedule(() => {
                         if (score) score.addNote("Lead", noteName, section.name);
                     }, time);
