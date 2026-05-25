@@ -4,7 +4,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("common.js ver. 024.0 FIXED LOADER loaded");
+console.log("common.js ver. 024.1 BRIGHT GREEN LOADER loaded");
 
 // ======================================================
 // 🎚 MASTER BUS & MASTERING
@@ -23,7 +23,7 @@ export function logNote(instrumentName, note, time) {
 }
 
 // ======================================================
-// 🎨 LOADER WIN11 FLUIDO SENZA INTERRUZIONI (VERDE/BLU)
+// 🎨 LOADER WIN11 FLUIDO SENZA INTERRUZIONI (VERDE BRILLANTE/BLU)
 // ======================================================
 
 let win11Overlay = null;
@@ -71,21 +71,26 @@ function injectWin11LoaderStyle() {
         ".win11-subtitle { font-size: 13px; color: rgba(255, 255, 255, 0.6); margin-bottom: 20px; }" +
         ".win11-bar-container { background: rgba(255, 255, 255, 0.1); border-radius: 10px; height: 6px; overflow: hidden; margin-bottom: 8px; }" +
         
-        // Transizione ultra rapida a 0.1s per sincronia perfetta con la percentuale numerica
+        // Barra Blu Originale (Fase Strumenti)
         ".win11-progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #0a6eff, #3b82f6, #60a5fa); border-radius: 10px; transition: width 0.1s; position: relative; overflow: hidden; }" +
-        ".win11-progress-bar.dna-mode { background: linear-gradient(90deg, #10b981, #34d399, #6ee7b7) !important; }" +
+        // 🟢 NUOVO GRADIENTE VERDE IPER-BRILLANTE (Fase DNA)
+        ".win11-progress-bar.dna-mode { background: linear-gradient(90deg, #00c853, #00f5d4, #66ffa6) !important; }" +
         
         ".win11-progress-bar::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent); animation: win11-shimmer 1.5s infinite; transform: translateX(-100%); }" +
         "@keyframes win11-shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }" +
         ".win11-percent { font-size: 12px; font-weight: 500; color: #60a5fa; text-align: right; font-family: monospace; margin-bottom: 16px; }" +
-        ".win11-percent.dna-mode { color: #34d399 !important; }" +
+        // 🟢 Testo percentuale verde neon coordinato
+        ".win11-percent.dna-mode { color: #00f5d4 !important; text-shadow: 0 0 10px rgba(0, 245, 212, 0.3); }" +
+        
         ".win11-genre-label { font-size: 11px; color: rgba(255, 255, 255, 0.5); margin-bottom: 4px; text-align: left; }" +
         ".win11-genre-bar-container { background: rgba(255, 255, 255, 0.08); border-radius: 8px; height: 4px; overflow: hidden; margin-bottom: 4px; }" +
         ".win11-genre-progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #60a5fa, #3b82f6, #0a6eff); border-radius: 8px; transition: width 0.1s; }" +
         ".win11-genre-percent { font-size: 10px; color: #60a5fa; text-align: right; font-family: monospace; margin-bottom: 4px; }" +
         ".win11-instrument-label { font-size: 10px; color: rgba(255, 255, 255, 0.35); margin-top: 8px; text-align: left; }" +
         ".win11-instrument-name { font-size: 11px; color: #60a5fa; font-weight: 500; margin-top: 2px; text-align: left; min-height: 16px; }" +
-        ".win11-instrument-name.dna-mode { color: #34d399 !important; }" +
+        // 🟢 Testo etichette parametri verde neon coordinato
+        ".win11-instrument-name.dna-mode { color: #00f5d4 !important; }" +
+        
         ".win11-status { font-size: 11px; color: rgba(255, 255, 255, 0.4); margin-top: 16px; }" +
         ".win11-divider { margin: 12px 0 8px 0; border-top: 1px solid rgba(255, 255, 255, 0.1); }";
     document.head.appendChild(style);
@@ -221,7 +226,7 @@ export async function waitForInstruments(genreInstruments) {
     showWin11UI();
 
     // --------------------------------------------------
-    // FASE 1: ESTRAZIONE DNA IMMAGINE (7 Secondi, Barra Verde)
+    // FASE 1: ESTRAZIONE DNA IMMAGINE (7 Secondi, Barra Verde Brillante)
     // --------------------------------------------------
     loadLottieAnimation('DNAloader.json');
     
@@ -251,7 +256,6 @@ export async function waitForInstruments(genreInstruments) {
             
             var currentLabel = currentStep.label;
             
-            // Se nel frattempo il main ci ha passato i dati estratti veri, mostriamoli a video in tempo reale!
             if (activeAnalysisData) {
                 if (percent > 12 && percent <= 24) currentLabel = `Brightness: ${Number(activeAnalysisData.brightness).toFixed(3)}`;
                 else if (percent > 24 && percent <= 36) currentLabel = `Color Temp: ${Number(activeAnalysisData.colorTemperature).toFixed(3)}`;
@@ -284,7 +288,7 @@ export async function waitForInstruments(genreInstruments) {
     // --------------------------------------------------
     // FASE 2: CARICAMENTO STRUMENTI (7 Secondi, Barra Blu)
     // --------------------------------------------------
-    loadLottieAnimation('Instrumentsloader.json');
+    loadLottieAnimation('loader.json');
 
     var loadingQueue = [];
     var displayNames = {
@@ -314,7 +318,7 @@ export async function waitForInstruments(genreInstruments) {
     updateWin11UI(0, 0, "Inizializzazione", 0, 0, "Avvio...", "Caricamento strumenti", "Preparazione dei campioni...", "-", false);
     
     var startTime = Date.now();
-    var TOTAL_DURATION_MS = 7000; // Ridotta a 7 secondi su tua richiesta!
+    var TOTAL_DURATION_MS = 7000;
     
     var animationInterval = setInterval(function() {
         var elapsed = Date.now() - startTime;
@@ -369,7 +373,7 @@ export async function waitForInstruments(genreInstruments) {
     return loadingQueue;
 }
 
-// Conserva funzioni legacy per sicurezza
+// Funzioni utility e legacy invariate
 let count = 0;
 export function registerInstrumentLoaded(instrument) {
     count++;
