@@ -30,19 +30,22 @@ export function createMetalEngine(params, score) {
     const hasBridge = params.imageParams.complexity > 0.4; // bridge se complessità > 0.4
 
     const rawStructure = [
-        { name: "intro",     weight: 4 + (rand() * 4) }, 
-        { name: "verse",     weight: 8 },
-        { name: "prechorus", weight: preChorusWeight },
-        { name: "chorus",    weight: 8 },
-        { name: "verse",     weight: 4 },
-        { name: "chorus",    weight: 4 },
-        { name: "soloPt1",    weight: params.imageParams.complexity > 0.6 ? 8 : 0 },
-        { name: "soloPt2",    weight: params.imageParams.complexity > 0.6 ? 8 : 0 },
-        //{ name: "solo",      weight: params.imageParams.complexity > 0.6 ? 16 : 0 },
-        { name: "bridge",    weight: hasBridge ? preChorusWeight : 0 },  // bridge solo se attivo
-        { name: "chorus",    weight: 8 },
-        { name: "outro",     weight: 4 }
-    ];
+    { name: "intro",     weight: 4 + (rand() * 4) },
+    { name: "verse",     weight: 8 },
+    { name: "prechorus", weight: preChorusWeight },
+    { name: "chorus1",   weight: 8 },
+    { name: "verse",     weight: 4 },
+    { name: "chorus1",   weight: 4 },
+    { name: "soloPt1",   weight: params.imageParams.complexity > 0.6 ? 8 : 0 },
+    { name: "soloPt2",   weight: params.imageParams.complexity > 0.6 ? 8 : 0 },
+    { name: "bridge1",   weight: hasBridge ? preChorusWeight : 0 },
+    { name: "soloPt3",   weight: params.imageParams.energy > 0.5 ? 8 : 0 },
+    { name: "soloPt4",   weight: params.imageParams.energy > 0.5 ? 8 : 0 },
+    { name: "bridge2",   weight: hasBridge ? preChorusWeight : 0 },
+    { name: "chorus2",   weight: 8 },
+    { name: "outro",     weight: 4 }
+];
+
 
     // 2. QUADRATURA MUSICALE
     const finalStructure = rawStructure.map(s => {

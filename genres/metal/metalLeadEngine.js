@@ -21,34 +21,51 @@ function clampLeadRange(note, sectionName) {
 
     const midi = Tone.Frequency(note).toMidi();
 
-    // RANGE DINAMICO IN BASE ALLA SEZIONE
-    const lowSections  = ["verse", "prechorus", "chorus"];
-    const highSections = ["intro", "solo", "bridge", "outro"];
-
     let min, max;
 
-    if (lowSections.some(s => sectionName.includes(s))) {
-        // RANGE GRAVE
+    if (
+        sectionName.includes("intro") ||
+        sectionName.includes("solopt3") ||
+        sectionName.includes("solopt4") ||
+        sectionName.includes("bridge2") ||
+        sectionName.includes("outro")
+    ) {
+        min = Tone.Frequency("C4").toMidi();
+        max = Tone.Frequency("C6").toMidi();
+    }
+
+    else if (
+        sectionName.includes("verse") ||
+        sectionName.includes("chorus1") ||
+        sectionName.includes("prechorus")
+    ) {
         min = Tone.Frequency("C2").toMidi();
         max = Tone.Frequency("C4").toMidi();
-    } else if (highSections.some(s => sectionName.includes(s))) {
-        // RANGE ACUTO
-        min = Tone.Frequency("C4").toMidi();
-        max = Tone.Frequency("D6").toMidi();
-    } else {
-        // fallback sicuro
+    }
+
+    else if (
+        sectionName.includes("solopt1") ||
+        sectionName.includes("solopt2") ||
+        sectionName.includes("bridge1") ||
+        sectionName.includes("chorus2")
+    ) {
+        min = Tone.Frequency("C3").toMidi();
+        max = Tone.Frequency("C5").toMidi();
+    }
+
+    else {
         min = Tone.Frequency("C2").toMidi();
         max = Tone.Frequency("C6").toMidi();
     }
 
     let finalMidi = midi;
 
-    // WRAPPING MUSICALE
     while (finalMidi < min) finalMidi += 12;
     while (finalMidi > max) finalMidi -= 12;
 
     return Tone.Frequency(finalMidi, "midi").toNote();
 }
+
 
 // ============================================================
 // FLOYD ROSE (rimane locale al metal)
@@ -106,8 +123,10 @@ const LeadLegacy = {
         const isChorus = name.includes("chorus") && !name.includes("pre");
         const isPreChorus = name.includes("pre");
         const isIntro = name.includes("intro") || name.includes("outro");
-        const isSolo = name.includes("solo") || name.includes("bridge");
+        const isSolo = name.includes("soloPt1") || name.includes("soloPt2") || name.includes("bridge");
         const isSoloPt2 = name.includes("solopt2");
+        const isSoloPt3 = name.includes("solopt3");
+        const isSoloPt4 = name.includes("solopt4");
 
         const stepTime = measureDur / 16;
 
@@ -167,7 +186,42 @@ const LeadLegacy = {
             let currentMelody;
             let moodName;
 
-            if (isSolo) {
+
+if (isSoloPt3) {
+
+    const basePattern = getPattern("chorus");
+    currentPattern = applyLeadEnhancer(basePattern, "enhanceRhythmPattern", enhancerContext);
+    currentPattern = applyLeadEnhancer(currentPattern, "addAnticipation", enhancerContext);
+
+    const fam = leadMelodicLibrary.active;
+    const melodyIndex = Math.floor(complexity * fam.length) % fam.length;
+    currentMelody = fam[melodyIndex];
+
+    currentMelody = applyLeadEnhancer(currentMelody, "addScaleRunBetweenPeaks", enhancerContext);
+    currentMelody = applyLeadEnhancer(currentMelody, "addOctaveDoubling", enhancerContext);
+    currentMelody = applyLeadEnhancer(currentMelody, "addTrills", enhancerContext);
+    currentMelody = applyLeadEnhancer(currentMelody, "addSlideEffect", enhancerContext);
+
+    moodName = "SOLO PT3 ⚡ CLIMAX";
+}
+
+else if (isSoloPt4) {
+
+    const basePattern = getPattern("prechorus");
+    currentPattern = applyLeadEnhancer(basePattern, "enhanceRhythmPattern", enhancerContext);
+
+    const fam = brightness > 0.5 ? leadMelodicLibrary.epic : leadMelodicLibrary.emotional;
+    const melodyIndex = Math.floor(brightness * fam.length) % fam.length;
+    currentMelody = fam[melodyIndex];
+
+    currentMelody = applyLeadEnhancer(currentMelody, "addEchoEffect", enhancerContext);
+    currentMelody = applyLeadEnhancer(currentMelody, "addOctaveDoubling", enhancerContext);
+    currentMelody = applyLeadEnhancer(currentMelody, "addScaleRunBetweenPeaks", enhancerContext);
+
+    moodName = "SOLO PT4 🏰 FINAL BOSS";
+}
+
+else if (isSolo) {
 
                 const basePattern = getPattern("chorus");
 
@@ -742,6 +796,37 @@ if (isSolo && section.isLast && energy > 0.7 && complexity > 0.6 && duration > 0
     } catch (e) {}
 }
 
+// 🎻 MODALITÀ MALMSTEEN — sweep a 5 note + microtonal bending
+if (isSoloPt3 || isSoloPt4) {
+    try {
+        const baseMidi = Tone.Frequency(noteName).toMidi();
+
+        // Sweep 5 note (triade + 2 passing tones)
+        const intervals = [0, 3, 7, 10, 12];
+
+        intervals.forEach((intv, idx) => {
+            const swMidi = baseMidi + intv;
+            const swNote = Tone.Frequency(swMidi, "midi").toNote();
+            const swTime = finalTime + (idx * 0.03);
+
+            guitarLead.triggerAttackRelease(
+                swNote,
+                duration * 0.25,
+                swTime,
+                dynamicVelocity * 0.85
+            );
+
+            if (score) score.addNote("Lead", swNote, section.name + " (malmsteen)");
+        });
+
+        // Microtonal bending
+        const pr = guitarLead.playbackRate;
+        const bend = 1 + ((Math.random() * 0.03) - 0.015);
+        pr.setValueAtTime(bend, finalTime + 0.02);
+        pr.linearRampToValueAtTime(1.0, finalTime + 0.12);
+
+    } catch (e) {}
+}
 
 
 
