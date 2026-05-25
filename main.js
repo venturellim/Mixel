@@ -1,14 +1,12 @@
 //
 // main.js - Versione VERTICALE/ORIZZONTALE
-// Router centrale dell'app: UI, caricamento immagine, analisi, parametri,
-// selezione genere, player, spectrum, FX panel.
-// Tutto il resto vive nei moduli dei generi.
+// Router centrale dell'app: UI, caricamento immagine, analisi, parametri...
 //
 
 import * as Tone from "https://esm.sh/tone";
 
-import { masterEQ, waitForInstruments } from "./common.js";
-import { analyzeImage } from "./imageAnalysis.js";
+import { masterEQ, waitForInstruments, setLoaderAnalysisData } from "./common.js";
+import { analyzeImage } from "./imageAnalysis.js"; // Rimane l'import classico originale!
 import { photoToMusicParams } from "./photoToMusicParams.js";
 import { createPianoEngine } from "./genres/piano/pianoEngine.js";
 import { createMetalEngine } from "./genres/metal/metalEngine.js";
@@ -17,62 +15,28 @@ import { createDanceEngine } from "./genres/dance/danceEngine.js";
 import { createFunkyEngine } from "./genres/funky/funkyEngine.js";
 import { scoreVisualizer } from "./scoreUI.js";
 
-console.log("main.js Ver. 018.1 loaded");
-
+console.log("main.js Ver. 019.5 STABLE LOADER loaded");
 
 let currentEngine = null;
 let currentGenre = null;
 let firstStart = 1;
 let scoreUI = null;
+let globalPhotoParams = null; // Memorizza i parametri strutturati per i generi
 
-const instrumentsByType = {
-    chitarre: [
-        "Guitar Palm Mute", "Guitar Open", "Guitar Lead",
-        "Guitar Mute", "Guitar Clean"
-    ],
-    bassi: [
-        "Bass Metal", "Bass Slap", "Bass Synth"
-    ],
-    batterie: [
-        "Drum Metal", "Drum Funky", "Timpani"
-    ],
-    tastiere: [
-        "Piano", "Clavinet", "Organo", "Korg Synth"
-    ],
-    fiati: [
-        "Trumpet", "Trombone", "Sax Alto"
-    ],
-    archi: [
-        "Violin", "Viola", "Cello", "Double Bass"
-    ],
-    synth: [
-        "Lead Saw", "Lead Synth Brass 1", "Lead Synth Brass 2",
-        "Sub Bass", "Bass Attack"
-    ],
-    pads: [
-        "Bells Pad", "Glass Pad", "Warm Pad", "Wave Pad", "StString Pad"
-    ],
-    fx: [
-        "Sweep", "Noise", "Fantasy", "Heaven", "Jump", "Hard For The Core"
-    ]
+const genreInstruments = {
+    dance: ["Bells Pad", "Fantasy Fx", "Glass Pad",  "Hard for the Core Fx", "Heaven Fx", "Jump Fx", "Synth Bass", "Lead Synth", "Noise Fx", "Organo", "Percussions", "Saw", "Shaku Pad", "So True Strig Pad", "Sweet Fx", "Synth Brass 1", "Synth Brass 2","Warm Pad", "Wave Pad"],
+    funky: ["Clavinet", "Funky Drum", "Guitar Clean", "Guitar Mute", "Noisy", "Sax Alto", "Slap Bass", "Trombone", "Trumpet"], 
+    metal: ["Bass", "Drums", "Lead Guitar", "Rhythm Guitar Open", "Rhythm Guitar Palm"],
+    orchestra: ["Basses", "Cellos", "Violas", "Violins", "Timpani"],
+    piano: ["Grand Piano"]
 };
-
 
 const miniVideo = document.querySelector('.video-mini-wrapper video'); 
 
-
-// -------------------------------------------------------------
-// Error handler globale
-// -------------------------------------------------------------
 window.onerror = function (msg, url, line, col, error) {
     console.log("🔥 ERRORE:", msg, " @", url, ":", line, ":", col);
-    console.log("STACK:", error?.stack);
 };
 
-
-// -------------------------------------------------------------
-// Inizializzazione UI
-// -------------------------------------------------------------
 window.addEventListener("DOMContentLoaded", () => {
     initFileLoader();
     initGenrePanel();
@@ -82,9 +46,6 @@ window.addEventListener("DOMContentLoaded", () => {
     resizeCanvas();
 });
 
-// -------------------------------------------------------------
-// File Loader + Preview
-// -------------------------------------------------------------
 function initFileLoader() {
     const fileInput = document.getElementById("fileInput");
     const previewImage = document.getElementById("previewImage");
@@ -108,27 +69,19 @@ function initFileLoader() {
             previewImage.src = img.src;
             previewImage.classList.remove("hidden");
             
-            // RILEVA ASPECT RATIO DELL'IMMAGINE
-            const isLandscape = img.width > img.height;
-            if (isLandscape) {
+            if (img.width > img.height) {
                 previewImage.classList.add("landscape-img");
                 previewImage.classList.remove("portrait-img");
-                console.log("📷 Immagine orizzontale rilevata");
             } else {
                 previewImage.classList.add("portrait-img");
                 previewImage.classList.remove("landscape-img");
-                console.log("📷 Immagine verticale rilevata");
             }
             
             heroLogoContainer.style.display = "none";
             btnElabora.classList.remove("hidden");
-            
             spectrumPanel.classList.add("hidden");
             playerPanel.classList.add("hidden");
-            
-            // Rimuovi zoom se presente
-            previewImage.classList.remove("zoomed-out");
-            previewImage.classList.remove("moved-up");
+            previewImage.classList.remove("zoomed-out", "moved-up");
             
             if (miniVideo) {
                 miniVideo.pause();
@@ -140,26 +93,35 @@ function initFileLoader() {
     });
 }
 
-// -------------------------------------------------------------
-// Pannello generi
-// -------------------------------------------------------------
 function initGenrePanel() {
     const btnElabora = document.getElementById("btnElabora");
     const genrePanel = document.getElementById("genrePanel");
     const closeGenrePanel = document.getElementById("closeGenrePanel");
+    const previewImage = document.getElementById("previewImage");
 
     btnElabora.addEventListener("click", async () => {
-        
         closeMixelUI();
-        miniVideo?.play().catch(e => console.log("Autoplay video bloccato:", e));
+        miniVideo?.play().catch(e => console.log("Video bloccato:", e));
         requestWakeLock();
         
         if (firstStart !== 1) {
             resetAudio();
             firstStart = 0;
         } else {
-        await waitForInstruments(instrumentsByType);
-        firstStart = 0;
+            // 🛠 L'ANALISI RIMANE INTEGRA QUI: 
+            // 1. Calcola l'analisi visiva grezza
+            const analysis = analyzeImage(previewImage);
+            
+            // 2. La manda subito a common.js per popolare i testi della barra verde
+            setLoaderAnalysisData(analysis);
+            
+            // 3. Genera i parametri musicali globali necessari per gli engine musicali
+            globalPhotoParams = photoToMusicParams(analysis);
+            
+            // 4. Avvia l'interfaccia unica del loader (7s verde + 7s blu)
+            await waitForInstruments(genreInstruments);
+            
+            firstStart = 0;
         }
         
         genrePanel.classList.add("show");
@@ -178,42 +140,31 @@ function initGenrePanel() {
     });
 }
 
-// -------------------------------------------------------------
-// Selezione genere
-// -------------------------------------------------------------
 async function selectGenre(genre) {
     currentGenre = genre;
     if (scoreUI) scoreUI.setTheme(genre);
 
     const previewImage = document.getElementById("previewImage");
 
-    const analysis = await analyzeImage(previewImage);
-    const params = photoToMusicParams(analysis);
+    // Fallback di sicurezza se per qualche motivo globalPhotoParams non si è popolato
+    if (!globalPhotoParams) {
+        const analysis = analyzeImage(previewImage);
+        globalPhotoParams = photoToMusicParams(analysis);
+    }
 
-    if (genre === "dance") {
-        currentEngine = await createDanceEngine(params, scoreUI);
-    }
-    if (genre === "funky") {
-        currentEngine = await createFunkyEngine(params, scoreUI);
-    }
-    if (genre === "metal") {
-        currentEngine = await createMetalEngine(params, scoreUI);
-    }
-    if (genre === "orchestra") {
-        currentEngine = await createOrchestraEngine(params, scoreUI);
-    }
-    if (genre === "piano") {
-        currentEngine = await createPianoEngine(params, scoreUI);
-    }
+    // Passa i parametri pronti agli engine dei vari generi (rimane identico al tuo codice)
+    if (genre === "dance") currentEngine = await createDanceEngine(globalPhotoParams, scoreUI);
+    if (genre === "funky") currentEngine = await createFunkyEngine(globalPhotoParams, scoreUI);
+    if (genre === "metal") currentEngine = await createMetalEngine(globalPhotoParams, scoreUI);
+    if (genre === "orchestra") currentEngine = await createOrchestraEngine(globalPhotoParams, scoreUI);
+    if (genre === "piano") currentEngine = await createPianoEngine(globalPhotoParams, scoreUI);
 
     if (!currentEngine) {
         console.error("❌ Engine non creato!");
         return;
     }
 
-    // Zoom-out dell'immagine dopo la selezione del genere
     previewImage.classList.add("zoomed-out");
-
     initPlayerUI();
     drawSpectrum();
     initFxPanel(currentEngine.mixerData);
@@ -222,9 +173,6 @@ async function selectGenre(genre) {
     setTimeout(() => document.getElementById("genrePanel").classList.add("hidden"), 400);
 }
 
-// -------------------------------------------------------------
-// Player UI
-// -------------------------------------------------------------
 function initPlayerUI() {
     const spectrumPanel = document.getElementById("spectrumPanel");
     const playerPanel = document.getElementById("playerPanel");
@@ -233,7 +181,6 @@ function initPlayerUI() {
     const closeScoreBtn = document.getElementById("closeScoreBtn");
     const rightPanel = document.querySelector(".right-panel");
     
-    // Aggiungi questa riga per rendere visibile il pannello destro in orizzontale
     if (rightPanel) rightPanel.classList.add("visible");
     
     spectrumPanel.classList.remove("hidden");
@@ -260,10 +207,8 @@ function initPlayerUI() {
     playBtn.onclick = async () => {
         const overlay = document.getElementById("loadingOverlay");
         if (overlay) overlay.style.display = "flex";
-
         await Tone.start();
         await Tone.loaded();
-
         if (overlay) overlay.style.display = "none";
         
         currentEngine.play();
@@ -272,22 +217,17 @@ function initPlayerUI() {
     };
 
     pauseBtn.onclick = () => currentEngine?.pause();
-    
     stopBtn.onclick = () => {
-    if (currentEngine) {
-        currentEngine.stop();  // ferma la riproduzione
-    }
-    if (scoreUI) scoreUI.hide();
-    btnSpartito.classList.add("hidden");
-    btnSpartito.classList.remove("show-flex");
-};
+        if (currentEngine) currentEngine.stop();
+        if (scoreUI) scoreUI.hide();
+        btnSpartito.classList.add("hidden");
+        btnSpartito.classList.remove("show-flex");
+    };
     
     btnSpartito.onclick = () => {
         if (scoreUI) {
             scoreUI.show();
             if (closeScoreBtn) closeScoreBtn.style.display = "flex";
-        } else {
-            console.error("scoreUI non inizializzato!");
         }
     };
 
@@ -311,12 +251,8 @@ function initPlayerUI() {
     });
 }
 
-// -------------------------------------------------------------
-// Spectrum Analyzer
-// -------------------------------------------------------------
 const fft = new Tone.Analyser("fft", 256);
 Tone.Destination.connect(fft);
-
 const canvas = document.getElementById("spectrumCanvas");
 let ctx = null;
 let peaks = new Array(256).fill(0);
@@ -333,16 +269,13 @@ function resizeCanvas() {
 }
 
 function drawSpectrum() {
-    if (animationId) {
-        cancelAnimationFrame(animationId);
-    }
+    if (animationId) cancelAnimationFrame(animationId);
     
     function draw() {
         animationId = requestAnimationFrame(draw);
-        
         if (!canvas || !ctx) {
             if (canvas) ctx = canvas.getContext("2d");
-            if (!ctx) return;
+            return;
         }
         
         const rect = canvas.getBoundingClientRect();
@@ -354,81 +287,51 @@ function drawSpectrum() {
         
         const W = canvas.width;
         const H = canvas.height;
-        
         if (W === 0 || H === 0) return;
         
         const values = fft.getValue();
         ctx.clearRect(0, 0, W, H);
-        
         const barWidth = W / values.length;
         
         for (let i = 0; i < values.length; i++) {
             const v = values[i];
             const magnitude = Math.max(0, Math.min(1, (v + 120) / 120));
             const barHeight = magnitude * H;
-            
-            const startHue = 320;
-            const endHue = 220;
-            const hue = startHue + (endHue - startHue) * magnitude;
+            const hue = 320 + (220 - 320) * magnitude;
             ctx.fillStyle = `hsl(${hue}, 100%, 60%)`;
             
             const x = i * barWidth;
             const y = H - barHeight;
             ctx.fillRect(x, y, Math.max(1, barWidth - 1), barHeight);
             
-            if (barHeight > peaks[i]) {
-                peaks[i] = barHeight;
-            } else {
-                peaks[i] *= 0.97;
-            }
+            if (barHeight > peaks[i]) peaks[i] = barHeight;
+            else peaks[i] *= 0.97;
             
             ctx.fillStyle = "#FFFFFF";
-            const peakY = H - peaks[i];
-            ctx.fillRect(x, peakY - 2, Math.max(1, barWidth - 1), 2);
+            ctx.fillRect(x, H - peaks[i] - 2, Math.max(1, barWidth - 1), 2);
         }
     }
-    
     draw();
 }
 
-// -------------------------------------------------------------
-// FX Panel
-// -------------------------------------------------------------
 function initFxPanel(mixerData) {
     const fxPanel = document.getElementById("fxPanel");
     const btnFxPanel = document.getElementById("btnFxPanel");
     const closeFxPanel = document.getElementById("closeFxPanel");
 
-    if (btnFxPanel) {
-        btnFxPanel.onclick = () => fxPanel.classList.add("show");
-    }
-    if (closeFxPanel) {
-        closeFxPanel.onclick = () => fxPanel.classList.remove("show");
-    }
+    if (btnFxPanel) btnFxPanel.onclick = () => fxPanel.classList.add("show");
+    if (closeFxPanel) closeFxPanel.onclick = () => fxPanel.classList.remove("show");
 
     const eqLow = document.getElementById("eqLow");
     const eqMid = document.getElementById("eqMid");
     const eqHigh = document.getElementById("eqHigh");
 
-    if (eqLow) {
-        eqLow.addEventListener("input", e => {
-            masterEQ.low.value = Tone.dbToGain(Number(e.target.value));
-        });
-    }
-    if (eqMid) {
-        eqMid.addEventListener("input", e => {
-            masterEQ.mid.value = Tone.dbToGain(Number(e.target.value));
-        });
-    }
-    if (eqHigh) {
-        eqHigh.addEventListener("input", e => {
-            masterEQ.high.value = Tone.dbToGain(Number(e.target.value));
-        });
-    }
+    if (eqLow) eqLow.addEventListener("input", e => { masterEQ.low.value = Tone.dbToGain(Number(e.target.value)); });
+    if (eqMid) eqMid.addEventListener("input", e => { masterEQ.mid.value = Tone.dbToGain(Number(e.target.value)); });
+    if (eqHigh) eqHigh.addEventListener("input", e => { masterEQ.high.value = Tone.dbToGain(Number(e.target.value)); });
 
     const volumeContainer = document.getElementById("volumeControls");
     if (!volumeContainer || !mixerData || !mixerData.volumeMap) return;
-    
     volumeContainer.innerHTML = "";
 
     Object.entries(mixerData.volumeMap).forEach(([busName, label]) => {
@@ -445,9 +348,7 @@ function initFxPanel(mixerData) {
         slider.value = 0;
         slider.dataset.bus = busName;
 
-        slider.addEventListener("input", e => {
-            mixerData.instruments.setVolume(busName, Number(e.target.value));
-        });
+        slider.addEventListener("input", e => { mixerData.instruments.setVolume(busName, Number(e.target.value)); });
 
         const btnSolo = document.createElement("button");
         btnSolo.textContent = "Solo";
@@ -479,36 +380,22 @@ function initFxPanel(mixerData) {
     });
 }
 
-// -------------------------------------------------------------
-// Reset audio
-// -------------------------------------------------------------
 async function resetAudio() {
-    console.log("🔄 Reset audio in corso (solo Transport)...");
-    
     try {
-        // Ferma e resetta il Transport, ma NON chiudere il contesto
         Tone.Transport.stop();
         Tone.Transport.cancel();
         Tone.Transport.seconds = 0;
-        
-        // Non chiudere il contesto! Riavvia solo se necessario
-        if (Tone.context.state !== "running") {
-            await Tone.start();
-        }
-        
-        console.log("✅ Reset audio completato");
+        if (Tone.context.state !== "running") await Tone.start();
     } catch (e) {
         console.warn("⚠️ Errore durante reset audio:", e);
     }
 }
 
-// -------------------------------------------------------------
-// Reset App
-// -------------------------------------------------------------
 function resetAppState() {
     currentEngine?.stop();
     if (currentEngine?.score) currentEngine.score.hide(); 
     currentEngine = null;
+    globalPhotoParams = null;
     closeMixelUI();
     if (miniVideo) {
         miniVideo.pause();
@@ -519,20 +406,12 @@ function resetAppState() {
         resetAudio();
         firstStart = 0;
     }
-    // Rimuovi zoom dall'immagine
     const previewImage = document.getElementById("previewImage");
-    if (previewImage) {
-        previewImage.classList.remove("zoomed-out");
-        previewImage.classList.remove("moved-up");
-    }
-    // Nascondi pulsante chiusura spartito
+    if (previewImage) previewImage.classList.remove("zoomed-out", "moved-up");
     const closeScoreBtn = document.getElementById("closeScoreBtn");
     if (closeScoreBtn) closeScoreBtn.style.display = "none";
 }
 
-// -------------------------------------------------------------
-// UI animazioni
-// -------------------------------------------------------------
 function closeMixelUI() {
     const spectrumPanel = document.getElementById("spectrumPanel");
     const playerPanel = document.getElementById("playerPanel");
@@ -541,9 +420,7 @@ function closeMixelUI() {
     const closeScoreBtn = document.getElementById("closeScoreBtn");
     const rightPanel = document.querySelector(".right-panel");
     
-    // Rimuovi la visibilità del pannello destro
     if (rightPanel) rightPanel.classList.remove("visible");
-    
     if (spectrumPanel) spectrumPanel.classList.add("hidden");
     if (playerPanel) playerPanel.classList.add("hidden");
     if (btnSpartito) btnSpartito.classList.add("hidden");
@@ -551,23 +428,14 @@ function closeMixelUI() {
     if (closeScoreBtn) closeScoreBtn.style.display = "none";
 }
 
-// -------------------------------------------------------------
-// Wake Lock per schermo sempre acceso
-// -------------------------------------------------------------
 let wakeLock = null;
-
 async function requestWakeLock() {
     try {
         if ('wakeLock' in navigator) {
             wakeLock = await navigator.wakeLock.request('screen');
-            console.log("✅ Schermo bloccato: non si spegnerà.");
-            
-            wakeLock.addEventListener('release', () => {
-                console.log("Wake Lock rilasciato.");
-            });
         }
     } catch (err) {
-        console.error(`❌ Errore Wake Lock: ${err.name}, ${err.message}`);
+        console.error(`❌ Errore Wake Lock: ${err.message}`);
     }
 }
 
@@ -575,13 +443,9 @@ function releaseWakeLock() {
     if (wakeLock !== null) {
         wakeLock.release();
         wakeLock = null;
-        console.log("💤 Schermo libero: ora può spegnersi.");
     }
 }
 
-// -------------------------------------------------------------
-// Event listener per resize (canvas responsive)
-// -------------------------------------------------------------
 window.addEventListener('resize', () => {
     resizeCanvas();
     if (currentEngine) {
@@ -592,30 +456,18 @@ window.addEventListener('resize', () => {
     }
 });
 
-// Observer per ridimensionare canvas quando diventa visibile
 const observer = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
-        if (mutation.target.id === 'spectrumPanel' && 
-            mutation.type === 'attributes' && 
-            mutation.attributeName === 'class') {
-            if (!mutation.target.classList.contains('hidden')) {
-                setTimeout(resizeCanvas, 100);
-            }
+        if (mutation.target.id === 'spectrumPanel' && mutation.type === 'attributes' && mutation.attributeName === 'class') {
+            if (!mutation.target.classList.contains('hidden')) setTimeout(resizeCanvas, 100);
         }
     });
 });
 
 const spectrumPanelElement = document.getElementById("spectrumPanel");
-if (spectrumPanelElement) {
-    observer.observe(spectrumPanelElement, { attributes: true });
-}
+if (spectrumPanelElement) observer.observe(spectrumPanelElement, { attributes: true });
 
-// -------------------------------------------------------------
-// Pulisci animation frame alla chiusura
-// -------------------------------------------------------------
 window.addEventListener('beforeunload', () => {
-    if (animationId) {
-        cancelAnimationFrame(animationId);
-    }
+    if (animationId) cancelAnimationFrame(animationId);
     releaseWakeLock();
 });
