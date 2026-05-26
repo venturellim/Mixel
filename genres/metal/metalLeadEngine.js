@@ -15,7 +15,7 @@ import {
     shapeBridgeSolo
 } from "../../utils/leadEnhancers.js";
 
-console.log("metalLeadEngine.js ver. 090.3 loaded");
+console.log("metalLeadEngine.js ver. 090.4 loaded");
 
 function clampLeadRange(note, sectionName) {
 
@@ -363,37 +363,6 @@ if (name.includes("chorus") && energy > 0.7 && duration > 0.3 && (m % 2 === 0)) 
     } catch (e) {}
 }
 
-// 🎶 SCALE RUN INTELLIGENTE — Prechorus → Chorus
-if ((name.includes("prechorus") || name.includes("chorus")) 
-    && (i >= currentPattern.length - 2) 
-    && energy > 0.4 
-    && complexity > 0.4) {
-
-    try {
-        const scale = currentScale; // già calcolata nel tuo engine
-        const baseMidi = Tone.Frequency(noteName).toMidi();
-
-        // direzione della run
-        const direction = name.includes("prechorus") ? +1 : -1;
-
-        // 2 note veloci
-        for (let r = 1; r <= 2; r++) {
-            const runMidi = baseMidi + (direction * r * 2); // passi di seconda
-            const runNote = Tone.Frequency(runMidi, "midi").toNote();
-            const runTime = finalTime + (r * 0.05);
-
-            guitarLead.triggerAttackRelease(
-                runNote,
-                duration * 0.4,
-                runTime,
-                dynamicVelocity * 0.85
-            );
-
-            if (score) score.addNote("Lead", runNote, section.name + " (run)");
-        }
-    } catch (e) {}
-}
-
 // 🎤 HEROIC LEAD — solo finale epico
 if (isSolo && section.isLast && energy > 0.6 && complexity > 0.5) {
     try {
@@ -591,34 +560,6 @@ if (isSolo && brightness < 0.4 && texture > 0.6 && duration > 0.25) {
         );
 
         if (score) score.addNote("Lead", chromNote, section.name + " (chrom)");
-    } catch (e) {}
-}
-
-// 👻 GHOST-NOTES LEAD — micro-anticipazioni realistiche
-if (duration > 0.3 && energy > 0.4 && !(isSolo && complexity > 0.8)) {
-    try {
-        // 1) Tempo della ghost-note (20–40ms prima)
-        const ghostTime = finalTime - (0.02 + Math.random() * 0.02);
-
-        // 2) Pitch: stessa nota o semitono sotto
-        const baseMidi = Tone.Frequency(noteName).toMidi();
-        const ghostMidi = Math.random() < 0.5 ? baseMidi : baseMidi - 1;
-        const ghostNote = Tone.Frequency(ghostMidi, "midi").toNote();
-
-        // 3) Velocity molto bassa
-        const ghostVel = dynamicVelocity * 0.35;
-
-        // 4) Durata brevissima
-        const ghostDur = duration * 0.25;
-
-        guitarLead.triggerAttackRelease(
-            ghostNote,
-            ghostDur,
-            ghostTime,
-            ghostVel
-        );
-
-        if (score) score.addNote("Lead", ghostNote, section.name + " (ghost)");
     } catch (e) {}
 }
 
