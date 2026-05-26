@@ -5,7 +5,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-import { masterEQ, waitForInstruments, setLoaderAnalysisData } from "./common.js";
+import { masterEQ, waitLoader, setLoaderAnalysisData } from "./common.js";
 import { analyzeImage } from "./imageAnalysis.js"; // Rimane l'import classico originale!
 import { photoToMusicParams } from "./photoToMusicParams.js";
 import { createPianoEngine } from "./genres/piano/pianoEngine.js";
@@ -15,7 +15,7 @@ import { createDanceEngine } from "./genres/dance/danceEngine.js";
 import { createFunkyEngine } from "./genres/funky/funkyEngine.js";
 import { scoreVisualizer } from "./scoreUI.js";
 
-console.log("main.js Ver. 020 loaded");
+console.log("main.js Ver. 020.1 loaded");
 
 let currentEngine = null;
 let currentGenre = null;
@@ -106,19 +106,17 @@ function initGenrePanel() {
         closeMixelUI();
         miniVideo?.play().catch(e => console.log("Video bloccato:", e));
         requestWakeLock();
-        if (newImageLoaded === 1){ 
-            const analysis = analyzeImage(previewImage);
-            setLoaderAnalysisData(analysis);
-            globalPhotoParams = photoToMusicParams(analysis);
-            newImageLoaded = 0;
-            }
                     
         if (firstStart !== 1) {
             resetAudio();
             firstStart = 0;
-        } else {          
-            await waitForInstruments(genreInstruments);
-            
+        } if (newImageLoaded === 1){ 
+            const analysis = analyzeImage(previewImage);
+            setLoaderAnalysisData(analysis);
+            globalPhotoParams = photoToMusicParams(analysis);
+                     
+            await waitLoader(genreInstruments, firstStart);
+            newImageLoaded = 0;
             firstStart = 0;
         }
         

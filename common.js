@@ -4,7 +4,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("common.js ver. 024.1 BRIGHT GREEN LOADER loaded");
+console.log("common.js ver. 025 loaded");
 
 // ======================================================
 // 🎚 MASTER BUS & MASTERING
@@ -221,7 +221,7 @@ function hideWin11UI() {
 // 📦 CARICAMENTO STRUMENTI UNIFICATO
 // ======================================================
 
-export async function waitForInstruments(genreInstruments) {
+export async function waitLoader(genreInstruments, firstStart) {
     initWin11Loader();
     showWin11UI();
 
@@ -288,7 +288,9 @@ export async function waitForInstruments(genreInstruments) {
     // --------------------------------------------------
     // FASE 2: CARICAMENTO STRUMENTI (7 Secondi, Barra Blu)
     // --------------------------------------------------
-    loadLottieAnimation('loader.json');
+
+if {firstStart === 1) {
+loadLottieAnimation('loader.json');
 
     var loadingQueue = [];
     var displayNames = {
@@ -367,6 +369,7 @@ export async function waitForInstruments(genreInstruments) {
     clearInterval(animationInterval);
     
     updateWin11UI(100, 100, "Completato!", totalInstruments, totalInstruments, "Tutti gli strumenti pronti!", "Caricamento completato", "Pronto per suonare!", "✅ Completato!", false);
+    }
     await new Promise(function(r) { setTimeout(r, 500); });
     
     hideWin11UI();
