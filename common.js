@@ -289,7 +289,7 @@ export async function waitLoader(genreInstruments, firstStart) {
     // FASE 2: CARICAMENTO STRUMENTI (7 Secondi, Barra Blu)
     // --------------------------------------------------
 
-if {firstStart === 1) {
+if (firstStart === 1) {
 loadLottieAnimation('loader.json');
 
     var loadingQueue = [];

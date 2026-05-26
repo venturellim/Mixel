@@ -110,7 +110,9 @@ function initGenrePanel() {
         if (firstStart !== 1) {
             resetAudio();
             firstStart = 0;
-        } if (newImageLoaded === 1){ 
+        } 
+        
+        if (newImageLoaded === 1){ 
             const analysis = analyzeImage(previewImage);
             setLoaderAnalysisData(analysis);
             globalPhotoParams = photoToMusicParams(analysis);
