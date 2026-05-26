@@ -108,12 +108,11 @@ const LeadLegacy = {
         if (!guitarLead) return;
 
         const name = section?.name?.toLowerCase() || "";
-        const isChorus = name.includes("chorus") && !name.includes("pre") && !name.includes("End");
+        const isChorus = name.includes("chorus") && !name.includes("pre");
         const isPreChorus = name.includes("pre");
         const isIntro = name.includes("intro") || name.includes("outro");
         const isSolo = name.includes("solo") || name.includes("bridge");
         const isSoloPt2 = name.includes("solopt2");
-        const isEnd = name.includes("End")
 
         const stepTime = measureDur / 16;
 
@@ -137,7 +136,7 @@ const LeadLegacy = {
 
         const getMelodyFamily = () => {
             if (isPreChorus) return { name: "PRE-CHORUS 📈", data: leadMelodicLibrary.prechorus };
-            if (isChorus || isEnd) {
+            if (isChorus) {
                 return brightness > 0.5
                     ? { name: "EPIC 🏰", data: leadMelodicLibrary.epic }
                     : { name: "EMOTIONAL 💧", data: leadMelodicLibrary.emotional };
@@ -151,7 +150,6 @@ const LeadLegacy = {
         let sectionType =
             isIntro ? "intro" :
             isPreChorus ? "prechorus" :
-            isEnd ? "chorusEnd"
             isChorus ? "chorus" :
             "verse";
             
