@@ -15,11 +15,12 @@ import { createDanceEngine } from "./genres/dance/danceEngine.js";
 import { createFunkyEngine } from "./genres/funky/funkyEngine.js";
 import { scoreVisualizer } from "./scoreUI.js";
 
-console.log("main.js Ver. 019.5 STABLE LOADER loaded");
+console.log("main.js Ver. 020 loaded");
 
 let currentEngine = null;
 let currentGenre = null;
 let firstStart = 1;
+let newImageLoaded = 0;
 let scoreUI = null;
 let globalPhotoParams = null; // Memorizza i parametri strutturati per i generi
 
@@ -83,6 +84,8 @@ function initFileLoader() {
             playerPanel.classList.add("hidden");
             previewImage.classList.remove("zoomed-out", "moved-up");
             
+            newImageLoaded = 1;
+            
             if (miniVideo) {
                 miniVideo.pause();
                 miniVideo.currentTime = 0; 
@@ -103,22 +106,17 @@ function initGenrePanel() {
         closeMixelUI();
         miniVideo?.play().catch(e => console.log("Video bloccato:", e));
         requestWakeLock();
-        
+        if (newImageLoaded === 1){ 
+            const analysis = analyzeImage(previewImage);
+            setLoaderAnalysisData(analysis);
+            globalPhotoParams = photoToMusicParams(analysis);
+            newImageLoaded = 0;
+            }
+                    
         if (firstStart !== 1) {
             resetAudio();
             firstStart = 0;
-        } else {
-            // 🛠 L'ANALISI RIMANE INTEGRA QUI: 
-            // 1. Calcola l'analisi visiva grezza
-            const analysis = analyzeImage(previewImage);
-            
-            // 2. La manda subito a common.js per popolare i testi della barra verde
-            setLoaderAnalysisData(analysis);
-            
-            // 3. Genera i parametri musicali globali necessari per gli engine musicali
-            globalPhotoParams = photoToMusicParams(analysis);
-            
-            // 4. Avvia l'interfaccia unica del loader (7s verde + 7s blu)
+        } else {          
             await waitForInstruments(genreInstruments);
             
             firstStart = 0;

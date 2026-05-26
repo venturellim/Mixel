@@ -230,7 +230,7 @@ export async function waitForInstruments(genreInstruments) {
     // --------------------------------------------------
     loadLottieAnimation('DNAloader.json');
     
-    const dnaDuration = 7000;
+    const dnaDuration = 5000;
     const dnaStartTime = Date.now();
     
     const fallbackDnaSteps = [
