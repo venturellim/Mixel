@@ -42,6 +42,7 @@ export function createMetalEngine(params, score) {
         { name: "bridge",    weight: hasBridge ? preChorusWeight : 0 },  // bridge solo se attivo
         { name: "soloPt1",    weight: params.imageParams.complexity > 0.6 ? 8 : 0 },
         { name: "soloPt2",    weight: params.imageParams.complexity > 0.6 ? 8 : 0 },
+        { name: "bridge",    weight: hasBridge ? preChorusWeight : 0 },  // bridge solo se attivo
         { name: "chorus",    weight: 8 },
         { name: "outro",     weight: 4 }
     ];
