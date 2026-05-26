@@ -8,7 +8,7 @@ import { metalInstruments, metalVolumeMap } from "./metalInstruments.js";
 import { scheduleRhythm } from "./metalRhythmEngine.js";
 import { scheduleLead } from "./metalLeadEngine.js"; 
 
-console.log("metalEngine.js ver. 016.5 loaded");
+console.log("metalEngine.js ver. 017 loaded");
 
 export function createMetalEngine(params, score) {
     const rand = createSeededRandom(params.dna);
@@ -66,6 +66,7 @@ export function createMetalEngine(params, score) {
     const chorusSection = structure.sections.find(s => s.name === "chorus");
     const soloPt1Section = structure.sections.find(s => s.name === "soloPt1");
 const soloPt2Section = structure.sections.find(s => s.name === "soloPt2");
+    const chorusEndSection = structure.sections.find(s => s.name === "chorusEnd");
     
     if (bridgeSection && preChorusSection) {
         // Usa la progressione del prechorus per il bridge
@@ -111,6 +112,29 @@ if (soloPt1Section && chorusSection) {
         };
     }
 }
+
+// ============================================================
+// FORZA PROGRESSIONE PER CHORUSEND (usa la stessa del CHORUS)
+// ============================================================
+const chorusEndSection = structure.sections.find(s => s.name === "chorusEnd");
+
+if (chorusEndSection && chorusSection) {
+    const chorusProg = progressions["chorus"];
+    if (chorusProg) {
+        progressions["chorusEnd"] = {
+            root: chorusProg.root,
+            progression: chorusProg.progression
+        };
+        console.log("🎶 CHORUSEND: usa progressione del CHORUS →", chorusProg.progression);
+    } else {
+        const fallbackProg = ["i", "iv", "v", "vi", "i", "iv", "v", "i"];
+        progressions["chorusEnd"] = {
+            root: metalParams.tonalCenter[0] || "A",
+            progression: fallbackProg
+        };
+    }
+}
+
 
     const measureDur = (60 / metalParams.bpm) * 4;
 
