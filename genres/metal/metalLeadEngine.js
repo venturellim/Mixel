@@ -15,7 +15,7 @@ import {
     shapeBridgeSolo
 } from "../../utils/leadEnhancers.js";
 
-console.log("metalLeadEngine.js ver. 090.4 loaded");
+console.log("metalLeadEngine.js ver. 091 loaded");
 
 function clampLeadRange(note, sectionName) {
 
@@ -23,6 +23,7 @@ function clampLeadRange(note, sectionName) {
 
     // RANGE DINAMICO IN BASE ALLA SEZIONE
     const lowSections  = ["verse", "prechorus", "chorus"];
+    const midSections = ["chorusEnd"]
     const highSections = ["intro", "solo", "bridge", "outro"];
 
     let min, max;
@@ -31,6 +32,10 @@ function clampLeadRange(note, sectionName) {
         // RANGE GRAVE
         min = Tone.Frequency("C2").toMidi();
         max = Tone.Frequency("C4").toMidi();
+    } else if (midSections.some(s => sectionName.includes(s))) {
+        // RANGE MEDIO
+        min = Tone.Frequency("C3").toMidi();
+        max = Tone.Frequency("D5").toMidi();
     } else if (highSections.some(s => sectionName.includes(s))) {
         // RANGE ACUTO
         min = Tone.Frequency("C4").toMidi();
@@ -103,11 +108,12 @@ const LeadLegacy = {
         if (!guitarLead) return;
 
         const name = section?.name?.toLowerCase() || "";
-        const isChorus = name.includes("chorus") && !name.includes("pre");
+        const isChorus = name.includes("chorus") && !name.includes("pre") && !name.includes("End");
         const isPreChorus = name.includes("pre");
         const isIntro = name.includes("intro") || name.includes("outro");
         const isSolo = name.includes("solo") || name.includes("bridge");
         const isSoloPt2 = name.includes("solopt2");
+        const isEnd = name.includes("End")
 
         const stepTime = measureDur / 16;
 
@@ -131,7 +137,7 @@ const LeadLegacy = {
 
         const getMelodyFamily = () => {
             if (isPreChorus) return { name: "PRE-CHORUS 📈", data: leadMelodicLibrary.prechorus };
-            if (isChorus) {
+            if (isChorus || isEnd) {
                 return brightness > 0.5
                     ? { name: "EPIC 🏰", data: leadMelodicLibrary.epic }
                     : { name: "EMOTIONAL 💧", data: leadMelodicLibrary.emotional };
@@ -145,8 +151,10 @@ const LeadLegacy = {
         let sectionType =
             isIntro ? "intro" :
             isPreChorus ? "prechorus" :
+            isEnd ? "chorusEnd"
             isChorus ? "chorus" :
             "verse";
+            
 
         const getStrictScale = (root) => {
             const allNotes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];

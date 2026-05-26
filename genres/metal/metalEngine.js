@@ -8,7 +8,7 @@ import { metalInstruments, metalVolumeMap } from "./metalInstruments.js";
 import { scheduleRhythm } from "./metalRhythmEngine.js";
 import { scheduleLead } from "./metalLeadEngine.js"; 
 
-console.log("metalEngine.js ver. 016.4 loaded");
+console.log("metalEngine.js ver. 016.5 loaded");
 
 export function createMetalEngine(params, score) {
     const rand = createSeededRandom(params.dna);
@@ -37,7 +37,8 @@ export function createMetalEngine(params, score) {
         { name: "soloPt2",    weight: params.imageParams.complexity > 0.6 ? 8 : 0 },
         //{ name: "solo",      weight: params.imageParams.complexity > 0.6 ? 16 : 0 },
         { name: "bridge",    weight: hasBridge ? preChorusWeight : 0 },  // bridge solo se attivo
-        { name: "chorus",    weight: 8 },
+        { name: "chorus",    weight: 4 },
+        { name: "chorusEnd",    weight: 8 },
         { name: "outro",     weight: 4 }
     ];
 
