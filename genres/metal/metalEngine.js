@@ -7,8 +7,15 @@ import { generateSongProgressions, degreeToRoot } from "../../utils/musicTheory.
 import { metalInstruments, metalVolumeMap } from "./metalInstruments.js";
 import { scheduleRhythm } from "./metalRhythmEngine.js";
 import { scheduleLead } from "./metalLeadEngine.js"; 
+import { waitForInstruments } from "../../common.js";
 
-console.log("metalEngine.js ver. 017 loaded");
+console.log("metalEngine.js ver. 016.4 loaded");
+
+
+export async function waitMetalInstruments() {
+    const totalInstruments = 5; // guitarPalm, guitarOpen, guitarLead, bass, drums
+    await waitForInstruments(totalInstruments, "Metal");
+}
 
 export function createMetalEngine(params, score) {
     const rand = createSeededRandom(params.dna);
@@ -33,8 +40,8 @@ export function createMetalEngine(params, score) {
         { name: "soloPt2",    weight: params.imageParams.complexity > 0.6 ? 8 : 0 },
         //{ name: "solo",      weight: params.imageParams.complexity > 0.6 ? 16 : 0 },
         { name: "bridge",    weight: hasBridge ? preChorusWeight : 0 },  // bridge solo se attivo
-        { name: "soloPt3",    weight: params.imageParams.complexity > 0.6 ? 8 : 0 },
-        { name: "soloPt4",    weight: params.imageParams.complexity > 0.6 ? 8 : 0 },
+        { name: "soloPt1",    weight: params.imageParams.complexity > 0.6 ? 8 : 0 },
+        { name: "soloPt2",    weight: params.imageParams.complexity > 0.6 ? 8 : 0 },
         { name: "chorus",    weight: 8 },
         { name: "outro",     weight: 4 }
     ];
@@ -63,8 +70,6 @@ export function createMetalEngine(params, score) {
     const chorusSection = structure.sections.find(s => s.name === "chorus");
     const soloPt1Section = structure.sections.find(s => s.name === "soloPt1");
 const soloPt2Section = structure.sections.find(s => s.name === "soloPt2");
-const soloPt3Section = structure.sections.find(s => s.name === "soloPt3");
-const soloPt4Section = structure.sections.find(s => s.name === "soloPt4");
     
     if (bridgeSection && preChorusSection) {
         // Usa la progressione del prechorus per il bridge
@@ -108,40 +113,6 @@ if (soloPt1Section && chorusSection) {
             root: metalParams.tonalCenter[0] || "A",
             progression: fallbackProg
         };
-    }
-}
-
-// FORZA PROGRESSIONE PER SOLO PT3/PT4 (usa la stessa del CHORUS)
-if ((soloPt3Section || soloPt4Section) && chorusSection) {
-    const chorusProg = progressions["chorus"];
-    if (chorusProg) {
-        if (soloPt3Section) {
-            progressions["soloPt3"] = {
-                root: chorusProg.root,
-                progression: chorusProg.progression
-            };
-        }
-        if (soloPt4Section) {
-            progressions["soloPt4"] = {
-                root: chorusProg.root,
-                progression: chorusProg.progression
-            };
-        }
-        console.log("🎸 SOLO Pt3/Pt4: usa progressione del CHORUS →", chorusProg.progression);
-    } else {
-        const fallbackProg = ["i", "iv", "v", "vi", "i", "iv", "v", "i"];
-        if (soloPt3Section) {
-            progressions["soloPt3"] = {
-                root: metalParams.tonalCenter[0] || "A",
-                progression: fallbackProg
-            };
-        }
-        if (soloPt4Section) {
-            progressions["soloPt4"] = {
-                root: metalParams.tonalCenter[0] || "A",
-                progression: fallbackProg
-            };
-        }
     }
 }
 
