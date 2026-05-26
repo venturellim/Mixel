@@ -15,7 +15,7 @@ import {
     shapeBridgeSolo
 } from "../../utils/leadEnhancers.js";
 
-console.log("metalLeadEngine.js ver. 091 loaded");
+console.log("metalLeadEngine.js ver. 091.1 loaded");
 
 function clampLeadRange(note, sectionName) {
 
@@ -106,7 +106,7 @@ const LeadLegacy = {
         const isChorus = name.includes("chorus") && !name.includes("pre");
         const isPreChorus = name.includes("pre");
         const isIntro = name.includes("intro") || name.includes("outro");
-        const isSolo = name.includes("solopt1") || name.includes("bridge");
+        const isSolo = name.includes("solo") || name.includes("bridge");
         const isSoloPt2 = name.includes("solopt2");
         const isSoloPt3 = name.includes("solopt3");
         const isSoloPt4 = name.includes("solopt4");
