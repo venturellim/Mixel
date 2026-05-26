@@ -116,7 +116,6 @@ if (soloPt1Section && chorusSection) {
 // ============================================================
 // FORZA PROGRESSIONE PER CHORUSEND (usa la stessa del CHORUS)
 // ============================================================
-const chorusEndSection = structure.sections.find(s => s.name === "chorusEnd");
 
 if (chorusEndSection && chorusSection) {
     const chorusProg = progressions["chorus"];
