@@ -7,14 +7,9 @@ import { generateSongProgressions, degreeToRoot } from "../../utils/musicTheory.
 import { danceInstruments, danceVolumeMap } from "./danceInstruments.js";
 import { scheduleDanceRhythm } from "./danceRhythmEngine.js";
 import { scheduleDanceLead } from "./danceLeadEngine.js";
-import { waitForInstruments } from "../../common.js";
 import { scheduleDanceFx } from "./danceFxEngine.js";
 
 console.log("danceEngine.js ver. 008 loaded");
-
-export async function waitDanceInstruments() {
-    await waitForInstruments(19, "Dance");
-}
 
 // danceEngine.js — usa stile da danceParams
 export function createDanceEngine(params, score) {
