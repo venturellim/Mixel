@@ -22,7 +22,10 @@ let currentGenre = null;
 let firstStart = 1;
 let newImageLoaded = 0;
 let scoreUI = null;
-let globalPhotoParams = null; // Memorizza i parametri strutturati per i generi
+export let globalPhotoParams = null; // Memorizza i parametri strutturati per i generi
+
+// Export per debug mode
+export { selectGenre, globalPhotoParams };
 
 const genreInstruments = {
     dance: ["Bells Pad", "Fantasy Fx", "Glass Pad",  "Hard for the Core Fx", "Heaven Fx", "Jump Fx", "Synth Bass", "Lead Synth", "Noise Fx", "Organo", "Percussions", "Saw", "Shaku Pad", "So True Strig Pad", "Sweet Fx", "Synth Brass 1", "Synth Brass 2","Warm Pad", "Wave Pad"],
