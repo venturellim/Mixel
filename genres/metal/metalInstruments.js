@@ -2,7 +2,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("metalInstruments.js ver. 006 loaded");
+console.log("metalInstruments.js ver. 007 loaded");
 
 // ============================================================
 // 🎚 BUS SPECIFICI DEL METAL
@@ -11,11 +11,13 @@ export const guitarBus = new Tone.Gain(1);
 export const bassBus = new Tone.Gain(1);
 export const drumBus = new Tone.Gain(1);
 export const leadBus = new Tone.Gain(1);
+export const padBus = new Tone.Gain(1);
 
 const guitarEQ = new Tone.EQ3({ low: -4, mid: 2, high: 3 });
 const bassEQ   = new Tone.EQ3({ low: 4, mid: -2, high: -4 });
 const drumEQ   = new Tone.EQ3({ low: 2, mid: 1, high: 3 });
 const leadEQ   = new Tone.EQ3({ low: -3, mid: 2, high: 6 });
+const padEQ = new Tone.EQ3({ low: -2, mid: -1, high: 2 });
 
 const drumComp = new Tone.Compressor({
     threshold: -18,
@@ -24,11 +26,19 @@ const drumComp = new Tone.Compressor({
     release: 0.2
 });
 
+// --- RIVERBERO ---
+const hallReverb = new Tone.Reverb({
+    decay: 2.8,
+    preDelay: 0.01,
+    wet: 0.35
+}).toDestination();
+
 // Routing bus → EQ → master
 guitarBus.connect(guitarEQ).connect(masterEQ);
 bassBus.connect(bassEQ).connect(masterEQ);
 drumBus.connect(drumEQ).connect(drumComp).connect(masterEQ);
 leadBus.connect(leadEQ).connect(masterEQ);
+padBus.connect(padEQ).connect(hallReverb).connect(masterEQ);
 
 // ============================================================
 // 🎸 FIX CHITARRE RITMICHE: CABINET & STEREO HAAS
@@ -77,6 +87,19 @@ const TOTAL_INSTRUMENTS = 6; // guitarPalm, guitarOpen, guitarLead, bass, drums 
 // ============================================================
 // 🎸 STRUMENTI (SAMPLERS)
 // ============================================================
+
+// SO TRUE STRING PAD 
+
+export const StStringPad = new Tone.Sampler({
+    urls: {  
+    C2: "Samples/Synth/StStringPad/C2.mp3", 
+    C3: "Samples/Synth/StStringPad/C3.mp3", 
+    C4: "Samples/Synth/StStringPad/C4.mp3",
+    C5: "Samples/Synth/StStringPad/C5.mp3"
+    },
+    release: 1.2,
+    onload: () => registerInstrumentLoaded("So true String")
+}).connect(padBus);
 
 export const guitarPalm = new Tone.Sampler({
     urls: {
@@ -239,9 +262,20 @@ export function normalizeNote(note, instrument) {
 }
 
 export const metalInstruments = {
-    guitarPalm, guitarOpen, guitarLead, bass, drums,
-    guitarBus, bassBus, drumBus, leadBus, setVolume
+    guitarPalm,
+    guitarOpen,
+    guitarLead,
+    bass,
+    drums,
+    StStringPad,   
+    guitarBus,
+    bassBus,
+    drumBus,
+    leadBus,
+    padBus,        
+    setVolume
 };
+
 
 export const metalVolumeMap = {
     guitar: "Chitarre",

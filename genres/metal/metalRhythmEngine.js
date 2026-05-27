@@ -191,13 +191,13 @@ if (isChorus) {
     }
     if (s === 8) kick = true;
     // Pad
-    instruments.pad.triggerAttackRelease(currentRoot + "3", "2n", absoluteTime);
+    instruments.StStringPad.triggerAttackRelease(currentRoot + "3", "2n", absoluteTime);
     break;
 
 case "intro_timpani_roll":
     if (s % 2 === 0) kick = true;
     if (s === 0) {
-        instruments.pad.triggerAttackRelease(currentRoot + "3", "1n", absoluteTime);
+        instruments.StStringPad.triggerAttackRelease(currentRoot + "3", "1n", absoluteTime);
     }
     break;
 
@@ -209,7 +209,7 @@ case "intro_open_chord":
         kick = true;
     }
     if (s === 8) snare = true;
-    instruments.pad.triggerAttackRelease(currentRoot + "3", "1n", absoluteTime);
+    instruments.StStringPad.triggerAttackRelease(currentRoot + "3", "1n", absoluteTime);
     break;
 
     // ========== VERSE ==========
@@ -469,13 +469,13 @@ case "djent":
         sustain = true;
         kick = true;
     }
-    instruments.pad.triggerAttackRelease(currentRoot + "3", "1n", absoluteTime);
+    instruments.StStringPad.triggerAttackRelease(currentRoot + "3", "1n", absoluteTime);
     break;
 
 case "outro_timpani":
     if (s % 4 === 0) kick = true;
     if (s === 0) {
-        instruments.pad.triggerAttackRelease(currentRoot + "3", "1n", absoluteTime);
+        instruments.StStringPad.triggerAttackRelease(currentRoot + "3", "1n", absoluteTime);
     }
     break;
 
@@ -491,7 +491,7 @@ case "outro_final_hit":
         kick = true;
         snare = true;
     }
-    instruments.pad.triggerAttackRelease(currentRoot + "3", "1n", absoluteTime);
+    instruments.StStringPad.triggerAttackRelease(currentRoot + "3", "1n", absoluteTime);
     break;
     case "outro_epic_hit":
     // Colpo finale aperto + crash
