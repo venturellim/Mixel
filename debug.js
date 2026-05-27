@@ -1,4 +1,11 @@
 // debug.js — Versione COMPLETA per mobile
+
+import { createDanceEngine } from './genres/dance/danceEngine.js';
+import { createMetalEngine } from './genres/metal/metalEngine.js';
+import { createOrchestraEngine } from './genres/orchestra/orchestraEngine.js';
+import { createPianoEngine } from './genres/piano/pianoEngine.js';
+import { createFunkyEngine } from './genres/funky/funkyEngine.js';
+
 console.log("🐛 debug.js loaded");
 
 // ============================================================
@@ -57,18 +64,57 @@ const genreStyles = {
     }
 };
 
+function showDebugNotification(message) {
+    const notification = document.createElement('div');
+    notification.textContent = `🐛 DEBUG: ${message}`;
+    notification.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: #00c853;
+        color: #000;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-family: monospace;
+        font-size: 12px;
+        font-weight: bold;
+        z-index: 20001;
+        animation: fadeOut 2s ease forwards;
+    `;
+    
+    if (!document.querySelector('#debug-notification-style')) {
+        const style = document.createElement('style');
+        style.id = 'debug-notification-style';
+        style.textContent = `
+            @keyframes fadeOut {
+                0% { opacity: 1; transform: translateX(0); }
+                70% { opacity: 1; transform: translateX(0); }
+                100% { opacity: 0; transform: translateX(100px); display: none; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 2000);
+}
+
 // ============================================================
 // FUNZIONE PER TRIGGERARE DEBUG
 // ============================================================
 
 function triggerDebugMode(genre, styleName, forcedParams) {
-    console.log(`🐛 DEBUG: ${genre} - ${styleName}`, forcedParams);
+    console.log(`🐛 DEBUG MODE: ${genre} | ${styleName}`);
+    console.log("Parametri forzati:", forcedParams);
     
-    // Mostra notifica
-    showToast(`🐛 ${genre.toUpperCase()} - ${styleName}`);
+    // Chiudi il pannello debug
+    if (debugPanel) debugPanel.style.display = 'none';
+    debugActive = false;
     
-    // Crea parametri fake
-    const fakeParams = {
+    // ============================================================
+    // COSTRUISCI params DIRETTAMENTE (come da photoToMusicParams)
+    // ============================================================
+    const params = {
         dna: Math.floor(Math.random() * 1000000),
         imageParams: {
             brightness: forcedParams.intensity,
@@ -88,37 +134,36 @@ function triggerDebugMode(genre, styleName, forcedParams) {
         },
         harmony: {
             tonalCenter: "C4",
-            scaleProfile: "naturalMinor"
+            scaleProfile: forcedParams.intensity > 0.66 ? "harmonicMinor" : "naturalMinor"
         },
         rhythm: {
-            tempoProfile: 120 + forcedParams.intensity * 60,
+            tempoProfile: 90 + forcedParams.intensity * 70,
             timeSignature: "4/4"
         },
-        structure: {},
-        genreParams: {
-            forcedStyle: styleName
-        }
+        structure: {
+            intro: forcedParams.intensity < 0.33 ? 8 : forcedParams.intensity < 0.66 ? 4 : 2,
+            verse: forcedParams.intensity < 0.33 ? 16 : forcedParams.intensity < 0.66 ? 8 : 6,
+            chorus: forcedParams.intensity < 0.33 ? 8 : forcedParams.intensity < 0.66 ? 8 : 6,
+            solo: forcedParams.intensity < 0.33 ? 4 : forcedParams.intensity < 0.66 ? 8 : 12,
+            outro: forcedParams.intensity < 0.33 ? 8 : forcedParams.intensity < 0.66 ? 4 : 2
+        },
+        genreParams: {}
     };
-    
-    // Sovrascrivi globalPhotoParams
-    if (window.globalPhotoParams !== undefined) {
-        window.globalPhotoParams = fakeParams;
-    }
     
     // Ferma engine corrente
     if (window.currentEngine) {
-        try {
-            window.currentEngine.stop();
-        } catch(e) {}
+        try { window.currentEngine.stop(); } catch(e) {}
         window.currentEngine = null;
     }
     
-    // Nascondi pannello generi
+    // Nascondi pannello generi e FX
     const genrePanel = document.getElementById('genrePanel');
     if (genrePanel) {
         genrePanel.classList.remove('show');
         genrePanel.classList.add('hidden');
     }
+    const fxPanel = document.getElementById('fxPanel');
+    if (fxPanel) fxPanel.classList.remove('show');
     
     // Mostra UI player
     const spectrumPanel = document.getElementById('spectrumPanel');
@@ -135,66 +180,65 @@ function triggerDebugMode(genre, styleName, forcedParams) {
         setTimeout(() => previewImage.classList.add('moved-up'), 100);
     }
     
-    // Crea engine in base al genere
+    // ============================================================
+    // CHIAMA DIRETTAMENTE L'ENGINE DEL GENERE SELEZIONATO
+    // ============================================================
     let engine = null;
     
     switch(genre) {
         case 'dance':
-            if (typeof createDanceEngine !== 'undefined') {
-                engine = createDanceEngine(fakeParams, window.scoreUI);
-            }
+            engine = createDanceEngine(params, window.scoreUI);
             break;
         case 'metal':
-            if (typeof createMetalEngine !== 'undefined') {
-                engine = createMetalEngine(fakeParams, window.scoreUI);
-            }
+            engine = createMetalEngine(params, window.scoreUI);
             break;
         case 'orchestra':
-            if (typeof createOrchestraEngine !== 'undefined') {
-                engine = createOrchestraEngine(fakeParams, window.scoreUI);
-            }
+            engine = createOrchestraEngine(params, window.scoreUI);
             break;
         case 'piano':
-            if (typeof createPianoEngine !== 'undefined') {
-                engine = createPianoEngine(fakeParams, window.scoreUI);
-            }
+            engine = createPianoEngine(params, window.scoreUI);
             break;
         case 'funky':
-            if (typeof createFunkyEngine !== 'undefined') {
-                engine = createFunkyEngine(fakeParams, window.scoreUI);
-            }
+            engine = createFunkyEngine(params, window.scoreUI);
             break;
+        default:
+            console.error("Genere non riconosciuto:", genre);
+            return;
     }
     
-    if (engine) {
-        window.currentEngine = engine;
-        
-        // Aggiorna UI tempi
-        const totalTimeEl = document.getElementById('totalTime');
-        if (totalTimeEl && engine.totalDuration) {
-            const formatTime = (sec) => {
-                const m = Math.floor(sec / 60);
-                const s = Math.floor(sec % 60).toString().padStart(2, '0');
-                return `${m}:${s}`;
-            };
-            totalTimeEl.textContent = formatTime(engine.totalDuration);
-        }
-        
-        // Inizializza FX panel
-        if (typeof initFxPanel !== 'undefined' && engine.mixerData) {
-            initFxPanel(engine.mixerData);
-        }
-        
-        // Avvia
-        setTimeout(() => {
-            if (window.currentEngine && typeof window.currentEngine.play === 'function') {
-                window.currentEngine.play();
-                showToast(`▶️ ${genre} - ${styleName}`);
-            }
-        }, 500);
-    } else {
-        showToast("❌ Engine non disponibile, riprova");
+    if (!engine) {
+        console.error("❌ Engine non creato");
+        return;
     }
+    
+    window.currentEngine = engine;
+    
+    // Aggiorna UI tempi
+    const totalTimeEl = document.getElementById('totalTime');
+    if (totalTimeEl && engine.totalDuration) {
+        const formatTime = (sec) => {
+            const m = Math.floor(sec / 60);
+            const s = Math.floor(sec % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        };
+        totalTimeEl.textContent = formatTime(engine.totalDuration);
+    }
+    
+    // Inizializza FX panel
+    if (typeof initFxPanel !== 'undefined' && engine.mixerData) {
+        initFxPanel(engine.mixerData);
+    }
+    
+    // Avvia
+    setTimeout(() => {
+        if (window.currentEngine && typeof window.currentEngine.play === 'function') {
+            window.currentEngine.play();
+            console.log(`🚀 Debug: ${genre} - ${styleName} avviato!`);
+        }
+    }, 500);
+    
+    // Notifica visiva
+    showDebugNotification(`${genre.toUpperCase()} - ${styleName}`);
 }
 
 // Notifica toast visibile
