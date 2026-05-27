@@ -6,7 +6,21 @@ import { createOrchestraEngine } from './genres/orchestra/orchestraEngine.js';
 import { createPianoEngine } from './genres/piano/pianoEngine.js';
 import { createFunkyEngine } from './genres/funky/funkyEngine.js';
 
+console.log("🐛 debug.js Ver. 002 loaded");
+
+// debug.js — all'inizio, dopo gli import
 console.log("🐛 debug.js loaded");
+
+// ============================================================
+// STATO DEBUG
+// ============================================================
+let debugActive = false;
+let debugPanel = null;
+let clickCount = 0;
+let clickTimeout = null;
+let vConsoleLoaded = false;
+
+// ... resto del codice
 
 // ============================================================
 // CONFIGURAZIONE STILI PER GENERE
@@ -271,8 +285,6 @@ function showToast(message) {
 // ============================================================
 // CREAZIONE PANNEL DEBUG
 // ============================================================
-
-let debugPanel = null;
 
 function createDebugPanel() {
     if (debugPanel && document.body.contains(debugPanel)) return debugPanel;
