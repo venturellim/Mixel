@@ -1,10 +1,13 @@
 // debug.js — Versione COMPLETA per mobile
+import * as Tone from "https://esm.sh/tone";
 
 import { createDanceEngine } from './genres/dance/danceEngine.js';
 import { createMetalEngine } from './genres/metal/metalEngine.js';
 import { createOrchestraEngine } from './genres/orchestra/orchestraEngine.js';
 import { createPianoEngine } from './genres/piano/pianoEngine.js';
 import { createFunkyEngine } from './genres/funky/funkyEngine.js';
+// In debug.js, aggiungi:
+import { scoreVisualizer } from './scoreUI.js';
 
 console.log("🐛 debug.js Ver. 003 loaded")
 
@@ -221,6 +224,12 @@ function triggerDebugMode(genre, styleName, forcedParams) {
         console.error("❌ Engine non creato");
         return;
     }
+
+// Poi in triggerDebugMode, prima di creare l'engine:
+if (!window.scoreUI) {
+    window.scoreUI = new scoreVisualizer();
+    window.scoreUI.setTheme(genre);
+}
       
     window.currentEngine = engine;
     
