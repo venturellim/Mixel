@@ -6,10 +6,7 @@ import { createOrchestraEngine } from './genres/orchestra/orchestraEngine.js';
 import { createPianoEngine } from './genres/piano/pianoEngine.js';
 import { createFunkyEngine } from './genres/funky/funkyEngine.js';
 
-console.log("🐛 debug.js Ver. 002 loaded");
-
-// debug.js — all'inizio, dopo gli import
-console.log("🐛 debug.js loaded");
+console.log("🐛 debug.js Ver. 003 loaded")
 
 // ============================================================
 // STATO DEBUG
@@ -224,8 +221,102 @@ function triggerDebugMode(genre, styleName, forcedParams) {
         console.error("❌ Engine non creato");
         return;
     }
-    
+      
     window.currentEngine = engine;
+    
+    // ============================================================
+    // COLLEGA I TASTI DEL PLAYER ALL'ENGINE
+    // ============================================================
+    
+    // Trova i tasti
+    const playBtn = document.getElementById('btnPlay');
+    const pauseBtn = document.getElementById('btnPause');
+    const stopBtn = document.getElementById('btnStop');
+    const seekBar = document.getElementById('seekBar');
+    const btnSpartito = document.getElementById('btnSpartito');
+    const closeScoreBtn = document.getElementById('closeScoreBtn');
+    
+    // Aggiorna i listener dei tasti
+    if (playBtn) {
+        // Rimuovi vecchi listener (clonando e sostituendo)
+        const newPlayBtn = playBtn.cloneNode(true);
+        playBtn.parentNode.replaceChild(newPlayBtn, playBtn);
+        newPlayBtn.onclick = async () => {
+            if (window.currentEngine) {
+                const overlay = document.getElementById('loadingOverlay');
+                if (overlay) overlay.style.display = 'flex';
+                await Tone.start();
+                await Tone.loaded();
+                if (overlay) overlay.style.display = 'none';
+                window.currentEngine.play();
+                if (btnSpartito) {
+                    btnSpartito.classList.remove('hidden');
+                    btnSpartito.classList.add('show-flex');
+                }
+            }
+        };
+    }
+    
+    if (pauseBtn) {
+        const newPauseBtn = pauseBtn.cloneNode(true);
+        pauseBtn.parentNode.replaceChild(newPauseBtn, pauseBtn);
+        newPauseBtn.onclick = () => {
+            if (window.currentEngine) window.currentEngine.pause();
+        };
+    }
+    
+    if (stopBtn) {
+        const newStopBtn = stopBtn.cloneNode(true);
+        stopBtn.parentNode.replaceChild(newStopBtn, stopBtn);
+        newStopBtn.onclick = () => {
+            if (window.currentEngine) window.currentEngine.stop();
+            if (window.scoreUI) window.scoreUI.hide();
+            if (btnSpartito) {
+                btnSpartito.classList.add('hidden');
+                btnSpartito.classList.remove('show-flex');
+            }
+        };
+    }
+    
+    if (seekBar) {
+        const newSeekBar = seekBar.cloneNode(true);
+        seekBar.parentNode.replaceChild(newSeekBar, seekBar);
+        newSeekBar.addEventListener('input', () => {
+            if (window.currentEngine) {
+                const seconds = (newSeekBar.value / 100) * window.currentEngine.totalDuration;
+                window.currentEngine.seek(seconds);
+            }
+        });
+    }
+    
+    if (btnSpartito) {
+        const newSpartito = btnSpartito.cloneNode(true);
+        btnSpartito.parentNode.replaceChild(newSpartito, btnSpartito);
+        newSpartito.onclick = () => {
+            if (window.scoreUI) {
+                window.scoreUI.show();
+                if (closeScoreBtn) closeScoreBtn.style.display = 'flex';
+            }
+        };
+    }
+    
+    // Aggiorna il seekBar periodicamente
+    if (window.seekInterval) clearInterval(window.seekInterval);
+    window.seekInterval = setInterval(() => {
+        if (window.currentEngine && seekBar && Tone.Transport.state === 'started') {
+            const now = Tone.Transport.seconds;
+            const duration = window.currentEngine.totalDuration || 1;
+            const percent = (now / duration) * 100;
+            seekBar.value = percent;
+            
+            const currentTimeEl = document.getElementById('currentTime');
+            if (currentTimeEl) {
+                const m = Math.floor(now / 60);
+                const s = Math.floor(now % 60).toString().padStart(2, '0');
+                currentTimeEl.textContent = `${m}:${s}`;
+            }
+        }
+    }, 100);
     
     // Aggiorna UI tempi
     const totalTimeEl = document.getElementById('totalTime');
