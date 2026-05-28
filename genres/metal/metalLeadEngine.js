@@ -15,7 +15,7 @@ import {
     shapeBridgeSolo
 } from "../../utils/leadEnhancers.js";
 
-console.log("metalLeadEngine.js ver. 091 loaded");
+console.log("metalLeadEngine.js ver. 092 loaded");
 
 function clampLeadRange(note, sectionName) {
 
@@ -103,6 +103,11 @@ function getSoloMelodyFamily(isSoloPt2, energy, brightness, complexity, texture)
 
 const LeadLegacy = {
     schedule(section, progression, instruments, params, rand, measureDur, rootNote, isMinor, scaleType, score) {
+    
+const leadVibrato = {
+    depth: new Tone.Signal(0.1),
+    frequency: new Tone.Signal(5.0)
+};
 
         const { guitarLead } = instruments || {};
         if (!guitarLead) return;
@@ -110,7 +115,8 @@ const LeadLegacy = {
         const name = section?.name?.toLowerCase() || "";
         const isChorus = name.includes("chorus") && !name.includes("pre");
         const isPreChorus = name.includes("pre");
-        const isIntro = name.includes("intro") || name.includes("outro");
+        const isIntro = name.includes("intro");
+const isOutro = name.includes("outro");
         const isSolo = name.includes("solo") || name.includes("bridge");
         const isSoloPt2 = name.includes("solopt2");
 
@@ -122,6 +128,12 @@ const LeadLegacy = {
             texture = 0.5,
             complexity = 0.5
         } = params?.imageParams || {};
+        
+        const isEpicIntro =
+    isIntro &&
+    brightness > 0.45 &&
+    texture > 0.4;
+
 
         const enhancerContext = { energy, brightness, texture, complexity };
 
@@ -164,6 +176,89 @@ const LeadLegacy = {
             const intervals = isMinor ? [0, 2, 3, 5, 7, 8, 10] : [0, 2, 4, 5, 7, 9, 11];
             return intervals.map(i => allNotes[(idx + i) % 12]);
         };
+        
+// ============================================================
+// INTRO HANDLING (prima del loop delle misure)
+
+if (isIntro) {
+    const root = progression[0] || "A";
+    const note = root + "4";  // <-- SPOSTATA QUI
+    
+    if (isEpicIntro) {
+        const t = section.startTime + measureDur * 0.5;
+        guitarLead.triggerAttackRelease(note, "2n", t, 0.6);
+        const third = Tone.Frequency(note).transpose(4).toNote();
+        guitarLead.triggerAttackRelease(third, "2n", t + 0.05, 0.4);
+    } else {
+        const t = section.startTime + measureDur * 0.75;
+        guitarLead.triggerAttackRelease(note, "1n", t, 0.4);
+    }
+    return;
+}
+
+// ============================================================
+// OUTRO EPICA (versione potenziata)
+// ============================================================
+if (isOutro) {
+
+    const root = progression[progression.length - 1] || "A";
+    const baseNote = root + "5"; // finale alto
+    const t = section.startTime + measureDur * 0.25;
+
+    // 1) Nota principale lunga
+    guitarLead.triggerAttackRelease(baseNote, "2n", t, 0.85);
+
+    // 2) Armonizzazione a terza
+    const third = Tone.Frequency(baseNote).transpose(4).toNote();
+    guitarLead.triggerAttackRelease(third, "2n", t + 0.03, 0.65);
+
+    // 3) Armonizzazione a quinta
+    const fifth = Tone.Frequency(baseNote).transpose(7).toNote();
+    guitarLead.triggerAttackRelease(fifth, "2n", t + 0.06, 0.55);
+
+    // 4) Colpo finale discendente (tipico power metal)
+    const finalRun = [
+        Tone.Frequency(baseNote).transpose(-2).toNote(),
+        Tone.Frequency(baseNote).transpose(-4).toNote(),
+        Tone.Frequency(baseNote).transpose(-7).toNote()
+    ];
+
+    finalRun.forEach((n, i) => {
+        guitarLead.triggerAttackRelease(
+            n,
+            "8n",
+            t + 0.35 + i * 0.08,
+            0.75
+        );
+    });
+
+    // 5) Floyd Rose finale (dive bomb)
+    try {
+        const pr = guitarLead.playbackRate;
+        const t1 = t + 0.55;
+        const t2 = t1 + 0.25;
+
+        pr.setValueAtTime(1.0, t1);
+        pr.exponentialRampToValueAtTime(0.65, t2);
+        pr.linearRampToValueAtTime(1.0, t2 + 0.15);
+    } catch(e){}
+
+    // 6) Vibrato finale più profondo
+    try {
+        leadVibrato.depth.rampTo(0.32, 0.1);
+        leadVibrato.frequency.rampTo(6.8, 0.1);
+    } catch(e){}
+
+    // 7) Logging score
+    if (score) {
+        score.addNote("Lead", baseNote, section.name + " (outro epic)");
+        score.addNote("Lead", third, section.name + " (outro epic)");
+        score.addNote("Lead", fifth, section.name + " (outro epic)");
+    }
+
+    return;
+}
+
 
         for (let m = 0; m < section.measures; m++) {
 

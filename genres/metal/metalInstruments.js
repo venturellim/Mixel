@@ -2,7 +2,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("metalInstruments.js ver. 007 loaded");
+console.log("metalInstruments.js ver. 007.1 loaded");
 
 // ============================================================
 // 🎚 BUS SPECIFICI DEL METAL
@@ -77,12 +77,6 @@ const leadVibrato = new Tone.Vibrato({
     frequency: 5,
     depth: 0.1
 }).connect(leadDelay);
-
-// ============================================================
-// 📦 CONTEGGIO STRUMENTI (per il loader)
-// ============================================================
-// Ogni sampler chiamerà registerInstrumentLoaded() quando caricato
-const TOTAL_INSTRUMENTS = 6; // guitarPalm, guitarOpen, guitarLead, bass, drums + 1 extra
 
 // ============================================================
 // 🎸 STRUMENTI (SAMPLERS)
@@ -239,6 +233,24 @@ guitarBus.gain.value = Tone.dbToGain(6);  // Chitarra ritmica
 bassBus.gain.value = Tone.dbToGain(4);    // Basso
 leadBus.gain.value = Tone.dbToGain(0);   // Lead
 drumBus.gain.value = Tone.dbToGain(0);   // Batteria
+
+export function normalizePadNote(note) {
+    // Il pad ha solo C2, C3, C4, C5
+    const allowed = ["C2", "C3", "C4", "C5"];
+
+    // Prendi solo la lettera della nota
+    const root = note[0].toUpperCase();
+
+    // Mappa tutto a C
+    let octave = note.replace(/[^0-9]/g, "");
+    if (!octave) octave = "3";
+
+    // Clamping dell’ottava
+    if (octave < 2) octave = 2;
+    if (octave > 5) octave = 5;
+
+    return "C" + octave;
+}
 
 export function normalizeNote(note, instrument) {
     if (!note || typeof note !== "string") return "A";
