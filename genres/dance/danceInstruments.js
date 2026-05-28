@@ -206,6 +206,19 @@ export const shakuPad = new Tone.Sampler({
     onload: () => registerInstrumentLoaded("Shaku")
 }).connect(padBus);
 
+// SO TRUE STRING PAD 
+
+export const StStringPad = new Tone.Sampler({
+    urls: {  
+    C2: "Samples/Synth/StStringPad/C2.mp3", 
+    C3: "Samples/Synth/StStringPad/C3.mp3", 
+    C4: "Samples/Synth/StStringPad/C4.mp3",
+    C5: "Samples/Synth/StStringPad/C5.mp3"
+    },
+    release: 1.2,
+    onload: () => registerInstrumentLoaded("So true String")
+}).connect(padBus);
+
 // WARM PAD 
 
 export const warmPad = new Tone.Sampler({
@@ -412,6 +425,7 @@ export const danceInstruments = {
     bellsPad,
     glassPad,
     shakuPad,
+    StStringPad,
     warmPad,
     wavePad,
     organo,
@@ -443,6 +457,7 @@ export const danceVolumeMap = {
     bellsPad: "Bells",
     glassPad: "Glass",
     shakuPad: "Shaku",
+    StStringPad: "SoTrueString",
     warmPad: "Warm",
     wavePad: "Wave",
     bass: "Basso", 
