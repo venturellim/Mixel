@@ -103,6 +103,11 @@ function getSoloMelodyFamily(isSoloPt2, energy, brightness, complexity, texture)
 
 const LeadLegacy = {
     schedule(section, progression, instruments, params, rand, measureDur, rootNote, isMinor, scaleType, score) {
+    
+const leadVibrato = {
+    depth: new Tone.Signal(0.1),
+    frequency: new Tone.Signal(5.0)
+};
 
         const { guitarLead } = instruments || {};
         if (!guitarLead) return;
@@ -174,28 +179,21 @@ const isOutro = name.includes("outro");
         
 // ============================================================
 // INTRO HANDLING (prima del loop delle misure)
-// ============================================================
+
 if (isIntro) {
-
     const root = progression[0] || "A";
-    const note = root + "4";
-
+    const note = root + "4";  // <-- SPOSTATA QUI
+    
     if (isEpicIntro) {
-        // Intro epica
         const t = section.startTime + measureDur * 0.5;
-
         guitarLead.triggerAttackRelease(note, "2n", t, 0.6);
-
         const third = Tone.Frequency(note).transpose(4).toNote();
         guitarLead.triggerAttackRelease(third, "2n", t + 0.05, 0.4);
-
     } else {
-        // Intro normale
         const t = section.startTime + measureDur * 0.75;
         guitarLead.triggerAttackRelease(note, "1n", t, 0.4);
     }
-
-    return; // esci PRIMA del loop
+    return;
 }
 
 // ============================================================
