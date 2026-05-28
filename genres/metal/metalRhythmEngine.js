@@ -2,10 +2,10 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
 
-console.log("metalRhythmEngine.js ver. 015.3 loaded");
+console.log("metalRhythmEngine.js ver. 016 loaded");
 
 export function scheduleRhythm(section, progression, instruments, params, rand, measureDur, nextSectionRoot, score) {
-    const { drums, guitarPalm, guitarOpen, bass } = instruments;
+    const { drums, guitarPalm, guitarOpen, bass, StStringPad } = instruments;
     if (!drums || !guitarPalm || !bass) return;
 
     const name = section?.name?.toLowerCase() || "";
@@ -13,16 +13,32 @@ export function scheduleRhythm(section, progression, instruments, params, rand, 
 name.includes("solo") && !name.includes("pre"); 
     const isPreChorus = name.includes("pre") ||
 name.includes("bridge");
-    const isIntro = name.includes("intro") || name.includes("outro");
+    const isIntro = name.includes("intro");
+const isOutro = name.includes("outro");
+    
     const stepTime = measureDur / 16;
     const { energy = 0.5, brightness = 0.5, complexity = 0.5, texture = 0.5 } = params?.imageParams || {};
+    
+    const isEpicIntro =
+    isIntro &&
+    brightness > 0.45 &&
+    texture > 0.4;
+    
+    const isEpicOutro =
+    isOutro &&
+    energy > 0.45 &&
+    brightness > 0.45 &&
+    texture > 0.4;
 
     const grooves = {
     intro: ["intro_ambient", "intro_heavy_strikes", "stratovarius_intro", "doom_slow", "cinematic_buildup", "industrial_static", "stoner_doom", "power_ballad"],
+intro_epic: ["intro_pad_swell", "intro_timpani_roll", "intro_open_chord"],
     verse: ["gallop_classic", "gallop_triplet", "thrash_diamond", "palm_mute_chug", "motorhead_drive", "technical_sync", "meshuggah_ish", "breakdown_heavy", "jump_groove", "double_time_punk", "power_gallop", "groove_metal", "black_tremolo", "speed_metal", "death_roll", "thrash_skank"],
     prechorus: ["pre_build_up", "driving_eights", "march_to_war", "suspended_tension", "epic_buildup", "power_ballad"],
     bridge: ["pre_build_up", "driving_eights", "march_to_war", "suspended_tension", "epic_buildup", "power_ballad"],
-    chorus: ["helloween_speed", "chorus_pure_sustain", "chorus_sustain_hit", "anthem_half_time", "power_ride_groove", "double_kick_wall", "blast_beat_light", "epic_waltz_feel", "symphonic_blast", "power_gallop", "speed_metal", "power_ballad"]
+    chorus: ["helloween_speed", "chorus_pure_sustain", "chorus_sustain_hit", "anthem_half_time", "power_ride_groove", "double_kick_wall", "blast_beat_light", "epic_waltz_feel", "symphonic_blast", "power_gallop", "speed_metal", "power_ballad"],
+    outro_epic: ["outro_epic_hit", "outro_epic_roll", "outro_epic_finale"],
+outro: ["outro_sustain", "outro_timpani", "outro_final_hit"]
 };
 
 // Definizione dei groove con caratteristiche
@@ -36,6 +52,9 @@ const grooveCharacteristics = {
     "doom_slow": { energy: 0.3, brightness: 0.2, complexity: 0.2, tempo: "slow" },
     "stoner_doom": { energy: 0.3, brightness: 0.2, complexity: 0.3, tempo: "slow" },
     "power_ballad": { energy: 0.4, brightness: 0.6, complexity: 0.3, tempo: "slow" },
+    "intro_pad_swell": { energy: 0.2, brightness: 0.6, complexity: 0.2, tempo: "slow" },
+"intro_timpani_roll": { energy: 0.3, brightness: 0.4, complexity: 0.3, tempo: "slow" },
+"intro_open_chord": { energy: 0.4, brightness: 0.6, complexity: 0.2, tempo: "slow" },
     
     // VERSE
     "gallop_classic": { energy: 0.7, brightness: 0.5, complexity: 0.5, tempo: "fast" },
@@ -75,7 +94,14 @@ const grooveCharacteristics = {
     "epic_waltz_feel": { energy: 0.6, brightness: 0.7, complexity: 0.4, tempo: "slow" },
     "symphonic_blast": { energy: 0.9, brightness: 0.8, complexity: 0.7, tempo: "very_fast" },
     "folk_hop": { energy: 0.7, brightness: 0.7, complexity: 0.5, tempo: "fast" },
-    "djent": { energy: 0.6, brightness: 0.3, complexity: 0.9, tempo: "medium" }
+    "djent": { energy: 0.6, brightness: 0.3, complexity: 0.9, tempo: "medium" },
+    "outro_sustain": { energy: 0.4, brightness: 0.6, complexity: 0.2, tempo: "slow" },
+"outro_timpani": { energy: 0.3, brightness: 0.4, complexity: 0.3, tempo: "slow" },
+"outro_final_hit": { energy: 0.5, brightness: 0.7, complexity: 0.2, tempo: "slow" },
+"outro_epic_hit": { energy: 0.6, brightness: 0.7, complexity: 0.3, tempo: "slow" },
+"outro_epic_roll": { energy: 0.5, brightness: 0.6, complexity: 0.5, tempo: "slow" },
+"outro_epic_finale": { energy: 0.7, brightness: 0.8, complexity: 0.4, tempo: "slow" },
+
 };
 
     const getGroove = (type, energy, brightness, complexity) => {
@@ -100,11 +126,17 @@ const grooveCharacteristics = {
 };
 
     const currentGroove = getGroove(
-    isIntro ? "intro" : (isPreChorus ? "prechorus" : (isChorus ? "chorus" : "verse")),
+    isEpicIntro ? "intro_epic" :
+    isIntro ? "intro" :
+    isEpicOutro ? "outro_epic" :
+    isOutro ? "outro" : 
+    (isPreChorus ? "prechorus" :
+    (isChorus ? "chorus" : "verse")),
     energy,
     brightness,
     complexity
 );
+
 
     for (let m = 0; m < section.measures; m++) {
         const measureStartTime = section.startTime + (m * measureDur);
@@ -150,6 +182,35 @@ if (isChorus) {
     case "doom_slow":
         if (s === 0 || s === 8) { playGuitar = true; inst = guitarOpen; sustain = true; kick = true; snare = (s === 8); }
         break;
+        case "intro_pad_swell":
+    if (s === 0) {
+        playGuitar = true;
+        inst = guitarOpen;
+        sustain = true;
+        kick = true;
+    }
+    if (s === 8) kick = true;
+    // Pad
+    instruments.StStringPad.triggerAttackRelease(currentRoot + "3", "2n", absoluteTime);
+    break;
+
+case "intro_timpani_roll":
+    if (s % 2 === 0) kick = true;
+    if (s === 0) {
+        instruments.StStringPad.triggerAttackRelease(currentRoot + "3", "1n", absoluteTime);
+    }
+    break;
+
+case "intro_open_chord":
+    if (s === 0) {
+        playGuitar = true;
+        inst = guitarOpen;
+        sustain = true;
+        kick = true;
+    }
+    if (s === 8) snare = true;
+    instruments.StStringPad.triggerAttackRelease(currentRoot + "3", "1n", absoluteTime);
+    break;
 
     // ========== VERSE ==========
     case "gallop":
@@ -401,6 +462,77 @@ case "djent":
     inst = guitarPalm;
     if (s === 0 || s === 8) inst = guitarOpen;
     break;
+    case "outro_sustain":
+    if (s === 0) {
+        playGuitar = true;
+        inst = guitarOpen;
+        sustain = true;
+        kick = true;
+    }
+    instruments.StStringPad.triggerAttackRelease(currentRoot + "3", "1n", absoluteTime);
+    break;
+
+case "outro_timpani":
+    if (s % 4 === 0) kick = true;
+    if (s === 0) {
+        instruments.StStringPad.triggerAttackRelease(currentRoot + "3", "1n", absoluteTime);
+    }
+    break;
+
+case "outro_final_hit":
+    if (s === 0) {
+        playGuitar = true;
+        inst = guitarOpen;
+        sustain = true;
+        kick = true;
+        snare = true;
+    }
+    if (s === 8) {
+        kick = true;
+        snare = true;
+    }
+    instruments.StStringPad.triggerAttackRelease(currentRoot + "3", "1n", absoluteTime);
+    break;
+    case "outro_epic_hit":
+    // Colpo finale aperto + crash
+    if (s === 0) {
+        playGuitar = true;
+        inst = guitarOpen;
+        sustain = true;
+        kick = true;
+        snare = true;
+    }
+    if (s === 0) {
+        try { drums.player("crash1").start(absoluteTime); } catch(e){}
+    }
+    break;
+
+case "outro_epic_roll":
+    // Rullo di timpani + accordo aperto
+    if (s % 2 === 0) kick = true;
+    if (s === 0) {
+        playGuitar = true;
+        inst = guitarOpen;
+        sustain = true;
+    }
+    try { drums.player("tom1").start(absoluteTime); } catch(e){}
+    break;
+
+case "outro_epic_finale":
+    // Ultimo colpo epico: kick + snare + crash + accordo aperto
+    if (s === 0) {
+        playGuitar = true;
+        inst = guitarOpen;
+        sustain = true;
+        kick = true;
+        snare = true;
+        try { drums.player("crash2").start(absoluteTime); } catch(e){}
+    }
+    if (s === 8) {
+        kick = true;
+        snare = true;
+    }
+    break;
 
     // ========== DEFAULT ==========
     default:
@@ -409,14 +541,45 @@ case "djent":
         break;
 }
 
-            const isFillZone = isLastMeasure && s >= 12;
-            if (isFillZone && complexity > 0.4) {
-                playGuitar = true; inst = guitarPalm; sustain = false; kick = true; snare = (s % 2 === 0 || s > 14);
-                const currMidi = Tone.Frequency(currentRoot + "2").toMidi();
-                const nextMidi = Tone.Frequency((nextRoot || currentRoot) + "2").toMidi();
-                const stepScale = Math.round(((nextMidi - currMidi) / 4) * (s - 11));
-                customNote = Tone.Frequency(currMidi + stepScale, "midi").toNote();
-            }
+            // CORREZIONE per la sezione fill zone (RIGHE ~315-335)
+const isFillZone = isLastMeasure && s >= 12;
+if (isFillZone && complexity > 0.4) {
+    playGuitar = true; 
+    inst = guitarPalm; 
+    sustain = false; 
+    kick = true; 
+    snare = (s % 2 === 0 || s > 14);
+    const currMidi = Tone.Frequency(currentRoot + "2").toMidi();
+    const nextMidi = Tone.Frequency((nextRoot || currentRoot) + "2").toMidi();
+    const stepScale = Math.round(((nextMidi - currMidi) / 4) * (s - 11));
+    customNote = Tone.Frequency(currMidi + stepScale, "midi").toNote();
+    
+    if (isEpicOutro) {
+        try { drums.player("tom1").start(absoluteTime); } catch(e){}
+        try { drums.player("tom2").start(absoluteTime + 0.05); } catch(e){}
+        try { drums.player("tom3").start(absoluteTime + 0.10); } catch(e){}
+        try { drums.player("crash1").start(absoluteTime + 0.20); } catch(e){}
+    } else {
+        try { drums.player("tom" + (s - 11)).start(absoluteTime); } catch(e){}
+    }
+} 
+            
+            // --- OUTRO EPICA: colpo finale chitarra + batteria + basso ---
+if (isEpicOutro && s === 0) {
+
+    // 7) Chitarra + batteria
+    playGuitar = true;
+    inst = guitarOpen;
+    sustain = true;
+    kick = true;
+    snare = true;
+
+    // 8) Basso lungo
+    const bNote = normalizeNote(currentRoot, "bass") + "1";
+    bass.triggerAttackRelease(bNote, "2n", absoluteTime);
+}
+
+            
 
             // --- 1. SCHEDULAZIONE CHITARRA E BASSO ---
             if (playGuitar) {
@@ -503,3 +666,4 @@ inst.triggerAttackRelease(
         }
     }
 }
+
