@@ -80,10 +80,6 @@ function getSoloMelodyFamily(isSoloPt2, energy, brightness, complexity, texture)
 
 const LeadLegacy = {
     schedule(section, progression, instruments, params, rand, measureDur, rootNote, isMinor, scaleType, score) {
-        const leadVibrato = {
-            depth: new Tone.Signal(0.1),
-            frequency: new Tone.Signal(5.0)
-        };
 
         const { guitarLead } = instruments || {};
         if (!guitarLead) return;
@@ -188,11 +184,6 @@ const LeadLegacy = {
                 pr.setValueAtTime(1.0, t1);
                 pr.exponentialRampToValueAtTime(0.65, t2);
                 pr.linearRampToValueAtTime(1.0, t2 + 0.15);
-            } catch(e){}
-
-            try {
-                leadVibrato.depth.rampTo(0.32, 0.1);
-                leadVibrato.frequency.rampTo(6.8, 0.1);
             } catch(e){}
 
             if (score) {
@@ -315,13 +306,6 @@ const LeadLegacy = {
 
                     guitarLead.triggerAttackRelease(noteName, duration, finalTime, dynamicVelocity);
 
-                    if ((isSolo || name.includes("bridge") || name.includes("outro")) && duration > 0.3) {
-                        try {
-                            leadVibrato.depth.rampTo(0.25, 0.05);
-                            leadVibrato.frequency.rampTo(6.5, 0.05);
-                        } catch (e) {}
-                    }
-
                     if ((name.includes("bridge") || isSolo) && duration > 0.25 && complexity > 0.5) {
                         try {
                             const pr = guitarLead.playbackRate;
@@ -346,8 +330,7 @@ const LeadLegacy = {
 
                     if (isSolo && section.isLast && energy > 0.6 && complexity > 0.5) {
                         try {
-                            leadVibrato.depth.rampTo(0.3, 0.05);
-                            leadVibrato.frequency.rampTo(7.2, 0.05);
+                           
                             const pr = guitarLead.playbackRate;
                             const bendUp = 1 + (Math.random() * 0.04);
                             const bendDown = 1 - (Math.random() * 0.03);
@@ -367,8 +350,7 @@ const LeadLegacy = {
 
                     if (isSolo && energy > 0.75 && complexity > 0.7) {
                         try {
-                            leadVibrato.depth.rampTo(0.28, 0.03);
-                            leadVibrato.frequency.rampTo(7.5, 0.03);
+                            
                             const pr = guitarLead.playbackRate;
                             const shredBend = 1 + ((Math.random() * 0.05) - 0.025);
                             const t1s = finalTime + 0.03;
@@ -425,8 +407,7 @@ const LeadLegacy = {
 
                     if (isSolo && brightness < 0.4 && texture > 0.6 && duration > 0.25) {
                         try {
-                            leadVibrato.depth.rampTo(0.22, 0.05);
-                            leadVibrato.frequency.rampTo(5.2, 0.05);
+                            
                             const baseMidi = Tone.Frequency(noteName).toMidi();
                             const diminished = [0, 3, 6];
                             diminished.forEach((intv, idx) => {
@@ -446,8 +427,7 @@ const LeadLegacy = {
 
                     if (isSolo && section.isLast && energy > 0.7 && complexity > 0.6 && duration > 0.25) {
                         try {
-                            leadVibrato.depth.rampTo(0.35, 0.05);
-                            leadVibrato.frequency.rampTo(5.8, 0.05);
+                            
                             const pr = guitarLead.playbackRate;
                             const bendUp = 1 + (Math.random() * 0.06);
                             const bendDown = 1 - (Math.random() * 0.04);
