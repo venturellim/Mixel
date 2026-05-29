@@ -98,6 +98,73 @@ function getSoloMelodyFamily(isSoloPt2, energy, brightness, complexity, texture)
 }
 
 // ============================================================
+// BALLAD LEAD ENGINE (nuovo modulo, indipendente)
+// ============================================================
+
+const balladLeadSettings = {
+    vibratoDepth: 0.25,
+    vibratoFreq: 4.5,
+    stepProb: 0.85,
+    leapProb: 0.15,
+    rangeLow: 60,   // C4
+    rangeHigh: 81   // A5
+};
+
+function applyBalladVibrato(leadVibrato) {
+    if (!leadVibrato) return;
+    leadVibrato.depth.rampTo(balladLeadSettings.vibratoDepth, 0.2);
+    leadVibrato.frequency.rampTo(balladLeadSettings.vibratoFreq, 0.2);
+}
+
+function generateBalladNote(prevMidi) {
+    const { stepProb, leapProb, rangeLow, rangeHigh } = balladLeadSettings;
+
+    if (Math.random() < stepProb) {
+        let next = prevMidi + (Math.random() < 0.5 ? -1 : 1);
+        if (next < rangeLow) next = rangeLow + 1;
+        if (next > rangeHigh) next = rangeHigh - 1;
+        return next;
+    }
+
+    if (Math.random() < leapProb) {
+        let next = prevMidi + (Math.random() < 0.5 ? -3 : 3);
+        if (next < rangeLow) next = rangeLow + 3;
+        if (next > rangeHigh) next = rangeHigh - 3;
+        return next;
+    }
+
+    return prevMidi;
+}
+
+function scheduleBalladLead(section, progression, instruments, measureDur, score) {
+    const { guitarLead, leadVibrato } = instruments;
+    if (!guitarLead) return;
+
+    let prevMidi = 64; // E4
+    const stepTime = measureDur / 16;
+
+    for (let m = 0; m < section.measures; m++) {
+        const measureStart = section.startTime + m * measureDur;
+
+        for (let s = 0; s < 16; s += 4) {
+            const absoluteTime = measureStart + s * stepTime;
+
+            applyBalladVibrato(leadVibrato);
+
+            const midi = generateBalladNote(prevMidi);
+            prevMidi = midi;
+
+            const note = Tone.Frequency(midi, "midi").toNote();
+
+            Tone.Transport.schedule(t => {
+                guitarLead.triggerAttackRelease(note, "1n", t);
+                if (score) score.addNote("Lead", note, section.name);
+            }, absoluteTime);
+        }
+    }
+}
+
+// ============================================================
 // LEAD ENGINE (ripulito dagli enhancer locali)
 // ============================================================
 
@@ -679,11 +746,31 @@ if (isSolo && section.isLast && energy > 0.7 && complexity > 0.6 && duration > 0
 
 export function scheduleLead(section, progression, instruments, params, rand, measureDur, score) {
 
+    const isBalladLead = section?.isBallad === true;
+
     const tonalCenter = params?.tonalCenter || params?.imageParams?.tonalCenter || "A4";
     const scaleType = params?.scaleType || params?.imageParams?.scaleType || "naturalMinor";
 
     const rootNote = tonalCenter.replace(/[0-9]/g, "");
     const isMinor = scaleType.includes("minor");
 
-    LeadLegacy.schedule(section, progression, instruments, params, rand, measureDur, rootNote, isMinor, scaleType, score);
+    // 🎵 BALLAD MODE — intercetta PRIMA del motore metal
+    if (isBalladLead) {
+        scheduleBalladLead(section, progression, instruments, measureDur, score);
+        return;
+    }
+
+    // 🎸 METAL MODE — normale
+    LeadLegacy.schedule(
+        section,
+        progression,
+        instruments,
+        params,
+        rand,
+        measureDur,
+        rootNote,
+        isMinor,
+        scaleType,
+        score
+    );
 }
