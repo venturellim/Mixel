@@ -254,7 +254,7 @@ function triggerDebugMode(genre, styleName, forcedParams) {
     showDebugNotification(`${genre.toUpperCase()} - ${styleName}`);
 }
 
- Notifica toast visibile
+//Notifica toast visibile
 function showToast(message) {
     const existing = document.querySelector('#debug-toast');
     if (existing) existing.remove();
