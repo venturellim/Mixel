@@ -254,7 +254,7 @@ function triggerDebugMode(genre, styleName, forcedParams) {
     showDebugNotification(`${genre.toUpperCase()} - ${styleName}`);
 }
 
-// Notifica toast visibile
+ Notifica toast visibile
 function showToast(message) {
     const existing = document.querySelector('#debug-toast');
     if (existing) existing.remove();
@@ -293,8 +293,12 @@ function setDebugSliders(params) {
     const set = (id, value) => {
         const slider = document.getElementById(`debug-${id}`);
         const valSpan = document.getElementById(`debug-${id}-val`);
+
         slider.value = value;
         valSpan.textContent = value.toFixed(2);
+
+        // 🔥 Triggera l’evento input per aggiornare il valore interno
+        slider.dispatchEvent(new Event('input'));
     };
 
     set("intensity", intensity);
@@ -303,7 +307,7 @@ function setDebugSliders(params) {
     set("texture", texture);
 }
 
-    if (debugPanel && document.body.contains(debugPanel)) return debugPanel;
+   if (debugPanel && document.body.contains(debugPanel)) return debugPanel;
     if (debugPanel) debugPanel.remove();
 
     debugPanel = document.createElement('div');
