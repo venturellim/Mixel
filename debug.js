@@ -1,29 +1,16 @@
-// debug.js — Versione COMPLETA per mobile
-
-import { createDanceEngine } from './genres/dance/danceEngine.js';
-import { createMetalEngine } from './genres/metal/metalEngine.js';
-import { createOrchestraEngine } from './genres/orchestra/orchestraEngine.js';
-import { createPianoEngine } from './genres/piano/pianoEngine.js';
-import { createFunkyEngine } from './genres/funky/funkyEngine.js';
-
-console.log("🐛 debug.js Ver. 003 loaded");
-
+// debug.js — Versione COMPLETA per mobile (con import dinamici)
+console.log("🐛 debug.js Ver. 004 test loaded");
 
 // ============================================================
 // STATO DEBUG
 // ============================================================
 let debugActive = false;
 let debugPanel = null;
-let clickCount = 0;
-let clickTimeout = null;
 let vConsoleLoaded = false;
-
-// ... resto del codice
 
 // ============================================================
 // CONFIGURAZIONE STILI PER GENERE
 // ============================================================
-
 const genreStyles = {
     dance: {
         name: "Dance",
@@ -37,7 +24,7 @@ const genreStyles = {
     metal: {
         name: "Metal",
         styles: [
-        { name: "BalladMode", params: { intensity: 0.25, mood: 0.65, complexity: 0.25, texture: 0.75 } },
+            { name: "BalladMode", params: { intensity: 0.25, mood: 0.65, complexity: 0.25, texture: 0.75 } },
             { name: "HeavyMetal", params: { intensity: 0.5, mood: 0.5, complexity: 0.5, texture: 0.5 } },
             { name: "PowerMetal", params: { intensity: 0.75, mood: 0.7, complexity: 0.6, texture: 0.5 } },
             { name: "ThrashMetal", params: { intensity: 0.8, mood: 0.4, complexity: 0.7, texture: 0.6 } },
@@ -77,6 +64,10 @@ const genreStyles = {
     }
 };
 
+// ============================================================
+// FUNZIONI DI UTILITY
+// ============================================================
+
 function showDebugNotification(message) {
     const notification = document.createElement('div');
     notification.textContent = `🐛 DEBUG: ${message}`;
@@ -112,13 +103,46 @@ function showDebugNotification(message) {
     setTimeout(() => notification.remove(), 2000);
 }
 
+function showToast(message) {
+    const existing = document.querySelector('#debug-toast');
+    if (existing) existing.remove();
+    
+    const toast = document.createElement('div');
+    toast.id = 'debug-toast';
+    toast.textContent = message;
+    toast.style.cssText = `
+        position: fixed;
+        bottom: 150px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0,0,0,0.85);
+        color: #00f5d4;
+        padding: 10px 20px;
+        border-radius: 30px;
+        font-size: 12px;
+        z-index: 20001;
+        white-space: nowrap;
+        font-family: monospace;
+        border: 1px solid #00f5d4;
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 2000);
+}
+
 // ============================================================
-// FUNZIONE PER TRIGGERARE DEBUG
+// FUNZIONE PER TRIGGERARE DEBUG (con import dinamici)
 // ============================================================
 
-function triggerDebugMode(genre, styleName, forcedParams) {
+async function triggerDebugMode(genre, styleName, forcedParams) {
     console.log(`🐛 DEBUG MODE: ${genre} | ${styleName}`);
     console.log("Parametri forzati:", forcedParams);
+    
+    // 🔥 IMPORTA DINAMICAMENTE GLI ENGINE (solo quando necessario)
+    const { createDanceEngine } = await import('./genres/dance/danceEngine.js');
+    const { createMetalEngine } = await import('./genres/metal/metalEngine.js');
+    const { createOrchestraEngine } = await import('./genres/orchestra/orchestraEngine.js');
+    const { createPianoEngine } = await import('./genres/piano/pianoEngine.js');
+    const { createFunkyEngine } = await import('./genres/funky/funkyEngine.js');
     
     // Chiudi il pannello debug
     if (debugPanel) debugPanel.style.display = 'none';
@@ -254,54 +278,27 @@ function triggerDebugMode(genre, styleName, forcedParams) {
     showDebugNotification(`${genre.toUpperCase()} - ${styleName}`);
 }
 
-// Notifica toast visibile
-function showToast(message) {
-    const existing = document.querySelector('#debug-toast');
-    if (existing) existing.remove();
-    
-    const toast = document.createElement('div');
-    toast.id = 'debug-toast';
-    toast.textContent = message;
-    toast.style.cssText = `
-        position: fixed;
-        bottom: 150px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(0,0,0,0.85);
-        color: #00f5d4;
-        padding: 10px 20px;
-        border-radius: 30px;
-        font-size: 12px;
-        z-index: 20001;
-        white-space: nowrap;
-        font-family: monospace;
-        border: 1px solid #00f5d4;
-    `;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 2000);
-}
-
 // ============================================================
 // CREAZIONE PANNEL DEBUG
 // ============================================================
 
-function createDebugPanel() {
-
-function setDebugSliders(params) {
-    const { intensity, mood, complexity, texture } = params;
-
-    const set = (id, value) => {
-        const slider = document.getElementById(`debug-${id}`);
-        const valSpan = document.getElementById(`debug-${id}-val`);
-        slider.value = value;
-        valSpan.textContent = value.toFixed(2);
-    };
-
-    set("intensity", intensity);
-    set("mood", mood);
-    set("complexity", complexity);
-    set("texture", texture);
-}
+export function createDebugPanel() {
+    function setDebugSliders(params) {
+        const { intensity, mood, complexity, texture } = params;
+        const set = (id, value) => {
+            const slider = document.getElementById(`debug-${id}`);
+            const valSpan = document.getElementById(`debug-${id}-val`);
+            if (slider && valSpan) {
+                slider.value = value;
+                valSpan.textContent = value.toFixed(2);
+                slider.dispatchEvent(new Event('input'));
+            }
+        };
+        set("intensity", intensity);
+        set("mood", mood);
+        set("complexity", complexity);
+        set("texture", texture);
+    }
 
     if (debugPanel && document.body.contains(debugPanel)) return debugPanel;
     if (debugPanel) debugPanel.remove();
@@ -391,26 +388,20 @@ function setDebugSliders(params) {
     };
     
     document.getElementById('debug-genre').onchange = (e) => {
-    const genre = e.target.value;
-    const styles = genreStyles[genre].styles;
-    const styleSelect = document.getElementById('debug-style');
-
-    // aggiorna lista stili
-    styleSelect.innerHTML = styles.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
-
-    // imposta parametri del primo stile
-    const first = styles[0].params;
-    setDebugSliders(first);
-};
-
-document.getElementById('debug-style').onchange = (e) => {
-    const genre = document.getElementById('debug-genre').value;
-    const styleName = e.target.value;
-
-    const style = genreStyles[genre].styles.find(s => s.name === styleName);
-    if (style) setDebugSliders(style.params);
-};
-
+        const genre = e.target.value;
+        const styles = genreStyles[genre].styles;
+        const styleSelect = document.getElementById('debug-style');
+        styleSelect.innerHTML = styles.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
+        const first = styles[0].params;
+        setDebugSliders(first);
+    };
+    
+    document.getElementById('debug-style').onchange = (e) => {
+        const genre = document.getElementById('debug-genre').value;
+        const styleName = e.target.value;
+        const style = genreStyles[genre].styles.find(s => s.name === styleName);
+        if (style) setDebugSliders(style.params);
+    };
     
     ['intensity', 'mood', 'complexity', 'texture'].forEach(param => {
         const slider = document.getElementById(`debug-${param}`);
@@ -440,7 +431,7 @@ document.getElementById('debug-style').onchange = (e) => {
 // BOTTONE FLUTTANTE PER MOBILE
 // ============================================================
 
-function createFloatingButton() {
+export function createFloatingButton() {
     const btn = document.createElement('div');
     btn.innerHTML = '🐛';
     btn.style.cssText = `
@@ -476,15 +467,6 @@ window.triggerDebugMode = triggerDebugMode;
 window.showToast = showToast;
 
 // ============================================================
-// INIZIALIZZA
+// NON INIZIALIZZARE AUTOMATICAMENTE!
+// Il debug si attiva solo via import dinamico da main.js
 // ============================================================
-
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        createFloatingButton();
-        console.log("🐛 Debug ready - click sul bottone 🐛");
-    });
-} else {
-    createFloatingButton();
-    console.log("🐛 Debug ready - click sul bottone 🐛");
-}
