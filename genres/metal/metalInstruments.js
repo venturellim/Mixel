@@ -2,7 +2,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("metalInstruments.js ver. 007.1 loaded");
+console.log("metalInstruments.js ver. 007.2 loaded");
 
 // ============================================================
 // 🎚 BUS SPECIFICI DEL METAL
@@ -12,6 +12,7 @@ export const bassBus = new Tone.Gain(1);
 export const drumBus = new Tone.Gain(1);
 export const leadBus = new Tone.Gain(1);
 export const acousticBus = new Tone.Gain(1);
+export const padBus = new Tone.Gain(1);
 
 
 
