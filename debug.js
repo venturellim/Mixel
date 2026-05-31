@@ -6,8 +6,10 @@ import { createOrchestraEngine } from './genres/orchestra/orchestraEngine.js';
 import { createPianoEngine } from './genres/piano/pianoEngine.js';
 import { createFunkyEngine } from './genres/funky/funkyEngine.js';
 
-console.log("🐛 debug.js Ver. 003 loaded");
+console.log("🐛 debug.js Ver. 002 loaded");
 
+// debug.js — all'inizio, dopo gli import
+console.log("🐛 debug.js loaded");
 
 // ============================================================
 // STATO DEBUG
@@ -37,7 +39,6 @@ const genreStyles = {
     metal: {
         name: "Metal",
         styles: [
-        { name: "BalladMode", params: { intensity: 0.25, mood: 0.65, complexity: 0.25, texture: 0.75 } },
             { name: "HeavyMetal", params: { intensity: 0.5, mood: 0.5, complexity: 0.5, texture: 0.5 } },
             { name: "PowerMetal", params: { intensity: 0.75, mood: 0.7, complexity: 0.6, texture: 0.5 } },
             { name: "ThrashMetal", params: { intensity: 0.8, mood: 0.4, complexity: 0.7, texture: 0.6 } },
@@ -286,23 +287,6 @@ function showToast(message) {
 // ============================================================
 
 function createDebugPanel() {
-
-function setDebugSliders(params) {
-    const { intensity, mood, complexity, texture } = params;
-
-    const set = (id, value) => {
-        const slider = document.getElementById(`debug-${id}`);
-        const valSpan = document.getElementById(`debug-${id}-val`);
-        slider.value = value;
-        valSpan.textContent = value.toFixed(2);
-    };
-
-    set("intensity", intensity);
-    set("mood", mood);
-    set("complexity", complexity);
-    set("texture", texture);
-}
-
     if (debugPanel && document.body.contains(debugPanel)) return debugPanel;
     if (debugPanel) debugPanel.remove();
 
@@ -391,26 +375,11 @@ function setDebugSliders(params) {
     };
     
     document.getElementById('debug-genre').onchange = (e) => {
-    const genre = e.target.value;
-    const styles = genreStyles[genre].styles;
-    const styleSelect = document.getElementById('debug-style');
-
-    // aggiorna lista stili
-    styleSelect.innerHTML = styles.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
-
-    // imposta parametri del primo stile
-    const first = styles[0].params;
-    setDebugSliders(first);
-};
-
-document.getElementById('debug-style').onchange = (e) => {
-    const genre = document.getElementById('debug-genre').value;
-    const styleName = e.target.value;
-
-    const style = genreStyles[genre].styles.find(s => s.name === styleName);
-    if (style) setDebugSliders(style.params);
-};
-
+        const genre = e.target.value;
+        const styles = genreStyles[genre].styles;
+        const styleSelect = document.getElementById('debug-style');
+        styleSelect.innerHTML = styles.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
+    };
     
     ['intensity', 'mood', 'complexity', 'texture'].forEach(param => {
         const slider = document.getElementById(`debug-${param}`);
