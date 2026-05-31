@@ -285,7 +285,7 @@ function showToast(message) {
 // CREAZIONE PANNEL DEBUG
 // ============================================================
 
-function createDebugPanel() {
+export function createDebugPanel() {
 
 function setDebugSliders(params) {
     const { intensity, mood, complexity, texture } = params;
@@ -440,7 +440,7 @@ document.getElementById('debug-style').onchange = (e) => {
 // BOTTONE FLUTTANTE PER MOBILE
 // ============================================================
 
-function createFloatingButton() {
+export function createFloatingButton() {
     const btn = document.createElement('div');
     btn.innerHTML = '🐛';
     btn.style.cssText = `

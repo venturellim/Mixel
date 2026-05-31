@@ -35,6 +35,56 @@ const genreInstruments = {
     piano: ["Grand Piano"]
 };
 
+// ============================================================
+// DEBUG MODE - Caricamento dinamico (7 click sul logo)
+// ============================================================
+let debugClickCount = 0;
+let debugClickTimeout = null;
+
+function setupDebugTrigger() {
+    const logo = document.querySelector('.logo-box img') || document.querySelector('header img');
+    if (!logo) {
+        console.warn("⚠️ Logo non trovato per debug mode");
+        return;
+    }
+    
+    logo.style.cursor = 'pointer';
+    logo.addEventListener('click', (e) => {
+        e.stopPropagation();
+        debugClickCount++;
+        console.log(`🐛 Debug click count: ${debugClickCount}`);
+        
+        clearTimeout(debugClickTimeout);
+        debugClickTimeout = setTimeout(() => {
+            debugClickCount = 0;
+        }, 1000);
+        
+        if (debugClickCount >= 7) {
+            debugClickCount = 0;
+            console.log("🐛 Attivazione debug mode...");
+            
+            // Carica debug.js dinamicamente
+            import('./debug.js').then(module => {
+                console.log("🐛 debug.js caricato");
+                // Crea il pannello e il bottone fluttuante
+                if (module.createDebugPanel) module.createDebugPanel();
+                if (module.createFloatingButton) module.createFloatingButton();
+                
+                // Mostra il pannello
+                const panel = document.getElementById('debug-panel');
+                if (panel) panel.style.display = 'block';
+            }).catch(err => {
+                console.error("❌ Errore caricamento debug.js:", err);
+            });
+        }
+    });
+}
+
+// Chiama questa funzione quando il DOM è pronto
+window.addEventListener("DOMContentLoaded", () => {
+    setupDebugTrigger();
+});
+
 const miniVideo = document.querySelector('.video-mini-wrapper video'); 
 
 window.onerror = function (msg, url, line, col, error) {
