@@ -12,7 +12,7 @@ export const bassBus = new Tone.Gain(1);
 export const drumBus = new Tone.Gain(1);
 export const leadBus = new Tone.Gain(1);
 export const acousticBus = new Tone.Gain(1);
-export const padBus = new Tone.Gain(1);
+export const stringBus = new Tone.Gain(1);
 
 
 
@@ -42,7 +42,7 @@ guitarBus.connect(guitarEQ).connect(masterEQ);
 bassBus.connect(bassEQ).connect(masterEQ);
 drumBus.connect(drumEQ).connect(drumComp).connect(masterEQ);
 leadBus.connect(leadEQ).connect(masterEQ);
-padBus.connect(padEQ).connect(hallReverb).connect(masterEQ);
+strungBus.connect(padEQ).connect(hallReverb).connect(masterEQ);
 acousticBus.connect(acousticEQ).connect(masterEQ);
 
 // ============================================================
@@ -98,7 +98,7 @@ export const StStringPad = new Tone.Sampler({
     },
     release: 1.2,
     onload: () => registerInstrumentLoaded("So true String")
-}).connect(padBus);
+}).connect(stringBus);
 
 export const AcousticGuitar = new Tone.Sampler({
     urls: {
@@ -248,7 +248,7 @@ guitarBus.gain.value = Tone.dbToGain(6);  // Chitarra ritmica
 bassBus.gain.value = Tone.dbToGain(4);    // Basso
 leadBus.gain.value = Tone.dbToGain(0);   // Lead
 drumBus.gain.value = Tone.dbToGain(0);   // Batteria
-padBus.gain.value = Tone.dbToGain(0);   // String Pad
+stringBus.gain.value = Tone.dbToGain(0);   // String Pad
 acousticBus.gain.value = Tone.dbToGain(0);   // Chitarra Acustica 
 
 export function normalizeNote(note, instrument) {
@@ -294,7 +294,7 @@ export const metalInstruments = {
     bassBus,
     drumBus,
     leadBus,
-    padBus,
+    stringBus,
     acousticBus,        
     setVolume
 };
