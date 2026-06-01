@@ -2,7 +2,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
 
-console.log("metalRhythmEngine.js ver. 018 loaded");
+console.log("metalRhythmEngine.js ver. 018.1 loaded");
 
 export function scheduleRhythm(section, progression, instruments, params, rand, measureDur, nextSectionRoot, score) {
     const { drums, guitarPalm, guitarOpen, bass, acousticGuitar, StStringPad } = instruments;
@@ -403,7 +403,7 @@ export function scheduleRhythm(section, progression, instruments, params, rand, 
                         playGuitar = true;
                         inst = acousticGuitar;
                         sustain = true;
-                        const gNote = normalizeNote(currentRoot, "guitarLead") + "3";
+                        const gNote = normalizeNote(currentRoot, "acousticGuitar") + "3";
                         inst.triggerAttackRelease(gNote, "1n", absoluteTime);
                         if (StStringPad) {
                             StStringPad.triggerAttackRelease(currentRoot + "3", "1n", absoluteTime);
@@ -415,7 +415,7 @@ export function scheduleRhythm(section, progression, instruments, params, rand, 
                     if (hasBalladInstruments && s === 0) {
                         inst = acousticGuitar;
                         sustain = true;
-                        const root = normalizeNote(currentRoot, "guitarLead");
+                        const root = normalizeNote(currentRoot, "acousticGuitar");
                         const fifth = Tone.Frequency(root + "3").transpose(7).toNote();
                         const octave = Tone.Frequency(root + "3").transpose(12).toNote();
                         Tone.Transport.schedule(t => {
@@ -451,7 +451,7 @@ export function scheduleRhythm(section, progression, instruments, params, rand, 
                 const rootToUse = customNote || currentRoot;
                 let gNote;
                 if (isBalladGroove) {
-                    gNote = normalizeNote(rootToUse, "guitarLead") + "3";
+                    gNote = normalizeNote(rootToUse, "acousticGuitar") + "3";
                 } else {
                     gNote = normalizeNote(rootToUse, inst === guitarOpen ? "guitarOpen" : "guitarPalm") + "2";
                 }
