@@ -2,7 +2,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("metalInstruments.js ver. 007.1 loaded");
+console.log("metalInstruments.js ver. 007.2 loaded");
 
 // ============================================================
 // 🎚 BUS SPECIFICI DEL METAL
@@ -11,13 +11,17 @@ export const guitarBus = new Tone.Gain(1);
 export const bassBus = new Tone.Gain(1);
 export const drumBus = new Tone.Gain(1);
 export const leadBus = new Tone.Gain(1);
-export const padBus = new Tone.Gain(1);
+export const acousticBus = new Tone.Gain(1);
+export const stringBus = new Tone.Gain(1);
+
+
 
 const guitarEQ = new Tone.EQ3({ low: -4, mid: 2, high: 3 });
 const bassEQ   = new Tone.EQ3({ low: 4, mid: -2, high: -4 });
 const drumEQ   = new Tone.EQ3({ low: 2, mid: 1, high: 3 });
 const leadEQ   = new Tone.EQ3({ low: -3, mid: 2, high: 6 });
 const padEQ = new Tone.EQ3({ low: -2, mid: -1, high: 2 });
+const acousticEQ = new Tone.EQ3({ low: -2, mid: -1, high: 2 });
 
 const drumComp = new Tone.Compressor({
     threshold: -18,
@@ -38,7 +42,8 @@ guitarBus.connect(guitarEQ).connect(masterEQ);
 bassBus.connect(bassEQ).connect(masterEQ);
 drumBus.connect(drumEQ).connect(drumComp).connect(masterEQ);
 leadBus.connect(leadEQ).connect(masterEQ);
-padBus.connect(padEQ).connect(hallReverb).connect(masterEQ);
+stringBus.connect(padEQ).connect(hallReverb).connect(masterEQ);
+acousticBus.connect(acousticEQ).connect(masterEQ);
 
 // ============================================================
 // 🎸 FIX CHITARRE RITMICHE: CABINET & STEREO HAAS
@@ -93,8 +98,23 @@ export const StStringPad = new Tone.Sampler({
     },
     release: 1.2,
     onload: () => registerInstrumentLoaded("So true String")
-}).connect(padBus);
+}).connect(stringBus);
 
+export const acousticGuitar = new Tone.Sampler({
+    urls: {
+       "E2": "E2.mp3", "F2": "F2.mp3", "F#2": "Fs2.mp3", "G2": "G2.mp3", "G#2": "Gs2.mp3",
+        "A2": "A2.mp3", "A#2": "As2.mp3", "B2": "B2.mp3", "C3": "C3.mp3", "C#3": "Cs3.mp3", "D3": "D3.mp3", "D#3": "Ds3.mp3", "E3": "E3.mp3", "F3": "F3.mp3", "F#3": "Fs3.mp3", "G3": "G3.mp3", "G#3": "Gs3.mp3",
+        "A3": "A3.mp3", "A#3": "As3.mp3", "B3": "B3.mp3", "C4": "C4.mp3", "C#4": "Cs4.mp3", "D4": "D4.mp3", "D#4": "Ds4.mp3", "E4": "E4.mp3", "F4": "F4.mp3", "F#4": "Fs4.mp3", "G4": "G4.mp3", "G#4": "Gs4.mp3",
+        "A4": "A4.mp3", "A#4": "As4.mp3", "B4": "B4.mp3", "C5": "C5.mp3", "C#5": "Cs5.mp3", "D5": "D5.mp3", "D#5": "Ds5.mp3", "E5": "E5.mp3", "F5": "F6.mp3", "F#5": "Fs5.mp3", "G5": "G5.mp3", "G#5": "Gs5.mp3",
+        "A5": "A5.mp3", "A#5": "As5.mp3", "B5": "B5.mp3",
+    },
+    release: 1.2,
+    baseUrl: "Samples/AcousticGuitar/",
+    onload: () => {
+registerInstrumentLoaded("Chitarra Acustica");
+    }
+}).connect(acousticBus);
+ 
 export const guitarPalm = new Tone.Sampler({
     urls: {
         C2: "Samples/GuitarPalm/C.mp3",
@@ -215,15 +235,17 @@ function wrapPlayer(name, player) {
 // ⚙️ FUNZIONI DI UTILITY
 // ============================================================
 export function setVolume(busName, dbValue) {
-    const mixer = { guitar: guitarBus, bass: bassBus, drums: drumBus, lead: leadBus };
+    const mixer = { 
+        guitar: guitarBus, 
+        bass: bassBus, 
+        drums: drumBus, 
+        lead: leadBus,
+        pad: stringBus,
+        acustica: acousticBus
+    };
     const bus = mixer[busName];
     if (bus) bus.gain.value = Tone.dbToGain(dbValue);
 }
-
-//setVolume("guitar", -2);
-//setVolume("bass", 0);
-//setVolume("drums", -8);
-//setVolume("lead", 0);
 
 // ============================================================
 // VOLUMI DI DEFAULT
@@ -233,25 +255,37 @@ guitarBus.gain.value = Tone.dbToGain(6);  // Chitarra ritmica
 bassBus.gain.value = Tone.dbToGain(4);    // Basso
 leadBus.gain.value = Tone.dbToGain(0);   // Lead
 drumBus.gain.value = Tone.dbToGain(0);   // Batteria
+stringBus.gain.value = Tone.dbToGain(0);   // String Pad
+acousticBus.gain.value = Tone.dbToGain(0);   // Chitarra Acustica 
 
 export function normalizeNote(note, instrument) {
     if (!note || typeof note !== "string") return "A";
+
     const first = note[0].toUpperCase();
     const second = note[1];
-    if (instrument === "guitarPalm" || instrument === "guitarOpen") return first; 
+
+    // Chitarre ritmiche: solo lettera
+    if (instrument === "guitarPalm" || instrument === "guitarOpen")
+        return first;
+
+    // Lead: mantieni i # ma togli l’ottava
+    if (instrument === "guitarLead") {
+        if (second === "#") return first + "#";
+        return first;
+    }
+
+    // Basso: converti # → bemolle
     if (instrument === "bass") {
         if (second === "b") return first + "b";
         if (second === "#") {
-            const sharpToFlat = { "C#": "Db", "D#": "Eb", "F#": "Gb", "G#": "Ab", "A#": "Bb" };
-            }
+            const sharpToFlat = {
+                "C#": "Db", "D#": "Eb", "F#": "Gb",
+                "G#": "Ab", "A#": "Bb"
+            };
             return sharpToFlat[first + "#"] ?? first;
+        }
+        return first;
     }
-     if (instrument === "guitarLead") {
-
-    if (second === "#") return first + "#";
-
-    return first;
-}
     return first;
 }
 
@@ -259,6 +293,7 @@ export const metalInstruments = {
     guitarPalm,
     guitarOpen,
     guitarLead,
+    acousticGuitar,
     bass,
     drums,
     StStringPad,   
@@ -266,7 +301,8 @@ export const metalInstruments = {
     bassBus,
     drumBus,
     leadBus,
-    padBus,        
+    stringBus,
+    acousticBus,        
     setVolume
 };
 
@@ -276,5 +312,6 @@ export const metalVolumeMap = {
     bass: "Basso",
     drums: "Batteria",
     lead: "Lead Solo",
-    pad: "So True String Pad"
+    pad: "So True String Pad",
+    acustica: "Chitarra Acustica"
 };
