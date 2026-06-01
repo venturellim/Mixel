@@ -2,7 +2,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("metalInstruments.js ver. 008.2 loaded");
+console.log("metalInstruments.js ver. 008.3 loaded");
 
 // ============================================================
 // 🎚 BUS SPECIFICI DEL METAL
@@ -258,61 +258,34 @@ stringBus.gain.value = Tone.dbToGain(0);   // String Pad
 acousticBus.gain.value = Tone.dbToGain(0);   // Chitarra Acustica 
 
 export function normalizeNote(note, instrument) {
-    if (!note || typeof note !== "string") return "C3";
+    if (!note || typeof note !== "string") return "C";
 
-    // Estrai root e ottava
-    const match = note.match(/^([A-G][#b]?)(\d+)?$/);
+    // Estrai la radice (es. "C", "F#", "Db") ignorando eventuali ottave passate per sbaglio
+    const match = note.match(/^([A-G][#b]?)/);
     const targetRoot = match ? match[1] : "C";
-    const targetOctave = match && match[2] ? parseInt(match[2]) : 4;
 
     // ============================================================
-    // CHITARRE RITMICHE (solo root, ottava 2)
+    // 🎸 CHITARRE RITMICHE (Non hanno i diesis nei sample)
+    // Ritorna solo la lettera base ("C" invece di "C#"). 
+    // Il Rhythm Engine appenderà + "2".
     // ============================================================
     if (instrument === "guitarPalm" || instrument === "guitarOpen") {
-        return targetRoot[0]; // solo la lettera
+        return targetRoot[0]; 
     }
 
     // ============================================================
-    // CHITARRA LEAD (mantiene diesis, ottava variabile)
+    // 🎸 CHITARRA LEAD E ACUSTICA (Chiavi standard con diesis)
+    // I tuoi Sampler usano chiavi pulite come "F#2" o "G#3".
+    // Ritorna la nota esatta. Il Lead/Rhythm Engine appenderà l'ottava.
     // ============================================================
-    if (instrument === "guitarLead") {
-        let root = targetRoot;
-        if (targetRoot.includes("#")) {
-            // mantieni il diesis
-        } else if (targetRoot.includes("b")) {
-            root = targetRoot;
-        }
-        return root;
+    if (instrument === "guitarLead" || instrument === "acousticGuitar") {
+        return targetRoot; 
     }
 
     // ============================================================
-    // CHITARRA ACUSTICA (ha sample con ottave 2-5)
-    // ============================================================
-    if (instrument === "acousticGuitar") {
-        let octave = targetOctave;
-        octave = Math.min(5, Math.max(2, octave));
-        
-        let root = targetRoot;
-        if (targetRoot === "F#") root = "Fs";
-        if (targetRoot === "G#") root = "Gs";
-        if (targetRoot === "A#") root = "As";
-        if (targetRoot === "C#") root = "Cs";
-        if (targetRoot === "D#") root = "Ds";
-        
-        return root + octave;
-    }
-
-    // ============================================================
-    // STRING PAD (ha solo note C, ottave 2-5)
-    // ============================================================
-    if (instrument === "StStringPad") {
-        let octave = targetOctave;
-        octave = Math.min(5, Math.max(2, octave));
-        return "C" + octave;
-    }
-
-    // ============================================================
-    // BASSO (converte # in bemolle, ottava 1-2)
+    // 🎸 BASSO (Usa i bemolli invece dei diesis)
+    // Mappa i diesis sui corrispettivi bemolli. 
+    // Il Rhythm Engine appenderà + "1".
     // ============================================================
     if (instrument === "bass") {
         let root = targetRoot;
@@ -323,16 +296,18 @@ export function normalizeNote(note, instrument) {
             };
             root = sharpToFlat[targetRoot] ?? targetRoot[0];
         }
-        if (targetRoot.includes("b")) {
-            root = targetRoot;
-        }
         return root;
     }
 
     // ============================================================
-    // DEFAULT (fallback sicuro)
+    // 🎹 PAD STRING (Ha solo note C)
     // ============================================================
-    return targetRoot[0] + targetOctave;
+    if (instrument === "StStringPad") {
+        return "C";
+    }
+
+    // Fallback sicuro (solo root)
+    return targetRoot;
 }
 
 export const metalInstruments = {
