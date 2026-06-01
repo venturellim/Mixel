@@ -244,6 +244,7 @@ export function normalizeNote(note, instrument) {
         if (second === "#") {
             const sharpToFlat = { "C#": "Db", "D#": "Eb", "F#": "Gb", "G#": "Ab", "A#": "Bb" };
             }
+            return sharpToFlat[first + "#"] ?? first;
     }
      if (instrument === "guitarLead") {
 
@@ -251,7 +252,6 @@ export function normalizeNote(note, instrument) {
 
     return first;
 }
-            return sharpToFlat[first + "#"] ?? first;
     return first;
 }
 
