@@ -2,7 +2,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("metalInstruments.js ver. 008.1 loaded");
+console.log("metalInstruments.js ver. 008.2 loaded");
 
 // ============================================================
 // 🎚 BUS SPECIFICI DEL METAL
@@ -258,34 +258,81 @@ stringBus.gain.value = Tone.dbToGain(0);   // String Pad
 acousticBus.gain.value = Tone.dbToGain(0);   // Chitarra Acustica 
 
 export function normalizeNote(note, instrument) {
-    if (!note || typeof note !== "string") return "A";
+    if (!note || typeof note !== "string") return "C3";
 
-    const first = note[0].toUpperCase();
-    const second = note[1];
+    // Estrai root e ottava
+    const match = note.match(/^([A-G][#b]?)(\d+)?$/);
+    const targetRoot = match ? match[1] : "C";
+    const targetOctave = match && match[2] ? parseInt(match[2]) : 4;
 
-    // Chitarre ritmiche: solo lettera
-    if (instrument === "guitarPalm" || instrument === "guitarOpen")
-        return first;
-
-    // Lead: mantieni i # ma togli l’ottava
-    if (instrument === "guitarLead") {
-        if (second === "#") return first + "#";
-        return first;
+    // ============================================================
+    // CHITARRE RITMICHE (solo root, ottava 2)
+    // ============================================================
+    if (instrument === "guitarPalm" || instrument === "guitarOpen") {
+        return targetRoot[0]; // solo la lettera
     }
 
-    // Basso: converti # → bemolle
+    // ============================================================
+    // CHITARRA LEAD (mantiene diesis, ottava variabile)
+    // ============================================================
+    if (instrument === "guitarLead") {
+        let root = targetRoot;
+        if (targetRoot.includes("#")) {
+            // mantieni il diesis
+        } else if (targetRoot.includes("b")) {
+            root = targetRoot;
+        }
+        return root;
+    }
+
+    // ============================================================
+    // CHITARRA ACUSTICA (ha sample con ottave 2-5)
+    // ============================================================
+    if (instrument === "acousticGuitar") {
+        let octave = targetOctave;
+        octave = Math.min(5, Math.max(2, octave));
+        
+        let root = targetRoot;
+        if (targetRoot === "F#") root = "Fs";
+        if (targetRoot === "G#") root = "Gs";
+        if (targetRoot === "A#") root = "As";
+        if (targetRoot === "C#") root = "Cs";
+        if (targetRoot === "D#") root = "Ds";
+        
+        return root + octave;
+    }
+
+    // ============================================================
+    // STRING PAD (ha solo note C, ottave 2-5)
+    // ============================================================
+    if (instrument === "StStringPad") {
+        let octave = targetOctave;
+        octave = Math.min(5, Math.max(2, octave));
+        return "C" + octave;
+    }
+
+    // ============================================================
+    // BASSO (converte # in bemolle, ottava 1-2)
+    // ============================================================
     if (instrument === "bass") {
-        if (second === "b") return first + "b";
-        if (second === "#") {
+        let root = targetRoot;
+        if (targetRoot.includes("#")) {
             const sharpToFlat = {
                 "C#": "Db", "D#": "Eb", "F#": "Gb",
                 "G#": "Ab", "A#": "Bb"
             };
-            return sharpToFlat[first + "#"] ?? first;
+            root = sharpToFlat[targetRoot] ?? targetRoot[0];
         }
-        return first;
+        if (targetRoot.includes("b")) {
+            root = targetRoot;
+        }
+        return root;
     }
-    return first;
+
+    // ============================================================
+    // DEFAULT (fallback sicuro)
+    // ============================================================
+    return targetRoot[0] + targetOctave;
 }
 
 export const metalInstruments = {
