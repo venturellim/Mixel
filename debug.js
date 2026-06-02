@@ -6,7 +6,7 @@ import { createOrchestraEngine } from './genres/orchestra/orchestraEngine.js';
 import { createPianoEngine } from './genres/piano/pianoEngine.js';
 import { createFunkyEngine } from './genres/funky/funkyEngine.js';
 
-console.log("🐛 debug.js Ver. 003 loaded");
+console.log("🐛 debug.js Ver. 004 loaded");
 
 
 // ============================================================
