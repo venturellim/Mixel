@@ -2,7 +2,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
 
-console.log("metalRhythmEngine.js ver. 024.1 loaded");
+console.log("metalRhythmEngine.js ver. 024.2 loaded");
 
 // ============================================================
 // FUNZIONI DI SUPPORTO PER LA BALLAD
@@ -27,7 +27,7 @@ function buildFifth(root) {
 // ============================================================
 
 export function scheduleRhythm(section, progression, instruments, params, rand, measureDur, nextSectionRoot, score) {
-    const { drums, guitarPalm, guitarOpen, bass, acousticGuitar } = instruments;
+    const { drums, guitarPalm, guitarOpen, bass, acousticGuitar, StStringPad } = instruments;
     if (!drums || !guitarPalm || !bass) return;
 
     const hasAcoustic = !!acousticGuitar;
@@ -443,6 +443,10 @@ const fifth = normalizeNote(rawFifth, "acousticGuitar");
         kick = true;
     }
     if (s % 4 === 0) snare = true;
+
+    if (StStringPad && s === 0) {
+        StStringPad.triggerAttackRelease(currentRoot + "3", "2n", absoluteTime);
+    }
 break;
 case "epic_verse_ride":
     playGuitar = (s % 4 === 0);
@@ -461,10 +465,19 @@ case "epic_verse_pad":
         sustain = true;
         kick = true;
     }
+
+    if (StStringPad && s === 0) {
+        StStringPad.triggerAttackRelease(currentRoot + "3", "2n", absoluteTime);
+    }
+
     if (s === 4 || s === 12) snare = true;
 break;
 case "epic_pre_timpani":
     if (s % 2 === 0) kick = true;
+
+    if (StStringPad && s === 0) {
+        StStringPad.triggerAttackRelease(currentRoot + "3", "1n", absoluteTime);
+    }
 break;
 case "epic_pre_build":
     if (s % 4 === 0) {
@@ -475,6 +488,10 @@ case "epic_pre_build":
     }
 
     if (s === 14) snare = true;
+
+    if (StStringPad && s === 0) {
+        StStringPad.triggerAttackRelease(currentRoot + "3", "2n", absoluteTime);
+    }
 break;
 case "epic_pre_sustain":
     if (s === 0) {
@@ -483,6 +500,11 @@ case "epic_pre_sustain":
         sustain = true;
         kick = true;
     }
+
+    if (StStringPad && s === 0) {
+        StStringPad.triggerAttackRelease(currentRoot + "3", "2n", absoluteTime);
+    }
+
     if (s === 8) snare = true;
 break;
 case "epic_chorus_anthem":
