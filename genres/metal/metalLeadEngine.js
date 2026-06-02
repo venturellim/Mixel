@@ -103,9 +103,15 @@ function scheduleBalladPad(section, progression, instruments, measureDur, score)
     for (let m = 0; m < section.measures; m++) {
 
         const measureStart = section.startTime + m * measureDur;
-        const root = progression[m % progression.length];
-        const third = buildThird(root);
-        const fifth = buildFifth(root);
+        const rawRoot = progression[m % progression.length];
+const rawThird = buildThird(rawRoot);
+const rawFifth = buildFifth(rawRoot);
+
+// Normalizzazione per pad
+const root = normalizeNote(rawRoot, "guitarLead"); 
+const third = normalizeNote(rawThird, "guitarLead");
+const fifth = normalizeNote(rawFifth, "guitarLead");
+
 
         // Accordo pieno, sostenuto
         const chord = [

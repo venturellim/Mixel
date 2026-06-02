@@ -55,9 +55,14 @@ if (isBalladMode) {
         const measureStart = section.startTime + m * measureDur;
         const currentRoot = progression[m % progression.length];
 
-        const root = normalizeNote(currentRoot, "acousticGuitar");
-        const third = buildThird(currentRoot);
-        const fifth = buildFifth(currentRoot);
+        const rawRoot = currentRoot;
+const rawThird = buildThird(rawRoot);
+const rawFifth = buildFifth(rawRoot);
+
+const root = normalizeNote(rawRoot, "acousticGuitar");
+const third = normalizeNote(rawThird, "acousticGuitar");
+const fifth = normalizeNote(rawFifth, "acousticGuitar");
+
 
         // ============================================================
         // 1. CHITARRA ACUSTICA — ACCORDO + PLETTRATE + ARPEGGIO
