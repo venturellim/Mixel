@@ -1,8 +1,8 @@
-// metalRhythmEngine.js — ver. 021 (Complete Metal + Ballad Acoustic Rhythm)
+// metalRhythmEngine.js — ver. 023 COMPLETO (Metal + Ballad)
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
 
-console.log("metalRhythmEngine.js ver. 021 loaded");
+console.log("metalRhythmEngine.js ver. 023 loaded");
 
 // ============================================================
 // FUNZIONI DI SUPPORTO PER LA BALLAD
@@ -22,23 +22,15 @@ function buildFifth(root) {
     return scale[(idx + 7) % 12];
 }
 
-function buildPassingNote(root, step) {
-    const scale = ["C", "D", "E", "F", "G", "A", "B"];
-    let idx = scale.indexOf(root);
-    if (idx === -1) idx = 0;
-    const passing = [1, 2, 3, 4, 5, 6, 0];
-    return scale[(idx + passing[step % 7]) % 7];
-}
-
 // ============================================================
 // FUNZIONE PRINCIPALE
 // ============================================================
 
 export function scheduleRhythm(section, progression, instruments, params, rand, measureDur, nextSectionRoot, score) {
-    const { drums, guitarPalm, guitarOpen, bass, acousticGuitar, StStringPad } = instruments;
+    const { drums, guitarPalm, guitarOpen, bass, acousticGuitar } = instruments;
     if (!drums || !guitarPalm || !bass) return;
 
-    const hasBalladInstruments = !!(acousticGuitar && StStringPad);
+    const hasAcoustic = !!acousticGuitar;
 
     const name = section?.name?.toLowerCase() || "";
     const isChorus = name.includes("chorus") || (name.includes("solo") && !name.includes("pre"));
@@ -49,7 +41,7 @@ export function scheduleRhythm(section, progression, instruments, params, rand, 
     const { energy = 0.5, brightness = 0.5, complexity = 0.5, texture = 0.5 } = params?.imageParams || {};
 
     // Condizione per ballad: energy bassa (<0.4) e complexity bassa (<0.4)
-    const isBalladMode = hasBalladInstruments && energy < 0.4 && complexity < 0.4;
+    const isBalladMode = hasAcoustic && energy < 0.4 && complexity < 0.4;
     section.isBallad = isBalladMode;
 
     // ============================================================
@@ -67,65 +59,62 @@ export function scheduleRhythm(section, progression, instruments, params, rand, 
             const fifthNote = buildFifth(currentRoot);
             
             // ============================================================
-            // CHITARRA ACUSTICA: POWER CHORD + ARPEGGI
+            // CHITARRA ACUSTICA: accordo sostenuto
             // ============================================================
-            for (let s = 0; s < 16; s++) {
-                const absoluteTime = measureStartTime + (s * stepTime);
-                const isBeat = (s === 0 || s === 4 || s === 8 || s === 12);
-                const isOffBeat = (s === 2 || s === 6 || s === 10 || s === 14);
+            if (acousticGuitar) {
+                // Power chord all'inizio della misura
+                Tone.Transport.schedule(t => {
+                    acousticGuitar.triggerAttackRelease(rootNote + "3", "2n", t, 0.7);
+                    acousticGuitar.triggerAttackRelease(fifthNote + "3", "2n", t, 0.6);
+                    if (score) {
+                        score.addNote("AcousticGuitar", rootNote + "3", section.name);
+                        score.addNote("AcousticGuitar", fifthNote + "3", section.name);
+                    }
+                }, measureStartTime);
                 
-                if (isBeat && acousticGuitar) {
-                    const powerChord = [rootNote + "3", fifthNote + "3"];
-                    Tone.Transport.schedule(t => {
-                        powerChord.forEach(note => {
-                            acousticGuitar.triggerAttackRelease(note, "8n", t, 0.5);
-                            if (score) score.addNote("AcousticGuitar", note, section.name);
-                        });
-                    }, absoluteTime);
-                }
-                
-                if (isOffBeat && acousticGuitar && complexity > 0.3) {
-                    const passNote = buildPassingNote(currentRoot, s);
-                    Tone.Transport.schedule(t => {
-                        acousticGuitar.triggerAttackRelease(passNote + "3", "16n", t, 0.35);
-                        if (score) score.addNote("AcousticGuitar", passNote, section.name);
-                    }, absoluteTime);
-                }
+                // Terza a metà misura
+                Tone.Transport.schedule(t => {
+                    acousticGuitar.triggerAttackRelease(thirdNote + "3", "2n", t, 0.5);
+                    if (score) score.addNote("AcousticGuitar", thirdNote + "3", section.name);
+                }, measureStartTime + measureDur / 2);
             }
             
             // ============================================================
-            // BATTERIA MINIMAL
+            // BATTERIA LENTA (ta... ta... ta...)
             // ============================================================
-            for (let s = 0; s < 16; s++) {
-                const absoluteTime = measureStartTime + (s * stepTime);
-                
-                if (s === 0) {
-                    Tone.Transport.schedule(t => {
-                        try { drums.player("kick").start(t); } catch(e) {}
-                        if (score) score.addNote("Drums", "Kick", section.name);
-                    }, absoluteTime);
-                }
-                
-                if (s % 4 === 0) {
-                    Tone.Transport.schedule(t => {
-                        try { drums.player("hihat").start(t); } catch(e) {}
-                        if (score) score.addNote("Drums", "HiHat", section.name);
-                    }, absoluteTime);
-                }
-                
-                if (s === 0 && m === 0) {
-                    Tone.Transport.schedule(t => {
-                        try { drums.player("crash1").start(t); } catch(e) {}
-                        if (score) score.addNote("Drums", "Crash", section.name);
-                    }, absoluteTime);
-                }
+            // Kick sul primo beat
+            Tone.Transport.schedule(t => {
+                try { drums.player("kick").start(t); } catch(e) {}
+                if (score) score.addNote("Drums", "Kick", section.name);
+            }, measureStartTime);
+            
+            // Snare sul terzo beat
+            Tone.Transport.schedule(t => {
+                try { drums.player("snare").start(t); } catch(e) {}
+                if (score) score.addNote("Drums", "Snare", section.name);
+            }, measureStartTime + measureDur / 2);
+            
+            // Crash all'inizio sezione
+            if (m === 0) {
+                Tone.Transport.schedule(t => {
+                    try { drums.player("crash1").start(t); } catch(e) {}
+                    if (score) score.addNote("Drums", "Crash", section.name);
+                }, measureStartTime);
+            }
+            
+            // Hi-hat opzionale
+            if (texture > 0.4) {
+                Tone.Transport.schedule(t => {
+                    try { drums.player("hihat").start(t); } catch(e) {}
+                    if (score) score.addNote("Drums", "HiHat", section.name);
+                }, measureStartTime + measureDur * 0.75);
             }
         }
         return;
     }
 
     // ============================================================
-    // METAL MODE NORMALE
+    // METAL MODE NORMALE (groove completo)
     // ============================================================
 
     const grooves = {

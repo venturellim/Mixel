@@ -1,4 +1,4 @@
-// metalLeadEngine.js — ver. 093 COMPLETA (Metal + Ballad with Dynamic Pad)
+// metalLeadEngine.js — ver. 094 COMPLETO (Metal + Ballad)
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
 
@@ -13,7 +13,7 @@ import {
     shapeBridgeSolo
 } from "../../utils/leadEnhancers.js";
 
-console.log("metalLeadEngine.js ver. 093 COMPLETA loaded");
+console.log("metalLeadEngine.js ver. 094 loaded");
 
 // ============================================================
 // FUNZIONI DI SUPPORTO
@@ -91,17 +91,16 @@ const LeadFloyd = {
 };
 
 // ============================================================
-// BALLAD PAD ENGINE (String Pad con movimento)
+// BALLAD PAD ENGINE (armonia lenta)
 // ============================================================
 
 function scheduleBalladPad(section, progression, instruments, measureDur, score) {
     const { StStringPad, leadVibrato } = instruments;
     if (!StStringPad) return;
     
-    const stepTime = measureDur / 16;
-    const { energy = 0.5, brightness = 0.5, complexity = 0.5, texture = 0.5 } = window.currentParams?.imageParams || {};
+    const { complexity = 0.5, texture = 0.5 } = window.currentParams?.imageParams || {};
     
-    console.log(`🎹 BALLAD PAD | ${section.name} | energy=${energy.toFixed(2)}, complexity=${complexity.toFixed(2)}`);
+    console.log(`🎹 BALLAD PAD | ${section.name}`);
     
     for (let m = 0; m < section.measures; m++) {
         const measureStartTime = section.startTime + (m * measureDur);
@@ -110,82 +109,47 @@ function scheduleBalladPad(section, progression, instruments, measureDur, score)
         const third = buildThird(currentRoot);
         const fifth = buildFifth(currentRoot);
         
-        if (energy < 0.3) {
-            Tone.Transport.schedule(t => {
-                StStringPad.triggerAttackRelease(rootNote + "3", measureDur * 0.8, t, 0.5);
-                if (score) score.addNote("StringPad", rootNote + "3", section.name);
-            }, measureStartTime);
-        }
-        else if (energy < 0.5) {
-            const arpeggio = [rootNote + "3", third + "3", fifth + "3", rootNote + "4"];
-            arpeggio.forEach((note, idx) => {
-                const time = measureStartTime + (idx * 0.3);
-                Tone.Transport.schedule(t => {
-                    StStringPad.triggerAttackRelease(note, "4n", t, 0.4);
-                    if (score) score.addNote("StringPad", note, section.name);
-                }, time);
+        // Accordo sostenuto per tutta la misura
+        const chordNotes = [rootNote + "3", third + "3", fifth + "3"];
+        
+        Tone.Transport.schedule(t => {
+            chordNotes.forEach(note => {
+                StStringPad.triggerAttackRelease(note, measureDur * 0.9, t, 0.5);
+                if (score) score.addNote("StringPad", note, section.name);
             });
-        }
-        else {
-            const baseNote = rootNote + "3";
-            const fifthNote = fifth + "3";
-            
+        }, measureStartTime);
+        
+        // Movimento melodico a metà misura
+        if (complexity > 0.4) {
+            const melodyNote = (m % 2 === 0) ? fifth + "4" : third + "4";
             Tone.Transport.schedule(t => {
-                StStringPad.triggerAttackRelease(baseNote, "2n", t, 0.5);
-                if (score) score.addNote("StringPad", baseNote, section.name);
-            }, measureStartTime);
-            
-            Tone.Transport.schedule(t => {
-                StStringPad.triggerAttackRelease(fifthNote, "2n", t, 0.4);
-                if (score) score.addNote("StringPad", fifthNote, section.name);
+                StStringPad.triggerAttackRelease(melodyNote, "2n", t, 0.4);
+                if (score) score.addNote("StringPad", melodyNote, section.name + " (melody)");
             }, measureStartTime + measureDur / 2);
-            
-            if (texture > 0.5 && leadVibrato) {
+        }
+        
+        // Vibrato finale
+        if (texture > 0.5 && leadVibrato) {
+            const vibratoTime = measureStartTime + measureDur * 0.7;
+            Tone.Transport.schedule(t => {
                 try {
-                    leadVibrato.depth.rampTo(0.15, 0.2);
-                    leadVibrato.frequency.rampTo(4.5, 0.2);
+                    leadVibrato.depth.rampTo(0.12, 0.1);
+                    leadVibrato.frequency.rampTo(4.0, 0.1);
                 } catch(e) {}
-            }
-        }
-        
-        if (complexity > 0.5) {
-            const startNote = rootNote + "3";
-            const endNote = fifth + "3";
-            const slideTime = measureStartTime + measureDur * 0.25;
-            
-            Tone.Transport.schedule(t => {
-                const midi1 = Tone.Frequency(startNote).toMidi();
-                const midi2 = Tone.Frequency(endNote).toMidi();
-                const steps = Math.abs(midi2 - midi1);
-                for (let step = 1; step <= steps; step++) {
-                    const stepNote = Tone.Frequency(midi1 + (midi2 > midi1 ? step : -step), "midi").toNote();
-                    Tone.Transport.schedule(st => {
-                        StStringPad.triggerAttackRelease(stepNote, "32n", st, 0.3);
-                    }, t + (step * 0.03));
-                }
-            }, slideTime);
-        }
-        
-        if (texture > 0.6) {
-            const echoTime = measureStartTime + measureDur * 0.75;
-            const echoNote = rootNote + "3";
-            Tone.Transport.schedule(t => {
-                StStringPad.triggerAttackRelease(echoNote, "4n", t, 0.25);
-                if (score) score.addNote("StringPad", echoNote, section.name + " (echo)");
-            }, echoTime);
+            }, vibratoTime);
         }
     }
 }
 
 // ============================================================
-// BALLAD LEAD ENGINE
+// BALLAD LEAD ENGINE (melodia lenta e presente)
 // ============================================================
 
 const balladLeadSettings = {
-    vibratoDepth: 0.25,
-    vibratoFreq: 4.5,
-    stepProb: 0.85,
-    leapProb: 0.15,
+    vibratoDepth: 0.3,
+    vibratoFreq: 5.0,
+    stepProb: 0.7,
+    leapProb: 0.2,
     rangeLow: 60,
     rangeHigh: 81
 };
@@ -200,16 +164,16 @@ function generateBalladNote(prevMidi) {
     const { stepProb, leapProb, rangeLow, rangeHigh } = balladLeadSettings;
 
     if (Math.random() < stepProb) {
-        let next = prevMidi + (Math.random() < 0.5 ? -1 : 1);
-        if (next < rangeLow) next = rangeLow + 1;
-        if (next > rangeHigh) next = rangeHigh - 1;
+        let next = prevMidi + (Math.random() < 0.5 ? -2 : 2);
+        if (next < rangeLow) next = rangeLow + 2;
+        if (next > rangeHigh) next = rangeHigh - 2;
         return next;
     }
 
     if (Math.random() < leapProb) {
-        let next = prevMidi + (Math.random() < 0.5 ? -3 : 3);
-        if (next < rangeLow) next = rangeLow + 3;
-        if (next > rangeHigh) next = rangeHigh - 3;
+        let next = prevMidi + (Math.random() < 0.5 ? -5 : 5);
+        if (next < rangeLow) next = rangeLow + 5;
+        if (next > rangeHigh) next = rangeHigh - 5;
         return next;
     }
 
@@ -221,20 +185,22 @@ function scheduleBalladLead(section, progression, instruments, measureDur, score
     if (!guitarLead) return;
 
     let prevMidi = 64;
-    const stepTime = measureDur / 16;
+    const stepTime = measureDur / 8;
+    const { energy = 0.5 } = window.currentParams?.imageParams || {};
 
     for (let m = 0; m < section.measures; m++) {
         const measureStart = section.startTime + m * measureDur;
 
-        for (let s = 0; s < 16; s += 4) {
-            const absoluteTime = measureStart + s * stepTime;
+        for (let beat = 0; beat < 4; beat++) {
+            const absoluteTime = measureStart + beat * (measureDur / 4);
             applyBalladVibrato(leadVibrato);
             const midi = generateBalladNote(prevMidi);
             prevMidi = midi;
             const note = Tone.Frequency(midi, "midi").toNote();
+            const duration = energy > 0.3 ? "2n" : "1n";
 
             Tone.Transport.schedule(t => {
-                guitarLead.triggerAttackRelease(note, "1n", t);
+                guitarLead.triggerAttackRelease(note, duration, t, 0.75);
                 if (score) score.addNote("Lead", note, section.name);
             }, absoluteTime);
         }
@@ -256,7 +222,7 @@ function getSoloMelodyFamily(isSoloPt2, energy, brightness, complexity, texture)
 }
 
 // ============================================================
-// LEAD ENGINE COMPLETO (TUTTE LE 300+ RIGHE ORIGINALI)
+// METAL LEAD ENGINE (COMPLETO)
 // ============================================================
 
 const LeadLegacy = {
@@ -386,26 +352,14 @@ const LeadLegacy = {
                 const absoluteTime = measureStartTime + s * stepTime;
                 const nextStep = currentPattern[i + 1] ?? 16;
 
-                if (!currentMelody || currentMelody.length === 0) {
-                    console.warn("🎸 Lead: currentMelody vuota in", section.name);
-                    return;
-                }
+                if (!currentMelody || currentMelody.length === 0) return;
 
                 const rawIdx = currentMelody[i % currentMelody.length];
-
-                if (typeof rawIdx !== "number" || !Number.isFinite(rawIdx)) {
-                    console.warn("🎸 Lead: noteIdx non valido", rawIdx, "in", section.name);
-                    return;
-                }
+                if (typeof rawIdx !== "number" || !Number.isFinite(rawIdx)) return;
 
                 const noteIdx = rawIdx;
-
                 const scaleNote = currentScale[noteIdx % 7];
-
-                if (!scaleNote || typeof scaleNote !== "string") {
-                    console.warn("🎸 Lead: scaleNote undefined/invalid", scaleNote, "per noteIdx", noteIdx, "in", section.name);
-                    return;
-                }
+                if (!scaleNote || typeof scaleNote !== "string") return;
 
                 const octave = (isChorus || isSolo) ? 5 : 4;
 
@@ -413,7 +367,6 @@ const LeadLegacy = {
                 try {
                     rawNote = normalizeNote(scaleNote, "guitarLead") + octave;
                 } catch (e) {
-                    console.warn("🎸 Lead: normalizeNote ha lanciato", e, "per", scaleNote, "in", section.name);
                     return;
                 }
 
@@ -421,7 +374,6 @@ const LeadLegacy = {
                 try {
                     noteName = clampLeadRange(rawNote, name);
                 } catch (e) {
-                    console.warn("🎸 Lead: clampLeadRange ha lanciato", e, "per", rawNote, "in", section.name);
                     return;
                 }
 
