@@ -38,6 +38,14 @@ const genreStyles = {
         name: "Metal",
         styles: [
         { name: "BalladMode", params: { intensity: 0.25, mood: 0.45, complexity: 0.25, texture: 0.75 } },
+        {
+    name: "EpicMetal",
+    params: {
+        intensity: 0.72,
+        mood: 0.78,
+        complexity: 0.45,
+        texture: 0.62
+    } },
             { name: "HeavyMetal", params: { intensity: 0.5, mood: 0.5, complexity: 0.5, texture: 0.5 } },
             { name: "PowerMetal", params: { intensity: 0.75, mood: 0.7, complexity: 0.6, texture: 0.5 } },
             { name: "ThrashMetal", params: { intensity: 0.8, mood: 0.4, complexity: 0.7, texture: 0.6 } },
