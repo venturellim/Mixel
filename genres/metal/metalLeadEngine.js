@@ -13,7 +13,7 @@ import {
     shapeBridgeSolo
 } from "../../utils/leadEnhancers.js";
 
-console.log("metalLeadEngine.js ver. 094 loaded");
+console.log("metalLeadEngine.js ver. 095 loaded");
 
 // ============================================================
 // FUNZIONI DI SUPPORTO
@@ -95,51 +95,43 @@ const LeadFloyd = {
 // ============================================================
 
 function scheduleBalladPad(section, progression, instruments, measureDur, score) {
-    const { StStringPad, leadVibrato } = instruments;
+    const { StStringPad } = instruments;
     if (!StStringPad) return;
-    
-    const { complexity = 0.5, texture = 0.5 } = window.currentParams?.imageParams || {};
-    
-    console.log(`🎹 BALLAD PAD | ${section.name}`);
-    
+
+    console.log(`🎹 BALLAD PAD ACTIVE | ${section.name}`);
+
     for (let m = 0; m < section.measures; m++) {
-        const measureStartTime = section.startTime + (m * measureDur);
-        const currentRoot = progression[m % progression.length];
-        const rootNote = currentRoot[0];
-        const third = buildThird(currentRoot);
-        const fifth = buildFifth(currentRoot);
-        
-        // Accordo sostenuto per tutta la misura
-        const chordNotes = [rootNote + "3", third + "3", fifth + "3"];
-        
+
+        const measureStart = section.startTime + m * measureDur;
+        const root = progression[m % progression.length];
+        const third = buildThird(root);
+        const fifth = buildFifth(root);
+
+        // Accordo pieno, sostenuto
+        const chord = [
+            root + "3",
+            third + "3",
+            fifth + "3"
+        ];
+
         Tone.Transport.schedule(t => {
-            chordNotes.forEach(note => {
-                StStringPad.triggerAttackRelease(note, measureDur * 0.9, t, 0.5);
-                if (score) score.addNote("StringPad", note, section.name);
+            chord.forEach(n => {
+                StStringPad.triggerAttackRelease(n, measureDur * 0.95, t, 0.45);
+                if (score) score.addNote("StringPad", n, section.name);
             });
-        }, measureStartTime);
-        
-        // Movimento melodico a metà misura
-        if (complexity > 0.4) {
-            const melodyNote = (m % 2 === 0) ? fifth + "4" : third + "4";
+        }, measureStart);
+
+        // Variazione melodica lenta ogni 2 misure
+        if (m % 2 === 1) {
+            const melody = (m % 4 === 1) ? third + "4" : fifth + "4";
             Tone.Transport.schedule(t => {
-                StStringPad.triggerAttackRelease(melodyNote, "2n", t, 0.4);
-                if (score) score.addNote("StringPad", melodyNote, section.name + " (melody)");
-            }, measureStartTime + measureDur / 2);
-        }
-        
-        // Vibrato finale
-        if (texture > 0.5 && leadVibrato) {
-            const vibratoTime = measureStartTime + measureDur * 0.7;
-            Tone.Transport.schedule(t => {
-                try {
-                    leadVibrato.depth.rampTo(0.12, 0.1);
-                    leadVibrato.frequency.rampTo(4.0, 0.1);
-                } catch(e) {}
-            }, vibratoTime);
+                StStringPad.triggerAttackRelease(melody, "2n", t, 0.35);
+                if (score) score.addNote("StringPad", melody, section.name + " (pad-mel)");
+            }, measureStart + measureDur * 0.5);
         }
     }
 }
+
 
 // ============================================================
 // BALLAD LEAD ENGINE (melodia lenta e presente)
@@ -598,10 +590,11 @@ export function scheduleLead(section, progression, instruments, params, rand, me
     const isMinor = scaleType.includes("minor");
 
     if (isBalladLead) {
-        scheduleBalladPad(section, progression, instruments, measureDur, score);
-        scheduleBalladLead(section, progression, instruments, measureDur, score);
-        return;
-    }
+    scheduleBalladPad(section, progression, instruments, measureDur, score);
+    scheduleBalladLead(section, progression, instruments, measureDur, score);
+    return;
+}
+
 
     LeadLegacy.schedule(section, progression, instruments, params, rand, measureDur, rootNote, isMinor, scaleType, score);
 }
