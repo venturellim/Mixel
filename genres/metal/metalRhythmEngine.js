@@ -2,7 +2,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
 
-console.log("metalRhythmEngine.js ver. 024 loaded");
+console.log("metalRhythmEngine.js ver. 023 loaded");
 
 // ============================================================
 // FUNZIONI DI SUPPORTO PER LA BALLAD
@@ -45,92 +45,73 @@ export function scheduleRhythm(section, progression, instruments, params, rand, 
     section.isBallad = isBalladMode;
 
     // ============================================================
-// BALLAD MODE — VERSIONE DEFINITIVA
-// ============================================================
-if (isBalladMode) {
-    console.log(`🎸 BALLAD MODE ACTIVE | ${section.name}`);
-
-    for (let m = 0; m < section.measures; m++) {
-
-        const measureStart = section.startTime + m * measureDur;
-        const currentRoot = progression[m % progression.length];
-
-        const rawRoot = currentRoot;
-const rawThird = buildThird(rawRoot);
-const rawFifth = buildFifth(rawRoot);
-
-const root = normalizeNote(rawRoot, "acousticGuitar");
-const third = normalizeNote(rawThird, "acousticGuitar");
-const fifth = normalizeNote(rawFifth, "acousticGuitar");
-
-
-        // ============================================================
-        // 1. CHITARRA ACUSTICA — ACCORDO + PLETTRATE + ARPEGGIO
-        // ============================================================
-        if (acousticGuitar) {
-
-            // --- Accordo iniziale (plettrate lente) ---
+    // BALLAD MODE
+    // ============================================================
+    if (isBalladMode) {
+        console.log(`🎸 BALLAD MODE | ${section.name} | energy=${energy.toFixed(2)}, complexity=${complexity.toFixed(2)}`);
+        
+        for (let m = 0; m < section.measures; m++) {
+            const measureStartTime = section.startTime + (m * measureDur);
+            const currentRoot = progression[m % progression.length];
+            
+            const rootNote = normalizeNote(currentRoot, "acousticGuitar");
+            const thirdNote = buildThird(currentRoot);
+            const fifthNote = buildFifth(currentRoot);
+            
+            // ============================================================
+            // CHITARRA ACUSTICA: accordo sostenuto
+            // ============================================================
+            if (acousticGuitar) {
+                // Power chord all'inizio della misura
+                Tone.Transport.schedule(t => {
+                    acousticGuitar.triggerAttackRelease(rootNote + "3", "2n", t, 0.7);
+                    acousticGuitar.triggerAttackRelease(fifthNote + "3", "2n", t, 0.6);
+                    if (score) {
+                        score.addNote("AcousticGuitar", rootNote + "3", section.name);
+                        score.addNote("AcousticGuitar", fifthNote + "3", section.name);
+                    }
+                }, measureStartTime);
+                
+                // Terza a metà misura
+                Tone.Transport.schedule(t => {
+                    acousticGuitar.triggerAttackRelease(thirdNote + "3", "2n", t, 0.5);
+                    if (score) score.addNote("AcousticGuitar", thirdNote + "3", section.name);
+                }, measureStartTime + measureDur / 2);
+            }
+            
+            // ============================================================
+            // BATTERIA LENTA (ta... ta... ta...)
+            // ============================================================
+            // Kick sul primo beat
             Tone.Transport.schedule(t => {
-                acousticGuitar.triggerAttackRelease(root + "3", "4n", t, 0.85);
-                acousticGuitar.triggerAttackRelease(fifth + "3", "4n", t + 0.04, 0.75);
-                acousticGuitar.triggerAttackRelease(third + "3", "4n", t + 0.08, 0.65);
-
-                if (score) {
-                    score.addNote("AcousticGuitar", root + "3", section.name);
-                    score.addNote("AcousticGuitar", fifth + "3", section.name);
-                    score.addNote("AcousticGuitar", third + "3", section.name);
-                }
-            }, measureStart);
-
-            // --- Arpeggio morbido a metà misura ---
+                try { drums.player("kick").start(t); } catch(e) {}
+                if (score) score.addNote("Drums", "Kick", section.name);
+            }, measureStartTime);
+            
+            // Snare sul terzo beat
             Tone.Transport.schedule(t => {
-                acousticGuitar.triggerAttackRelease(root + "4", "8n", t, 0.55);
-                acousticGuitar.triggerAttackRelease(third + "4", "8n", t + 0.15, 0.50);
-                acousticGuitar.triggerAttackRelease(fifth + "4", "8n", t + 0.30, 0.45);
-
-                if (score) {
-                    score.addNote("AcousticGuitar", root + "4", section.name);
-                    score.addNote("AcousticGuitar", third + "4", section.name);
-                    score.addNote("AcousticGuitar", fifth + "4", section.name);
-                }
-            }, measureStart + measureDur * 0.5);
-        }
-
-        // ============================================================
-        // 2. BATTERIA — SUPER SOFT
-        // ============================================================
-
-        // Kick solo sul primo beat
-        Tone.Transport.schedule(t => {
-            try { drums.player("kick").start(t); } catch(e){}
-            if (score) score.addNote("Drums", "Kick", section.name);
-        }, measureStart);
-
-        // Snare ogni 2 misure (soft)
-        if (m % 2 === 1) {
-            Tone.Transport.schedule(t => {
-                try { drums.player("snare").start(t); } catch(e){}
+                try { drums.player("snare").start(t); } catch(e) {}
                 if (score) score.addNote("Drums", "Snare", section.name);
-            }, measureStart + measureDur * 0.5);
+            }, measureStartTime + measureDur / 2);
+            
+            // Crash all'inizio sezione
+            if (m === 0) {
+                Tone.Transport.schedule(t => {
+                    try { drums.player("crash1").start(t); } catch(e) {}
+                    if (score) score.addNote("Drums", "Crash", section.name);
+                }, measureStartTime);
+            }
+            
+            // Hi-hat opzionale
+            if (texture > 0.4) {
+                Tone.Transport.schedule(t => {
+                    try { drums.player("hihat").start(t); } catch(e) {}
+                    if (score) score.addNote("Drums", "HiHat", section.name);
+                }, measureStartTime + measureDur * 0.75);
+            }
         }
-
-        // Hi-hat morbido sul 3° beat
-        Tone.Transport.schedule(t => {
-            try { drums.player("hihat").start(t); } catch(e){}
-            if (score) score.addNote("Drums", "HiHat", section.name);
-        }, measureStart + measureDur * 0.75);
-
-        // Crash solo all'inizio sezione
-        if (m === 0) {
-            Tone.Transport.schedule(t => {
-                try { drums.player("crash1").start(t); } catch(e){}
-                if (score) score.addNote("Drums", "Crash", section.name);
-            }, measureStart);
-        }
+        return;
     }
-
-    return;
-}
 
     // ============================================================
     // METAL MODE NORMALE (groove completo)
@@ -140,14 +121,14 @@ const fifth = normalizeNote(rawFifth, "acousticGuitar");
 
     const grooves = {
         intro: ["intro_ambient", "intro_heavy_strikes", "stratovarius_intro", "doom_slow", "cinematic_buildup", "industrial_static", "stoner_doom", "power_ballad"],
-        verse: ["gallop_classic", "gallop_triplet", "thrash_diamond", "palm_mute_chug", "motorhead_drive", "technical_sync", "meshuggah_ish", "breakdown_heavy", "jump_groove", "double_time_punk", "power_gallop", "groove_metal", "black_tremolo", "speed_metal", "death_roll", "thrash_skank",
+        verse: ["gallop_classic", "gallop_triplet", "thrash_diamond", "palm_mute_chug", "motorhead_drive", "technical_sync", "meshuggah_ish", "breakdown_heavy", "jump_groove", "double_time_punk", "power_gallop", "groove_metal", "black_tremolo", "speed_metal", "death_roll", "thrash_skank"],
         "epic_verse_open",
 "epic_verse_ride",
-"epic_verse_pad"],
-        prechorus: ["pre_build_up", "driving_eights", "march_to_war", "suspended_tension", "epic_buildup", "power_ballad",
+"epic_verse_pad",
+        prechorus: ["pre_build_up", "driving_eights", "march_to_war", "suspended_tension", "epic_buildup", "power_ballad"],
         "epic_pre_timpani",
 "epic_pre_build",
-"epic_pre_sustain"],
+"epic_pre_sustain",
         bridge: ["pre_build_up", "driving_eights", "march_to_war", "suspended_tension", "epic_buildup", "power_ballad"],
         chorus: ["helloween_speed", "chorus_pure_sustain", "chorus_sustain_hit", "anthem_half_time", "power_ride_groove", "double_kick_wall", "blast_beat_light", "epic_waltz_feel", "symphonic_blast", "power_gallop", "speed_metal", "power_ballad", "epic_chorus_anthem",
 "epic_chorus_sustain",
@@ -449,6 +430,7 @@ const fifth = normalizeNote(rawFifth, "acousticGuitar");
         StStringPad.triggerAttackRelease(currentRoot + "3", "2n", absoluteTime);
     }
 break;
+
 case "epic_verse_ride":
     playGuitar = (s % 4 === 0);
     inst = guitarOpen;
@@ -459,6 +441,7 @@ case "epic_verse_ride":
 
     try { drums.player("ride").start(absoluteTime); } catch(e){}
 break;
+
 case "epic_verse_pad":
     if (s === 0) {
         playGuitar = true;
@@ -480,6 +463,7 @@ case "epic_pre_timpani":
         StStringPad.triggerAttackRelease(currentRoot + "3", "1n", absoluteTime);
     }
 break;
+
 case "epic_pre_build":
     if (s % 4 === 0) {
         playGuitar = true;
@@ -494,6 +478,7 @@ case "epic_pre_build":
         StStringPad.triggerAttackRelease(currentRoot + "3", "2n", absoluteTime);
     }
 break;
+
 case "epic_pre_sustain":
     if (s === 0) {
         playGuitar = true;
@@ -520,6 +505,7 @@ case "epic_chorus_anthem":
 
     try { drums.player("crash1").start(absoluteTime); } catch(e){}
 break;
+
 case "epic_chorus_sustain":
     if (s === 0) {
         playGuitar = true;
@@ -532,6 +518,7 @@ case "epic_chorus_sustain":
 
     try { drums.player("crash1").start(absoluteTime); } catch(e){}
 break;
+
 case "epic_chorus_double":
     kick = true;
 
