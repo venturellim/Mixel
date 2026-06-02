@@ -121,14 +121,14 @@ export function scheduleRhythm(section, progression, instruments, params, rand, 
 
     const grooves = {
         intro: ["intro_ambient", "intro_heavy_strikes", "stratovarius_intro", "doom_slow", "cinematic_buildup", "industrial_static", "stoner_doom", "power_ballad"],
-        verse: ["gallop_classic", "gallop_triplet", "thrash_diamond", "palm_mute_chug", "motorhead_drive", "technical_sync", "meshuggah_ish", "breakdown_heavy", "jump_groove", "double_time_punk", "power_gallop", "groove_metal", "black_tremolo", "speed_metal", "death_roll", "thrash_skank"],
+        verse: ["gallop_classic", "gallop_triplet", "thrash_diamond", "palm_mute_chug", "motorhead_drive", "technical_sync", "meshuggah_ish", "breakdown_heavy", "jump_groove", "double_time_punk", "power_gallop", "groove_metal", "black_tremolo", "speed_metal", "death_roll", "thrash_skank",
         "epic_verse_open",
 "epic_verse_ride",
-"epic_verse_pad",
-        prechorus: ["pre_build_up", "driving_eights", "march_to_war", "suspended_tension", "epic_buildup", "power_ballad"],
+"epic_verse_pad"],
+        prechorus: ["pre_build_up", "driving_eights", "march_to_war", "suspended_tension", "epic_buildup", "power_ballad",
         "epic_pre_timpani",
 "epic_pre_build",
-"epic_pre_sustain",
+"epic_pre_sustain"],
         bridge: ["pre_build_up", "driving_eights", "march_to_war", "suspended_tension", "epic_buildup", "power_ballad"],
         chorus: ["helloween_speed", "chorus_pure_sustain", "chorus_sustain_hit", "anthem_half_time", "power_ride_groove", "double_kick_wall", "blast_beat_light", "epic_waltz_feel", "symphonic_blast", "power_gallop", "speed_metal", "power_ballad", "epic_chorus_anthem",
 "epic_chorus_sustain",
@@ -177,7 +177,7 @@ export function scheduleRhythm(section, progression, instruments, params, rand, 
         "epic_waltz_feel": { energy: 0.6, brightness: 0.7, complexity: 0.4 },
         "symphonic_blast": { energy: 0.9, brightness: 0.8, complexity: 0.7 },
         "folk_hop": { energy: 0.7, brightness: 0.7, complexity: 0.5 },
-        "djent": { energy: 0.6, brightness: 0.3, complexity: 0.9 }
+        "djent": { energy: 0.6, brightness: 0.3, complexity: 0.9 },
         // ===== EPIC VERSE =====
 "epic_verse_open":   { energy: 0.5, brightness: 0.7, complexity: 0.3, tempo: "slow" },
 "epic_verse_ride":   { energy: 0.6, brightness: 0.7, complexity: 0.4, tempo: "medium" },
@@ -191,8 +191,7 @@ export function scheduleRhythm(section, progression, instruments, params, rand, 
 // ===== EPIC CHORUS =====
 "epic_chorus_anthem": { energy: 0.8, brightness: 0.9, complexity: 0.4, tempo: "medium" },
 "epic_chorus_sustain":{ energy: 0.7, brightness: 0.9, complexity: 0.3, tempo: "slow" },
-"epic_chorus_double": { energy: 0.9, brightness: 0.8, complexity: 0.5, tempo: "fast" },
-
+"epic_chorus_double": { energy: 0.9, brightness: 0.8, complexity: 0.5, tempo: "fast" }
     };
 
     const getGroove = (type, energy, brightness, complexity) => {
