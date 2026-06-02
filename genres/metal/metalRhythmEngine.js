@@ -140,14 +140,14 @@ const fifth = normalizeNote(rawFifth, "acousticGuitar");
 
     const grooves = {
         intro: ["intro_ambient", "intro_heavy_strikes", "stratovarius_intro", "doom_slow", "cinematic_buildup", "industrial_static", "stoner_doom", "power_ballad"],
-        verse: ["gallop_classic", "gallop_triplet", "thrash_diamond", "palm_mute_chug", "motorhead_drive", "technical_sync", "meshuggah_ish", "breakdown_heavy", "jump_groove", "double_time_punk", "power_gallop", "groove_metal", "black_tremolo", "speed_metal", "death_roll", "thrash_skank"],
+        verse: ["gallop_classic", "gallop_triplet", "thrash_diamond", "palm_mute_chug", "motorhead_drive", "technical_sync", "meshuggah_ish", "breakdown_heavy", "jump_groove", "double_time_punk", "power_gallop", "groove_metal", "black_tremolo", "speed_metal", "death_roll", "thrash_skank",
         "epic_verse_open",
 "epic_verse_ride",
-"epic_verse_pad",
-        prechorus: ["pre_build_up", "driving_eights", "march_to_war", "suspended_tension", "epic_buildup", "power_ballad"],
+"epic_verse_pad"],
+        prechorus: ["pre_build_up", "driving_eights", "march_to_war", "suspended_tension", "epic_buildup", "power_ballad",
         "epic_pre_timpani",
 "epic_pre_build",
-"epic_pre_sustain",
+"epic_pre_sustain"],
         bridge: ["pre_build_up", "driving_eights", "march_to_war", "suspended_tension", "epic_buildup", "power_ballad"],
         chorus: ["helloween_speed", "chorus_pure_sustain", "chorus_sustain_hit", "anthem_half_time", "power_ride_groove", "double_kick_wall", "blast_beat_light", "epic_waltz_feel", "symphonic_blast", "power_gallop", "speed_metal", "power_ballad", "epic_chorus_anthem",
 "epic_chorus_sustain",
@@ -449,7 +449,6 @@ const fifth = normalizeNote(rawFifth, "acousticGuitar");
         StStringPad.triggerAttackRelease(currentRoot + "3", "2n", absoluteTime);
     }
 break;
-
 case "epic_verse_ride":
     playGuitar = (s % 4 === 0);
     inst = guitarOpen;
@@ -460,7 +459,6 @@ case "epic_verse_ride":
 
     try { drums.player("ride").start(absoluteTime); } catch(e){}
 break;
-
 case "epic_verse_pad":
     if (s === 0) {
         playGuitar = true;
@@ -482,7 +480,6 @@ case "epic_pre_timpani":
         StStringPad.triggerAttackRelease(currentRoot + "3", "1n", absoluteTime);
     }
 break;
-
 case "epic_pre_build":
     if (s % 4 === 0) {
         playGuitar = true;
@@ -497,7 +494,6 @@ case "epic_pre_build":
         StStringPad.triggerAttackRelease(currentRoot + "3", "2n", absoluteTime);
     }
 break;
-
 case "epic_pre_sustain":
     if (s === 0) {
         playGuitar = true;
@@ -524,7 +520,6 @@ case "epic_chorus_anthem":
 
     try { drums.player("crash1").start(absoluteTime); } catch(e){}
 break;
-
 case "epic_chorus_sustain":
     if (s === 0) {
         playGuitar = true;
@@ -537,7 +532,6 @@ case "epic_chorus_sustain":
 
     try { drums.player("crash1").start(absoluteTime); } catch(e){}
 break;
-
 case "epic_chorus_double":
     kick = true;
 
