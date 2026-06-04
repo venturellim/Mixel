@@ -118,7 +118,8 @@ export const StStringPad = new Tone.Sampler({
     "F#5": "Samples/StringEssemble/Fs5.mp3"
     },
     release: 1.2,
-    onload: () => registerInstrumentLoaded("So true String");
+    onload: () => { 
+    registerInstrumentLoaded("So true String");
     StStringPad.set({
             envelope: {
                 attack: 1.5,   // Entrata morbida in 1.5 secondi
@@ -127,6 +128,7 @@ export const StStringPad = new Tone.Sampler({
                 release: 2.5   // Sfuma lentamente in 2.5 secondi quando rilasci
             }
         });
+    }
 }).connect(stringBus);
 
 export const acousticGuitar = new Tone.Sampler({
