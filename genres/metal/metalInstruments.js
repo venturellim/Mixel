@@ -131,6 +131,46 @@ export const StStringPad = new Tone.Sampler({
     }
 }).connect(stringBus);
 
+// ============================================================
+// 🎹 PAD EFFECTS — creati UNA SOLA VOLTA
+// ============================================================
+
+StStringPad._padFilter = new Tone.Filter({
+    type: "lowpass",
+    frequency: 800,
+    rolloff: -12
+}).connect(stringBus);
+
+StStringPad.disconnect();
+StStringPad.connect(StStringPad._padFilter);
+
+StStringPad._padFilterLFO = new Tone.LFO({
+    frequency: 0.04,
+    min: 400,
+    max: 1200
+}).start();
+StStringPad._padFilterLFO.connect(StStringPad._padFilter.frequency);
+
+StStringPad._padVibrato = new Tone.Vibrato({
+    frequency: 5,
+    depth: 0.05
+}).connect(StStringPad._padFilter);
+
+StStringPad.disconnect();
+StStringPad.connect(StStringPad._padVibrato);
+
+StStringPad._padPan = new Tone.Panner(0).connect(StStringPad._padVibrato);
+StStringPad.disconnect();
+StStringPad.connect(StStringPad._padPan);
+
+StStringPad._padPanLFO = new Tone.LFO({
+    frequency: 0.02,
+    min: -0.2,
+    max: 0.2
+}).start();
+StStringPad._padPanLFO.connect(StStringPad._padPan.pan);
+
+
 export const acousticGuitar = new Tone.Sampler({
     urls: {
        "E2": "E2.mp3", "F2": "F2.mp3", "F#2": "Fs2.mp3", "G2": "G2.mp3", "G#2": "Gs2.mp3",

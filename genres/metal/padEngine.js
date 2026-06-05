@@ -115,66 +115,9 @@ export const leadPadMelodicLibrary = {
 // ENHANCER: padMotionEnhancer
 // ------------------------------------------------------------
 export function padMotionEnhancer(pad, time, params, rand) {
-
-    // 1) Tremolo lentissimo
-    if (!pad._padTremolo) {
-        pad._padTremolo = new Tone.LFO({
-            frequency: rand.range(0.05, 0.15),
-            min: 0.85,
-            max: 1.0
-        }).start();
-        pad._padTremolo.connect(pad.volume);
-    }
-
-    // 2) Filtro in movimento
-    if (!pad._padFilter) {
-        pad._padFilter = new Tone.Filter({
-            type: "lowpass",
-            frequency: 800,
-            rolloff: -12
-        }).connect(pad.output);
-
-        pad.disconnect();
-        pad.connect(pad._padFilter);
-
-        pad._padFilterLFO = new Tone.LFO({
-            frequency: rand.range(0.02, 0.08),
-            min: 400,
-            max: 1200
-        }).start();
-        pad._padFilterLFO.connect(pad._padFilter.frequency);
-    }
-
-    // 3) Micro‑velocity
-    const vel = rand.range(0.75, 1.0);
-
-    // 4) Vibrato leggerissimo
-    if (!pad._padVibrato) {
-        pad._padVibrato = new Tone.Vibrato({
-            frequency: rand.range(4, 6),
-            depth: 0.05
-        }).connect(pad._padFilter);
-
-        pad.disconnect();
-        pad.connect(pad._padVibrato);
-    }
-
-    // 5) Stereo motion
-    if (!pad._padPan) {
-        pad._padPan = new Tone.Panner(0).connect(pad._padVibrato);
-        pad.disconnect();
-        pad.connect(pad._padPan);
-
-        pad._padPanLFO = new Tone.LFO({
-            frequency: rand.range(0.01, 0.03),
-            min: -0.2,
-            max: 0.2
-        }).start();
-        pad._padPanLFO.connect(pad._padPan.pan);
-    }
-
-    return vel;
+    return rand.range(0.75, 1.0);
 }
+
 
 // ------------------------------------------------------------
 // PAD CHORD BUILDER — accordi veri per il pad
