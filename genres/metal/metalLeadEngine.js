@@ -1,6 +1,7 @@
 // metalLeadEngine.js — ver. 094 COMPLETO (Metal + Ballad)
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
+import { padEngine } from "./padEngine.js";
 
 import {
     leadRhythmLibrary,
@@ -89,55 +90,6 @@ const LeadFloyd = {
         }
     }
 };
-
-// ============================================================
-// BALLAD PAD ENGINE (armonia lenta)
-// ============================================================
-
-function scheduleBalladPad(section, progression, instruments, measureDur, score) {
-    const { StStringPad } = instruments;
-    if (!StStringPad) return;
-
-    console.log(`🎹 BALLAD PAD ACTIVE | ${section.name}`);
-
-    for (let m = 0; m < section.measures; m++) {
-
-        const measureStart = section.startTime + m * measureDur;
-        const rawRoot = progression[m % progression.length];
-const rawThird = buildThird(rawRoot);
-const rawFifth = buildFifth(rawRoot);
-
-// Normalizzazione per pad
-const root = normalizeNote(rawRoot, "guitarLead"); 
-const third = normalizeNote(rawThird, "guitarLead");
-const fifth = normalizeNote(rawFifth, "guitarLead");
-
-
-        // Accordo pieno, sostenuto
-        const chord = [
-            root + "3",
-            third + "3",
-            fifth + "3"
-        ];
-
-        Tone.Transport.schedule(t => {
-            chord.forEach(n => {
-                StStringPad.triggerAttackRelease(n, measureDur * 0.95, t, 0.45);
-                if (score) score.addNote("StringPad", n, section.name);
-            });
-        }, measureStart);
-
-        // Variazione melodica lenta ogni 2 misure
-        if (m % 2 === 1) {
-            const melody = (m % 4 === 1) ? third + "4" : fifth + "4";
-            Tone.Transport.schedule(t => {
-                StStringPad.triggerAttackRelease(melody, "2n", t, 0.35);
-                if (score) score.addNote("StringPad", melody, section.name + " (pad-mel)");
-            }, measureStart + measureDur * 0.5);
-        }
-    }
-}
-
 
 // ============================================================
 // BALLAD LEAD ENGINE (melodia lenta e presente)
@@ -596,7 +548,7 @@ export function scheduleLead(section, progression, instruments, params, rand, me
     const isMinor = scaleType.includes("minor");
 
     if (isBalladLead) {
-    scheduleBalladPad(section, progression, instruments, measureDur, score);
+padEngine.schedulePad(section, progression, instruments, params, rand);
     scheduleBalladLead(section, progression, instruments, measureDur, score);
     return;
 }

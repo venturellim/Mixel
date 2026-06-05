@@ -286,7 +286,7 @@ bassBus.gain.value = Tone.dbToGain(4);    // Basso
 leadBus.gain.value = Tone.dbToGain(0);   // Lead
 drumBus.gain.value = Tone.dbToGain(0);   // Batteria
 stringBus.gain.value = Tone.dbToGain(0);   // String Pad
-acousticBus.gain.value = Tone.dbToGain(0);   // Chitarra Acustica 
+acousticBus.gain.value = Tone.dbToGain(2);   // Chitarra Acustica 
 
 export function normalizeNote(note, instrument) {
     if (!note || typeof note !== "string") return "C3";
@@ -337,10 +337,45 @@ export function normalizeNote(note, instrument) {
     // STRING PAD (ha solo note C, ottave 2-5)
     // ============================================================
     if (instrument === "StStringPad") {
-        let octave = targetOctave;
-        octave = Math.min(5, Math.max(2, octave));
-        return "C" + octave;
+
+    // Root disponibili nel multisample
+    const roots = ["A", "C", "D#", "F#"];
+
+    // Normalizza la nota richiesta
+    let root = targetRoot.toUpperCase();
+
+    // Converte bemolle in diesis
+    const flatToSharp = {
+        "BB": "A#",
+        "EB": "D#",
+        "AB": "G#",
+        "DB": "C#",
+        "GB": "F#"
+    };
+    if (root.includes("B")) {
+        root = flatToSharp[root] || root;
     }
+
+    // Trova la root più vicina
+    const semitone = n => ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"].indexOf(n);
+    const targetSemi = semitone(root);
+
+    let best = "C";
+    let bestDist = Infinity;
+
+    roots.forEach(r => {
+        const dist = Math.abs(semitone(r) - targetSemi);
+        if (dist < bestDist) {
+            bestDist = dist;
+            best = r;
+        }
+    });
+
+    // Clamping ottava
+    let octave = Math.min(5, Math.max(0, targetOctave));
+
+    return best + octave;
+}
 
     // ============================================================
     // BASSO (converte # in bemolle, ottava 1-2)

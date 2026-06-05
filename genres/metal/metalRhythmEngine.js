@@ -1,8 +1,10 @@
 // metalRhythmEngine.js — ver. 023 COMPLETO (Metal + Ballad)
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
+import { padEngine } from "./padEngine.js";
 
-console.log("metalRhythmEngine.js ver. 024.2 loaded");
+
+console.log("metalRhythmEngine.js ver. 025 loaded");
 
 // ============================================================
 // FUNZIONI DI SUPPORTO PER LA BALLAD
@@ -444,11 +446,15 @@ const fifth = normalizeNote(rawFifth, "acousticGuitar");
     }
     if (s % 4 === 0) snare = true;
 
-    if (StStringPad && s === 0) {
-        StStringPad.triggerAttackRelease(currentRoot + "3", "2n", absoluteTime);
-    }
+    if (s === 0) {
+    padEngine.schedulePad(section, progression, instruments, params, rand);
+}
+
 break;
 case "epic_verse_ride":
+    if (s === 0) {
+    padEngine.schedulePad(section, progression, instruments, params, rand);
+}
     playGuitar = (s % 4 === 0);
     inst = guitarOpen;
     sustain = true;
@@ -466,18 +472,20 @@ case "epic_verse_pad":
         kick = true;
     }
 
-    if (StStringPad && s === 0) {
-        StStringPad.triggerAttackRelease(currentRoot + "3", "2n", absoluteTime);
-    }
+    if (s === 0) {
+    padEngine.schedulePad(section, progression, instruments, params, rand);
+}
+
 
     if (s === 4 || s === 12) snare = true;
 break;
 case "epic_pre_timpani":
     if (s % 2 === 0) kick = true;
 
-    if (StStringPad && s === 0) {
-        StStringPad.triggerAttackRelease(currentRoot + "3", "1n", absoluteTime);
-    }
+    if (s === 0) {
+    padEngine.schedulePad(section, progression, instruments, params, rand);
+}
+
 break;
 case "epic_pre_build":
     if (s % 4 === 0) {
@@ -489,9 +497,10 @@ case "epic_pre_build":
 
     if (s === 14) snare = true;
 
-    if (StStringPad && s === 0) {
-        StStringPad.triggerAttackRelease(currentRoot + "3", "2n", absoluteTime);
-    }
+    if (s === 0) {
+    padEngine.schedulePad(section, progression, instruments, params, rand);
+}
+
 break;
 case "epic_pre_sustain":
     if (s === 0) {
@@ -501,9 +510,9 @@ case "epic_pre_sustain":
         kick = true;
     }
 
-    if (StStringPad && s === 0) {
-        StStringPad.triggerAttackRelease(currentRoot + "3", "2n", absoluteTime);
-    }
+    if (s === 0) {
+    padEngine.schedulePad(section, progression, instruments, params, rand);
+}
 
     if (s === 8) snare = true;
 break;
@@ -514,6 +523,10 @@ case "epic_chorus_anthem":
         sustain = true;
         kick = true;
     }
+    if (s === 0) {
+    padEngine.schedulePad(section, progression, instruments, params, rand);
+}
+
 
     if (s === 4 || s === 12) snare = true;
 
@@ -526,6 +539,10 @@ case "epic_chorus_sustain":
         sustain = true;
         kick = true;
     }
+    if (s === 0) {
+    padEngine.schedulePad(section, progression, instruments, params, rand);
+}
+
 
     if (s === 8) snare = true;
 
@@ -533,6 +550,9 @@ case "epic_chorus_sustain":
 break;
 case "epic_chorus_double":
     kick = true;
+    if (s === 0) {
+    padEngine.schedulePad(section, progression, instruments, params, rand);
+}
 
     if (s % 4 === 0) {
         playGuitar = true;
