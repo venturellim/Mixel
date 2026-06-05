@@ -2,15 +2,20 @@
 // leadPadEngine.js — Pad Engine per Ballad + Epic
 // ============================================================
 
-console.log("padEngine.js ver. 001 loaded");
-
-// ------------------------------------------------------------
-// IMPORT
-// ------------------------------------------------------------
 
 import * as Tone from "https://esm.sh/tone";
-
 import { normalizeNote } from "../metal/metalInstruments.js";
+import { choose } from "../utils/randomUtils.js";
+
+console.log("padEngine.js ver. 002 loaded");
+
+function wrapRand(rand) {
+    return {
+        next: () => rand(),
+        range: (min, max) => min + rand() * (max - min),
+        pick: (arr) => choose(arr, rand)
+    };
+}
 
 export const leadPadRhythmLibrary = {
 
@@ -206,6 +211,7 @@ export function buildPadChord(root, octave, type = "triad") {
 // FUNZIONE PRINCIPALE: schedulePad() — con chord builder + motion melodico
 // ------------------------------------------------------------
 export function schedulePad(section, progression, instruments, params, rand) {
+    rand = wrapRand(rand);
 
     const pad = instruments.StStringPad;
     if (!pad) return;
