@@ -7,7 +7,7 @@ import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "../metal/metalInstruments.js";
 import { choose } from "../../utils/randomUtils.js";
 
-console.log("padEngine.js ver. 002 loaded");
+console.log("padEngine.js ver. 003 loaded");
 
 function wrapRand(rand) {
     return {
@@ -225,37 +225,39 @@ export function schedulePad(section, progression, instruments, params, rand) {
     let melodicLib = null;
     let chordType = "triad";
 
-    switch (section.type) {
-        case "ballad":
-            melodicLib = leadPadMelodicLibrary.ballad;
-            chordType = "open9";
-            break;
+    const name = section.name?.toLowerCase() || "";
 
-        case "intro":
-            melodicLib = leadPadMelodicLibrary.epicIntro;
-            chordType = "cinematic";
-            break;
+switch (true) {
+    case section.isBallad:
+        melodicLib = leadPadMelodicLibrary.ballad;
+        chordType = "open9";
+        break;
 
-        case "verse":
-            rhythmLib = leadPadRhythmLibrary.static;
-            chordType = "triad";
-            break;
+    case name.includes("intro"):
+        melodicLib = leadPadMelodicLibrary.epicIntro;
+        chordType = "cinematic";
+        break;
 
-        case "prechorus":
-            rhythmLib = leadPadRhythmLibrary.motion;
-            chordType = "triad9";
-            break;
+    case name.includes("verse"):
+        rhythmLib = leadPadRhythmLibrary.static;
+        chordType = "triad";
+        break;
 
-        case "chorus":
-            rhythmLib = leadPadRhythmLibrary.octaveSpread;
-            chordType = "epicSpread";
-            break;
+    case name.includes("pre"):
+        rhythmLib = leadPadRhythmLibrary.motion;
+        chordType = "triad9";
+        break;
 
-        default:
-            rhythmLib = leadPadRhythmLibrary.static;
-            chordType = "triad";
-            break;
-    }
+    case name.includes("chorus"):
+        rhythmLib = leadPadRhythmLibrary.octaveSpread;
+        chordType = "epicSpread";
+        break;
+
+    default:
+        rhythmLib = leadPadRhythmLibrary.static;
+        chordType = "triad";
+        break;
+}
 
     // --------------------------------------------------------
     // 2) Scegli pattern
@@ -269,9 +271,19 @@ export function schedulePad(section, progression, instruments, params, rand) {
     // --------------------------------------------------------
     // 3) Determina la root dalla progression
     // --------------------------------------------------------
-    const chordIndex = section.index % progression.length;
-    const chordSymbol = progression[chordIndex]; // es: "Am", "F", "G"
-    const root = chordSymbol.replace(/[^A-G#]/g, ""); // estrae "A" da "Am"
+    // 1) Ricava un indice sicuro
+let chordIndex = 0;
+
+if (typeof section.index === "number" && isFinite(section.index)) {
+    chordIndex = section.index % progression.length;
+}
+
+// 2) Ricava un simbolo accordo sicuro
+const chordSymbol = progression[chordIndex] || progression[0] || "C";
+
+// 3) Estrai la root (A, Bb, F#, ecc.)
+const rootMatch = chordSymbol.match(/[A-G][b#]?/i);
+const root = rootMatch ? rootMatch[0].toUpperCase() : "C";
     const octave = 3;
 
     // --------------------------------------------------------
