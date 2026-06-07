@@ -4,13 +4,13 @@ import { buildPianoParams } from "./pianoParams.js";
 import { buildSongStructure } from "../../utils/structureUtils.js";
 import { createSeededRandom } from "../../utils/randomUtils.js";
 import { generateSongProgressions, degreeToRoot } from "../../utils/musicTheory.js";
-import { pianoVolumeMap } from "./pianoInstruments.js";
+import { piano, lhBus, rhBus, pianoInstruments, pianoVolumeMap } from "./pianoInstruments.js";
 import { schedulePianoRhythm } from "./pianoRhythmEngine.js";
 import { schedulePianoLead } from "./pianoLeadEngine.js";
 
 console.log("pianoEngine.js ver. 001.2 loaded");
 
-export function createPianoEngine(params, score, instruments) {
+export function createPianoEngine(params, score) {
 
     const rand = createSeededRandom(params.dna);
     const pianoParams = buildPianoParams(rand, params.imageParams);
@@ -79,26 +79,8 @@ export function createPianoEngine(params, score, instruments) {
         }, sec.startTime);
 
         // Tre motori paralleli come orchestra/metal
-        schedulePianoRhythm(
-    sec,
-    realNotes,
-    instruments,
-    combinedParams,
-    rand,
-    measureDur,
-    nextSectionRoot,
-    score
-);
-
-schedulePianoLead(
-    sec,
-    realNotes,
-    instruments,
-    combinedParams,
-    rand,
-    measureDur,
-    score
-);
+        schedulePianoRhythm(sec, realNotes, { piano, lhBus, rhBus }, combinedParams, rand, measureDur, nextSectionRoot, score);
+        schedulePianoLead(sec, realNotes, { piano, lhBus, rhBus }, combinedParams, rand, measureDur, score);
     });
 
     return {
@@ -114,6 +96,6 @@ schedulePianoLead(
             Tone.Transport.seconds = 0;
         },
         seek: (s) => Tone.Transport.seconds = s,
-        mixerData: { instruments, volumeMap: pianoVolumeMap }
+        mixerData: { instruments: pianoInstruments, volumeMap: pianoVolumeMap }
     };
 }
