@@ -4,13 +4,13 @@ import { buildPowerMetalParams } from "./powerMetalParams.js";
 import { buildSongStructure } from "../../utils/structureUtils.js";
 import { createSeededRandom } from "../../utils/randomUtils.js";
 import { generateSongProgressions, degreeToRoot } from "../../utils/musicTheory.js";
-import { metalVolumeMap } from "./metalInstruments.js";
+import { metalInstruments, metalVolumeMap } from "./metalInstruments.js";
 import { scheduleRhythm } from "./metalRhythmEngine.js";
 import { scheduleLead } from "./metalLeadEngine.js"; 
 
 console.log("metalEngine.js ver. 017 loaded");
 
-export function createMetalEngine(params, score, instruments) {
+export function createMetalEngine(params, score) {
     const rand = createSeededRandom(params.dna);
     const metalParams = buildPowerMetalParams(rand);
     
@@ -165,8 +165,8 @@ if (chorusEndSection && chorusSection) {
         }, sec.startTime);
 
         // SCHEDULAZIONE
-        scheduleRhythm(sec, realNotes, instruments, combinedParams, rand, measureDur, nextSectionRoot, score);
-scheduleLead(sec, realNotes, instruments, combinedParams, rand, measureDur, score);
+        scheduleRhythm(sec, realNotes, metalInstruments, combinedParams, rand, measureDur, nextSectionRoot, score);
+        scheduleLead(sec, realNotes, metalInstruments, combinedParams, rand, measureDur, score); 
     });
 
     return {
@@ -182,7 +182,7 @@ scheduleLead(sec, realNotes, instruments, combinedParams, rand, measureDur, scor
             Tone.Transport.seconds = 0; 
         },
         seek: (s) => Tone.Transport.seconds = s,
-        mixerData: { instruments, volumeMap: metalVolumeMap }
+        mixerData: { instruments: metalInstruments, volumeMap: metalVolumeMap }
     };
 }
 
