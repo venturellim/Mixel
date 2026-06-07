@@ -2,7 +2,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("metalInstruments.js ver. 008.2 loaded");
+console.log("metalInstruments.js ver. 011 loaded");
 
 // ============================================================
 // 🎚 BUS SPECIFICI DEL METAL
@@ -89,217 +89,286 @@ const leadVibrato = new Tone.Vibrato({
 
 // SO TRUE STRING PAD 
 
-export const StStringPad = new Tone.Sampler({
-    urls: {  
-    A0: "Samples/StringEssemble/A0.mp3", 
-    A1: "Samples/StringEssemble/A1.mp3", 
-    A2: "Samples/StringEssemble/A2.mp3", 
-    A3: "Samples/StringEssemble/A3.mp3", 
-    A4: "Samples/StringEssemble/A4.mp3",
-    A5: "Samples/StringEssemble/A5.mp3",
-    C0: "Samples/StringEssemble/C0.mp3", 
-    C1: "Samples/StringEssemble/C1.mp3", 
-    C2: "Samples/StringEssemble/C2.mp3", 
-    C3: "Samples/StringEssemble/C3.mp3", 
-    C4: "Samples/StringEssemble/C4.mp3",
-    C5: "Samples/StringEssemble/C5.mp3",
-    C6: "Samples/StringEssemble/C6.mp3",
-    "D#0": "Samples/StringEssemble/Ds0.mp3", 
-    "D#1": "Samples/StringEssemble/Ds1.mp3", 
-    "D#2": "Samples/StringEssemble/Ds2.mp3", 
-    "D#3": "Samples/StringEssemble/Ds3.mp3", 
-    "D#4": "Samples/StringEssemble/Ds4.mp3",
-    "D#5": "Samples/StringEssemble/Ds5.mp3",
-    "F#0": "Samples/StringEssemble/Fs0.mp3", 
-    "F#1": "Samples/StringEssemble/Fs1.mp3", 
-    "F#2": "Samples/StringEssemble/Fs2.mp3", 
-    "F#3": "Samples/StringEssemble/Fs3.mp3", 
-    "F#4": "Samples/StringEssemble/Fs4.mp3",
-    "F#5": "Samples/StringEssemble/Fs5.mp3"
-    },
-    release: 1.2,
-    onload: () => { 
-    registerInstrumentLoaded("So true String");
-    StStringPad.set({
-            envelope: {
-                attack: 1.5,   // Entrata morbida in 1.5 secondi
-                decay: 0.5,
-                sustain: 1.0,  // Resta al massimo volume finché tieni premuto
-                release: 2.5   // Sfuma lentamente in 2.5 secondi quando rilasci
-            }
-        });
-    }
-}).connect(stringBus);
+export function createStStringPad() {
 
-// ============================================================
-// 🎹 PAD EFFECTS — creati UNA SOLA VOLTA
-// ============================================================
+    // 1) CREA IL SAMPLER
+    const pad = new Tone.Sampler({
+        urls: {  
+            A0: "Samples/StringEssemble/A0.mp3", 
+            A1: "Samples/StringEssemble/A1.mp3", 
+            A2: "Samples/StringEssemble/A2.mp3", 
+            A3: "Samples/StringEssemble/A3.mp3", 
+            A4: "Samples/StringEssemble/A4.mp3",
+            A5: "Samples/StringEssemble/A5.mp3",
+            C0: "Samples/StringEssemble/C0.mp3", 
+            C1: "Samples/StringEssemble/C1.mp3", 
+            C2: "Samples/StringEssemble/C2.mp3", 
+            C3: "Samples/StringEssemble/C3.mp3", 
+            C4: "Samples/StringEssemble/C4.mp3",
+            C5: "Samples/StringEssemble/C5.mp3",
+            C6: "Samples/StringEssemble/C6.mp3",
+            "D#0": "Samples/StringEssemble/Ds0.mp3", 
+            "D#1": "Samples/StringEssemble/Ds1.mp3", 
+            "D#2": "Samples/StringEssemble/Ds2.mp3", 
+            "D#3": "Samples/StringEssemble/Ds3.mp3", 
+            "D#4": "Samples/StringEssemble/Ds4.mp3",
+            "D#5": "Samples/StringEssemble/Ds5.mp3",
+            "F#0": "Samples/StringEssemble/Fs0.mp3", 
+            "F#1": "Samples/StringEssemble/Fs1.mp3", 
+            "F#2": "Samples/StringEssemble/Fs2.mp3", 
+            "F#3": "Samples/StringEssemble/Fs3.mp3", 
+            "F#4": "Samples/StringEssemble/Fs4.mp3",
+            "F#5": "Samples/StringEssemble/Fs5.mp3"
+        },
+        release: 1.2,
+        onload: () => { 
+            registerInstrumentLoaded("So true String");
+            pad.set({
+                envelope: {
+                    attack: 1.5,
+                    decay: 0.5,
+                    sustain: 1.0,
+                    release: 2.5
+                }
+            });
+        }
+    });
 
-StStringPad._padFilter = new Tone.Filter({
-    type: "lowpass",
-    frequency: 800,
-    rolloff: -12
-}).connect(stringBus);
+    // 2) ROUTING DI BASE
+    pad.connect(stringBus);
 
-StStringPad.disconnect();
-StStringPad.connect(StStringPad._padFilter);
+    // ============================================================
+    // 🎹 PAD EFFECTS — creati UNA SOLA VOLTA
+    // ============================================================
 
-StStringPad._padFilterLFO = new Tone.LFO({
-    frequency: 0.04,
-    min: 400,
-    max: 1200
-}).start();
-StStringPad._padFilterLFO.connect(StStringPad._padFilter.frequency);
+    // FILTER
+    pad._padFilter = new Tone.Filter({
+        type: "lowpass",
+        frequency: 800,
+        rolloff: -12
+    }).connect(stringBus);
 
-StStringPad._padVibrato = new Tone.Vibrato({
-    frequency: 5,
-    depth: 0.05
-}).connect(StStringPad._padFilter);
+    pad.disconnect();
+    pad.connect(pad._padFilter);
 
-StStringPad.disconnect();
-StStringPad.connect(StStringPad._padVibrato);
+    // FILTER LFO
+    pad._padFilterLFO = new Tone.LFO({
+        frequency: 0.04,
+        min: 400,
+        max: 1200
+    }).start();
+    pad._padFilterLFO.connect(pad._padFilter.frequency);
 
-StStringPad._padPan = new Tone.Panner(0).connect(StStringPad._padVibrato);
-StStringPad.disconnect();
-StStringPad.connect(StStringPad._padPan);
+    // VIBRATO
+    pad._padVibrato = new Tone.Vibrato({
+        frequency: 5,
+        depth: 0.05
+    }).connect(pad._padFilter);
 
-StStringPad._padPanLFO = new Tone.LFO({
-    frequency: 0.02,
-    min: -0.2,
-    max: 0.2
-}).start();
-StStringPad._padPanLFO.connect(StStringPad._padPan.pan);
+    pad.disconnect();
+    pad.connect(pad._padVibrato);
 
+    // PAN
+    pad._padPan = new Tone.Panner(0).connect(pad._padVibrato);
+    pad.disconnect();
+    pad.connect(pad._padPan);
 
-export const acousticGuitar = new Tone.Sampler({
-    urls: {
-       "E2": "E2.mp3", "F2": "F2.mp3", "F#2": "Fs2.mp3", "G2": "G2.mp3", "G#2": "Gs2.mp3",
-        "A2": "A2.mp3", "A#2": "As2.mp3", "B2": "B2.mp3", "C3": "C3.mp3", "C#3": "Cs3.mp3", "D3": "D3.mp3", "D#3": "Ds3.mp3", "E3": "E3.mp3", "F3": "F3.mp3", "G3": "G3.mp3", "G#3": "Gs3.mp3",
-        "A3": "A3.mp3", "A#3": "As3.mp3", "B3": "B3.mp3", "C4": "C4.mp3", "C#4": "Cs4.mp3", "D4": "D4.mp3", "D#4": "Ds4.mp3", "E4": "E4.mp3", "F4": "F4.mp3", "F#4": "Fs4.mp3", "G4": "G4.mp3", "G#4": "Gs4.mp3",
-        "A4": "A4.mp3", "A#4": "As4.mp3", "B4": "B4.mp3", "C5": "C5.mp3", "C#5": "Cs5.mp3", "D5": "D5.mp3", "D#5": "Ds5.mp3", "E5": "E5.mp3", "F5": "F5.mp3", "F#5": "Fs5.mp3", "G5": "G5.mp3", "G#5": "Gs5.mp3", "A#5": "As5.mp3", "B5": "B5.mp3",
-    },
-    release: 1.2,
-    baseUrl: "Samples/AcousticGuitar/",
-    onload: () => {
-registerInstrumentLoaded("Chitarra Acustica");
-    }
-}).connect(acousticBus);
+    // PAN LFO
+    pad._padPanLFO = new Tone.LFO({
+        frequency: 0.02,
+        min: -0.2,
+        max: 0.2
+    }).start();
+    pad._padPanLFO.connect(pad._padPan.pan);
+
+    return pad;
+}
+
+export function createAcousticGuitar() {
+
+    const sampler = new Tone.Sampler({
+        urls: {
+            "E2": "Samples/AcousticGuitar/E2.mp3", "F2": "Samples/AcousticGuitar/F2.mp3", "F#2": "Samples/AcousticGuitar/Fs2.mp3", "G2": "Samples/AcousticGuitar/G2.mp3", "G#2": "Samples/AcousticGuitar/Gs2.mp3",
+            "A2": "Samples/AcousticGuitar/A2.mp3", "A#2": "Samples/AcousticGuitar/As2.mp3", "B2": "Samples/AcousticGuitar/B2.mp3", "C3": "Samples/AcousticGuitar/C3.mp3", "C#3": "Samples/AcousticGuitar/Cs3.mp3",
+            "D3": "Samples/AcousticGuitar/D3.mp3", "D#3": "Samples/AcousticGuitar/Ds3.mp3", "E3": "Samples/AcousticGuitar/E3.mp3", "F3": "Samples/AcousticGuitar/F3.mp3", "G3": "Samples/AcousticGuitar/G3.mp3",
+            "G#3": "Samples/AcousticGuitar/Gs3.mp3", "A3": "Samples/AcousticGuitar/A3.mp3", "A#3": "Samples/AcousticGuitar/As3.mp3", "B3": "Samples/AcousticGuitar/B3.mp3", "C4": "Samples/AcousticGuitar/C4.mp3",
+            "C#4": "Samples/AcousticGuitar/Cs4.mp3", "D4": "Samples/AcousticGuitar/D4.mp3", "D#4": "Samples/AcousticGuitar/Ds4.mp3", "E4": "Samples/AcousticGuitar/E4.mp3", "F4": "Samples/AcousticGuitar/F4.mp3",
+            "F#4": "Samples/AcousticGuitar/Fs4.mp3", "G4": "Samples/AcousticGuitar/G4.mp3", "G#4": "Samples/AcousticGuitar/Gs4.mp3", "A4": "Samples/AcousticGuitar/A4.mp3", "A#4": "Samples/AcousticGuitar/As4.mp3",
+            "B4": "Samples/AcousticGuitar/B4.mp3", "C5": "Samples/AcousticGuitar/C5.mp3", "C#5": "Samples/AcousticGuitar/Cs5.mp3", "D5": "Samples/AcousticGuitar/D5.mp3", "D#5": "Samples/AcousticGuitar/Ds5.mp3",
+            "E5": "Samples/AcousticGuitar/E5.mp3", "F5": "Samples/AcousticGuitar/F5.mp3", "F#5": "Samples/AcousticGuitar/Fs5.mp3", "G5": "Samples/AcousticGuitar/G5.mp3", "G#5": "Samples/AcousticGuitar/Gs5.mp3",
+            "A#5": "Samples/AcousticGuitar/As5.mp3", "B5": "Samples/AcousticGuitar/B5.mp3"
+        },
+        release: 1.2,
+        onload: () => registerInstrumentLoaded("Chitarra Acustica")
+    }).connect(acousticBus);
+
+    return sampler;
+}
  
-export const guitarPalm = new Tone.Sampler({
-    urls: {
-        C2: "Samples/GuitarPalm/C.mp3",
-        D2: "Samples/GuitarPalm/D.mp3",
-        E2: "Samples/GuitarPalm/E.mp3",
-        F2: "Samples/GuitarPalm/F.mp3",
-        G2: "Samples/GuitarPalm/G.mp3",
-        A2: "Samples/GuitarPalm/A.mp3",
-        B2: "Samples/GuitarPalm/B.mp3"
-    },
-    attack: 0.015,
-    release: 0.6,
-    onload: () => registerInstrumentLoaded(" Chitarra Palm")
-}).connect(guitarFX);
+export function createGuitarPalm() {
 
-export const guitarOpen = new Tone.Sampler({
-    urls: {
-        C2: "Samples/GuitarOpen/C.mp3",
-        D2: "Samples/GuitarOpen/D.mp3",
-        E2: "Samples/GuitarOpen/E.mp3",
-        F2: "Samples/GuitarOpen/F.mp3",
-        G2: "Samples/GuitarOpen/G.mp3",
-        A2: "Samples/GuitarOpen/A.mp3",
-        B2: "Samples/GuitarOpen/B.mp3"
-    },
-    attack: 0.02,
-    release: 1.2,
-    onload: () => registerInstrumentLoaded("Chitarra Open")
-}).connect(guitarFX);
+    const sampler = new Tone.Sampler({
+        urls: {
+            C2: "Samples/GuitarPalm/C.mp3",
+            D2: "Samples/GuitarPalm/D.mp3",
+            E2: "Samples/GuitarPalm/E.mp3",
+            F2: "Samples/GuitarPalm/F.mp3",
+            G2: "Samples/GuitarPalm/G.mp3",
+            A2: "Samples/GuitarPalm/A.mp3",
+            B2: "Samples/GuitarPalm/B.mp3"
+        },
+        attack: 0.015,
+        release: 0.6,
+        onload: () => registerInstrumentLoaded("Chitarra Palm")
+    }).connect(guitarFX);
 
-export const guitarLead = new Tone.Sampler({
-    urls: {
-        C2: "Samples/GuitarLead/C2.mp3", D2: "Samples/GuitarLead/D2.mp3",
-        E2: "Samples/GuitarLead/E2.mp3", F2: "Samples/GuitarLead/F2.mp3",
-        "G#2": "Samples/GuitarLead/Gs2.mp3", A2: "Samples/GuitarLead/A2.mp3", B2: "Samples/GuitarLead/B2.mp3",
-        C3: "Samples/GuitarLead/C3.mp3", D3: "Samples/GuitarLead/D3.mp3",
-         E3: "Samples/GuitarLead/E3.mp3", F3: "Samples/GuitarLead/F3.mp3",
-        "G#3": "Samples/GuitarLead/Gs3.mp3", G3: "Samples/GuitarLead/G3.mp3", B3: "Samples/GuitarLead/B3.mp3",
-        "C#4": "Samples/GuitarLead/Cs4.mp3", D4: "Samples/GuitarLead/D4.mp3",
-         E4: "Samples/GuitarLead/E4.mp3", F4: "Samples/GuitarLead/F4.mp3",
-        "G#4": "Samples/GuitarLead/Gs4.mp3", G4: "Samples/GuitarLead/G4.mp3", B4: "Samples/GuitarLead/B4.mp3",
-        C5: "Samples/GuitarLead/C5.mp3", D5: "Samples/GuitarLead/D5.mp3",
-         F5: "Samples/GuitarLead/F5.mp3",
-        "G#5": "Samples/GuitarLead/Gs5.mp3", "A#5": "Samples/GuitarLead/As5.mp3",
-         B5: "Samples/GuitarLead/B5.mp3",
-        "C#6": "Samples/GuitarLead/Cs6.mp3", D6: "Samples/GuitarLead/D6.mp3",
-    },
-    attack: 0.02,
-    release: 0.8,
-    onload: () => registerInstrumentLoaded("Chitarra Lead")
-}).connect(leadVibrato);
-
-export const bass = new Tone.Sampler({
-    urls: {
-        C1: "Samples/Bass/C1.mp3", Db1: "Samples/Bass/Db1.mp3", D1: "Samples/Bass/D1.mp3",
-        Eb1: "Samples/Bass/Eb1.mp3", E1: "Samples/Bass/E1.mp3", F1: "Samples/Bass/F1.mp3",
-        Gb1: "Samples/Bass/Gb1.mp3", G1: "Samples/Bass/G1.mp3", Ab1: "Samples/Bass/Ab1.mp3",
-        A1: "Samples/Bass/A1.mp3", Bb1: "Samples/Bass/Bb1.mp3", B1: "Samples/Bass/B1.mp3",
-        C2: "Samples/Bass/C2.mp3"
-    },
-    onload: () => registerInstrumentLoaded("Basso")
-}).connect(bassBus);
-
-export const drums = new Tone.Players({
-    urls: {
-    kick: "Samples/Drums/kick.mp3", 
-    snare: "Samples/Drums/snare.mp3",
-    ghost: "Samples/Drums/ghost.mp3", 
-    hihat: "Samples/Drums/hihatclosed.mp3",
-    openhat: "Samples/Drums/hihatopen.mp3", 
-    crash1: "Samples/Drums/crash1.mp3",
-    crash2: "Samples/Drums/crash2.mp3", 
-    tom1: "Samples/Drums/tom1.mp3",
-    tom2: "Samples/Drums/tom2.mp3", 
-    tom3: "Samples/Drums/tom3.mp3",
-    tom4: "Samples/Drums/tom4.mp3", 
-    ride: "Samples/Drums/ride.mp3",
-    ridebell: "Samples/Drums/ridebell.mp3", 
-    china: "Samples/Drums/china.mp3"
-},
-    onload: () => registerInstrumentLoaded("Batteria")
-}).connect(drumBus);
-
-// ============================================================
-// 🎵 LOGGING & WRAPPING
-// ============================================================
-function wrapSampler(name, sampler) {
-    const orig = sampler.triggerAttackRelease.bind(sampler);
-    sampler.triggerAttackRelease = (note, dur, time) => {
-        logNote(name, note, time);
-        return orig(note, dur, time);
-    };
+    return sampler;
 }
 
-wrapSampler("guitarPalm", guitarPalm);
-wrapSampler("guitarOpen", guitarOpen);
-wrapSampler("guitarLead", guitarLead);
-wrapSampler("bass", bass);
+export function createGuitarOpen() {
 
-function wrapPlayer(name, player) {
-    const orig = player.start.bind(player);
-    player.start = (time, offset, dur) => {
-        logNote(name, "(sample)", time);
-        return orig(time, offset, dur);
-    };
+    const sampler = new Tone.Sampler({
+        urls: {
+            C2: "Samples/GuitarOpen/C.mp3",
+            D2: "Samples/GuitarOpen/D.mp3",
+            E2: "Samples/GuitarOpen/E.mp3",
+            F2: "Samples/GuitarOpen/F.mp3",
+            G2: "Samples/GuitarOpen/G.mp3",
+            A2: "Samples/GuitarOpen/A.mp3",
+            B2: "Samples/GuitarOpen/B.mp3"
+        },
+        attack: 0.02,
+        release: 1.2,
+        onload: () => registerInstrumentLoaded("Chitarra Open")
+    }).connect(guitarFX);
+
+    return sampler;
 }
 
-[
-    "kick","snare","ghost","hihat","openhat",
-    "crash1","crash2","tom1","tom2","tom3","tom4",
-    "ride","ridebell","china"
-].forEach(key => {
-    const p = drums.player(key);
-    if (p) wrapPlayer("drums."+key, p);
-});
+export function createGuitarLead() {
+
+    const sampler = new Tone.Sampler({
+        urls: {
+            C2: "Samples/GuitarLead/C2.mp3", D2: "Samples/GuitarLead/D2.mp3",
+            E2: "Samples/GuitarLead/E2.mp3", F2: "Samples/GuitarLead/F2.mp3",
+            "G#2": "Samples/GuitarLead/Gs2.mp3", A2: "Samples/GuitarLead/A2.mp3", B2: "Samples/GuitarLead/B2.mp3",
+
+            C3: "Samples/GuitarLead/C3.mp3", D3: "Samples/GuitarLead/D3.mp3",
+            E3: "Samples/GuitarLead/E3.mp3", F3: "Samples/GuitarLead/F3.mp3",
+            "G#3": "Samples/GuitarLead/Gs3.mp3", G3: "Samples/GuitarLead/G3.mp3", B3: "Samples/GuitarLead/B3.mp3",
+
+            "C#4": "Samples/GuitarLead/Cs4.mp3", D4: "Samples/GuitarLead/D4.mp3",
+            E4: "Samples/GuitarLead/E4.mp3", F4: "Samples/GuitarLead/F4.mp3",
+            "G#4": "Samples/GuitarLead/Gs4.mp3", G4: "Samples/GuitarLead/G4.mp3", B4: "Samples/GuitarLead/B4.mp3",
+
+            C5: "Samples/GuitarLead/C5.mp3", D5: "Samples/GuitarLead/D5.mp3",
+            F5: "Samples/GuitarLead/F5.mp3",
+            "G#5": "Samples/GuitarLead/Gs5.mp3", "A#5": "Samples/GuitarLead/As5.mp3",
+            B5: "Samples/GuitarLead/B5.mp3",
+
+            "C#6": "Samples/GuitarLead/Cs6.mp3", D6: "Samples/GuitarLead/D6.mp3"
+        },
+        attack: 0.02,
+        release: 0.8,
+        onload: () => registerInstrumentLoaded("Chitarra Lead")
+    }).connect(leadVibrato);
+
+    return sampler;
+}
+
+export function createBass() {
+
+    const sampler = new Tone.Sampler({
+        urls: {
+            C1: "Samples/Bass/C1.mp3", Db1: "Samples/Bass/Db1.mp3", D1: "Samples/Bass/D1.mp3",
+            Eb1: "Samples/Bass/Eb1.mp3", E1: "Samples/Bass/E1.mp3", F1: "Samples/Bass/F1.mp3",
+            Gb1: "Samples/Bass/Gb1.mp3", G1: "Samples/Bass/G1.mp3", Ab1: "Samples/Bass/Ab1.mp3",
+            A1: "Samples/Bass/A1.mp3", Bb1: "Samples/Bass/Bb1.mp3", B1: "Samples/Bass/B1.mp3",
+            C2: "Samples/Bass/C2.mp3"
+        },
+        onload: () => registerInstrumentLoaded("Basso")
+    }).connect(bassBus);
+
+       return sampler;
+}
+
+export function createDrums() {
+
+    const players = new Tone.Players({
+        urls: {
+            kick: "Samples/Drums/kick.mp3", 
+            snare: "Samples/Drums/snare.mp3",
+            ghost: "Samples/Drums/ghost.mp3", 
+            hihat: "Samples/Drums/hihatclosed.mp3",
+            openhat: "Samples/Drums/hihatopen.mp3", 
+            crash1: "Samples/Drums/crash1.mp3",
+            crash2: "Samples/Drums/crash2.mp3", 
+            tom1: "Samples/Drums/tom1.mp3",
+            tom2: "Samples/Drums/tom2.mp3", 
+            tom3: "Samples/Drums/tom3.mp3",
+            tom4: "Samples/Drums/tom4.mp3", 
+            ride: "Samples/Drums/ride.mp3",
+            ridebell: "Samples/Drums/ridebell.mp3", 
+            china: "Samples/Drums/china.mp3"
+        },
+        onload: () => registerInstrumentLoaded("Batteria")
+    }).connect(drumBus);
+
+    // Logging per ogni player
+    [
+        "kick","snare","ghost","hihat","openhat",
+        "crash1","crash2","tom1","tom2","tom3","tom4",
+        "ride","ridebell","china"
+    ].forEach(key => {
+        const p = players.player(key);
+        if (p) {
+            const orig = p.start.bind(p);
+            p.start = (time, offset, dur) => {
+                logNote("drums."+key, "(sample)", time);
+                return orig(time, offset, dur);
+            };
+        }
+    });
+
+    return players;
+}
+
+// ============================================================
+// 🎸 METAL PACK — crea TUTTI gli strumenti solo quando serve
+// ============================================================
+export async function loadMetalPack() {
+
+    // Creazione strumenti (factory functions)
+    const guitarPalm = createGuitarPalm();
+    const guitarOpen = createGuitarOpen();
+    const guitarLead = createGuitarLead();
+    const acousticGuitar = createAcousticGuitar();
+    const bass = createBass();
+    const drums = createDrums();
+    const StStringPad = createStStringPad();
+
+    // Restituiamo un oggetto identico a metalInstruments originale
+    return {
+        guitarPalm,
+        guitarOpen,
+        guitarLead,
+        acousticGuitar,
+        bass,
+        drums,
+        StStringPad,
+
+        // Bus (non cambiano)
+        guitarBus,
+        bassBus,
+        drumBus,
+        leadBus,
+        stringBus,
+        acousticBus,
+
+        // Utility
+        setVolume
+    };
+}
 
 // ============================================================
 // ⚙️ FUNZIONI DI UTILITY
@@ -440,24 +509,6 @@ export function normalizeNote(note, instrument) {
     // ============================================================
     return targetRoot[0] + targetOctave;
 }
-
-export const metalInstruments = {
-    guitarPalm,
-    guitarOpen,
-    guitarLead,
-    acousticGuitar,
-    bass,
-    drums,
-    StStringPad,   
-    guitarBus,
-    bassBus,
-    drumBus,
-    leadBus,
-    stringBus,
-    acousticBus,        
-    setVolume
-};
-
 
 export const metalVolumeMap = {
     guitar: "Chitarre",
