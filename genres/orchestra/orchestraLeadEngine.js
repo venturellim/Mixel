@@ -16,7 +16,6 @@ import {
     buildScaleFromTonic,
     getScaleDegree
 } from "../../utils/scaleUtils.js";
-import { normalizeNote } from "./orchestraInstruments.js";
 
 console.log("orchestraLeadEngine.js ver. 002.2 loaded");
 
@@ -242,13 +241,13 @@ export function scheduleOrchestraLead(section, progression, instruments, params,
 
             // Viola: range medio
             const violaOctave = isSolo ? 5 : 4;
-            const violaNote = normalizeNote(`${violaName}${violaOctave}`, "viola");
+            const violaNote = safeNote(violaName, violaOctave);
 
             // Violino: un'ottava sopra la viola
-            let violinNote = normalizeNote(`${violinNameBase}${violaOctave + 1}`, "violin");
+            let violinNote = safeNote(violinNameBase, violaOctave + 1);
             if (!violinNote && violinNameBase) {
                 // fallback: prova con ottava diversa
-                violinNote = normalizeNote(`${violinNameBase}${violaOctave + 2}`, "violin");
+                violinNote = safeNote(violinNameBase, violaOctave + 2);
             }
 
             const velViola = computeOrchestraVelocity(violaIdx, duration, isSolo, isBridge);
@@ -281,7 +280,7 @@ export function scheduleOrchestraLead(section, progression, instruments, params,
                 if (supportIdx !== null) {
                     const supportDegree = rootIdx + supportIdx;
                     const supportName = getScaleDegree(scale, supportDegree);
-                    const const supportNote = normalizeNote(`${supportName}3`, "viola");
+                    const supportNote = safeNote(supportName, "3");
                     if (supportNote) {
                         Tone.Transport.schedule(time => {
                             viola.triggerAttackRelease(
