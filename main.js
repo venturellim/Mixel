@@ -213,7 +213,7 @@ async function selectGenre(genre) {
         }
 
     if (genre === "metal") {
-        instrument = await loadMetalPack();
+        instruments = await loadMetalPack();
         currentEngine = await createMetalEngine(globalPhotoParams, scoreUI, instruments);
         }
 
