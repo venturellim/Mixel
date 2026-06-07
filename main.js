@@ -14,20 +14,11 @@ import { createOrchestraEngine } from "./genres/orchestra/orchestraEngine.js";
 import { createDanceEngine } from "./genres/dance/danceEngine.js";
 import { createFunkyEngine } from "./genres/funky/funkyEngine.js";
 import { scoreVisualizer } from "./scoreUI.js";
-// =========================
-// PACKS
-// =========================
-import { loadDancePack } from "./genres/dance/danceInstruments.js";
-import { loadMetalPack } from "./genres/metal/metalInstruments.js";
-import { loadOrchestraPack } from "./genres/orchestra/orchestraInstruments.js";
-import { loadPianoPack } from "./genres/piano/pianoInstruments.js";
-import { loadFunkyPack } from "./genres/funky/funkyInstruments.js";
 
-console.log("main.js Ver. 021 loaded");
+console.log("main.js Ver. 020.1 loaded");
 
 let currentEngine = null;
 let currentGenre = null;
-let currentPack = null;
 let firstStart = 1;
 let newImageLoaded = 0;
 let scoreUI = null;
@@ -55,40 +46,6 @@ window.addEventListener("DOMContentLoaded", () => {
     }
     resizeCanvas();
 });
-
-export function unloadPack(pack) {
-    if (!pack || typeof pack !== "object") return;
-
-    for (const key in pack) {
-        const item = pack[key];
-
-        // 1. IGNORA BUS, EQ, REVERB, ENVELOPE, ecc.
-        if (
-            key.endsWith("Bus") ||
-            key === "duckGain" ||
-            key === "duckEnv" ||
-            key === "setVolume" ||
-            key === "hallReverb"
-        ) {
-            continue;
-        }
-
-        // 2. SE È UN SAMPLER / SYNTH / PLAYER → dispose()
-        if (item && typeof item.dispose === "function") {
-            try {
-                item.dispose();
-                // console.log(`Disposed: ${key}`);
-            } catch (e) {
-                console.warn(`Errore dispose su ${key}:`, e);
-            }
-        }
-
-        // 3. RIMUOVI FLAG INTERNE (es. sidechain)
-        if (item && typeof item === "object") {
-            if (item._duckConnected) delete item._duckConnected;
-        }
-    }
-}
 
 function initFileLoader() {
     const fileInput = document.getElementById("fileInput");
@@ -187,59 +144,24 @@ async function selectGenre(genre) {
 
     const previewImage = document.getElementById("previewImage");
 
-    // Fallback di sicurezza
+    // Fallback di sicurezza se per qualche motivo globalPhotoParams non si è popolato
     if (!globalPhotoParams) {
         const analysis = analyzeImage(previewImage);
         globalPhotoParams = photoToMusicParams(analysis);
     }
 
-    let instruments = null;
-    if (currentPack !== null) {
-    unloadPack(currentPack);
-    }
+    // Passa i parametri pronti agli engine dei vari generi (rimane identico al tuo codice)
+    if (genre === "dance") currentEngine = await createDanceEngine(globalPhotoParams, scoreUI);
+    if (genre === "funky") currentEngine = await createFunkyEngine(globalPhotoParams, scoreUI);
+    if (genre === "metal") currentEngine = await createMetalEngine(globalPhotoParams, scoreUI);
+    if (genre === "orchestra") currentEngine = await createOrchestraEngine(globalPhotoParams, scoreUI);
+    if (genre === "piano") currentEngine = await createPianoEngine(globalPhotoParams, scoreUI);
 
-    // ============================================================
-    // 1) CARICAMENTO PACK STRUMENTI
-    // 2) CREAZIONE ENGINE DEL GENERE
-    // ============================================================
-    if (genre === "dance") {
-        instruments = await loadDancePack();
-        currentEngine = await createDanceEngine(globalPhotoParams, scoreUI, instruments);
-        }
-
-    if (genre === "funky") {
-        instruments = await loadFunkyPack();
-        currentEngine = await createFunkyEngine(globalPhotoParams, scoreUI, instruments);
-        }
-
-    if (genre === "metal") {
-        instruments = await loadMetalPack();
-        currentEngine = await createMetalEngine(globalPhotoParams, scoreUI, instruments);
-        }
-
-    if (genre === "orchestra") {
-        instruments = await loadOrchestraPack();
-        currentEngine = await createOrchestraEngine(globalPhotoParams, scoreUI, instruments);
-        }
-
-    if (genre === "piano") {
-        instruments = await loadPianoPack();
-        currentEngine = await createPianoEngine(globalPhotoParams, scoreUI, instruments);
-        }
-        
-        currentPack = instruments;
-
-    // ============================================================
-    // 3) SICUREZZA
-    // ============================================================
     if (!currentEngine) {
         console.error("❌ Engine non creato!");
         return;
     }
 
-    // ============================================================
-    // 4) UI
-    // ============================================================
     previewImage.classList.add("zoomed-out");
     initPlayerUI();
     drawSpectrum();
