@@ -14,6 +14,14 @@ import { createOrchestraEngine } from "./genres/orchestra/orchestraEngine.js";
 import { createDanceEngine } from "./genres/dance/danceEngine.js";
 import { createFunkyEngine } from "./genres/funky/funkyEngine.js";
 import { scoreVisualizer } from "./scoreUI.js";
+// =========================
+// PACKS
+// =========================
+import { loadDancePack } from "./genres/dance/danceInstruments.js";
+import { loadMetalPack } from "./genres/metal/metalInstruments.js";
+import { loadOrchestraPack } from "./genres/orchestra/orchestraInstruments.js";
+import { loadPianoPack } from "./genres/piano/pianoInstruments.js";
+import { loadFunkyPack } from "./genres/funky/funkyInstruments.js";
 
 console.log("main.js Ver. 021 loaded");
 
@@ -186,8 +194,9 @@ async function selectGenre(genre) {
     }
 
     let instruments = null;
-    
+    if (currentPack !== null) {
     unloadPack(currentPack);
+    }
 
     // ============================================================
     // 1) CARICAMENTO PACK STRUMENTI
