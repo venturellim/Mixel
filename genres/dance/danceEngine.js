@@ -122,9 +122,9 @@ export function createDanceEngine(params, score, instruments) {
             console.log(`%c ▶ DANCE ${sec.name.toUpperCase()}`, "color: #FF1493; font-weight: bold;");
         }, sec.startTime);
 
-        scheduleDanceRhythm(sec, realNotes, instruments, ...)
-scheduleDanceLead(sec, realNotes, instruments, ...)
-scheduleDanceFx(sec, instruments, ...)
+scheduleDanceRhythm(sec, realNotes, instruments, combinedParams, rand, measureDur, nextSectionRoot, score);
+scheduleDanceLead(sec, realNotes, instruments, combinedParams, rand, measureDur, score);
+scheduleDanceFx(sec, instruments, combinedParams, rand, measureDur, score);
     });
 
     return {
