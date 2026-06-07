@@ -4,7 +4,7 @@ import { buildDanceParams } from "./danceParams.js";
 import { buildSongStructure } from "../../utils/structureUtils.js";
 import { createSeededRandom } from "../../utils/randomUtils.js";
 import { generateSongProgressions, degreeToRoot } from "../../utils/musicTheory.js";
-import { danceInstruments, danceVolumeMap } from "./danceInstruments.js";
+import { danceVolumeMap } from "./danceInstruments.js";
 import { scheduleDanceRhythm } from "./danceRhythmEngine.js";
 import { scheduleDanceLead } from "./danceLeadEngine.js";
 import { scheduleDanceFx } from "./danceFxEngine.js";
@@ -12,7 +12,7 @@ import { scheduleDanceFx } from "./danceFxEngine.js";
 console.log("danceEngine.js ver. 008 loaded");
 
 // danceEngine.js — usa stile da danceParams
-export function createDanceEngine(params, score) {
+export function createDanceEngine(params, score, instruments) {
     const rand = createSeededRandom(params.dna);
     
     //params.global = { intensity: 0.3, mood: 0.5, complexity: 0.4 }; // → Gigi
@@ -122,9 +122,9 @@ export function createDanceEngine(params, score) {
             console.log(`%c ▶ DANCE ${sec.name.toUpperCase()}`, "color: #FF1493; font-weight: bold;");
         }, sec.startTime);
 
-        scheduleDanceRhythm(sec, realNotes, danceInstruments, combinedParams, rand, measureDur, nextSectionRoot, score);
-        scheduleDanceLead(sec, realNotes, danceInstruments, combinedParams, rand, measureDur, score);
-        scheduleDanceFx(sec, danceInstruments, combinedParams, measureDur, score);
+        scheduleDanceRhythm(sec, realNotes, instruments, ...)
+scheduleDanceLead(sec, realNotes, instruments, ...)
+scheduleDanceFx(sec, instruments, ...)
     });
 
     return {
@@ -140,6 +140,6 @@ export function createDanceEngine(params, score) {
             Tone.Transport.seconds = 0;
         },
         seek: (s) => Tone.Transport.seconds = s,
-        mixerData: { instruments: danceInstruments, volumeMap: danceVolumeMap }
+        mixerData: { instruments, volumeMap: danceVolumeMap }
     };
 }
