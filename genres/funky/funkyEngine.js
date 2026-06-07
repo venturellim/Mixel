@@ -4,13 +4,13 @@ import { buildFunkyParams } from "./funkyParams.js";
 import { buildSongStructure } from "../../utils/structureUtils.js";
 import { createSeededRandom } from "../../utils/randomUtils.js";
 import { generateSongProgressions, degreeToRoot } from "../../utils/musicTheory.js";
-import { funkyInstruments, funkyVolumeMap } from "./funkyInstruments.js";
+import { funkyVolumeMap } from "./funkyInstruments.js";
 import { scheduleFunkyRhythm } from "./funkyRhythmEngine.js";
 import { scheduleFunkyLead } from "./funkyLeadEngine.js";
 
 console.log("funkyEngine.js ver. 001 loaded");
 
-export async function createFunkyEngine(params, score) {
+export function createFunkyEngine(params, score, instruments) {
     const rand = createSeededRandom(params.dna);
     const funkyParams = buildFunkyParams(rand, params.global, params.rhythm);
     const style = funkyParams.style;
@@ -111,8 +111,26 @@ const soloSection = structure.sections.find(s => s.name === "soloPt1" || s.name 
             console.log(`%c ▶ FUNKY ${sec.name.toUpperCase()} | ${style}`, "color: #FF8C00; font-weight: bold;");
         }, sec.startTime);
 
-        scheduleFunkyRhythm(sec, realNotes, funkyInstruments, combinedParams, rand, measureDur, nextSectionRoot, score);
-        scheduleFunkyLead(sec, realNotes, funkyInstruments, combinedParams, rand, measureDur, score);
+        scheduleFunkyRhythm(
+    sec,
+    realNotes,
+    instruments,
+    combinedParams,
+    rand,
+    measureDur,
+    nextSectionRoot,
+    score
+);
+
+scheduleFunkyLead(
+    sec,
+    realNotes,
+    instruments,
+    combinedParams,
+    rand,
+    measureDur,
+    score
+);
     });
 
     return {
@@ -128,6 +146,6 @@ const soloSection = structure.sections.find(s => s.name === "soloPt1" || s.name 
             Tone.Transport.seconds = 0;
         },
         seek: (s) => Tone.Transport.seconds = s,
-        mixerData: { instruments: funkyInstruments, volumeMap: funkyVolumeMap }
+        mixerData: { instruments, volumeMap: funkyVolumeMap }
     };
 }
