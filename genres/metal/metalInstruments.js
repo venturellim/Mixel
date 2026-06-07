@@ -181,9 +181,6 @@ export function createStStringPad() {
     }).start();
     pad._padPanLFO.connect(pad._padPan.pan);
 
-    // 3) WRAPPING (logging)
-    wrapSampler("StStringPad", pad);
-
     return pad;
 }
 
@@ -191,23 +188,19 @@ export function createAcousticGuitar() {
 
     const sampler = new Tone.Sampler({
         urls: {
-            "E2": "E2.mp3", "F2": "F2.mp3", "F#2": "Fs2.mp3", "G2": "G2.mp3", "G#2": "Gs2.mp3",
-            "A2": "A2.mp3", "A#2": "As2.mp3", "B2": "B2.mp3", "C3": "C3.mp3", "C#3": "Cs3.mp3",
-            "D3": "D3.mp3", "D#3": "Ds3.mp3", "E3": "E3.mp3", "F3": "F3.mp3", "G3": "G3.mp3",
-            "G#3": "Gs3.mp3", "A3": "A3.mp3", "A#3": "As3.mp3", "B3": "B3.mp3", "C4": "C4.mp3",
-            "C#4": "Cs4.mp3", "D4": "D4.mp3", "D#4": "Ds4.mp3", "E4": "E4.mp3", "F4": "F4.mp3",
-            "F#4": "Fs4.mp3", "G4": "G4.mp3", "G#4": "Gs4.mp3", "A4": "A4.mp3", "A#4": "As4.mp3",
-            "B4": "B4.mp3", "C5": "C5.mp3", "C#5": "Cs5.mp3", "D5": "D5.mp3", "D#5": "Ds5.mp3",
-            "E5": "E5.mp3", "F5": "F5.mp3", "F#5": "Fs5.mp3", "G5": "G5.mp3", "G#5": "Gs5.mp3",
-            "A#5": "As5.mp3", "B5": "B5.mp3"
+            "E2": "Samples/AcousticGuitar/E2.mp3", "F2": "Samples/AcousticGuitar/F2.mp3", "F#2": "Samples/AcousticGuitar/Fs2.mp3", "G2": "Samples/AcousticGuitar/G2.mp3", "G#2": "Samples/AcousticGuitar/Gs2.mp3",
+            "A2": "Samples/AcousticGuitar/A2.mp3", "A#2": "Samples/AcousticGuitar/As2.mp3", "B2": "Samples/AcousticGuitar/B2.mp3", "C3": "Samples/AcousticGuitar/C3.mp3", "C#3": "Samples/AcousticGuitar/Cs3.mp3",
+            "D3": "Samples/AcousticGuitar/D3.mp3", "D#3": "Samples/AcousticGuitar/Ds3.mp3", "E3": "Samples/AcousticGuitar/E3.mp3", "F3": "Samples/AcousticGuitar/F3.mp3", "G3": "Samples/AcousticGuitar/G3.mp3",
+            "G#3": "Samples/AcousticGuitar/Gs3.mp3", "A3": "Samples/AcousticGuitar/A3.mp3", "A#3": "Samples/AcousticGuitar/As3.mp3", "B3": "Samples/AcousticGuitar/B3.mp3", "C4": "Samples/AcousticGuitar/C4.mp3",
+            "C#4": "Samples/AcousticGuitar/Cs4.mp3", "D4": "Samples/AcousticGuitar/D4.mp3", "D#4": "Samples/AcousticGuitar/Ds4.mp3", "E4": "Samples/AcousticGuitar/E4.mp3", "F4": "Samples/AcousticGuitar/F4.mp3",
+            "F#4": "Samples/AcousticGuitar/Fs4.mp3", "G4": "Samples/AcousticGuitar/G4.mp3", "G#4": "Samples/AcousticGuitar/Gs4.mp3", "A4": "Samples/AcousticGuitar/A4.mp3", "A#4": "Samples/AcousticGuitar/As4.mp3",
+            "B4": "Samples/AcousticGuitar/B4.mp3", "C5": "Samples/AcousticGuitar/C5.mp3", "C#5": "Samples/AcousticGuitar/Cs5.mp3", "D5": "Samples/AcousticGuitar/D5.mp3", "D#5": "Samples/AcousticGuitar/Ds5.mp3",
+            "E5": "Samples/AcousticGuitar/E5.mp3", "F5": "Samples/AcousticGuitar/F5.mp3", "F#5": "Samples/AcousticGuitar/Fs5.mp3", "G5": "Samples/AcousticGuitar/G5.mp3", "G#5": "Samples/AcousticGuitar/Gs5.mp3",
+            "A#5": "Samples/AcousticGuitar/As5.mp3", "B5": "Samples/AcousticGuitar/B5.mp3"
         },
         release: 1.2,
-        baseUrl: "Samples/AcousticGuitar/",
         onload: () => registerInstrumentLoaded("Chitarra Acustica")
     }).connect(acousticBus);
-
-    // Logging
-    wrapSampler("acousticGuitar", sampler);
 
     return sampler;
 }
@@ -229,9 +222,6 @@ export function createGuitarPalm() {
         onload: () => registerInstrumentLoaded("Chitarra Palm")
     }).connect(guitarFX);
 
-    // Logging
-    wrapSampler("guitarPalm", sampler);
-
     return sampler;
 }
 
@@ -251,9 +241,6 @@ export function createGuitarOpen() {
         release: 1.2,
         onload: () => registerInstrumentLoaded("Chitarra Open")
     }).connect(guitarFX);
-
-    // Logging
-    wrapSampler("guitarOpen", sampler);
 
     return sampler;
 }
@@ -286,9 +273,6 @@ export function createGuitarLead() {
         onload: () => registerInstrumentLoaded("Chitarra Lead")
     }).connect(leadVibrato);
 
-    // Logging
-    wrapSampler("guitarLead", sampler);
-
     return sampler;
 }
 
@@ -305,10 +289,7 @@ export function createBass() {
         onload: () => registerInstrumentLoaded("Basso")
     }).connect(bassBus);
 
-    // Logging
-    wrapSampler("bass", sampler);
-
-    return sampler;
+       return sampler;
 }
 
 export function createDrums() {
