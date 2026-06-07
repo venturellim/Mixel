@@ -2,6 +2,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 import { buildScaleFromTonic, getScaleDegree } from "../../utils/scaleUtils.js";
+import { normalizeNote } from "./orchestraInstruments.js";
 
 console.log("orchestraRhythmEngine.js ver. 002.3 loaded");
 
@@ -225,11 +226,11 @@ export function scheduleOrchestraRhythm(section, progression, instruments, param
             // NOTE SICURE
             // ------------------------------------------------------------
             const celloName = getScaleDegree(scale, rootIdx);
-            const safeCello = safeNote(celloName, "3");
+            const safeCello = normalizeNote(`${celloName}3`, "cello");
 
             const bassDegree = (rootIdx - 2 + scale.length) % scale.length;
             const bassName = getScaleDegree(scale, bassDegree);
-            const safeBass = safeNote(bassName, "1");
+            const safeBass = normalizeNote(`${bassName}1`, "doubleBass");
 
             // ------------------------------------------------------------
             // TRIGGER

@@ -31,98 +31,186 @@ percussionBus.connect(percussionEQ).connect(hallReverb).connect(masterEQ);
 celloBus.connect(celloEQ).connect(hallReverb).connect(masterEQ);
 
 // --- VIOLIN ---
-export const violin = new Tone.Sampler({
-    urls: { 
-    A2: "Samples/Violin/A2.mp3", 
-    A3: "Samples/Violin/A3.mp3",
-    B2: "Samples/Violin/B2.mp3", 
-    B4: "Samples/Violin/B4.mp3",
-    C4: "Samples/Violin/C4.mp3", 
-    D3: "Samples/Violin/D3.mp3",
-    D5: "Samples/Violin/D5.mp3", 
-    E4: "Samples/Violin/E4.mp3",
-    "F#3": "Samples/Violin/Fs3.mp3",
-    G2: "Samples/Violin/G2.mp3", 
-    G4: "Samples/Violin/G4.mp3"
-    },
-    release: 1.2,
-    onload: () => registerInstrumentLoaded("Violino")
-}).connect(violinBus);
+export function createViolin() {
+    const sampler = new Tone.Sampler({
+        urls: {
+            A2: "Samples/Violin/A2.mp3",
+            A3: "Samples/Violin/A3.mp3",
+            B2: "Samples/Violin/B2.mp3",
+            B4: "Samples/Violin/B4.mp3",
+            C4: "Samples/Violin/C4.mp3",
+            D3: "Samples/Violin/D3.mp3",
+            D5: "Samples/Violin/D5.mp3",
+            E4: "Samples/Violin/E4.mp3",
+            "F#3": "Samples/Violin/Fs3.mp3",
+            G2: "Samples/Violin/G2.mp3",
+            G4: "Samples/Violin/G4.mp3"
+        },
+        release: 1.2,
+        onload: () => registerInstrumentLoaded("Violino")
+    }).connect(violinBus);
+    return sampler;
+}
 
 // --- VIOLA ---
-export const viola = new Tone.Sampler({
-    urls: {  
-    A3: "Samples/Viola/A3.mp3",
-    B2: "Samples/Viola/B2.mp3", 
-    C2: "Samples/Viola/C2.mp3",
-    C4: "Samples/Viola/C4.mp3", 
-    D2: "Samples/Viola/D2.mp3",
-    D3: "Samples/Viola/D3.mp3",
-    D5: "Samples/Viola/D5.mp3",
-    E2: "Samples/Viola/E2.mp3",
-    E4: "Samples/Viola/E4.mp3",
-    G2: "Samples/Viola/G2.mp3", 
-    G4: "Samples/Viola/G4.mp3"
-    },
-    release: 1.2,
-    onload: () => registerInstrumentLoaded("Viola")
-}).connect(violaBus);
+export function createViola() {
+    const sampler = new Tone.Sampler({
+        urls: {
+            A3: "Samples/Viola/A3.mp3",
+            B2: "Samples/Viola/B2.mp3",
+            C2: "Samples/Viola/C2.mp3",
+            C4: "Samples/Viola/C4.mp3",
+            D2: "Samples/Viola/D2.mp3",
+            D3: "Samples/Viola/D3.mp3",
+            D5: "Samples/Viola/D5.mp3",
+            E2: "Samples/Viola/E2.mp3",
+            E4: "Samples/Viola/E4.mp3",
+            G2: "Samples/Viola/G2.mp3",
+            G4: "Samples/Viola/G4.mp3"
+        },
+        release: 1.2,
+        onload: () => registerInstrumentLoaded("Viola")
+    }).connect(violaBus);
+    return sampler;
+}
 
 // --- CELLO ---
-export const cello = new Tone.Sampler({
-    urls: { 
-   A2: "Samples/Cello/A2.mp3",
-   B1: "Samples/Cello/B1.mp3",
-   B3: "Samples/Cello/B3.mp3",
-   C1: "Samples/Cello/C1.mp3",
-   C3: "Samples/Cello/C3.mp3",
-   D2: "Samples/Cello/D2.mp3",
-   D4: "Samples/Cello/D4.mp3",
-   E1: "Samples/Cello/E1.mp3",
-   E3: "Samples/Cello/E3.mp3",
-   F2: "Samples/Cello/F2.mp3",
-   F4: "Samples/Cello/F4.mp3",
-   G1: "Samples/Cello/G1.mp3",
-   G3: "Samples/Cello/G3.mp3"
-    },
-    release: 1.5,
-onload: () => registerInstrumentLoaded("Violoncello")
-}).connect(celloBus);
+export function createCello() {
+    const sampler = new Tone.Sampler({
+        urls: {
+            A2: "Samples/Cello/A2.mp3",
+            B1: "Samples/Cello/B1.mp3",
+            B3: "Samples/Cello/B3.mp3",
+            C1: "Samples/Cello/C1.mp3",
+            C3: "Samples/Cello/C3.mp3",
+            D2: "Samples/Cello/D2.mp3",
+            D4: "Samples/Cello/D4.mp3",
+            E1: "Samples/Cello/E1.mp3",
+            E3: "Samples/Cello/E3.mp3",
+            F2: "Samples/Cello/F2.mp3",
+            F4: "Samples/Cello/F4.mp3",
+            G1: "Samples/Cello/G1.mp3",
+            G3: "Samples/Cello/G3.mp3"
+        },
+        release: 1.5,
+        onload: () => registerInstrumentLoaded("Violoncello")
+    }).connect(celloBus);
+    return sampler;
+}
 
 // --- DOUBLE BASS ---
-export const doubleBass = new Tone.Sampler({
-    urls: { 
-    "A#0": "Samples/DoubleBass/As0.mp3",
-    A1: "Samples/DoubleBass/A1.mp3",
-    B2: "Samples/DoubleBass/B2.mp3",
-    "C#2": "Samples/DoubleBass/Cs2.mp3",
-    C1: "Samples/DoubleBass/C1.mp3",
-    D1: "Samples/DoubleBass/D1.mp3",
-    E1: "Samples/DoubleBass/E1.mp3",
-    E2: "Samples/DoubleBass/E2.mp3",
-    "F#0": "Samples/DoubleBass/Fs0.mp3",
-    "F#1": "Samples/DoubleBass/Fs1.mp3",
-    "G#1": "Samples/DoubleBass/Gs1.mp3",
-    "G#2": "Samples/DoubleBass/Gs2.mp3",
-    G0: "Samples/DoubleBass/G0.mp3"
-    },
-    release: 2,
-onload: () => registerInstrumentLoaded("Contrabbasso")
-}).connect(doubleBassBus);
+export function createDoubleBass() {
+    const sampler = new Tone.Sampler({
+        urls: {
+            "A#0": "Samples/DoubleBass/As0.mp3",
+            A1: "Samples/DoubleBass/A1.mp3",
+            B2: "Samples/DoubleBass/B2.mp3",
+            "C#2": "Samples/DoubleBass/Cs2.mp3",
+            C1: "Samples/DoubleBass/C1.mp3",
+            D1: "Samples/DoubleBass/D1.mp3",
+            E1: "Samples/DoubleBass/E1.mp3",
+            E2: "Samples/DoubleBass/E2.mp3",
+            "F#0": "Samples/DoubleBass/Fs0.mp3",
+            "F#1": "Samples/DoubleBass/Fs1.mp3",
+            "G#1": "Samples/DoubleBass/Gs1.mp3",
+            "G#2": "Samples/DoubleBass/Gs2.mp3",
+            G0: "Samples/DoubleBass/G0.mp3"
+        },
+        release: 2,
+        onload: () => registerInstrumentLoaded("Contrabbasso")
+    }).connect(doubleBassBus);
+    return sampler;
+}
+
 
 // --- TIMPANI (The Thunder) ---
-export const percussion = new Tone.Players({
-    urls: { 
-         timpano1: "Samples/Timpani/Timpani1.mp3", 
-         timpano2: "Samples/Timpani/Timpani2.mp3",
-         timpano3: "Samples/Timpani/Timpani3.mp3",
-         timpano4: "Samples/Timpani/Timpani4.mp3",
-         timpano5: "Samples/Timpani/Timpani5.mp3",
-         gong: "Samples/Timpani/Gong.mp3"
-    },
-    release: 3,
-    onload: () => registerInstrumentLoaded("Timpani")
-}).connect(percussionBus);
+export function createPercussion() {
+    const players = new Tone.Players({
+        urls: {
+            timpano1: "Samples/Timpani/Timpani1.mp3",
+            timpano2: "Samples/Timpani/Timpani2.mp3",
+            timpano3: "Samples/Timpani/Timpani3.mp3",
+            timpano4: "Samples/Timpani/Timpani4.mp3",
+            timpano5: "Samples/Timpani/Timpani5.mp3",
+            gong: "Samples/Timpani/Gong.mp3"
+        },
+        release: 3,
+        onload: () => registerInstrumentLoaded("Timpani")
+    }).connect(percussionBus);
+    return players;
+}
+
+export function normalizeNote(note, instrument) {
+    if (!note || typeof note !== "string") return "C3";
+
+    // Estrae root + ottava (es: "F#4")
+    const match = note.match(/^([A-G][#b]?)(\d+)?$/);
+    if (!match) return "C3";
+
+    const targetRoot = match[1];
+    const targetOct = match[2] ? parseInt(match[2]) : 3;
+
+    // Mappa completa delle note disponibili per ogni strumento orchestrale
+    const availableNotesMap = {
+        violin: [
+            "G2", "A2", "B2",
+            "D3", "F#3",
+            "A3", "C4", "E4", "G4",
+            "B4", "D5"
+        ],
+        viola: [
+            "C2", "D2", "E2", "G2",
+            "B2", "D3",
+            "A3", "C4", "E4", "G4",
+            "D5"
+        ],
+        cello: [
+            "C1", "E1", "G1",
+            "B1", "D2", "F2",
+            "A2", "C3", "E3", "G3",
+            "B3", "D4", "F4"
+        ],
+        doubleBass: [
+            "A#0", "F#0", "G0",
+            "A1", "F#1", "G#1",
+            "C1", "D1", "E1",
+            "C#2", "E2", "G#2",
+            "B2"
+        ],
+        // Percussioni → Players → nessuna normalizzazione
+        percussion: null
+    };
+
+    const available = availableNotesMap[instrument];
+    if (!available) return note; // timpani o fallback
+
+    // Converte la nota target in MIDI
+    let targetMidi;
+    try {
+        targetMidi = Tone.Frequency(`${targetRoot}${targetOct}`).toMidi();
+    } catch(e) {
+        targetMidi = Tone.Frequency("C3").toMidi();
+    }
+
+    // Trova la nota disponibile più vicina
+    let bestNote = available[0];
+    let bestDist = Infinity;
+
+    for (const n of available) {
+        try {
+            const midi = Tone.Frequency(n).toMidi();
+            const dist = Math.abs(midi - targetMidi);
+            if (dist < bestDist) {
+                bestDist = dist;
+                bestNote = n;
+            }
+        } catch(e) {
+            console.warn(`Nota non valida: ${n} per ${instrument}`);
+        }
+    }
+
+    return bestNote;
+}
 
 export function setVolume(busName, dbValue) {
     const mixer = { violin: violinBus, viola: violaBus, doubleBass: doubleBassBus, percussion: percussionBus, cello: celloBus};
@@ -136,19 +224,32 @@ setVolume("cello", -6);
 setVolume("doubleBass", +2);
 setVolume("percussion", +6);
 
-export const orchestraInstruments = {
-    violin,
-    viola,
-    cello,
-    doubleBass,
-    percussion,
-    violinBus,
-    violaBus,
-    celloBus,
-    doubleBassBus,
-    percussionBus,
-    setVolume
-};
+export async function loadOrchestraPack() {
+    return {
+        // 🎻 Archi
+        violin: createViolin(),
+        viola: createViola(),
+        cello: createCello(),
+        doubleBass: createDoubleBass(),
+
+        // 🥁 Percussioni
+        percussion: createPercussion(),
+
+        // 🎚 Bus
+        violinBus,
+        violaBus,
+        celloBus,
+        doubleBassBus,
+        percussionBus,
+
+        // 🎛 Effetti
+        hallReverb,
+
+        // 🎚 Mixer dinamico
+        setVolume
+    };
+}
+
 
 export const orchestraVolumeMap = {
     violin: "Violino",

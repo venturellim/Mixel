@@ -4,13 +4,13 @@ import { buildOrchestraParams } from "./orchestraParams.js";
 import { buildSongStructure } from "../../utils/structureUtils.js";
 import { createSeededRandom } from "../../utils/randomUtils.js";
 import { generateSongProgressions, degreeToRoot } from "../../utils/musicTheory.js";
-import { orchestraInstruments, orchestraVolumeMap } from "./orchestraInstruments.js";
+import { orchestraVolumeMap } from "./orchestraInstruments.js";
 import { scheduleOrchestraRhythm } from "./orchestraRhythmEngine.js";
 import { scheduleOrchestraLead } from "./orchestraLeadEngine.js";
 
 console.log("orchestraEngine.js ver. 001 loaded");
 
-export function createOrchestraEngine(params, score) {
+export function createOrchestraEngine(params, score, instruments) {
     const rand = createSeededRandom(params.dna);
     const orchParams = buildOrchestraParams(rand);
 
@@ -112,8 +112,8 @@ export function createOrchestraEngine(params, score) {
             console.log(`%c ▶ ORCHESTRA ${sec.name.toUpperCase()}`, "color: #4B0082; font-weight: bold;");
         }, sec.startTime);
 
-        scheduleOrchestraRhythm(sec, realNotes, orchestraInstruments, combinedParams, rand, measureDur, nextSectionRoot, score);
-        scheduleOrchestraLead(sec, realNotes, orchestraInstruments, combinedParams, rand, measureDur, score);
+        scheduleOrchestraRhythm(sec, realNotes, instruments, combinedParams, rand, measureDur, nextSectionRoot, score);
+scheduleOrchestraLead(sec, realNotes, instruments, combinedParams, rand, measureDur, score);
     });
 
     return {
@@ -129,6 +129,6 @@ export function createOrchestraEngine(params, score) {
             Tone.Transport.seconds = 0;
         },
         seek: (s) => Tone.Transport.seconds = s,
-        mixerData: { instruments: orchestraInstruments, volumeMap: orchestraVolumeMap }
+        mixerData: { instruments, volumeMap: orchestraVolumeMap }
     };
 }
