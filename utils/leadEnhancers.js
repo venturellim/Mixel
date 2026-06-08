@@ -279,3 +279,7 @@ export function applyLeadEnhancer(sequence, enhancerName, params = {}) {
             return sequence;
     }
 }
+
+export function padMotionEnhancer(pad, time, params, rand) {
+    return rand.range(0.75, 1.0);
+}
