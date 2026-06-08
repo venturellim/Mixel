@@ -5,7 +5,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-import { masterEQ, waitLoader, setLoaderAnalysisData } from "./common.js";
+import { masterEQ, waitDNA, waitInstruments, setLoaderAnalysisData } from "./common.js";
 import { analyzeImage } from "./imageAnalysis.js"; // Rimane l'import classico originale!
 import { photoToMusicParams } from "./photoToMusicParams.js";
 import { createPianoEngine } from "./genres/piano/pianoEngine.js";
@@ -157,10 +157,9 @@ function initGenrePanel() {
         
         if (newImageLoaded === 1){ 
             const analysis = analyzeImage(previewImage);
-            setLoaderAnalysisData(analysis);
+setLoaderAnalysisData(analysis);
             globalPhotoParams = photoToMusicParams(analysis);
-                     
-            await waitLoader(genreInstruments, firstStart);
+            await waitDNA(analysis);
             newImageLoaded = 0;
             firstStart = 0;
         }
@@ -197,6 +196,9 @@ async function selectGenre(genre) {
     if (currentPack !== null) {
     unloadPack(currentPack);
     }
+
+const genreInstList = { [genre]: genreInstruments[genre] };
+    await waitInstruments(genreInstList, genre);
 
     // ============================================================
     // 1) CARICAMENTO PACK STRUMENTI
