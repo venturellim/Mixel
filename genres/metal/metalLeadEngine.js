@@ -1,7 +1,7 @@
 // metalLeadEngine.js — ver. 094 COMPLETO (Metal + Ballad)
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
-import { padEngine } from "./padEngine.js";
+//import { padEngine } from "./padEngine.js";
 
 import {
     leadRhythmLibrary,
@@ -14,7 +14,7 @@ import {
     shapeBridgeSolo
 } from "../../utils/leadEnhancers.js";
 
-console.log("metalLeadEngine.js ver. 096 loaded");
+console.log("metalLeadEngine.js ver. 096 test loaded");
 
 // ============================================================
 // FUNZIONI DI SUPPORTO
@@ -548,7 +548,7 @@ export function scheduleLead(section, progression, instruments, params, rand, me
     const isMinor = scaleType.includes("minor");
 
     if (isBalladLead) {
-padEngine.schedulePad(section, progression, instruments, params, rand);
+//padEngine.schedulePad(section, progression, instruments, params, rand);
     scheduleBalladLead(section, progression, instruments, measureDur, score);
     return;
 }
