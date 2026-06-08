@@ -4,13 +4,16 @@ import { normalizeNote } from "./metalInstruments.js";
 
 import {
     leadRhythmLibrary,
-    leadMelodicLibrary
+    leadMelodicLibrary,
+    leadPadRhythmLibrary,    
+    leadPadMelodicLibrary 
 } from "../../utils/leadLibraries.js";
 
 import {
     applyLeadEnhancer,
     computeLeadVelocity,
-    shapeBridgeSolo
+    shapeBridgeSolo,
+    padMotionEnhancer
 } from "../../utils/leadEnhancers.js";
 
 console.log("metalLeadEngine.js ver. 097 loaded");
@@ -103,6 +106,26 @@ const balladLeadSettings = {
     rangeHigh: 81
 };
 
+// ============================================================
+// PAD CHORD BUILDER
+// ============================================================
+function buildPadChord(root, octave, type = "triad") {
+    const intervals = {
+        triad: [0, 4, 7],
+        triad7: [0, 4, 7, 11],
+        triad9: [0, 4, 7, 14],
+        open9: [0, 7, 14],
+        epicSpread: [0, 7, 12, 14, 19],
+        cinematic: [0, 5, 12, 17]
+    };
+    const chosen = intervals[type] || intervals.triad;
+    return chosen.map(semi => {
+        const midi = Tone.Frequency(root + octave).toMidi() + semi;
+        const note = Tone.Frequency(midi, "midi").toNote();
+        return normalizeNote(note, "StStringPad");
+    });
+}
+
 function applyBalladVibrato(leadVibrato) {
     if (!leadVibrato) return;
     leadVibrato.depth.rampTo(balladLeadSettings.vibratoDepth, 0.2);
@@ -127,6 +150,74 @@ function generateBalladNote(prevMidi) {
     }
 
     return prevMidi;
+}
+
+// ============================================================
+// SCHEDULE PAD (ex padEngine.js)
+// ============================================================
+function schedulePad(section, progression, instruments, params, rand) {
+    const pad = instruments.StStringPad;
+    if (!pad || !pad.loaded) return;
+    
+    const { melodicSpeed = 2, melodicDensity = 1 } = params;
+    
+    let rhythmLib = null, melodicLib = null, chordType = "triad";
+    const name = section.name?.toLowerCase() || "";
+    
+    if (section.isBallad) {
+        melodicLib = leadPadMelodicLibrary.ballad;
+        chordType = "open9";
+    } else if (name.includes("intro")) {
+        melodicLib = leadPadMelodicLibrary.epicIntro;
+        chordType = "cinematic";
+    } else if (name.includes("verse")) {
+        rhythmLib = leadPadRhythmLibrary.static;
+        chordType = "triad";
+    } else if (name.includes("pre")) {
+        rhythmLib = leadPadRhythmLibrary.motion;
+        chordType = "triad9";
+    } else if (name.includes("chorus")) {
+        rhythmLib = leadPadRhythmLibrary.octaveSpread;
+        chordType = "epicSpread";
+    } else {
+        rhythmLib = leadPadRhythmLibrary.static;
+        chordType = "triad";
+    }
+    
+    const pattern = melodicLib ? rand.pick(melodicLib) : rand.pick(rhythmLib);
+    if (!pattern) return;
+    
+    const chordSymbol = progression[0] || "C";
+    const rootMatch = chordSymbol.match(/[A-G][b#]?/i);
+    const root = rootMatch ? rootMatch[0].toUpperCase() : "C";
+    const octave = 3;
+    const baseChord = buildPadChord(root, octave, chordType);
+    
+    const measureDur = Tone.Time("1m").toSeconds();
+    const stepDur = measureDur / 16;
+    
+    const randWrap = {
+        range: (min, max) => min + rand() * (max - min)
+    };
+    
+    pattern.forEach((value, index) => {
+        if (melodicLib && (index % melodicDensity !== 0)) return;
+        const step = melodicLib ? index * melodicSpeed : value;
+        const time = section.startTime + step * stepDur;
+        const vel = padMotionEnhancer(pad, time, params, randWrap);
+        
+        let highNote;
+        if (melodicLib) {
+            const interval = value;
+            const highMidi = Tone.Frequency(root + (octave + 2)).toMidi() + interval;
+            highNote = normalizeNote(Tone.Frequency(highMidi, "midi").toNote(), "StStringPad");
+        } else {
+            highNote = normalizeNote(root + (octave + 2), "StStringPad");
+        }
+        
+        const chord = [...baseChord, highNote];
+        pad.triggerAttackRelease(chord, stepDur * 1.5, time, vel);
+    });
 }
 
 function scheduleBalladLead(section, progression, instruments, measureDur, score) {
@@ -547,15 +638,10 @@ export function scheduleLead(section, progression, instruments, params, rand, me
     const isMinor = scaleType.includes("minor");
 
     if (isBalladLead) {
-        // IMPORT DINAMICO - caricato solo se serve
-        import("./padEngine.js").then(module => {
-            module.padEngine.schedulePad(section, progression, instruments, params, rand);
-        }).catch(err => console.warn("⚠️ padEngine non caricato:", err));
-        
+        schedulePad(section, progression, instruments, params, rand);  
         scheduleBalladLead(section, progression, instruments, measureDur, score);
         return;
     }
 
     LeadLegacy.schedule(section, progression, instruments, params, rand, measureDur, rootNote, isMinor, scaleType, score);
 }
-

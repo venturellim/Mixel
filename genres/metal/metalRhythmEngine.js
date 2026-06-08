@@ -1,8 +1,14 @@
 // metalRhythmEngine.js — ver. 023 COMPLETO (Metal + Ballad)
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
+import {
+    leadPadRhythmLibrary,    
+    leadPadMelodicLibrary 
+} from "../../utils/leadLibraries.js";
 
-console.log("metalRhythmEngine.js ver. 027 loaded");
+
+
+console.log("metalRhythmEngine.js ver. 028 loaded");
 
 // ============================================================
 // FUNZIONI DI SUPPORTO PER LA BALLAD
@@ -20,6 +26,73 @@ function buildFifth(root) {
     let idx = scale.indexOf(root);
     if (idx === -1) idx = 0;
     return scale[(idx + 7) % 12];
+}
+
+// ============================================================
+// PAD CHORD BUILDER (per epic metal)
+// ============================================================
+function buildPadChord(root, octave, type = "triad") {
+    const intervals = {
+        triad: [0, 4, 7],
+        triad7: [0, 4, 7, 11],
+        triad9: [0, 4, 7, 14],
+        open9: [0, 7, 14],
+        epicSpread: [0, 7, 12, 14, 19],
+        cinematic: [0, 5, 12, 17]
+    };
+    const chosen = intervals[type] || intervals.triad;
+    return chosen.map(semi => {
+        const midi = Tone.Frequency(root + octave).toMidi() + semi;
+        const note = Tone.Frequency(midi, "midi").toNote();
+        return normalizeNote(note, "StStringPad");
+    });
+}
+
+// ============================================================
+// SCHEDULE PAD PER EPIC METAL
+// ============================================================
+// ============================================================
+// SCHEDULE PAD PER EPIC METAL (USA LIBRERIE)
+// ============================================================
+function schedulePadInRhythm(section, progression, instruments, params, rand) {
+    const pad = instruments.StStringPad;
+    if (!pad || !pad.loaded) return;
+    
+    const name = section.name?.toLowerCase() || "";
+    let rhythmLib = null, melodicLib = null, chordType = "epicSpread";
+    
+    // SELEZIONE LIBRERIA IN BASE ALLA SEZIONE
+    if (name.includes("verse")) {
+        rhythmLib = leadPadRhythmLibrary.static;
+        chordType = "triad";
+    } else if (name.includes("pre")) {
+        rhythmLib = leadPadRhythmLibrary.motion;
+        chordType = "triad9";
+    } else if (name.includes("chorus")) {
+        rhythmLib = leadPadRhythmLibrary.octaveSpread;
+        chordType = "epicSpread";
+    } else {
+        rhythmLib = leadPadRhythmLibrary.static;
+        chordType = "cinematic";
+    }
+    
+    // Scegli un pattern random dalla libreria
+    const pattern = rhythmLib[Math.floor(rand() * rhythmLib.length)];
+    if (!pattern) return;
+    
+    const chordSymbol = progression[0] || "C";
+    const rootMatch = chordSymbol.match(/[A-G][b#]?/i);
+    const root = rootMatch ? rootMatch[0].toUpperCase() : "C";
+    const octave = 3;
+    const baseChord = buildPadChord(root, octave, chordType);
+    
+    const measureDur = Tone.Time("1m").toSeconds();
+    const stepDur = measureDur / 16;
+    
+    pattern.forEach(step => {
+        const time = section.startTime + step * stepDur;
+        pad.triggerAttackRelease(baseChord, stepDur * 2, time, 0.7);
+    });
 }
 
 // ============================================================
@@ -445,19 +518,13 @@ const fifth = normalizeNote(rawFifth, "acousticGuitar");
     if (s % 4 === 0) snare = true;
 
 if (s === 0) {
-    import("./padEngine.js").then(module => {
-        module.padEngine.schedulePad(section, progression, instruments, params, rand);
-    }).catch(err => console.warn("⚠️ padEngine non caricato:", err));
-}
+    schedulePadInRhythm(section, progression, instruments, params, rand);}
 
 
 break;
 case "epic_verse_ride":
     if (s === 0) {
-    import("./padEngine.js").then(module => {
-        module.padEngine.schedulePad(section, progression, instruments, params, rand);
-    }).catch(err => console.warn("⚠️ padEngine non caricato:", err));
-}
+    schedulePadInRhythm(section, progression, instruments, params, rand);}
 
     playGuitar = (s % 4 === 0);
     inst = guitarOpen;
@@ -477,10 +544,7 @@ case "epic_verse_pad":
     }
 
     if (s === 0) {
-    import("./padEngine.js").then(module => {
-        module.padEngine.schedulePad(section, progression, instruments, params, rand);
-    }).catch(err => console.warn("⚠️ padEngine non caricato:", err));
-}
+    schedulePadInRhythm(section, progression, instruments, params, rand);}
 
     if (s === 4 || s === 12) snare = true;
 break;
@@ -488,10 +552,7 @@ case "epic_pre_timpani":
     if (s % 2 === 0) kick = true;
 
     if (s === 0) {
-    import("./padEngine.js").then(module => {
-        module.padEngine.schedulePad(section, progression, instruments, params, rand);
-    }).catch(err => console.warn("⚠️ padEngine non caricato:", err));
-}
+    schedulePadInRhythm(section, progression, instruments, params, rand);}
 
 break;
 case "epic_pre_build":
@@ -505,10 +566,7 @@ case "epic_pre_build":
     if (s === 14) snare = true;
 
     if (s === 0) {
-    import("./padEngine.js").then(module => {
-        module.padEngine.schedulePad(section, progression, instruments, params, rand);
-    }).catch(err => console.warn("⚠️ padEngine non caricato:", err));
-}
+    schedulePadInRhythm(section, progression, instruments, params, rand);}
 
 break;
 case "epic_pre_sustain":
@@ -520,10 +578,7 @@ case "epic_pre_sustain":
     }
 
     if (s === 0) {
-    import("./padEngine.js").then(module => {
-        module.padEngine.schedulePad(section, progression, instruments, params, rand);
-    }).catch(err => console.warn("⚠️ padEngine non caricato:", err));
-}
+    schedulePadInRhythm(section, progression, instruments, params, rand);}
 
     if (s === 8) snare = true;
 break;
@@ -535,10 +590,7 @@ case "epic_chorus_anthem":
         kick = true;
     }
     if (s === 0) {
-    import("./padEngine.js").then(module => {
-        module.padEngine.schedulePad(section, progression, instruments, params, rand);
-    }).catch(err => console.warn("⚠️ padEngine non caricato:", err));
-}
+    schedulePadInRhythm(section, progression, instruments, params, rand);}
 
     if (s === 4 || s === 12) snare = true;
 
@@ -552,10 +604,7 @@ case "epic_chorus_sustain":
         kick = true;
     }
     if (s === 0) {
-    import("./padEngine.js").then(module => {
-        module.padEngine.schedulePad(section, progression, instruments, params, rand);
-    }).catch(err => console.warn("⚠️ padEngine non caricato:", err));
-}
+    schedulePadInRhythm(section, progression, instruments, params, rand);}
 
     if (s === 8) snare = true;
 
@@ -564,10 +613,7 @@ break;
 case "epic_chorus_double":
     kick = true;
     if (s === 0) {
-    import("./padEngine.js").then(module => {
-        module.padEngine.schedulePad(section, progression, instruments, params, rand);
-    }).catch(err => console.warn("⚠️ padEngine non caricato:", err));
-}
+    schedulePadInRhythm(section, progression, instruments, params, rand);}
 
     if (s % 4 === 0) {
         playGuitar = true;
