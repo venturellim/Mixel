@@ -4,7 +4,7 @@
 
 
 import * as Tone from "https://esm.sh/tone";
-import { normalizeNote } from "../metalInstruments.js";
+import { normalizeNote } from "./metalInstruments.js";
 import { choose } from "../../utils/randomUtils.js";
 
 console.log("padEngine.js ver. 004 loaded");
