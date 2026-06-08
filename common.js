@@ -4,7 +4,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("common.js ver. 025 loaded");
+console.log("common.js ver. 026 loaded");
 
 // ======================================================
 // 🎚 MASTER BUS & MASTERING
@@ -278,7 +278,10 @@ export async function waitDNA(analysisData) {
             
             if (percent >= 100) {
                 clearInterval(dnaInterval);
+              setTimeout(() => {
+                hideWin11UI();
                 resolve();
+                }, 500);
             }
         }, 50);
     });
