@@ -1,10 +1,8 @@
 // metalRhythmEngine.js — ver. 023 COMPLETO (Metal + Ballad)
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
-//import { padEngine } from "./padEngine.js";
 
-
-console.log("metalRhythmEngine.js ver. 026 test loaded");
+console.log("metalRhythmEngine.js ver. 027 loaded");
 
 // ============================================================
 // FUNZIONI DI SUPPORTO PER LA BALLAD
@@ -446,15 +444,21 @@ const fifth = normalizeNote(rawFifth, "acousticGuitar");
     }
     if (s % 4 === 0) snare = true;
 
-    if (s === 0) {
-    //padEngine.schedulePad(section, progression, instruments, params, rand);
+if (s === 0) {
+    import("./padEngine.js").then(module => {
+        module.padEngine.schedulePad(section, progression, instruments, params, rand);
+    }).catch(err => console.warn("⚠️ padEngine non caricato:", err));
 }
+
 
 break;
 case "epic_verse_ride":
     if (s === 0) {
-    //padEngine.schedulePad(section, progression, instruments, params, rand);
+    import("./padEngine.js").then(module => {
+        module.padEngine.schedulePad(section, progression, instruments, params, rand);
+    }).catch(err => console.warn("⚠️ padEngine non caricato:", err));
 }
+
     playGuitar = (s % 4 === 0);
     inst = guitarOpen;
     sustain = true;
@@ -473,9 +477,10 @@ case "epic_verse_pad":
     }
 
     if (s === 0) {
-    //padEngine.schedulePad(section, progression, instruments, params, rand);
+    import("./padEngine.js").then(module => {
+        module.padEngine.schedulePad(section, progression, instruments, params, rand);
+    }).catch(err => console.warn("⚠️ padEngine non caricato:", err));
 }
-
 
     if (s === 4 || s === 12) snare = true;
 break;
@@ -483,7 +488,9 @@ case "epic_pre_timpani":
     if (s % 2 === 0) kick = true;
 
     if (s === 0) {
-    //padEngine.schedulePad(section, progression, instruments, params, rand);
+    import("./padEngine.js").then(module => {
+        module.padEngine.schedulePad(section, progression, instruments, params, rand);
+    }).catch(err => console.warn("⚠️ padEngine non caricato:", err));
 }
 
 break;
@@ -498,7 +505,9 @@ case "epic_pre_build":
     if (s === 14) snare = true;
 
     if (s === 0) {
-    //padEngine.schedulePad(section, progression, instruments, params, rand);
+    import("./padEngine.js").then(module => {
+        module.padEngine.schedulePad(section, progression, instruments, params, rand);
+    }).catch(err => console.warn("⚠️ padEngine non caricato:", err));
 }
 
 break;
@@ -511,7 +520,9 @@ case "epic_pre_sustain":
     }
 
     if (s === 0) {
-    //padEngine.schedulePad(section, progression, instruments, params, rand);
+    import("./padEngine.js").then(module => {
+        module.padEngine.schedulePad(section, progression, instruments, params, rand);
+    }).catch(err => console.warn("⚠️ padEngine non caricato:", err));
 }
 
     if (s === 8) snare = true;
@@ -524,9 +535,10 @@ case "epic_chorus_anthem":
         kick = true;
     }
     if (s === 0) {
-    //padEngine.schedulePad(section, progression, instruments, params, rand);
+    import("./padEngine.js").then(module => {
+        module.padEngine.schedulePad(section, progression, instruments, params, rand);
+    }).catch(err => console.warn("⚠️ padEngine non caricato:", err));
 }
-
 
     if (s === 4 || s === 12) snare = true;
 
@@ -540,7 +552,9 @@ case "epic_chorus_sustain":
         kick = true;
     }
     if (s === 0) {
-    //padEngine.schedulePad(section, progression, instruments, params, rand);
+    import("./padEngine.js").then(module => {
+        module.padEngine.schedulePad(section, progression, instruments, params, rand);
+    }).catch(err => console.warn("⚠️ padEngine non caricato:", err));
 }
 
     if (s === 8) snare = true;
@@ -550,7 +564,9 @@ break;
 case "epic_chorus_double":
     kick = true;
     if (s === 0) {
-    //padEngine.schedulePad(section, progression, instruments, params, rand);
+    import("./padEngine.js").then(module => {
+        module.padEngine.schedulePad(section, progression, instruments, params, rand);
+    }).catch(err => console.warn("⚠️ padEngine non caricato:", err));
 }
 
     if (s % 4 === 0) {
