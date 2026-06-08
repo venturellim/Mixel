@@ -1,8 +1,8 @@
-// metalInstruments.js — ver. 006
+// metalInstruments.js — ver. 012
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("metalInstruments.js ver. 011 loaded");
+console.log("metalInstruments.js ver. 012 loaded");
 
 // ============================================================
 // 🎚 BUS SPECIFICI DEL METAL

@@ -4,10 +4,10 @@
 
 
 import * as Tone from "https://esm.sh/tone";
-import { normalizeNote } from "../metal/metalInstruments.js";
+import { normalizeNote } from "../metalInstruments.js";
 import { choose } from "../../utils/randomUtils.js";
 
-console.log("padEngine.js ver. 003 loaded");
+console.log("padEngine.js ver. 004 loaded");
 
 function wrapRand(rand) {
     return {

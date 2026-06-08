@@ -1,4 +1,4 @@
-// metalEngine.js — ver. 015 (con Bridge support)
+// metalEngine.js — ver. 018 (con Bridge support)
 import * as Tone from "https://esm.sh/tone";
 import { buildPowerMetalParams } from "./powerMetalParams.js";
 import { buildSongStructure } from "../../utils/structureUtils.js";
@@ -8,7 +8,7 @@ import { metalVolumeMap } from "./metalInstruments.js";
 import { scheduleRhythm } from "./metalRhythmEngine.js";
 import { scheduleLead } from "./metalLeadEngine.js"; 
 
-console.log("metalEngine.js ver. 017 loaded");
+console.log("metalEngine.js ver. 018 loaded");
 
 export function createMetalEngine(params, score, instruments) {
     const rand = createSeededRandom(params.dna);

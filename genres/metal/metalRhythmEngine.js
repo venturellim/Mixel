@@ -1,10 +1,10 @@
 // metalRhythmEngine.js — ver. 023 COMPLETO (Metal + Ballad)
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
-//import { padEngine } from "./padEngine.js";
+import { padEngine } from "./padEngine.js";
 
 
-console.log("metalRhythmEngine.js ver. 025 test loaded");
+console.log("metalRhythmEngine.js ver. 026 loaded");
 
 // ============================================================
 // FUNZIONI DI SUPPORTO PER LA BALLAD
@@ -447,13 +447,13 @@ const fifth = normalizeNote(rawFifth, "acousticGuitar");
     if (s % 4 === 0) snare = true;
 
     if (s === 0) {
-    //padEngine.schedulePad(section, progression, instruments, params, rand);
+    padEngine.schedulePad(section, progression, instruments, params, rand);
 }
 
 break;
 case "epic_verse_ride":
     if (s === 0) {
-    //padEngine.schedulePad(section, progression, instruments, params, rand);
+    padEngine.schedulePad(section, progression, instruments, params, rand);
 }
     playGuitar = (s % 4 === 0);
     inst = guitarOpen;
@@ -473,7 +473,7 @@ case "epic_verse_pad":
     }
 
     if (s === 0) {
-    //padEngine.schedulePad(section, progression, instruments, params, rand);
+    padEngine.schedulePad(section, progression, instruments, params, rand);
 }
 
 
@@ -483,7 +483,7 @@ case "epic_pre_timpani":
     if (s % 2 === 0) kick = true;
 
     if (s === 0) {
-    //padEngine.schedulePad(section, progression, instruments, params, rand);
+    padEngine.schedulePad(section, progression, instruments, params, rand);
 }
 
 break;
@@ -498,7 +498,7 @@ case "epic_pre_build":
     if (s === 14) snare = true;
 
     if (s === 0) {
-    //padEngine.schedulePad(section, progression, instruments, params, rand);
+    padEngine.schedulePad(section, progression, instruments, params, rand);
 }
 
 break;
@@ -511,7 +511,7 @@ case "epic_pre_sustain":
     }
 
     if (s === 0) {
-    //padEngine.schedulePad(section, progression, instruments, params, rand);
+    padEngine.schedulePad(section, progression, instruments, params, rand);
 }
 
     if (s === 8) snare = true;
@@ -524,7 +524,7 @@ case "epic_chorus_anthem":
         kick = true;
     }
     if (s === 0) {
-    //padEngine.schedulePad(section, progression, instruments, params, rand);
+    padEngine.schedulePad(section, progression, instruments, params, rand);
 }
 
 
@@ -540,9 +540,8 @@ case "epic_chorus_sustain":
         kick = true;
     }
     if (s === 0) {
-    //padEngine.schedulePad(section, progression, instruments, params, rand);
+    padEngine.schedulePad(section, progression, instruments, params, rand);
 }
-
 
     if (s === 8) snare = true;
 
@@ -551,7 +550,7 @@ break;
 case "epic_chorus_double":
     kick = true;
     if (s === 0) {
-    //padEngine.schedulePad(section, progression, instruments, params, rand);
+    padEngine.schedulePad(section, progression, instruments, params, rand);
 }
 
     if (s % 4 === 0) {
