@@ -324,7 +324,7 @@ export function createDrums() {
         if (p) {
             const orig = p.start.bind(p);
             p.start = (time, offset, dur) => {
-                logNote("drums."+key, "(sample)", time);
+                //logNote("drums."+key, "(sample)", time);
                 return orig(time, offset, dur);
             };
         }
