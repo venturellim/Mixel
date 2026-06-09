@@ -4,7 +4,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("common.js ver. 026 loaded");
+console.log("common.js ver. 027 loaded");
 
 // ======================================================
 // 🎚 MASTER BUS & MASTERING
@@ -217,8 +217,6 @@ function hideWin11UI() {
     if (win11Overlay) win11Overlay.style.display = "none";
 }
 
-// common.js - Sostituisci la funzione waitLoader con queste due funzioni
-
 // ======================================================
 // 📦 FASE 1: ANALISI DNA IMMAGINE (SOLO GRAFICA)
 // ======================================================
@@ -290,115 +288,158 @@ export async function waitDNA(analysisData) {
 // ======================================================
 // 📦 FASE 2: CARICAMENTO STRUMENTI (ATTESA REALE)
 // ======================================================
-export async function waitInstruments(genreInstruments, selectedGenre = null) {
+export async function waitLoader(genreInstruments, firstStart) {
     initWin11Loader();
     showWin11UI();
+
+    // --------------------------------------------------
+    // FASE 1: ESTRAZIONE DNA IMMAGINE (7 Secondi, Barra Verde Brillante)
+    // --------------------------------------------------
+    loadLottieAnimation('DNAloader.json');
     
-    loadLottieAnimation('loader.json');
+    const dnaDuration = 5000;
+    const dnaStartTime = Date.now();
     
-    // Se è stato selezionato un genere, carichiamo SOLO quello
-    let loadingQueue = [];
-    let displayNames = {
+    const fallbackDnaSteps = [
+        { label: "Matrice Pixel RGB...", status: "Mappatura canali colore..." },
+        { label: "Luminance Contrast", status: "Calcolo dei livelli di soglia globale..." },
+        { label: "Color Temperature", status: "Analisi bilanciamento caldo/freddo..." },
+        { label: "Energy (StdDev)", status: "Misurazione del contrasto dell'immagine..." },
+        { label: "Texture & Roughness", status: "Rilevamento densità superficiale..." },
+        { label: "Complexity Vector", status: "Analisi dell'entropia spaziale..." },
+        { label: "Edge Density (Sobel)", status: "Estrazione bordi d'onda visivi..." },
+        { label: "Key Dominante", status: "Calcolo della tonalità musicale associata..." },
+        { label: "Generazione Photo DNA Hash", status: "Hashing deterministico completato!" }
+    ];
+
+    await new Promise((resolve) => {
+        var dnaInterval = setInterval(function() {
+            var elapsed = Date.now() - dnaStartTime;
+            var percent = Math.min(100, (elapsed / dnaDuration) * 100);
+            
+            var stepIndex = Math.floor((percent / 100) * fallbackDnaSteps.length);
+            stepIndex = Math.min(stepIndex, fallbackDnaSteps.length - 1);
+            var currentStep = fallbackDnaSteps[stepIndex];
+            
+            var currentLabel = currentStep.label;
+            
+            if (activeAnalysisData) {
+                if (percent > 12 && percent <= 24) currentLabel = `Brightness: ${Number(activeAnalysisData.brightness).toFixed(3)}`;
+                else if (percent > 24 && percent <= 36) currentLabel = `Color Temp: ${Number(activeAnalysisData.colorTemperature).toFixed(3)}`;
+                else if (percent > 36 && percent <= 48) currentLabel = `Energy/Contrast: ${Number(activeAnalysisData.energy).toFixed(3)}`;
+                else if (percent > 48 && percent <= 60) currentLabel = `Texture/Roughness: ${Number(activeAnalysisData.texture).toFixed(3)}`;
+                else if (percent > 60 && percent <= 72) currentLabel = `Complexity Vector: ${Number(activeAnalysisData.complexity).toFixed(3)}`;
+                else if (percent > 72 && percent <= 84) currentLabel = `Entropy Spatial: ${Number(activeAnalysisData.entropy).toFixed(3)}`;
+                else if (percent > 84 && percent <= 93) currentLabel = `Edge Density: ${Number(activeAnalysisData.edges).toFixed(3)}`;
+                else if (percent > 93) currentLabel = `Key: ${activeAnalysisData.key} | DNA: ${activeAnalysisData.dna}`;
+            }
+
+            updateWin11UI(
+                percent, 
+                0, 
+                null, 0, 0, 
+                currentStep.status, 
+                "Estrazione DNA Immagine", 
+                "Analisi dei descrittori visivi in corso...", 
+                currentLabel, 
+                true
+            );
+            
+            if (percent >= 100) {
+                clearInterval(dnaInterval);
+                resolve();
+            }
+        }, 50);
+    });
+
+    // --------------------------------------------------
+    // FASE 2: CARICAMENTO STRUMENTI (7 Secondi, Barra Blu)
+    // --------------------------------------------------
+
+if (firstStart === 1) {
+loadLottieAnimation('loader.json');
+
+    var loadingQueue = [];
+    var displayNames = {
         dance: "Dance",
         metal: "Metal",
         orchestra: "Orchestra",
-        piano: "Piano",
-        funky: "Funky"
+        piano: "Piano"
     };
     
-    if (selectedGenre) {
-        // Caricamento dinamico: solo gli strumenti del genere selezionato
-        const instruments = genreInstruments[selectedGenre];
-        const displayName = displayNames[selectedGenre] || selectedGenre.charAt(0).toUpperCase() + selectedGenre.slice(1);
+    for (var genreKey in genreInstruments) {
+        var instruments = genreInstruments[genreKey];
+        var displayName = displayNames[genreKey] || genreKey.charAt(0).toUpperCase() + genreKey.slice(1);
         
-        for (let i = 0; i < instruments.length; i++) {
+        for (var i = 0; i < instruments.length; i++) {
             loadingQueue.push({
-                genre: selectedGenre,
+                genre: genreKey,
                 genreDisplay: displayName,
                 instrumentName: instruments[i],
                 instrumentIndex: i + 1,
                 instrumentTotal: instruments.length
             });
         }
-    } else {
-        // Fallback: carica tutti (primo avvio)
-        for (let genreKey in genreInstruments) {
-            const instruments = genreInstruments[genreKey];
-            const displayName = displayNames[genreKey] || genreKey.charAt(0).toUpperCase() + genreKey.slice(1);
-            
-            for (let i = 0; i < instruments.length; i++) {
-                loadingQueue.push({
-                    genre: genreKey,
-                    genreDisplay: displayName,
-                    instrumentName: instruments[i],
-                    instrumentIndex: i + 1,
-                    instrumentTotal: instruments.length
-                });
-            }
-        }
     }
     
-    const totalInstruments = loadingQueue.length;
+    var totalInstruments = loadingQueue.length;
     
     updateWin11UI(0, 0, "Inizializzazione", 0, 0, "Avvio...", "Caricamento strumenti", "Preparazione dei campioni...", "-", false);
     
-    const startTime = Date.now();
-    const TOTAL_DURATION_MS = 7000;
+    var startTime = Date.now();
+    var TOTAL_DURATION_MS = 7000;
     
-    // Animazione progresso (grafica)
-    const animationPromise = new Promise((resolve) => {
-        const animationInterval = setInterval(function() {
-            const elapsed = Date.now() - startTime;
-            let totalPercent = Math.min(100, (elapsed / TOTAL_DURATION_MS) * 100);
+    var animationInterval = setInterval(function() {
+        var elapsed = Date.now() - startTime;
+        var totalPercent = Math.min(100, (elapsed / TOTAL_DURATION_MS) * 100);
+        
+        var targetInstrumentIndex = Math.floor((totalPercent / 100) * totalInstruments);
+        targetInstrumentIndex = Math.min(targetInstrumentIndex, totalInstruments - 1);
+        
+        if (targetInstrumentIndex >= 0 && loadingQueue[targetInstrumentIndex]) {
+            var current = loadingQueue[targetInstrumentIndex];
             
-            const targetInstrumentIndex = Math.min(
-                Math.floor((totalPercent / 100) * totalInstruments),
-                totalInstruments - 1
+            var sameGenreLoaded = loadingQueue.slice(0, targetInstrumentIndex + 1).filter(item => item.genre === current.genre).length;
+            var sameGenreTotal = loadingQueue.filter(item => item.genre === current.genre).length;
+            
+            var genrePercent = (sameGenreLoaded / sameGenreTotal) * 100;
+            var instrumentDisplay = `${current.instrumentName} (${current.instrumentIndex}/${current.instrumentTotal})`;
+            
+            updateWin11UI(
+                totalPercent,
+                genrePercent,
+                current.genreDisplay,
+                sameGenreLoaded,
+                sameGenreTotal,
+                `Caricamento ${current.genreDisplay}: ${instrumentDisplay}...`,
+                "Caricamento strumenti",
+                "Preparazione del tuo mix...",
+                instrumentDisplay,
+                false
             );
-            
-            if (targetInstrumentIndex >= 0 && loadingQueue[targetInstrumentIndex]) {
-                const current = loadingQueue[targetInstrumentIndex];
-                
-                const sameGenreLoaded = loadingQueue.slice(0, targetInstrumentIndex + 1)
-                    .filter(item => item.genre === current.genre).length;
-                const sameGenreTotal = loadingQueue.filter(item => item.genre === current.genre).length;
-                const genrePercent = (sameGenreLoaded / sameGenreTotal) * 100;
-                const instrumentDisplay = `${current.instrumentName} (${current.instrumentIndex}/${current.instrumentTotal})`;
-                
-                updateWin11UI(
-                    totalPercent,
-                    genrePercent,
-                    current.genreDisplay,
-                    sameGenreLoaded,
-                    sameGenreTotal,
-                    `Caricamento ${current.genreDisplay}: ${instrumentDisplay}...`,
-                    "Caricamento strumenti",
-                    "Preparazione del tuo mix...",
-                    instrumentDisplay,
-                    false
-                );
-            }
-            
-            if (totalPercent >= 100) {
-                clearInterval(animationInterval);
-                resolve();
-            }
-        }, 50);
-    });
+        }
+        
+        if (totalPercent >= 100) {
+            clearInterval(animationInterval);
+        }
+    }, 50);
     
-    // Attesa reale del caricamento degli strumenti
-    const loadedPromise = Tone.loaded();
+    var loadedPromise = Tone.loaded();
     
     await Promise.all([
         loadedPromise,
-        animationPromise
+        new Promise(function(resolve) {
+            setTimeout(resolve, TOTAL_DURATION_MS);
+        })
     ]);
     
+    clearInterval(animationInterval);
+    
     updateWin11UI(100, 100, "Completato!", totalInstruments, totalInstruments, "Tutti gli strumenti pronti!", "Caricamento completato", "Pronto per suonare!", "✅ Completato!", false);
+    }
+    await new Promise(function(r) { setTimeout(r, 500); });
     
-    await new Promise(r => setTimeout(r, 500));
     hideWin11UI();
-    
     return loadingQueue;
 }
 

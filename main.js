@@ -23,7 +23,7 @@ import { loadOrchestraPack } from "./genres/orchestra/orchestraInstruments.js";
 import { loadPianoPack } from "./genres/piano/pianoInstruments.js";
 import { loadFunkyPack } from "./genres/funky/funkyInstruments.js";
 
-console.log("main.js Ver. 021 loaded");
+console.log("main.js Ver. 022 loaded");
 
 let currentEngine = null;
 let currentGenre = null;
@@ -198,7 +198,7 @@ async function selectGenre(genre) {
     }
 
 const genreInstList = { [genre]: genreInstruments[genre] };
-    await waitInstruments(genreInstList, genre);
+const animationPromise = waitInstruments(genreInstList, genre);
 
     // ============================================================
     // 1) CARICAMENTO PACK STRUMENTI
@@ -206,26 +206,31 @@ const genreInstList = { [genre]: genreInstruments[genre] };
     // ============================================================
     if (genre === "dance") {
         instruments = await loadDancePack();
+        await animationPromise;
         currentEngine = await createDanceEngine(globalPhotoParams, scoreUI, instruments);
         }
 
     if (genre === "funky") {
         instruments = await loadFunkyPack();
+        await animationPromise;
         currentEngine = await createFunkyEngine(globalPhotoParams, scoreUI, instruments);
         }
 
     if (genre === "metal") {
         instruments = await loadMetalPack();
+        await animationPromise;
         currentEngine = await createMetalEngine(globalPhotoParams, scoreUI, instruments);
         }
 
     if (genre === "orchestra") {
         instruments = await loadOrchestraPack();
+        await animationPromise;
         currentEngine = await createOrchestraEngine(globalPhotoParams, scoreUI, instruments);
         }
 
     if (genre === "piano") {
         instruments = await loadPianoPack();
+        await animationPromise;
         currentEngine = await createPianoEngine(globalPhotoParams, scoreUI, instruments);
         }
         
