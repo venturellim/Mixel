@@ -13,7 +13,7 @@
 // Nessuna dipendenza da strumenti.
 //
 
-console.log("randomUtils.js loaded");
+console.log("randomUtils.js Ver 002 loaded");
 
 // ============================================================
 // 🎯 RANDOM DETERMINISTICO (SEED)
@@ -121,4 +121,18 @@ export function vary(value, amount, rand = Math.random) {
 
 export function chance(prob, rand = Math.random) {
     return rand() < prob;
+}
+
+// ============================================================
+// WRAPPER PER RAND (pick e range)
+// ============================================================
+export function wrapRand(rand) {
+    return {
+        next: () => rand(),
+        range: (min, max) => min + rand() * (max - min),
+        pick: (arr) => {
+            if (!arr || arr.length === 0) return null;
+            return arr[Math.floor(rand() * arr.length)];
+        }
+    };
 }
