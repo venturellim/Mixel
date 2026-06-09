@@ -126,7 +126,7 @@ function showDebugNotification(message) {
 // FUNZIONE PER TRIGGERARE DEBUG
 // ============================================================
 
-function triggerDebugMode(genre, styleName, forcedParams) {
+async function triggerDebugMode(genre, styleName, forcedParams) {
     console.log(`🐛 DEBUG MODE: ${genre} | ${styleName}`);
     console.log("Parametri forzati:", forcedParams);
     
@@ -213,27 +213,27 @@ function triggerDebugMode(genre, styleName, forcedParams) {
         case 'dance':
         instruments = await loadDancePack();
         await Tone.loaded();
-            engine = createDanceEngine(params, window.scoreUI, instruments);
+            engine = await createDanceEngine(params, window.scoreUI, instruments);
             break;
         case 'metal':
         instruments = await loadMetalPack();
         await Tone.loaded();
-            engine = createMetalEngine(params, window.scoreUI, instruments);
+            engine = await createMetalEngine(params, window.scoreUI, instruments);
             break;
         case 'orchestra':
         instruments = await loadOrchestraPack();
         await Tone.loaded();
-            engine = createOrchestraEngine(params, window.scoreUI, instruments);
+            engine = await createOrchestraEngine(params, window.scoreUI, instruments);
             break;
         case 'piano':
         instruments = await loadPianoPack();
         await Tone.loaded();
-            engine = createPianoEngine(params, window.scoreUI, instruments);
+            engine = await createPianoEngine(params, window.scoreUI, instruments);
             break;
         case 'funky':
         instruments = await loadFunkyPack();
         await Tone.loaded();
-            engine = createFunkyEngine(params, window.scoreUI, instruments);
+            engine = await createFunkyEngine(params, window.scoreUI, instruments);
             break;
         default:
             console.error("Genere non riconosciuto:", genre);
