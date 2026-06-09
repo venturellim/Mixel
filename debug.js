@@ -5,8 +5,13 @@ import { createMetalEngine } from './genres/metal/metalEngine.js';
 import { createOrchestraEngine } from './genres/orchestra/orchestraEngine.js';
 import { createPianoEngine } from './genres/piano/pianoEngine.js';
 import { createFunkyEngine } from './genres/funky/funkyEngine.js';
+import { loadDancePack } from "./genres/dance/danceInstruments.js";
+import { loadMetalPack } from "./genres/metal/metalInstruments.js";
+import { loadOrchestraPack } from "./genres/orchestra/orchestraInstruments.js";
+import { loadPianoPack } from "./genres/piano/pianoInstruments.js";
+import { loadFunkyPack } from "./genres/funky/funkyInstruments.js";
 
-console.log("🐛 debug.js Ver. 004 loaded");
+console.log("🐛 debug.js Ver. 005 loaded");
 
 
 // ============================================================
@@ -204,19 +209,29 @@ function triggerDebugMode(genre, styleName, forcedParams) {
     
     switch(genre) {
         case 'dance':
-            engine = createDanceEngine(params, window.scoreUI);
+        instruments = await loadDancePack();
+        await Tone.loaded();
+            engine = createDanceEngine(params, window.scoreUI, instruments);
             break;
         case 'metal':
-            engine = createMetalEngine(params, window.scoreUI);
+        instruments = await loadMetalPack();
+        await Tone.loaded();
+            engine = createMetalEngine(params, window.scoreUI, instruments);
             break;
         case 'orchestra':
-            engine = createOrchestraEngine(params, window.scoreUI);
+        instruments = await loadOrchestraPack();
+        await Tone.loaded();
+            engine = createOrchestraEngine(params, window.scoreUI, instruments);
             break;
         case 'piano':
-            engine = createPianoEngine(params, window.scoreUI);
+        instruments = await loadPianoPack();
+        await Tone.loaded();
+            engine = createPianoEngine(params, window.scoreUI, instruments);
             break;
         case 'funky':
-            engine = createFunkyEngine(params, window.scoreUI);
+        instruments = await loadFunkyPack();
+        await Tone.loaded();
+            engine = createFunkyEngine(params, window.scoreUI, instruments);
             break;
         default:
             console.error("Genere non riconosciuto:", genre);
