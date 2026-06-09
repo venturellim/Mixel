@@ -288,74 +288,10 @@ export async function waitDNA(analysisData) {
 // ======================================================
 // 📦 FASE 2: CARICAMENTO STRUMENTI (ATTESA REALE)
 // ======================================================
-export async function waitLoader(genreInstruments, firstStart) {
+export async function waitInstruments(genreInstruments, selectedGenre = null) {
     initWin11Loader();
     showWin11UI();
-
-    // --------------------------------------------------
-    // FASE 1: ESTRAZIONE DNA IMMAGINE (7 Secondi, Barra Verde Brillante)
-    // --------------------------------------------------
-    loadLottieAnimation('DNAloader.json');
-    
-    const dnaDuration = 5000;
-    const dnaStartTime = Date.now();
-    
-    const fallbackDnaSteps = [
-        { label: "Matrice Pixel RGB...", status: "Mappatura canali colore..." },
-        { label: "Luminance Contrast", status: "Calcolo dei livelli di soglia globale..." },
-        { label: "Color Temperature", status: "Analisi bilanciamento caldo/freddo..." },
-        { label: "Energy (StdDev)", status: "Misurazione del contrasto dell'immagine..." },
-        { label: "Texture & Roughness", status: "Rilevamento densità superficiale..." },
-        { label: "Complexity Vector", status: "Analisi dell'entropia spaziale..." },
-        { label: "Edge Density (Sobel)", status: "Estrazione bordi d'onda visivi..." },
-        { label: "Key Dominante", status: "Calcolo della tonalità musicale associata..." },
-        { label: "Generazione Photo DNA Hash", status: "Hashing deterministico completato!" }
-    ];
-
-    await new Promise((resolve) => {
-        var dnaInterval = setInterval(function() {
-            var elapsed = Date.now() - dnaStartTime;
-            var percent = Math.min(100, (elapsed / dnaDuration) * 100);
-            
-            var stepIndex = Math.floor((percent / 100) * fallbackDnaSteps.length);
-            stepIndex = Math.min(stepIndex, fallbackDnaSteps.length - 1);
-            var currentStep = fallbackDnaSteps[stepIndex];
-            
-            var currentLabel = currentStep.label;
-            
-            if (activeAnalysisData) {
-                if (percent > 12 && percent <= 24) currentLabel = `Brightness: ${Number(activeAnalysisData.brightness).toFixed(3)}`;
-                else if (percent > 24 && percent <= 36) currentLabel = `Color Temp: ${Number(activeAnalysisData.colorTemperature).toFixed(3)}`;
-                else if (percent > 36 && percent <= 48) currentLabel = `Energy/Contrast: ${Number(activeAnalysisData.energy).toFixed(3)}`;
-                else if (percent > 48 && percent <= 60) currentLabel = `Texture/Roughness: ${Number(activeAnalysisData.texture).toFixed(3)}`;
-                else if (percent > 60 && percent <= 72) currentLabel = `Complexity Vector: ${Number(activeAnalysisData.complexity).toFixed(3)}`;
-                else if (percent > 72 && percent <= 84) currentLabel = `Entropy Spatial: ${Number(activeAnalysisData.entropy).toFixed(3)}`;
-                else if (percent > 84 && percent <= 93) currentLabel = `Edge Density: ${Number(activeAnalysisData.edges).toFixed(3)}`;
-                else if (percent > 93) currentLabel = `Key: ${activeAnalysisData.key} | DNA: ${activeAnalysisData.dna}`;
-            }
-
-            updateWin11UI(
-                percent, 
-                0, 
-                null, 0, 0, 
-                currentStep.status, 
-                "Estrazione DNA Immagine", 
-                "Analisi dei descrittori visivi in corso...", 
-                currentLabel, 
-                true
-            );
-            
-            if (percent >= 100) {
-                clearInterval(dnaInterval);
-                resolve();
-            }
-        }, 50);
-    });
-
-    // --------------------------------------------------
-    // FASE 2: CARICAMENTO STRUMENTI (7 Secondi, Barra Blu)
-    // --------------------------------------------------
-
+    const firstStart = 1;
 if (firstStart === 1) {
 loadLottieAnimation('loader.json');
 
