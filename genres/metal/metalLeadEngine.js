@@ -1,7 +1,7 @@
 // metalLeadEngine.js — ver. 094 COMPLETO (Metal + Ballad)
 import * as Tone from "https://esm.sh/tone";
 import { normalizeNote } from "./metalInstruments.js";
-
+import { wrapRand } from "../../utils/randomUtils.js";
 import {
     leadRhythmLibrary,
     leadMelodicLibrary,
@@ -158,7 +158,7 @@ function generateBalladNote(prevMidi) {
 function schedulePad(section, progression, instruments, params, rand) {
     const pad = instruments.StStringPad;
     if (!pad || !pad.loaded) return;
-    
+    rand = wrapRand(rand);
     const { melodicSpeed = 2, melodicDensity = 1 } = params;
     
     let rhythmLib = null, melodicLib = null, chordType = "triad";
