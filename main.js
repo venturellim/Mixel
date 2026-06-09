@@ -23,7 +23,7 @@ import { loadOrchestraPack } from "./genres/orchestra/orchestraInstruments.js";
 import { loadPianoPack } from "./genres/piano/pianoInstruments.js";
 import { loadFunkyPack } from "./genres/funky/funkyInstruments.js";
 
-console.log("main.js Ver. 022 loaded");
+console.log("main.js Ver. 022.1 loaded");
 
 let currentEngine = null;
 let currentGenre = null;
@@ -123,6 +123,7 @@ function initFileLoader() {
             
             heroLogoContainer.style.display = "none";
             btnElabora.classList.remove("hidden");
+            btnElabora.textContent = "✨ Elabora foto";
             spectrumPanel.classList.add("hidden");
             playerPanel.classList.add("hidden");
             previewImage.classList.remove("zoomed-out", "moved-up");
@@ -160,6 +161,7 @@ function initGenrePanel() {
 setLoaderAnalysisData(analysis);
             globalPhotoParams = photoToMusicParams(analysis);
             await waitDNA(analysis);
+           btnElabora.textContent = "🎵 Scegli genere";
             newImageLoaded = 0;
             firstStart = 0;
         }
