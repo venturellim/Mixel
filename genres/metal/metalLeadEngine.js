@@ -158,7 +158,7 @@ function generateBalladNote(prevMidi) {
 function schedulePad(section, progression, instruments, params, rand) {
     const pad = instruments.StStringPad;
     if (!pad || !pad.loaded) return;
-    randWrapper = wrapRand(rand);
+    const randWrapper = wrapRand(rand);
     const { melodicSpeed = 2, melodicDensity = 1 } = params;
     
     let rhythmLib = null, melodicLib = null, chordType = "triad";
