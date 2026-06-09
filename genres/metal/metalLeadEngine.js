@@ -158,7 +158,7 @@ function generateBalladNote(prevMidi) {
 function schedulePad(section, progression, instruments, params, rand) {
     const pad = instruments.StStringPad;
     if (!pad || !pad.loaded) return;
-    rand = wrapRand(rand);
+    randWrapper = wrapRand(rand);
     const { melodicSpeed = 2, melodicDensity = 1 } = params;
     
     let rhythmLib = null, melodicLib = null, chordType = "triad";
@@ -184,7 +184,7 @@ function schedulePad(section, progression, instruments, params, rand) {
         chordType = "triad";
     }
     
-    const pattern = melodicLib ? rand.pick(melodicLib) : rand.pick(rhythmLib);
+    const pattern = melodicLib ? randWrapper.pick(melodicLib) : randWrapper.pick(rhythmLib);
     if (!pattern) return;
     
     const chordSymbol = progression[0] || "C";
@@ -204,7 +204,7 @@ function schedulePad(section, progression, instruments, params, rand) {
         if (melodicLib && (index % melodicDensity !== 0)) return;
         const step = melodicLib ? index * melodicSpeed : value;
         const time = section.startTime + step * stepDur;
-        const vel = padMotionEnhancer(pad, time, params, randWrap);
+        const vel = padMotionEnhancer(pad, time, params, randWrapper);
         
         let highNote;
         if (melodicLib) {
