@@ -1,4 +1,5 @@
 // debug.js — Versione COMPLETA per mobile
+import * as Tone from "https://esm.sh/tone";
 
 import { createDanceEngine } from './genres/dance/danceEngine.js';
 import { createMetalEngine } from './genres/metal/metalEngine.js';
@@ -206,6 +207,7 @@ function triggerDebugMode(genre, styleName, forcedParams) {
     // CHIAMA DIRETTAMENTE L'ENGINE DEL GENERE SELEZIONATO
     // ============================================================
     let engine = null;
+    let instruments;
     
     switch(genre) {
         case 'dance':
