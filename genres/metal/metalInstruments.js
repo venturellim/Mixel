@@ -395,7 +395,7 @@ bassBus.gain.value = Tone.dbToGain(4);    // Basso
 leadBus.gain.value = Tone.dbToGain(0);   // Lead
 drumBus.gain.value = Tone.dbToGain(0);   // Batteria
 stringBus.gain.value = Tone.dbToGain(0);   // String Pad
-acousticBus.gain.value = Tone.dbToGain(2);   // Chitarra Acustica 
+acousticBus.gain.value = Tone.dbToGain(4);   // Chitarra Acustica 
 
 export function normalizeNote(note, instrument) {
     if (!note || typeof note !== "string") return "C3";

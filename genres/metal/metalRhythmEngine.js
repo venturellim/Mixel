@@ -8,7 +8,7 @@ import {
 
 
 
-console.log("metalRhythmEngine.js ver. 028 loaded");
+console.log("metalRhythmEngine.js ver. 029 loaded");
 
 // ============================================================
 // FUNZIONI DI SUPPORTO PER LA BALLAD
@@ -120,96 +120,141 @@ export function scheduleRhythm(section, progression, instruments, params, rand, 
     // ============================================================
 // BALLAD MODE — VERSIONE DEFINITIVA
 // ============================================================
+// ============================================================
+// BALLAD MODE — CELESTIAL DREAM STYLE
+// ============================================================
 if (isBalladMode) {
-    console.log(`🎸 BALLAD MODE ACTIVE | ${section.name}`);
+    console.log(`🎸 BALLAD MODE ACTIVE (Celestial Dream style) | ${section.name}`);
 
+    // Imposta BPM più lento per la ballad (80 BPM)
+    const originalBpm = Tone.Transport.bpm.value;
+    const balladBpm = 80;
+    Tone.Transport.bpm.value = balladBpm;
+    const balladMeasureDur = (60 / balladBpm) * 4;
+    const stepTime = balladMeasureDur / 16;
+    
+    // Pattern di plettrate per la chitarra acustica
+    // "Taaaa tatataaaa tatataa" in sedicesimi
+    const strumPatterns = [
+        // Pattern base: [posizione, durata, tipo]
+        { steps: [0], type: "long" },           // Taaaa (accordo lungo)
+        { steps: [4, 5, 6, 7], type: "fast" },  // tatataaaa (4 note veloci)
+        { steps: [10, 11, 12], type: "medium" }, // tatataa (3 note)
+    ];
+    
+    // Pattern alternativi per variazione
+    const altPatterns = [
+        { steps: [0, 1, 2, 3], type: "fast", desc: "upbeat" },
+        { steps: [0], type: "long", desc: "sustain" },
+        { steps: [4, 5, 6], type: "medium", desc: "fill" },
+        { steps: [8, 9, 10, 11], type: "fast", desc: "chorus" }
+    ];
+    
     for (let m = 0; m < section.measures; m++) {
-
-        const measureStart = section.startTime + m * measureDur;
+        const measureStart = section.startTime + m * balladMeasureDur;
         const currentRoot = progression[m % progression.length];
-
+        
+        // Raw root per la scala
         const rawRoot = currentRoot;
-const rawThird = buildThird(rawRoot);
-const rawFifth = buildFifth(rawRoot);
-
-const root = normalizeNote(rawRoot, "acousticGuitar");
-const third = normalizeNote(rawThird, "acousticGuitar");
-const fifth = normalizeNote(rawFifth, "acousticGuitar");
-
-
+        const rawThird = buildThird(rawRoot);
+        const rawFifth = buildFifth(rawRoot);
+        
+        // Normalizzazione per la chitarra acustica (PLEKTRATE, non arpeggio)
+        const rootNote = normalizeNote(rawRoot, "acousticGuitar");
+        const thirdNote = normalizeNote(rawThird, "acousticGuitar");
+        const fifthNote = normalizeNote(rawFifth, "acousticGuitar");
+        
+        // Accordo completo (plettrata)
+        const chord = [rootNote + "3", thirdNote + "3", fifthNote + "3"];
+        
+        // Scegli pattern in base alla sezione
+        let usePattern;
+        const name = section.name?.toLowerCase() || "";
+        if (name.includes("chorus")) {
+            usePattern = altPatterns[Math.floor(rand() * altPatterns.length)];
+        } else {
+            usePattern = strumPatterns[Math.floor(rand() * strumPatterns.length)];
+        }
+        
         // ============================================================
-        // 1. CHITARRA ACUSTICA — ACCORDO + PLETTRATE + ARPEGGIO
+        // 1. CHITARRA ACUSTICA — PLETTRATE CON MOVIMENTO
         // ============================================================
         if (acousticGuitar) {
-
-            // --- Accordo iniziale (plettrate lente) ---
-            Tone.Transport.schedule(t => {
-                acousticGuitar.triggerAttackRelease(root + "3", "4n", t, 0.85);
-                acousticGuitar.triggerAttackRelease(fifth + "3", "4n", t + 0.04, 0.75);
-                acousticGuitar.triggerAttackRelease(third + "3", "4n", t + 0.08, 0.65);
-
-                if (score) {
-                    score.addNote("AcousticGuitar", root + "3", section.name);
-                    score.addNote("AcousticGuitar", fifth + "3", section.name);
-                    score.addNote("AcousticGuitar", third + "3", section.name);
-                }
-            }, measureStart);
-
-            // --- Arpeggio morbido a metà misura ---
-            Tone.Transport.schedule(t => {
-                acousticGuitar.triggerAttackRelease(root + "4", "8n", t, 0.55);
-                acousticGuitar.triggerAttackRelease(third + "4", "8n", t + 0.15, 0.50);
-                acousticGuitar.triggerAttackRelease(fifth + "4", "8n", t + 0.30, 0.45);
-
-                if (score) {
-                    score.addNote("AcousticGuitar", root + "4", section.name);
-                    score.addNote("AcousticGuitar", third + "4", section.name);
-                    score.addNote("AcousticGuitar", fifth + "4", section.name);
-                }
-            }, measureStart + measureDur * 0.5);
+            usePattern.steps.forEach(step => {
+                const absoluteTime = measureStart + step * stepTime;
+                const duration = (usePattern.type === "long") ? "2n" : 
+                               (usePattern.type === "medium") ? "8n" : "16n";
+                const velocity = (usePattern.type === "long") ? 0.7 : 0.55;
+                
+                Tone.Transport.schedule(t => {
+                    // Suona l'accordo completo (plettrata)
+                    chord.forEach(note => {
+                        acousticGuitar.triggerAttackRelease(note, duration, t, velocity);
+                        if (score) score.addNote("AcousticGuitar", note, section.name);
+                    });
+                }, absoluteTime);
+            });
         }
-
+        
         // ============================================================
-        // 2. BATTERIA — SUPER SOFT
+        // 2. BATTERIA — MINIMA (solo kick e piatti)
         // ============================================================
-
-        // Kick solo sul primo beat
+        
+        // Kick all'inizio della misura (soft)
         Tone.Transport.schedule(t => {
             try { drums.player("kick").start(t); } catch(e){}
             if (score) score.addNote("Drums", "Kick", section.name);
         }, measureStart);
-
-        // Snare ogni 2 misure (soft)
+        
+        // Kick anche a metà misura (opzionale, ogni 2 misure)
         if (m % 2 === 1) {
             Tone.Transport.schedule(t => {
-                try { drums.player("snare").start(t); } catch(e){}
-                if (score) score.addNote("Drums", "Snare", section.name);
-            }, measureStart + measureDur * 0.5);
+                try { drums.player("kick").start(t); } catch(e){}
+                if (score) score.addNote("Drums", "Kick", section.name);
+            }, measureStart + balladMeasureDur * 0.5);
         }
-
-        // Hi-hat morbido sul 3° beat
-        Tone.Transport.schedule(t => {
-            try { drums.player("hihat").start(t); } catch(e){}
-            if (score) score.addNote("Drums", "HiHat", section.name);
-        }, measureStart + measureDur * 0.75);
-
-        // Crash solo all'inizio sezione
-        if (m === 0) {
+        
+        // Crash all'inizio sezione (intro e chorus)
+        if (m === 0 && (name.includes("chorus") || name.includes("intro"))) {
             Tone.Transport.schedule(t => {
                 try { drums.player("crash1").start(t); } catch(e){}
                 if (score) score.addNote("Drums", "Crash", section.name);
             }, measureStart);
         }
+        
+        // Ride o hi-hat delicato ogni 2 misure
+        if (m % 2 === 0 && energy > 0.3) {
+            Tone.Transport.schedule(t => {
+                try { drums.player("ride").start(t); } catch(e){} 
+                if (score) score.addNote("Drums", "Ride", section.name);
+            }, measureStart + balladMeasureDur * 0.75);
+        }
+        
+        // ============================================================
+        // 3. BASSO — SEMPLICE, SOSTIENE L'ARMONIA
+        // ============================================================
+        if (bass) {
+            const bassNote = normalizeNote(rawRoot, "bass") + "1";
+            Tone.Transport.schedule(t => {
+                bass.triggerAttackRelease(bassNote, "2n", t, 0.5);
+                if (score) score.addNote("Bass", bassNote, section.name);
+            }, measureStart);
+            
+            // Quinta al secondo beat
+            const fifthBass = normalizeNote(rawFifth, "bass") + "1";
+            Tone.Transport.schedule(t => {
+                bass.triggerAttackRelease(fifthBass, "4n", t, 0.4);
+                if (score) score.addNote("Bass", fifthBass, section.name);
+            }, measureStart + balladMeasureDur * 0.5);
+        }
     }
-
+    
     return;
 }
 
     // ============================================================
     // METAL MODE NORMALE (groove completo)
     // ============================================================
-    
-    
 
     const grooves = {
         intro: ["intro_ambient", "intro_heavy_strikes", "stratovarius_intro", "doom_slow", "cinematic_buildup", "industrial_static", "stoner_doom", "power_ballad"],
