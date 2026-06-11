@@ -8,7 +8,7 @@ import {
 
 
 
-console.log("metalRhythmEngine.js ver. 029.1 loaded");
+console.log("metalRhythmEngine.js ver. 029.2 loaded");
 
 // ============================================================
 // FUNZIONI DI SUPPORTO PER LA BALLAD
@@ -161,6 +161,7 @@ if (isBalladMode) {
         
         // Normalizzazione per la chitarra acustica (PLEKTRATE, non arpeggio)
         const rootNote = normalizeNote(rawRoot, "acousticGuitar");
+console.log("rawRoot:", rawRoot, "→ rootNote:", rootNote);
         const thirdNote = normalizeNote(rawThird, "acousticGuitar");
         const fifthNote = normalizeNote(rawFifth, "acousticGuitar");
         
