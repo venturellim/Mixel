@@ -8,7 +8,7 @@ import {
 
 
 
-console.log("metalRhythmEngine.js ver. 029 loaded");
+console.log("metalRhythmEngine.js ver. 029.1 loaded");
 
 // ============================================================
 // FUNZIONI DI SUPPORTO PER LA BALLAD
@@ -180,6 +180,8 @@ if (isBalladMode) {
         // 1. CHITARRA ACUSTICA — PLETTRATE CON MOVIMENTO
         // ============================================================
         if (acousticGuitar) {
+    console.log("🎸 Acoustic Guitar: suono accordo", chord, "con pattern", usePattern);
+    // ... resto del codice
             usePattern.steps.forEach(step => {
                 const absoluteTime = measureStart + step * stepTime;
                 const duration = (usePattern.type === "long") ? "2n" : 
