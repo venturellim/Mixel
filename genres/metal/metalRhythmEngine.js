@@ -6,7 +6,7 @@ import {
     leadPadMelodicLibrary 
 } from "../../utils/leadLibraries.js";
 
-console.log("metalRhythmEngine.js ver. 030 loaded");
+console.log("metalRhythmEngine.js ver. 030.1 loaded");
 
 // ============================================================
 // FUNZIONI DI SUPPORTO PER LA BALLAD
@@ -99,8 +99,8 @@ export function scheduleRhythm(section, progression, instruments, params, rand, 
     const { drums, guitarPalm, guitarOpen, bass, acousticChordMajor, acousticChordMinor, StStringPad } = instruments;
     if (!drums || !guitarPalm || !bass) return;
 
-    const hasAcoustic = !!acousticChord;
-
+    const hasAcoustic = !!(acousticChordMajor || acousticChordMinor);
+    
     const name = section?.name?.toLowerCase() || "";
     const isChorus = name.includes("chorus") || (name.includes("solo") && !name.includes("pre"));
     const isPreChorus = name.includes("pre") || name.includes("bridge");
