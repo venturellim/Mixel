@@ -651,26 +651,30 @@ function scheduleShimmer(section, progression, instruments, params, rand, measur
     // Determina se l'accordo è minore
     const isMinor = (params?.imageParams?.mood < 0.5) || params?.scaleType?.includes("minor");
     
-    // Pattern per lo shimmer (accordi lunghi)
+    // Pattern per lo shimmer
     let pattern = [];
-    let chordDuration = "1m";  // durata accordo
+    let chordDuration = "4n";
+    let velocity = 0.55;
     
     if (isIntro || name.includes("outro")) {
-        // Intro/Outro: accordo lungo, poche note
-        pattern = [0];  // solo all'inizio della misura
-        chordDuration = "2n";
+        // INTRO/OUTRO: movimento melodico (come 4000 Raining Nights)
+        // Pattern ascendente/discente in sedicesimi
+        pattern = [0, 3, 6, 8, 10, 13];  // movimento fluido
+        chordDuration = "8n";
+        velocity = 0.45;
     } else if (isChorus) {
-        // Chorus: movimento più attivo
-        pattern = [0, 8];  // inizio e metà misura
-        chordDuration = "2n";
-    } else if (isSolo) {
-        // Solo: segue la rhythm (accordi ogni metà misura)
         pattern = [0, 8];
         chordDuration = "2n";
+        velocity = 0.7;
+    } else if (isSolo) {
+        pattern = [0, 8];
+        chordDuration = "2n";
+        velocity = 0.6;
     } else {
-        // Verse: accordo all'inizio
+        // Verse
         pattern = [0];
         chordDuration = "1m";
+        velocity = 0.55;
     }
     
     for (let m = 0; m < section.measures; m++) {
@@ -688,13 +692,30 @@ function scheduleShimmer(section, progression, instruments, params, rand, measur
         if (rootForFile === "Bb") rootForFile = "As";
         
         const chordName = isMinor ? `${rootForFile}m2` : `${rootForFile}2`;
-        const velocity = isIntro ? 0.4 : (isChorus ? 0.7 : 0.55);
         
-        pattern.forEach(step => {
+        // Per intro/outro, alterna note diverse per creare movimento
+        const useAlternateNotes = isIntro;
+        
+        pattern.forEach((step, idx) => {
             const time = measureStart + step * (measureDur / 16);
+            
+            // Variazione di ottava per intro (più interesse)
+            let octaveOffset = 0;
+            if (useAlternateNotes) {
+                octaveOffset = (idx % 2 === 0) ? 0 : 1;  // alterna ottava
+            }
+            
+            // Per intro, usa note singole non accordi pieni? 
+            // Shimmer ha sample di accordi, ma possiamo usare note diverse
+            const finalChordName = useAlternateNotes && octaveOffset === 1 
+                ? chordName.replace("2", "3")  // ottava superiore se esiste
+                : chordName;
+            
+            const dynVelocity = useAlternateNotes ? velocity * (0.8 + idx * 0.05) : velocity;
+            
             Tone.Transport.schedule(t => {
-                shimmer.triggerAttackRelease(chordName, chordDuration, t, velocity);
-                if (score) score.addNote("Shimmer", chordName, section.name);
+                shimmer.triggerAttackRelease(finalChordName, chordDuration, t, dynVelocity);
+                if (score) score.addNote("Shimmer", finalChordName, section.name);
             }, time);
         });
     }
