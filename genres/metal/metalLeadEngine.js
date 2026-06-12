@@ -16,7 +16,18 @@ import {
     padMotionEnhancer
 } from "../../utils/leadEnhancers.js";
 
-console.log("metalLeadEngine.js ver. 097 loaded");
+console.log("metalLeadEngine.js ver. 098 loaded");
+
+function getStrictScale(root, isMinor) {
+    const allNotes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+    let cleanRoot = root.replace(/[0-9]/g, "").toUpperCase();
+    const alt = { DB: "C#", EB: "D#", GB: "F#", AB: "G#", BB: "A#" };
+    cleanRoot = alt[cleanRoot] || cleanRoot;
+    let idx = allNotes.indexOf(cleanRoot);
+    if (idx === -1) idx = 9;
+    const intervals = isMinor ? [0, 2, 3, 5, 7, 8, 10] : [0, 2, 4, 5, 7, 9, 11];
+    return intervals.map(i => allNotes[(idx + i) % 12]);
+}
 
 // ============================================================
 // FUNZIONI DI SUPPORTO
@@ -626,22 +637,231 @@ const LeadLegacy = {
 };
 
 // ============================================================
-// API PUBBLICA
+// SCHEDULE SHIMMER (PAD ATMOSFERICO)
 // ============================================================
+function scheduleShimmer(section, progression, instruments, params, rand, measureDur) {
+    const shimmer = instruments.shimmer;
+    if (!shimmer) return;
+    
+    const name = section.name?.toLowerCase() || "";
+    const isIntro = name.includes("intro") || name.includes("outro");
+    const isChorus = name.includes("chorus");
+    const isSolo = name.includes("solo");
+    
+    // Determina se l'accordo è minore
+    const isMinor = (params?.imageParams?.mood < 0.5) || params?.scaleType?.includes("minor");
+    
+    // Pattern per lo shimmer (accordi lunghi)
+    let pattern = [];
+    let chordDuration = "1m";  // durata accordo
+    
+    if (isIntro || name.includes("outro")) {
+        // Intro/Outro: accordo lungo, poche note
+        pattern = [0];  // solo all'inizio della misura
+        chordDuration = "2n";
+    } else if (isChorus) {
+        // Chorus: movimento più attivo
+        pattern = [0, 8];  // inizio e metà misura
+        chordDuration = "2n";
+    } else if (isSolo) {
+        // Solo: segue la rhythm (accordi ogni metà misura)
+        pattern = [0, 8];
+        chordDuration = "2n";
+    } else {
+        // Verse: accordo all'inizio
+        pattern = [0];
+        chordDuration = "1m";
+    }
+    
+    for (let m = 0; m < section.measures; m++) {
+        const measureStart = section.startTime + m * measureDur;
+        const currentRoot = progression[m % progression.length];
+        
+        // Normalizza la root per il shimmer
+        let rootForFile = currentRoot;
+        if (rootForFile === "F#") rootForFile = "Fs";
+        if (rootForFile === "G#") rootForFile = "Gs";
+        if (rootForFile === "A#") rootForFile = "As";
+        if (rootForFile === "C#") rootForFile = "Cs";
+        if (rootForFile === "D#") rootForFile = "Ds";
+        if (rootForFile === "Eb") rootForFile = "Ds";
+        if (rootForFile === "Bb") rootForFile = "As";
+        
+        const chordName = isMinor ? `${rootForFile}m2` : `${rootForFile}2`;
+        const velocity = isIntro ? 0.4 : (isChorus ? 0.7 : 0.55);
+        
+        pattern.forEach(step => {
+            const time = measureStart + step * (measureDur / 16);
+            Tone.Transport.schedule(t => {
+                shimmer.triggerAttackRelease(chordName, chordDuration, t, velocity);
+                if (score) score.addNote("Shimmer", chordName, section.name);
+            }, time);
+        });
+    }
+}
 
+// ============================================================
+// SCHEDULE LEAD MELODICA (GuitarLead)
+// ============================================================
+function scheduleLeadMelody(section, progression, instruments, params, rand, measureDur, score, isShimmerActive) {
+    const { guitarLead, leadVibrato } = instruments;
+    if (!guitarLead) return;
+    
+    const name = section.name?.toLowerCase() || "";
+    const isIntro = name.includes("intro");
+    const isChorus = name.includes("chorus");
+    const isBridge = name.includes("bridge");
+    
+    const stepTime = measureDur / 16;
+    const { energy = 0.5, brightness = 0.5, complexity = 0.5 } = params?.imageParams || {};
+    
+    // Pattern melodici diversi in base alla sezione
+    let melodyPattern;
+    let noteCount = 6;  // default 6 note per misura
+    
+    if (isIntro) {
+        // Intro: poche note, atmosferiche
+        melodyPattern = [0, 8];
+        noteCount = 4;
+    } else if (isChorus) {
+        // Chorus: più attivo
+        melodyPattern = [0, 4, 8, 12];
+        noteCount = 8;
+    } else if (isBridge) {
+        // Bridge: più tensione
+        melodyPattern = [0, 6, 12];
+        noteCount = 6;
+    } else {
+        // Verse: movimento moderato
+        melodyPattern = [0, 8];
+        noteCount = 6;
+    }
+    
+    const tonalCenter = params?.tonalCenter || "A4";
+    const scaleType = params?.scaleType || "naturalMinor";
+    const rootNote = tonalCenter.replace(/[0-9]/g, "");
+    const isMinor = scaleType.includes("minor");
+    
+    for (let m = 0; m < section.measures; m++) {
+        const measureStart = section.startTime + m * measureDur;
+        const currentRoot = progression[m % progression.length];
+        const currentScale = getStrictScale(currentRoot, isMinor);
+        
+        // Genera una melodia semplice basata sulla scala
+        const melodyNotes = [];
+        for (let i = 0; i < noteCount; i++) {
+            // Alterna gradi della scala per creare movimento
+            const degree = (i * 2) % 7;  // 0,2,4,6,1,3,5
+            melodyNotes.push(degree);
+        }
+        
+        melodyPattern.forEach((step, idx) => {
+            const absoluteTime = measureStart + step * stepTime;
+            const noteIdx = melodyNotes[idx % melodyNotes.length];
+            const noteName = currentScale[noteIdx] + "4";  // ottava 4 per la lead
+            
+            const velocity = 0.6 + (energy * 0.2);
+            const duration = "8n";
+            
+            Tone.Transport.schedule(t => {
+                guitarLead.triggerAttackRelease(noteName, duration, t, velocity);
+                if (score) score.addNote("GuitarLead", noteName, section.name);
+            }, absoluteTime);
+        });
+    }
+}
+
+// ============================================================
+// SCHEDULE ASSOLO CON CHITARRA ACUSTICA
+// ============================================================
+function scheduleAcousticSolo(section, progression, instruments, params, rand, measureDur, score) {
+    const { acousticGuitar } = instruments;
+    if (!acousticGuitar) return;
+    
+    const stepTime = measureDur / 16;
+    const { complexity = 0.5, energy = 0.5 } = params?.imageParams || {};
+    const isMinor = (params?.imageParams?.mood < 0.5) || params?.scaleType?.includes("minor");
+    
+    // L'assolo è più intenso se complexity > 0.6
+    const isIntense = complexity > 0.6;
+    const noteDensity = isIntense ? 12 : 8;
+    
+    for (let m = 0; m < section.measures; m++) {
+        const measureStart = section.startTime + m * measureDur;
+        const currentRoot = progression[m % progression.length];
+        
+        let rootForFile = currentRoot;
+        if (rootForFile === "F#") rootForFile = "Fs";
+        if (rootForFile === "G#") rootForFile = "Gs";
+        if (rootForFile === "A#") rootForFile = "As";
+        if (rootForFile === "C#") rootForFile = "Cs";
+        if (rootForFile === "D#") rootForFile = "Ds";
+        
+        // Usa singole note della chitarra acustica (non accordi)
+        const noteName = `${rootForFile}3`;
+        
+        // Pattern di assolo (note singole, non accordi)
+        for (let i = 0; i < noteDensity; i++) {
+            const step = i * Math.floor(16 / noteDensity);
+            const time = measureStart + step * stepTime;
+            const velocity = 0.55 + (energy * 0.2);
+            
+            Tone.Transport.schedule(t => {
+                acousticGuitar.triggerAttackRelease(noteName, "8n", t, velocity);
+                if (score) score.addNote("AcousticSolo", noteName, section.name);
+            }, time);
+        }
+    }
+}
+
+// ============================================================
+// API PUBBLICA - NUOVA SCHEDULE LEAD
+// ============================================================
 export function scheduleLead(section, progression, instruments, params, rand, measureDur, score) {
     window.currentParams = params;
+    
+    const name = section.name?.toLowerCase() || "";
+    const isIntro = name.includes("intro") || name.includes("outro");
+    const isSolo = name.includes("solo");
     const isBalladLead = section?.isBallad === true;
+    
+    // ============================================================
+    // BALLAD MODE (Celestial Dream style)
+    // ============================================================
+    if (isBalladLead) {
+        // Intro/Outro: solo Shimmer
+        if (isIntro) {
+            scheduleShimmer(section, progression, instruments, params, rand, measureDur);
+            return;
+        }
+        
+        // Verse/Chorus: contrappunto Shimmer ↔ GuitarLead
+        // Prima metà: Shimmer tiene la nota, GuitarLead si muove
+        // Seconda metà: GuitarLead tiene la nota, Shimmer si muove
+        
+        const halfMeasure = measureDur / 2;
+        
+        // Shimmer: accordo lungo nella prima metà
+        scheduleShimmer(section, progression, instruments, params, rand, measureDur);
+        
+        // GuitarLead: movimento nella prima metà
+        scheduleLeadMelody(section, progression, instruments, params, rand, measureDur, score, true);
+        
+        // Solo (opzionale) - se c'è sezione solo e complexity > 0.6
+        if (isSolo && params?.imageParams?.complexity > 0.6) {
+            scheduleAcousticSolo(section, progression, instruments, params, rand, measureDur, score);
+        }
+        
+        return;
+    }
+    
+    // ============================================================
+    // METAL MODE NORMALE (legacy)
+    // ============================================================
     const tonalCenter = params?.tonalCenter || params?.imageParams?.tonalCenter || "A4";
     const scaleType = params?.scaleType || params?.imageParams?.scaleType || "naturalMinor";
     const rootNote = tonalCenter.replace(/[0-9]/g, "");
     const isMinor = scaleType.includes("minor");
-
-    if (isBalladLead) {
-        schedulePad(section, progression, instruments, params, rand);  
-        scheduleBalladLead(section, progression, instruments, measureDur, score);
-        return;
-    }
-
+    
     LeadLegacy.schedule(section, progression, instruments, params, rand, measureDur, rootNote, isMinor, scaleType, score);
 }

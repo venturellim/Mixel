@@ -2,7 +2,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("metalInstruments.js ver. 012 loaded");
+console.log("metalInstruments.js ver. 013 loaded");
 
 // ============================================================
 // 🎚 BUS SPECIFICI DEL METAL
@@ -137,6 +137,49 @@ export function createStStringPad() {
     // 2) ROUTING DI BASE
     pad.connect(stringBus);
 
+export function createShimmer() {
+
+    const sampler = new Tone.Sampler({
+        urls: {
+            C2: "Samples/Shimmer/C2.mp3",
+            D2: "Samples/Shimmer/D2.mp3",
+            E2: "Samples/Shimmer/E2.mp3",
+            F2: "Samples/Shimmer/F2.mp3",
+            G2: "Samples/Shimmer/G2.mp3",
+            A2: "Samples/Shimmer/A2.mp3",
+            B2: "Samples/Shimmer/B2.mp3",
+            "C#2": "Samples/Shimmer/Cs2.mp3",
+            "D#2": "Samples/Shimmer/Ds2.mp3",
+            "F#2": "Samples/Shimmer/Fs2.mp3",
+            "G#2": "Samples/Shimmer/Gs2.mp3",
+            "A#2": "Samples/Shimmer/As2.mp3",
+            Cm2: "Samples/Shimmer/Cm2.mp3",
+            Dm2: "Samples/Shimmer/Dm2.mp3",
+            Em2: "Samples/Shimmer/Em2.mp3",
+            Fm2: "Samples/Shimmer/Fm2.mp3",
+            Gm2: "Samples/Shimmer/Gm2.mp3",
+            Am2: "Samples/Shimmer/Am2.mp3",
+            Bm2: "Samples/Shimmer/Bm2.mp3",
+            "C#m2": "Samples/Shimmer/Csm2.mp3",
+            "D#m2": "Samples/Shimmer/Dsm2.mp3",
+            "F#m2": "Samples/Shimmer/Fsm2.mp3",
+            "G#m2": "Samples/Shimmer/Gsm2.mp3",
+            "A#m2": "Samples/Shimmer/Asm2.mp3"
+        },
+        release: 1.2,
+        onload: () => { 
+            registerInstrumentLoaded("Shimmer");
+            pad.set({
+                envelope: {
+                    attack: 1.5,
+                    decay: 0.5,
+                    sustain: 1.0,
+                    release: 2.5
+                }
+            });
+        }
+    });
+
     // ============================================================
     // 🎹 PAD EFFECTS — creati UNA SOLA VOLTA
     // ============================================================
@@ -200,6 +243,32 @@ export function createAcousticGuitar() {
         },
         release: 1.2,
         onload: () => registerInstrumentLoaded("Chitarra Acustica")
+    }).connect(acousticBus);
+
+    return sampler;
+}
+
+export function createAcousticChord() {
+
+    const sampler = new Tone.Sampler({
+        urls: {
+            C2: "Samples/AcousticGuitar/Chord/C2.mp3",
+            D2: "Samples/AcousticGuitar/Chord/D2.mp3",
+            E2: "Samples/AcousticGuitar/Chord/E2.mp3",
+            F2: "Samples/AcousticGuitar/Chord/F2.mp3",
+            G2: "Samples/AcousticGuitar/Chord/G2.mp3",
+            A2: "Samples/AcousticGuitar/Chord/A2.mp3",
+            B2: "Samples/AcousticGuitar/Chord/B2.mp3",
+            Cm2: "Samples/AcousticGuitar/Chord/Cm2.mp3",
+            Dm2: "Samples/AcousticGuitar/Chord/Dm2.mp3",
+            Em2: "Samples/AcousticGuitar/Chord/Em2.mp3",
+            Fm2: "Samples/AcousticGuitar/Chord/Fm2.mp3",
+            Gm2: "Samples/AcousticGuitar/Chord/Gm2.mp3",
+            Am2: "Samples/AcousticGuitar/Chord/Am2.mp3",
+            Bm2: "Samples/AcousticGuitar/Chord/Bm2.mp3"
+        },
+        release: 1.2,
+        onload: () => registerInstrumentLoaded("Chitarra Acustica Accordi")
     }).connect(acousticBus);
 
     return sampler;
@@ -343,9 +412,11 @@ export async function loadMetalPack() {
     const guitarOpen = createGuitarOpen();
     const guitarLead = createGuitarLead();
     const acousticGuitar = createAcousticGuitar();
+    const acousticChord = createAcousticChord();
     const bass = createBass();
     const drums = createDrums();
     const StStringPad = createStStringPad();
+    const shimmer = createShimmer();
 
     // Restituiamo un oggetto identico a metalInstruments originale
     return {
@@ -353,9 +424,11 @@ export async function loadMetalPack() {
         guitarOpen,
         guitarLead,
         acousticGuitar,
+        acousticChord,
         bass,
         drums,
         StStringPad,
+        shimmer,
 
         // Bus (non cambiano)
         guitarBus,
@@ -397,7 +470,8 @@ drumBus.gain.value = Tone.dbToGain(0);   // Batteria
 stringBus.gain.value = Tone.dbToGain(0);   // String Pad
 acousticBus.gain.value = Tone.dbToGain(4);   // Chitarra Acustica 
 
-export function normalizeNote(note, instrument) {
+// metalInstruments.js
+export function normalizeNote(note, instrument, isMinor = false) {
     if (!note || typeof note !== "string") return "C3";
 
     // Estrai root e ottava
@@ -406,10 +480,42 @@ export function normalizeNote(note, instrument) {
     const targetOctave = match && match[2] ? parseInt(match[2]) : 4;
 
     // ============================================================
+    // CHITARRA ACUSTICA (ACCORDI PRONTI)
+    // ============================================================
+    if (instrument === "acousticChord") {
+        let root = targetRoot;
+        // Converte diesis in formato file
+        if (root === "F#") root = "Fs";
+        if (root === "G#") root = "Gs";
+        if (root === "A#") root = "As";
+        if (root === "C#") root = "Cs";
+        if (root === "D#") root = "Ds";
+        
+        // Aggiunge "m" se minore, altrimenti lascia invariato
+        const suffix = isMinor ? "m" : "";
+        return `${root}${suffix}2`;  // ottava 2 fissa per gli accordi
+    }
+
+    // ============================================================
+    // SHIMMER PAD
+    // ============================================================
+    if (instrument === "shimmer") {
+        let root = targetRoot;
+        if (root === "F#") root = "Fs";
+        if (root === "G#") root = "Gs";
+        if (root === "A#") root = "As";
+        if (root === "C#") root = "Cs";
+        if (root === "D#") root = "Ds";
+        
+        const suffix = isMinor ? "m" : "";
+        return `${root}${suffix}2`;
+    }
+
+    // ============================================================
     // CHITARRE RITMICHE (solo root, ottava 2)
     // ============================================================
     if (instrument === "guitarPalm" || instrument === "guitarOpen") {
-        return targetRoot[0]; // solo la lettera
+        return targetRoot[0];
     }
 
     // ============================================================
@@ -426,7 +532,7 @@ export function normalizeNote(note, instrument) {
     }
 
     // ============================================================
-    // CHITARRA ACUSTICA (ha sample con ottave 2-5)
+    // CHITARRA ACUSTICA VECCHIA (legacy, per compatibilità)
     // ============================================================
     if (instrument === "acousticGuitar") {
         let octave = targetOctave;
@@ -443,48 +549,36 @@ export function normalizeNote(note, instrument) {
     }
 
     // ============================================================
-    // STRING PAD (ha solo note C, ottave 2-5)
+    // STRING PAD
     // ============================================================
     if (instrument === "StStringPad") {
-
-    // Root disponibili nel multisample
-    const roots = ["A", "C", "D#", "F#"];
-
-    // Normalizza la nota richiesta
-    let root = targetRoot.toUpperCase();
-
-    // Converte bemolle in diesis
-    const flatToSharp = {
-        "BB": "A#",
-        "EB": "D#",
-        "AB": "G#",
-        "DB": "C#",
-        "GB": "F#"
-    };
-    if (root.includes("B")) {
-        root = flatToSharp[root] || root;
-    }
-
-    // Trova la root più vicina
-    const semitone = n => ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"].indexOf(n);
-    const targetSemi = semitone(root);
-
-    let best = "C";
-    let bestDist = Infinity;
-
-    roots.forEach(r => {
-        const dist = Math.abs(semitone(r) - targetSemi);
-        if (dist < bestDist) {
-            bestDist = dist;
-            best = r;
+        const roots = ["A", "C", "D#", "F#"];
+        let root = targetRoot.toUpperCase();
+        
+        const flatToSharp = {
+            "BB": "A#", "EB": "D#", "AB": "G#", "DB": "C#", "GB": "F#"
+        };
+        if (root.includes("B")) {
+            root = flatToSharp[root] || root;
         }
-    });
-
-    // Clamping ottava
-    let octave = Math.min(5, Math.max(0, targetOctave));
-
-    return best + octave;
-}
+        
+        const semitone = n => ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"].indexOf(n);
+        const targetSemi = semitone(root);
+        
+        let best = "C";
+        let bestDist = Infinity;
+        
+        roots.forEach(r => {
+            const dist = Math.abs(semitone(r) - targetSemi);
+            if (dist < bestDist) {
+                bestDist = dist;
+                best = r;
+            }
+        });
+        
+        let octave = Math.min(5, Math.max(0, targetOctave));
+        return best + octave;
+    }
 
     // ============================================================
     // BASSO (converte # in bemolle, ottava 1-2)

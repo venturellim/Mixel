@@ -8,7 +8,7 @@ import {
 
 
 
-console.log("metalRhythmEngine.js ver. 029.2 loaded");
+console.log("metalRhythmEngine.js ver. 030 loaded");
 
 // ============================================================
 // FUNZIONI DI SUPPORTO PER LA BALLAD
@@ -100,10 +100,10 @@ function schedulePadInRhythm(section, progression, instruments, params, rand) {
 // ============================================================
 
 export function scheduleRhythm(section, progression, instruments, params, rand, measureDur, nextSectionRoot, score) {
-    const { drums, guitarPalm, guitarOpen, bass, acousticGuitar, StStringPad } = instruments;
+    const { drums, guitarPalm, guitarOpen, bass, acousticChord, StStringPad } = instruments;
     if (!drums || !guitarPalm || !bass) return;
 
-    const hasAcoustic = !!acousticGuitar;
+    const hasAcoustic = !!acousticChord;
 
     const name = section?.name?.toLowerCase() || "";
     const isChorus = name.includes("chorus") || (name.includes("solo") && !name.includes("pre"));
@@ -117,26 +117,29 @@ export function scheduleRhythm(section, progression, instruments, params, rand, 
     const isBalladMode = hasAcoustic && energy < 0.4 && complexity < 0.4;
     section.isBallad = isBalladMode;
 
-    // ============================================================
+// ============================================================
 // BALLAD MODE — VERSIONE DEFINITIVA
 // ============================================================
 // ============================================================
-// BALLAD MODE — CELESTIAL DREAM STYLE
+// BALLAD MODE — CELESTIAL DREAM STYLE (con accordi pronti)
 // ============================================================
 if (isBalladMode) {
     console.log(`🎸 BALLAD MODE ACTIVE (Celestial Dream style) | ${section.name}`);
 
-    // Imposta BPM più lento per la ballad (80 BPM)
+    // Salva BPM originale e imposta BPM ballad (80)
     const originalBpm = Tone.Transport.bpm.value;
     const balladBpm = 80;
     Tone.Transport.bpm.value = balladBpm;
     const balladMeasureDur = (60 / balladBpm) * 4;
     const stepTime = balladMeasureDur / 16;
     
+    // Determina se la ballad deve essere in scala minore o maggiore (dai parametri della foto)
+    // mood < 0.5 → minore (malinconico), mood > 0.5 → maggiore (più luminoso)
+    const isMinor = (params?.imageParams?.mood < 0.5) || params?.scaleType?.includes("minor");
+    console.log(`🎵 Ballad chord mode: ${isMinor ? "MINORE (malinconico)" : "MAGGIORE (luminoso)"}`);
+    
     // Pattern di plettrate per la chitarra acustica
-    // "Taaaa tatataaaa tatataa" in sedicesimi
     const strumPatterns = [
-        // Pattern base: [posizione, durata, tipo]
         { steps: [0], type: "long" },           // Taaaa (accordo lungo)
         { steps: [4, 5, 6, 7], type: "fast" },  // tatataaaa (4 note veloci)
         { steps: [10, 11, 12], type: "medium" }, // tatataa (3 note)
@@ -154,19 +157,18 @@ if (isBalladMode) {
         const measureStart = section.startTime + m * balladMeasureDur;
         const currentRoot = progression[m % progression.length];
         
-        // Raw root per la scala
-        const rawRoot = currentRoot;
-        const rawThird = buildThird(rawRoot);
-        const rawFifth = buildFifth(rawRoot);
+        // Normalizza la root (es. "F#" → "Fs")
+        let rootForFile = currentRoot;
+        if (rootForFile === "F#") rootForFile = "Fs";
+        if (rootForFile === "G#") rootForFile = "Gs";
+        if (rootForFile === "A#") rootForFile = "As";
+        if (rootForFile === "C#") rootForFile = "Cs";
+        if (rootForFile === "D#") rootForFile = "Ds";
+        if (rootForFile === "Eb") rootForFile = "Ds";
+        if (rootForFile === "Bb") rootForFile = "As";
         
-        // Normalizzazione per la chitarra acustica (PLEKTRATE, non arpeggio)
-        const rootNote = normalizeNote(rawRoot, "acousticGuitar");
-console.log("rawRoot:", rawRoot, "→ rootNote:", rootNote);
-        const thirdNote = normalizeNote(rawThird, "acousticGuitar");
-        const fifthNote = normalizeNote(rawFifth, "acousticGuitar");
-        
-        // Accordo completo (plettrata)
-        const chord = [rootNote + "3", thirdNote + "3", fifthNote + "3"];
+        // Nome dell'accordo (es. "C2" o "Cm2")
+        const chordName = isMinor ? `${rootForFile}m2` : `${rootForFile}2`;
         
         // Scegli pattern in base alla sezione
         let usePattern;
@@ -178,11 +180,9 @@ console.log("rawRoot:", rawRoot, "→ rootNote:", rootNote);
         }
         
         // ============================================================
-        // 1. CHITARRA ACUSTICA — PLETTRATE CON MOVIMENTO
+        // 1. CHITARRA ACUSTICA — ACCORDO PRONTO (SINGOLO SAMPLE)
         // ============================================================
-        if (acousticGuitar) {
-    console.log("🎸 Acoustic Guitar: suono accordo", chord, "con pattern", usePattern);
-    // ... resto del codice
+        if (acousticChord) {
             usePattern.steps.forEach(step => {
                 const absoluteTime = measureStart + step * stepTime;
                 const duration = (usePattern.type === "long") ? "2n" : 
@@ -190,11 +190,8 @@ console.log("rawRoot:", rawRoot, "→ rootNote:", rootNote);
                 const velocity = (usePattern.type === "long") ? 0.7 : 0.55;
                 
                 Tone.Transport.schedule(t => {
-                    // Suona l'accordo completo (plettrata)
-                    chord.forEach(note => {
-                        acousticGuitar.triggerAttackRelease(note, duration, t, velocity);
-                        if (score) score.addNote("AcousticGuitar", note, section.name);
-                    });
+                    acousticChord.triggerAttackRelease(chordName, duration, t, velocity);
+                    if (score) score.addNote("acousticChord", chordName, section.name);
                 }, absoluteTime);
             });
         }
@@ -203,13 +200,13 @@ console.log("rawRoot:", rawRoot, "→ rootNote:", rootNote);
         // 2. BATTERIA — MINIMA (solo kick e piatti)
         // ============================================================
         
-        // Kick all'inizio della misura (soft)
+        // Kick all'inizio della misura
         Tone.Transport.schedule(t => {
             try { drums.player("kick").start(t); } catch(e){}
             if (score) score.addNote("Drums", "Kick", section.name);
         }, measureStart);
         
-        // Kick anche a metà misura (opzionale, ogni 2 misure)
+        // Kick a metà misura (ogni 2 misure)
         if (m % 2 === 1) {
             Tone.Transport.schedule(t => {
                 try { drums.player("kick").start(t); } catch(e){}
@@ -217,7 +214,7 @@ console.log("rawRoot:", rawRoot, "→ rootNote:", rootNote);
             }, measureStart + balladMeasureDur * 0.5);
         }
         
-        // Crash all'inizio sezione (intro e chorus)
+        // Crash all'inizio di intro o chorus
         if (m === 0 && (name.includes("chorus") || name.includes("intro"))) {
             Tone.Transport.schedule(t => {
                 try { drums.player("crash1").start(t); } catch(e){}
@@ -225,7 +222,7 @@ console.log("rawRoot:", rawRoot, "→ rootNote:", rootNote);
             }, measureStart);
         }
         
-        // Ride o hi-hat delicato ogni 2 misure
+        // Ride delicato ogni 2 misure
         if (m % 2 === 0 && energy > 0.3) {
             Tone.Transport.schedule(t => {
                 try { drums.player("ride").start(t); } catch(e){} 
@@ -234,16 +231,19 @@ console.log("rawRoot:", rawRoot, "→ rootNote:", rootNote);
         }
         
         // ============================================================
-        // 3. BASSO — SEMPLICE, SOSTIENE L'ARMONIA
+        // 3. BASSO — SOSTIENE L'ARMONIA
         // ============================================================
         if (bass) {
-            const bassNote = normalizeNote(rawRoot, "bass") + "1";
+            // Nota fondamentale
+            const bassRoot = currentRoot;
+            const bassNote = normalizeNote(bassRoot, "bass") + "1";
             Tone.Transport.schedule(t => {
                 bass.triggerAttackRelease(bassNote, "2n", t, 0.5);
                 if (score) score.addNote("Bass", bassNote, section.name);
             }, measureStart);
             
-            // Quinta al secondo beat
+            // Quinta (opzionale, per movimento)
+            const rawFifth = buildFifth(currentRoot);
             const fifthBass = normalizeNote(rawFifth, "bass") + "1";
             Tone.Transport.schedule(t => {
                 bass.triggerAttackRelease(fifthBass, "4n", t, 0.4);
@@ -252,10 +252,13 @@ console.log("rawRoot:", rawRoot, "→ rootNote:", rootNote);
         }
     }
     
+    // Ripristina BPM originale
+    Tone.Transport.bpm.value = originalBpm;
+    
     return;
-}
+}  
 
-    // ============================================================
+// ============================================================
     // METAL MODE NORMALE (groove completo)
     // ============================================================
 
