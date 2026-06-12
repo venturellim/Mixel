@@ -2,7 +2,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("metalInstruments.js ver. 013 loaded");
+console.log("metalInstruments.js ver. 014 loaded");
 
 // ============================================================
 // 🎚 BUS SPECIFICI DEL METAL
@@ -184,8 +184,7 @@ export function createStStringPad() {
     return pad;
 }
     
-export function createShimmer() {
-
+export function createShimmerMajor() {
     const sampler = new Tone.Sampler({
         urls: {
             C2: "Samples/Shimmer/C2.mp3",
@@ -199,23 +198,11 @@ export function createShimmer() {
             "D#2": "Samples/Shimmer/Ds2.mp3",
             "F#2": "Samples/Shimmer/Fs2.mp3",
             "G#2": "Samples/Shimmer/Gs2.mp3",
-            "A#2": "Samples/Shimmer/As2.mp3",
-            Cm2: "Samples/Shimmer/Cm2.mp3",
-            Dm2: "Samples/Shimmer/Dm2.mp3",
-            Em2: "Samples/Shimmer/Em2.mp3",
-            Fm2: "Samples/Shimmer/Fm2.mp3",
-            Gm2: "Samples/Shimmer/Gm2.mp3",
-            Am2: "Samples/Shimmer/Am2.mp3",
-            Bm2: "Samples/Shimmer/Bm2.mp3",
-            "C#m2": "Samples/Shimmer/Csm2.mp3",
-            "D#m2": "Samples/Shimmer/Dsm2.mp3",
-            "F#m2": "Samples/Shimmer/Fsm2.mp3",
-            "G#m2": "Samples/Shimmer/Gsm2.mp3",
-            "A#m2": "Samples/Shimmer/Asm2.mp3"
+            "A#2": "Samples/Shimmer/As2.mp3"
         },
         release: 1.2,
         onload: () => { 
-            registerInstrumentLoaded("Shimmer");
+            registerInstrumentLoaded("Shimmer (Maggiore)");
             sampler.set({
                 envelope: {
                     attack: 1.5,
@@ -228,9 +215,40 @@ export function createShimmer() {
     });
     
     return sampler;
-    
 }
 
+export function createShimmerMinor() {
+    const sampler = new Tone.Sampler({
+        urls: {
+            C2: "Samples/Shimmer/Cm2.mp3",
+            D2: "Samples/Shimmer/Dm2.mp3",
+            E2: "Samples/Shimmer/Em2.mp3",
+            F2: "Samples/Shimmer/Fm2.mp3",
+            G2: "Samples/Shimmer/Gm2.mp3",
+            A2: "Samples/Shimmer/Am2.mp3",
+            B2: "Samples/Shimmer/Bm2.mp3",
+            "C#2": "Samples/Shimmer/Csm2.mp3",
+            "D#2": "Samples/Shimmer/Dsm2.mp3",
+            "F#2": "Samples/Shimmer/Fsm2.mp3",
+            "G#2": "Samples/Shimmer/Gsm2.mp3",
+            "A#2": "Samples/Shimmer/Asm2.mp3"
+        },
+        release: 1.2,
+        onload: () => { 
+            registerInstrumentLoaded("Shimmer (Minore)");
+            sampler.set({
+                envelope: {
+                    attack: 1.5,
+                    decay: 0.5,
+                    sustain: 1.0,
+                    release: 2.5
+                }
+            });
+        }
+    });
+    
+    return sampler;
+}
     
 export function createAcousticGuitar() {
 
@@ -253,8 +271,7 @@ export function createAcousticGuitar() {
     return sampler;
 }
 
-export function createAcousticChord() {
-
+export function createAcousticChordMajor() {
     const sampler = new Tone.Sampler({
         urls: {
             C2: "Samples/AcousticGuitar/Chord/C2.mp3",
@@ -263,17 +280,28 @@ export function createAcousticChord() {
             F2: "Samples/AcousticGuitar/Chord/F2.mp3",
             G2: "Samples/AcousticGuitar/Chord/G2.mp3",
             A2: "Samples/AcousticGuitar/Chord/A2.mp3",
-            B2: "Samples/AcousticGuitar/Chord/B2.mp3",
-            Cm2: "Samples/AcousticGuitar/Chord/Cm2.mp3",
-            Dm2: "Samples/AcousticGuitar/Chord/Dm2.mp3",
-            Em2: "Samples/AcousticGuitar/Chord/Em2.mp3",
-            Fm2: "Samples/AcousticGuitar/Chord/Fm2.mp3",
-            Gm2: "Samples/AcousticGuitar/Chord/Gm2.mp3",
-            Am2: "Samples/AcousticGuitar/Chord/Am2.mp3",
-            Bm2: "Samples/AcousticGuitar/Chord/Bm2.mp3"
+            B2: "Samples/AcousticGuitar/Chord/B2.mp3"
         },
         release: 1.2,
-        onload: () => registerInstrumentLoaded("Chitarra Acustica Accordi")
+        onload: () => registerInstrumentLoaded("Chitarra Acustica Accordi (Maggiori)")
+    }).connect(acousticBus);
+
+    return sampler;
+}
+
+export function createAcousticChordMinor() {
+    const sampler = new Tone.Sampler({
+        urls: {
+            C2: "Samples/AcousticGuitar/Chord/Cm2.mp3",
+            D2: "Samples/AcousticGuitar/Chord/Dm2.mp3",
+            E2: "Samples/AcousticGuitar/Chord/Em2.mp3",
+            F2: "Samples/AcousticGuitar/Chord/Fm2.mp3",
+            G2: "Samples/AcousticGuitar/Chord/Gm2.mp3",
+            A2: "Samples/AcousticGuitar/Chord/Am2.mp3",
+            B2: "Samples/AcousticGuitar/Chord/Bm2.mp3"
+        },
+        release: 1.2,
+        onload: () => registerInstrumentLoaded("Chitarra Acustica Accordi (Minori)")
     }).connect(acousticBus);
 
     return sampler;
@@ -411,31 +439,33 @@ export function createDrums() {
 // 🎸 METAL PACK — crea TUTTI gli strumenti solo quando serve
 // ============================================================
 export async function loadMetalPack() {
-
-    // Creazione strumenti (factory functions)
+    // Creazione strumenti
     const guitarPalm = createGuitarPalm();
     const guitarOpen = createGuitarOpen();
     const guitarLead = createGuitarLead();
     const acousticGuitar = createAcousticGuitar();
-    const acousticChord = createAcousticChord();
+    const acousticChordMajor = createAcousticChordMajor();
+    const acousticChordMinor = createAcousticChordMinor();
     const bass = createBass();
     const drums = createDrums();
     const StStringPad = createStStringPad();
-    const shimmer = createShimmer();
+    const shimmerMajor = createShimmerMajor();
+    const shimmerMinor = createShimmerMinor();
 
-    // Restituiamo un oggetto identico a metalInstruments originale
     return {
         guitarPalm,
         guitarOpen,
         guitarLead,
         acousticGuitar,
-        acousticChord,
+        acousticChordMajor,
+        acousticChordMinor,
         bass,
         drums,
         StStringPad,
-        shimmer,
+        shimmerMajor,
+        shimmerMinor,
 
-        // Bus (non cambiano)
+        // Bus
         guitarBus,
         bassBus,
         drumBus,

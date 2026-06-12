@@ -6,8 +6,6 @@ import {
     leadPadMelodicLibrary 
 } from "../../utils/leadLibraries.js";
 
-
-
 console.log("metalRhythmEngine.js ver. 030 loaded");
 
 // ============================================================
@@ -51,9 +49,7 @@ function buildPadChord(root, octave, type = "triad") {
 // ============================================================
 // SCHEDULE PAD PER EPIC METAL
 // ============================================================
-// ============================================================
-// SCHEDULE PAD PER EPIC METAL (USA LIBRERIE)
-// ============================================================
+
 function schedulePadInRhythm(section, progression, instruments, params, rand) {
     const pad = instruments.StStringPad;
     if (!pad || !pad.loaded) return;
@@ -100,7 +96,7 @@ function schedulePadInRhythm(section, progression, instruments, params, rand) {
 // ============================================================
 
 export function scheduleRhythm(section, progression, instruments, params, rand, measureDur, nextSectionRoot, score) {
-    const { drums, guitarPalm, guitarOpen, bass, acousticChord, StStringPad } = instruments;
+    const { drums, guitarPalm, guitarOpen, bass, acousticChordMajor, acousticChordMinor, StStringPad } = instruments;
     if (!drums || !guitarPalm || !bass) return;
 
     const hasAcoustic = !!acousticChord;
@@ -120,9 +116,7 @@ export function scheduleRhythm(section, progression, instruments, params, rand, 
 // ============================================================
 // BALLAD MODE — VERSIONE DEFINITIVA
 // ============================================================
-// ============================================================
-// BALLAD MODE — CELESTIAL DREAM STYLE (con accordi pronti)
-// ============================================================
+
 if (isBalladMode) {
     console.log(`🎸 BALLAD MODE ACTIVE (Celestial Dream style) | ${section.name}`);
 
@@ -182,19 +176,25 @@ if (isBalladMode) {
         // ============================================================
         // 1. CHITARRA ACUSTICA — ACCORDO PRONTO (SINGOLO SAMPLE)
         // ============================================================
-        if (acousticChord) {
-            usePattern.steps.forEach(step => {
-                const absoluteTime = measureStart + step * stepTime;
-                const duration = (usePattern.type === "long") ? "2n" : 
-                               (usePattern.type === "medium") ? "8n" : "16n";
-                const velocity = (usePattern.type === "long") ? 0.7 : 0.55;
-                
-                Tone.Transport.schedule(t => {
-                    acousticChord.triggerAttackRelease(chordName, duration, t, velocity);
-                    if (score) score.addNote("acousticChord", chordName, section.name);
-                }, absoluteTime);
-            });
-        }
+        // Scegli lo strumento accordo giusto in base a isMinor
+const acousticChordInstrument = isMinor ? acousticChordMinor : acousticChordMajor;
+
+if (acousticChordInstrument) {
+    usePattern.steps.forEach(step => {
+        const absoluteTime = measureStart + step * stepTime;
+        const duration = (usePattern.type === "long") ? "2n" : 
+                       (usePattern.type === "medium") ? "8n" : "16n";
+        const velocity = (usePattern.type === "long") ? 0.7 : 0.55;
+        
+        // Ora il chordName è sempre "C2", mai "Cm2"
+        const chordName = `${rootForFile}2`;
+        
+        Tone.Transport.schedule(t => {
+            acousticChordInstrument.triggerAttackRelease(chordName, duration, t, velocity);
+            if (score) score.addNote("acousticChord", chordName + (isMinor ? "m" : ""), section.name);
+        }, absoluteTime);
+    });
+}
         
         // ============================================================
         // 2. BATTERIA — MINIMA (solo kick e piatti)

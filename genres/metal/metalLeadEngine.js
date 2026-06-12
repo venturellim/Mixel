@@ -628,7 +628,11 @@ const LeadLegacy = {
 // SCHEDULE SHIMMER (PAD ATMOSFERICO)
 // ============================================================
 function scheduleShimmer(section, progression, instruments, params, rand, measureDur) {
-    const shimmer = instruments.shimmer;
+    // Determina se l'accordo è minore
+    const isMinor = (params?.imageParams?.mood < 0.5) || params?.scaleType?.includes("minor");
+    
+    // Scegli lo shimmer giusto in base alla tonalità
+    const shimmer = isMinor ? instruments.shimmerMinor : instruments.shimmerMajor;
     if (!shimmer) return;
     
     const name = section.name?.toLowerCase() || "";
@@ -636,18 +640,13 @@ function scheduleShimmer(section, progression, instruments, params, rand, measur
     const isChorus = name.includes("chorus");
     const isSolo = name.includes("solo");
     
-    // Determina se l'accordo è minore
-    const isMinor = (params?.imageParams?.mood < 0.5) || params?.scaleType?.includes("minor");
-    
     // Pattern per lo shimmer
     let pattern = [];
     let chordDuration = "4n";
     let velocity = 0.55;
     
     if (isIntro || name.includes("outro")) {
-        // INTRO/OUTRO: movimento melodico (come 4000 Raining Nights)
-        // Pattern ascendente/discente in sedicesimi
-        pattern = [0, 3, 6, 8, 10, 13];  // movimento fluido
+        pattern = [0, 3, 6, 8, 10, 13];
         chordDuration = "8n";
         velocity = 0.45;
     } else if (isChorus) {
@@ -659,7 +658,6 @@ function scheduleShimmer(section, progression, instruments, params, rand, measur
         chordDuration = "2n";
         velocity = 0.6;
     } else {
-        // Verse
         pattern = [0];
         chordDuration = "1m";
         velocity = 0.55;
@@ -679,24 +677,21 @@ function scheduleShimmer(section, progression, instruments, params, rand, measur
         if (rootForFile === "Eb") rootForFile = "Ds";
         if (rootForFile === "Bb") rootForFile = "As";
         
-        const chordName = isMinor ? `${rootForFile}m2` : `${rootForFile}2`;
+        // Ora il chordName è sempre "C2" (il sampler minore sa già che è minore)
+        const chordName = `${rootForFile}2`;
         
-        // Per intro/outro, alterna note diverse per creare movimento
         const useAlternateNotes = isIntro;
         
         pattern.forEach((step, idx) => {
             const time = measureStart + step * (measureDur / 16);
             
-            // Variazione di ottava per intro (più interesse)
             let octaveOffset = 0;
             if (useAlternateNotes) {
-                octaveOffset = (idx % 2 === 0) ? 0 : 1;  // alterna ottava
+                octaveOffset = (idx % 2 === 0) ? 0 : 1;
             }
             
-            // Per intro, usa note singole non accordi pieni? 
-            // Shimmer ha sample di accordi, ma possiamo usare note diverse
             const finalChordName = useAlternateNotes && octaveOffset === 1 
-                ? chordName.replace("2", "3")  // ottava superiore se esiste
+                ? chordName.replace("2", "3")
                 : chordName;
             
             const dynVelocity = useAlternateNotes ? velocity * (0.8 + idx * 0.05) : velocity;
@@ -708,6 +703,7 @@ function scheduleShimmer(section, progression, instruments, params, rand, measur
         });
     }
 }
+
 
 // ============================================================
 // SCHEDULE LEAD MELODICA (GuitarLead)
