@@ -327,18 +327,6 @@ const LeadLegacy = {
             isPreChorus ? "prechorus" :
             isChorus ? "chorus" :
             "verse";
-            
-
-        const getStrictScale = (root) => {
-            const allNotes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-            let cleanRoot = root.replace(/[0-9]/g, "").toUpperCase();
-            const alt = { DB: "C#", EB: "D#", GB: "F#", AB: "G#", BB: "A#" };
-            cleanRoot = alt[cleanRoot] || cleanRoot;
-            let idx = allNotes.indexOf(cleanRoot);
-            if (idx === -1) idx = 9;
-            const intervals = isMinor ? [0, 2, 3, 5, 7, 8, 10] : [0, 2, 4, 5, 7, 9, 11];
-            return intervals.map(i => allNotes[(idx + i) % 12]);
-        };
 
         for (let m = 0; m < section.measures; m++) {
 
