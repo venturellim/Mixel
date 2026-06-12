@@ -136,50 +136,7 @@ export function createStStringPad() {
 
     // 2) ROUTING DI BASE
     pad.connect(stringBus);
-
-export function createShimmer() {
-
-    const sampler = new Tone.Sampler({
-        urls: {
-            C2: "Samples/Shimmer/C2.mp3",
-            D2: "Samples/Shimmer/D2.mp3",
-            E2: "Samples/Shimmer/E2.mp3",
-            F2: "Samples/Shimmer/F2.mp3",
-            G2: "Samples/Shimmer/G2.mp3",
-            A2: "Samples/Shimmer/A2.mp3",
-            B2: "Samples/Shimmer/B2.mp3",
-            "C#2": "Samples/Shimmer/Cs2.mp3",
-            "D#2": "Samples/Shimmer/Ds2.mp3",
-            "F#2": "Samples/Shimmer/Fs2.mp3",
-            "G#2": "Samples/Shimmer/Gs2.mp3",
-            "A#2": "Samples/Shimmer/As2.mp3",
-            Cm2: "Samples/Shimmer/Cm2.mp3",
-            Dm2: "Samples/Shimmer/Dm2.mp3",
-            Em2: "Samples/Shimmer/Em2.mp3",
-            Fm2: "Samples/Shimmer/Fm2.mp3",
-            Gm2: "Samples/Shimmer/Gm2.mp3",
-            Am2: "Samples/Shimmer/Am2.mp3",
-            Bm2: "Samples/Shimmer/Bm2.mp3",
-            "C#m2": "Samples/Shimmer/Csm2.mp3",
-            "D#m2": "Samples/Shimmer/Dsm2.mp3",
-            "F#m2": "Samples/Shimmer/Fsm2.mp3",
-            "G#m2": "Samples/Shimmer/Gsm2.mp3",
-            "A#m2": "Samples/Shimmer/Asm2.mp3"
-        },
-        release: 1.2,
-        onload: () => { 
-            registerInstrumentLoaded("Shimmer");
-            pad.set({
-                envelope: {
-                    attack: 1.5,
-                    decay: 0.5,
-                    sustain: 1.0,
-                    release: 2.5
-                }
-            });
-        }
-    });
-
+    
     // ============================================================
     // 🎹 PAD EFFECTS — creati UNA SOLA VOLTA
     // ============================================================
@@ -226,7 +183,55 @@ export function createShimmer() {
 
     return pad;
 }
+    
+export function createShimmer() {
 
+    const sampler = new Tone.Sampler({
+        urls: {
+            C2: "Samples/Shimmer/C2.mp3",
+            D2: "Samples/Shimmer/D2.mp3",
+            E2: "Samples/Shimmer/E2.mp3",
+            F2: "Samples/Shimmer/F2.mp3",
+            G2: "Samples/Shimmer/G2.mp3",
+            A2: "Samples/Shimmer/A2.mp3",
+            B2: "Samples/Shimmer/B2.mp3",
+            "C#2": "Samples/Shimmer/Cs2.mp3",
+            "D#2": "Samples/Shimmer/Ds2.mp3",
+            "F#2": "Samples/Shimmer/Fs2.mp3",
+            "G#2": "Samples/Shimmer/Gs2.mp3",
+            "A#2": "Samples/Shimmer/As2.mp3",
+            Cm2: "Samples/Shimmer/Cm2.mp3",
+            Dm2: "Samples/Shimmer/Dm2.mp3",
+            Em2: "Samples/Shimmer/Em2.mp3",
+            Fm2: "Samples/Shimmer/Fm2.mp3",
+            Gm2: "Samples/Shimmer/Gm2.mp3",
+            Am2: "Samples/Shimmer/Am2.mp3",
+            Bm2: "Samples/Shimmer/Bm2.mp3",
+            "C#m2": "Samples/Shimmer/Csm2.mp3",
+            "D#m2": "Samples/Shimmer/Dsm2.mp3",
+            "F#m2": "Samples/Shimmer/Fsm2.mp3",
+            "G#m2": "Samples/Shimmer/Gsm2.mp3",
+            "A#m2": "Samples/Shimmer/Asm2.mp3"
+        },
+        release: 1.2,
+        onload: () => { 
+            registerInstrumentLoaded("Shimmer");
+            sampler.set({
+                envelope: {
+                    attack: 1.5,
+                    decay: 0.5,
+                    sustain: 1.0,
+                    release: 2.5
+                }
+            });
+        }
+    });
+    
+    return sampler;
+    
+}
+
+    
 export function createAcousticGuitar() {
 
     const sampler = new Tone.Sampler({
