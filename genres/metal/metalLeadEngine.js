@@ -16,7 +16,7 @@ import {
     padMotionEnhancer
 } from "../../utils/leadEnhancers.js";
 
-console.log("metalLeadEngine.js ver. 098.4 loaded");
+console.log("metalLeadEngine.js ver. 098.5 loaded");
 
 function getStrictScale(root, isMinor) {
     const allNotes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
@@ -236,19 +236,19 @@ function schedulePad(section, progression, instruments, params, rand) {
     });
 }
 
-function scheduleBalladLead(section, progression, instruments, measureDur, score) {
+function scheduleBalladLead(section, progression, instruments, balladMeasureDur, score) {
     const { guitarLead, leadVibrato } = instruments;
     if (!guitarLead) return;
 
     let prevMidi = 64;
-    const stepTime = measureDur / 8;
+    const stepTime = balladMeasureDur / 8;
     const { energy = 0.5 } = window.currentParams?.imageParams || {};
 
     for (let m = 0; m < section.measures; m++) {
-        const measureStart = section.startTime + m * measureDur;
+        const measureStart = section.startTime + m * balladMeasureDur;
 
         for (let beat = 0; beat < 4; beat++) {
-            const absoluteTime = measureStart + beat * (measureDur / 4);
+            const absoluteTime = measureStart + beat * (balladMeasureDur / 4);
             applyBalladVibrato(leadVibrato);
             const midi = generateBalladNote(prevMidi);
             prevMidi = midi;
@@ -846,8 +846,14 @@ export function scheduleLead(section, progression, instruments, params, rand, me
     // ============================================================
     if (isBalladLead) {
         // Intro/Outro: solo Shimmer
+        const originalBpm = Tone.Transport.bpm.value;
+        const balladBpm = 80;
+    Tone.Transport.bpm.value = balladBpm;
+    const balladMeasureDur = (60 / balladBpm) * 4;
+    const stepTime = balladMeasureDur / 16;
+    
         if (isIntro) {
-            scheduleShimmer(section, progression, instruments, params, rand, measureDur);
+            scheduleShimmer(section, progression, instruments, params, rand, balladMeasureDur);
             return;
         }
         
@@ -858,15 +864,19 @@ export function scheduleLead(section, progression, instruments, params, rand, me
         const halfMeasure = measureDur / 2;
         
         // Shimmer: accordo lungo nella prima metà
-        scheduleShimmer(section, progression, instruments, params, rand, measureDur);
+        scheduleShimmer(section, progression, instruments, params, rand, balladMeasureDur);
         
         // GuitarLead: movimento nella prima metà
-        scheduleLeadMelody(section, progression, instruments, params, rand, measureDur, score, true);
+        
+        scheduleBalladLead(section, progression, instruments, balladMeasureDur, score);
         
         // Solo (opzionale) - se c'è sezione solo e complexity > 0.6
         if (isSolo && params?.imageParams?.complexity > 0.6) {
-            scheduleAcousticSolo(section, progression, instruments, params, rand, measureDur, score);
+            scheduleAcousticSolo(section, progression, instruments, params, rand, balladMeasureDur, score);
         }
+        
+        // Ripristina BPM originale
+    Tone.Transport.bpm.value = originalBpm;
         
         return;
     }

@@ -6,7 +6,7 @@ import {
     leadPadMelodicLibrary 
 } from "../../utils/leadLibraries.js";
 
-console.log("metalRhythmEngine.js ver. 030.3 loaded");
+console.log("metalRhythmEngine.js ver. 030.4 loaded");
 
 // ============================================================
 // FUNZIONI DI SUPPORTO PER LA BALLAD
