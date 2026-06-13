@@ -846,6 +846,8 @@ export function scheduleLead(section, progression, instruments, params, rand, me
     // ============================================================
     if (isBalladLead) {
         // Intro/Outro: solo Shimmer
+        return;
+        
         const originalBpm = Tone.Transport.bpm.value;
         const balladBpm = 80;
     Tone.Transport.bpm.value = balladBpm;
