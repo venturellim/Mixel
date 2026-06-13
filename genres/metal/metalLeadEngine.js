@@ -16,7 +16,7 @@ import {
     padMotionEnhancer
 } from "../../utils/leadEnhancers.js";
 
-console.log("metalLeadEngine.js ver. 098 loaded");
+console.log("metalLeadEngine.js ver. 098.1 loaded");
 
 function getStrictScale(root, isMinor) {
     const allNotes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
@@ -628,11 +628,17 @@ const LeadLegacy = {
 // SCHEDULE SHIMMER (PAD ATMOSFERICO)
 // ============================================================
 function scheduleShimmer(section, progression, instruments, params, rand, measureDur) {
-    // Determina se l'accordo è minore
     const isMinor = (params?.imageParams?.mood < 0.5) || params?.scaleType?.includes("minor");
-    
-    // Scegli lo shimmer giusto in base alla tonalità
     const shimmer = isMinor ? instruments.shimmerMinor : instruments.shimmerMajor;
+    
+    console.log("🔍 SHIMMER DEBUG:", {
+        isMinor,
+        shimmerExists: !!shimmer,
+        shimmerLoaded: shimmer?.loaded,
+        hasShimmerMajor: !!instruments.shimmerMajor,
+        hasShimmerMinor: !!instruments.shimmerMinor
+    });
+    
     if (!shimmer) return;
     
     const name = section.name?.toLowerCase() || "";
