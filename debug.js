@@ -32,10 +32,11 @@ const genreStyles = {
     dance: {
         name: "Dance",
         styles: [
-            { name: "Gigi", params: { intensity: 0.3, mood: 0.4, complexity: 0.4, texture: 0.4 } },
-            { name: "Prezioso", params: { intensity: 0.5, mood: 0.5, complexity: 0.5, texture: 0.5 } },
-            { name: "Eiffel65", params: { intensity: 0.6, mood: 0.5, complexity: 0.8, texture: 0.7 } },
-            { name: "GabryPonte", params: { intensity: 0.7, mood: 0.7, complexity: 0.5, texture: 0.5 } }
+            { name: "Gigi", params: { intensity: 0.10, mood: 0.10, complexity: 0.30, texture: 0.10 } },
+            { name: "Prezioso", params: { intensity: 0.50, mood: 0.50, complexity: 0.50, texture: 0.50 } },
+            { name: "Eiffel65", params: { intensity: 0.50, mood: 0.50, complexity: 0.90, texture: 0.90 } },
+            { name: "GabryPonte", params: { intensity: 0.90, mood: 0.90, complexity: 0.40, texture: 0.40 } },
+            { name: "Molella", params: { intensity: 0.30, mood: 0.85, complexity: 0.10, texture: 0.10 } }
         ]
     },
     metal: {
