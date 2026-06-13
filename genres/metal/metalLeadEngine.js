@@ -16,7 +16,7 @@ import {
     padMotionEnhancer
 } from "../../utils/leadEnhancers.js";
 
-console.log("metalLeadEngine.js ver. 098.2 loaded");
+console.log("metalLeadEngine.js ver. 098.3 loaded");
 
 function getStrictScale(root, isMinor) {
     const allNotes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
@@ -679,9 +679,16 @@ function scheduleShimmer(section, progression, instruments, params, rand, measur
         console.log("🔊 SHIMMER - chordName:", chordName, "root:", currentRoot, "isMinor:", isMinor);
         
         const useAlternateNotes = isIntro;
+        console.log("🔍 pattern:", pattern, "useAlternateNotes:", useAlternateNotes);
         
         pattern.forEach((step, idx) => {
     const time = measureStart + step * (measureDur / 16);
+    
+    // CONTROLLO SICUREZZA
+    if (!chordName || typeof chordName !== "string") {
+        console.warn("⚠️ chordName non valido:", chordName);
+        return;
+    }
                
             let octaveOffset = 0;
             if (useAlternateNotes) {
