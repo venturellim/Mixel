@@ -2,7 +2,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("metalInstruments.js ver. 014.1 loaded");
+console.log("metalInstruments.js ver. 014.2 loaded");
 
 // ============================================================
 // 🎚 BUS SPECIFICI DEL METAL
@@ -212,7 +212,7 @@ export function createShimmerMajor() {
                 }
             });
         }
-    });
+    }).connect(stringBus);
     
     return sampler;
 }
@@ -245,7 +245,7 @@ export function createShimmerMinor() {
                 }
             });
         }
-    });
+    })connect(stringBus);
     
     return sampler;
 }
