@@ -6,7 +6,7 @@ import {
     leadPadMelodicLibrary 
 } from "../../utils/leadLibraries.js";
 
-console.log("metalRhythmEngine.js ver. 030.2 loaded");
+console.log("metalRhythmEngine.js ver. 030.2 test loaded");
 
 // ============================================================
 // FUNZIONI DI SUPPORTO PER LA BALLAD
@@ -123,7 +123,7 @@ if (isBalladMode) {
     // Salva BPM originale e imposta BPM ballad (80)
     const originalBpm = Tone.Transport.bpm.value;
     const balladBpm = 80;
-    Tone.Transport.bpm.value = balladBpm;
+    //Tone.Transport.bpm.value = balladBpm;
     const balladMeasureDur = (60 / balladBpm) * 4;
     const stepTime = balladMeasureDur / 16;
     
