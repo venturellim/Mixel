@@ -23,7 +23,7 @@ import { loadOrchestraPack } from "./genres/orchestra/orchestraInstruments.js";
 import { loadPianoPack } from "./genres/piano/pianoInstruments.js";
 import { loadFunkyPack } from "./genres/funky/funkyInstruments.js";
 
-console.log("main.js Ver. 022.1 loaded");
+console.log("main.js Ver. 022.2 loaded");
 
 let currentEngine = null;
 let currentGenre = null;
@@ -36,7 +36,7 @@ let globalPhotoParams = null; // Memorizza i parametri strutturati per i generi
 const genreInstruments = {
     dance: ["Bells Pad", "Fantasy Fx", "Glass Pad",  "Hard for the Core Fx", "Heaven Fx", "Jump Fx", "Synth Bass", "Lead Synth", "Noise Fx", "Organo", "Percussions", "Saw", "Shaku Pad", "So True Strig Pad", "Sweet Fx", "Synth Brass 1", "Synth Brass 2","Warm Pad", "Wave Pad"],
     funky: ["Clavinet", "Funky Drum", "Guitar Clean", "Guitar Mute", "Noisy", "Sax Alto", "Slap Bass", "Trombone", "Trumpet"], 
-    metal: ["Bass", "Drums", "Lead Guitar", "Rhythm Guitar Open", "Rhythm Guitar Palm"],
+    metal: ["Acoustic Guitar Lead", "Acoustic Guitar Rhythm", "Bass", "Drums", "Lead Guitar", "Rhythm Guitar Open", "Rhythm Guitar Palm", "Shimmer", "So True String Pad"],
     orchestra: ["Basses", "Cellos", "Violas", "Violins", "Timpani"],
     piano: ["Grand Piano"]
 };
