@@ -2,7 +2,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("metalInstruments.js ver. 014.2 loaded");
+console.log("metalInstruments.js ver. 014.3 loaded");
 
 // ============================================================
 // 🎚 BUS SPECIFICI DEL METAL
@@ -502,8 +502,8 @@ guitarBus.gain.value = Tone.dbToGain(6);  // Chitarra ritmica
 bassBus.gain.value = Tone.dbToGain(4);    // Basso
 leadBus.gain.value = Tone.dbToGain(0);   // Lead
 drumBus.gain.value = Tone.dbToGain(0);   // Batteria
-stringBus.gain.value = Tone.dbToGain(0);   // String Pad
-acousticBus.gain.value = Tone.dbToGain(4);   // Chitarra Acustica 
+stringBus.gain.value = Tone.dbToGain(2);   // String Pad
+acousticBus.gain.value = Tone.dbToGain(2);   // Chitarra Acustica 
 
 // metalInstruments.js
 export function normalizeNote(note, instrument, isMinor = false) {
@@ -645,19 +645,25 @@ if (instrument === "shimmerMinor") {
     // BASSO (converte # in bemolle, ottava 1-2)
     // ============================================================
     if (instrument === "bass") {
-        let root = targetRoot;
-        if (targetRoot.includes("#")) {
-            const sharpToFlat = {
-                "C#": "Db", "D#": "Eb", "F#": "Gb",
-                "G#": "Ab", "A#": "Bb"
-            };
-            root = sharpToFlat[targetRoot] ?? targetRoot[0];
-        }
-        if (targetRoot.includes("b")) {
-            root = targetRoot;
-        }
-        return root;
+    let root = targetRoot;
+
+    if (targetRoot.includes("#")) {
+        const sharpToFlat = {
+            "C#": "Db", "D#": "Eb", "F#": "Gb",
+            "G#": "Ab", "A#": "Bb"
+        };
+        root = sharpToFlat[targetRoot] ?? targetRoot[0];
     }
+
+    if (targetRoot.includes("b")) {
+        root = targetRoot;
+    }
+
+    const allowed = ["C","Db","D","Eb","E","F","Gb","G","Ab","A","Bb","B"];
+    if (!allowed.includes(root)) root = "C";
+
+    return root;
+}
 
     // ============================================================
     // DEFAULT (fallback sicuro)
