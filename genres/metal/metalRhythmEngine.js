@@ -6,7 +6,7 @@ import {
     leadPadMelodicLibrary 
 } from "../../utils/leadLibraries.js";
 
-console.log("metalRhythmEngine.js ver. 030.2 loaded");
+console.log("metalRhythmEngine.js ver. 030.2 test loaded");
 
 // ============================================================
 // FUNZIONI DI SUPPORTO PER LA BALLAD
@@ -148,7 +148,8 @@ if (isBalladMode) {
     ];
     
     for (let m = 0; m < section.measures; m++) {
-        const measureStart = section.startTime + m * balladMeasureDur;
+        //const measureStart = section.startTime + m * balladMeasureDur;
+        const measureStart = Tone.Transport.seconds + m * balladMeasureDur;
         const currentRoot = progression[m % progression.length];
         
         // Scegli pattern in base alla sezione
