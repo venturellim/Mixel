@@ -6,25 +6,32 @@ import {
     leadPadMelodicLibrary 
 } from "../../utils/leadLibraries.js";
 
-console.log("metalRhythmEngine.js ver. 030.2 test loaded");
+console.log("metalRhythmEngine.js ver. 030.3 loaded");
 
 // ============================================================
 // FUNZIONI DI SUPPORTO PER LA BALLAD
 // ============================================================
 
+function cleanRoot(root) {
+    return root.replace(/[0-9]/g, "").toUpperCase();
+}
+
 function buildThird(root) {
     const scale = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-    let idx = scale.indexOf(root);
+    const clean = cleanRoot(root);
+    let idx = scale.indexOf(clean);
     if (idx === -1) idx = 0;
     return scale[(idx + 3) % 12];
 }
 
 function buildFifth(root) {
     const scale = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-    let idx = scale.indexOf(root);
+    const clean = cleanRoot(root);
+    let idx = scale.indexOf(clean);
     if (idx === -1) idx = 0;
     return scale[(idx + 7) % 12];
 }
+
 
 // ============================================================
 // PAD CHORD BUILDER (per epic metal)

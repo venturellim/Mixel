@@ -502,7 +502,7 @@ guitarBus.gain.value = Tone.dbToGain(6);  // Chitarra ritmica
 bassBus.gain.value = Tone.dbToGain(4);    // Basso
 leadBus.gain.value = Tone.dbToGain(0);   // Lead
 drumBus.gain.value = Tone.dbToGain(0);   // Batteria
-stringBus.gain.value = Tone.dbToGain(2);   // String Pad
+stringBus.gain.value = Tone.dbToGain(4);   // String Pad
 acousticBus.gain.value = Tone.dbToGain(2);   // Chitarra Acustica 
 
 // metalInstruments.js
