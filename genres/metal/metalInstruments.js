@@ -2,7 +2,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("metalInstruments.js ver. 014.3 loaded");
+console.log("metalInstruments.js ver. 014.4 loaded");
 
 // ============================================================
 // 🎚 BUS SPECIFICI DEL METAL
@@ -511,165 +511,118 @@ export function normalizeNote(note, instrument, isMinor = false) {
 
     // Estrai root e ottava
     const match = note.match(/^([A-G][#b]?)(\d+)?$/);
-    const targetRoot = match ? match[1] : "C";
+    let targetRoot = match ? match[1].toUpperCase() : "C";
     const targetOctave = match && match[2] ? parseInt(match[2]) : 4;
-    
-    // ============================================================
-// CHITARRA ACUSTICA (ACCORDI PRONTI - MAGGIORE)
-// ============================================================
-if (instrument === "acousticChordMajor") {
-    let root = targetRoot;
-    // Converte diesis in formato chiave (es. "F#" rimane "F#")
-    // Non convertiamo in "Fs" perché la chiave deve essere valida per Tone!
-    if (root === "F#") root = "F";
-    if (root === "G#") root = "G";
-    if (root === "A#") root = "A";
-    if (root === "C#") root = "C";
-    if (root === "D#") root = "D";
-    
-    return `${root}2`;  // ottava 2 fissa
-}
 
-// ============================================================
-// CHITARRA ACUSTICA (ACCORDI PRONTI - MINORE)
-// ============================================================
-if (instrument === "acousticChordMinor") {
-    let root = targetRoot;
-    if (root === "F#") root = "F";
-    if (root === "G#") root = "G";
-    if (root === "A#") root = "A";
-    if (root === "C#") root = "C";
-    if (root === "D#") root = "D";
-    
-    return `${root}2`;  // stessa nota, ma sampler minore!
-}
-
-// ============================================================
-// SHIMMER MAGGIORE
-// ============================================================
-if (instrument === "shimmerMajor") {
-    let root = targetRoot;
-    if (root === "F#") root = "F#";
-    if (root === "G#") root = "G#";
-    if (root === "A#") root = "A#";
-    if (root === "C#") root = "C#";
-    if (root === "D#") root = "D#";
-    
-    return `${root}2`;
-}
-
-// ============================================================
-// SHIMMER MINORE
-// ============================================================
-if (instrument === "shimmerMinor") {
-    let root = targetRoot;
-    if (root === "F#") root = "F#";
-    if (root === "G#") root = "G#";
-    if (root === "A#") root = "A#";
-    if (root === "C#") root = "C#";
-    if (root === "D#") root = "D#";
-    
-    return `${root}2`;
-}
+    // Mappa bemolli → diesis per compatibilità Tone.js
+    const flatToSharp = {
+        "BB": "A#", "EB": "D#", "AB": "G#", "DB": "C#", "GB": "F#"
+    };
+    if (targetRoot.includes("B")) {
+        targetRoot = flatToSharp[targetRoot] || targetRoot[0];
+    }
 
     // ============================================================
-    // CHITARRE RITMICHE (solo root, ottava 2)
+    // 🎸 CHITARRA ACUSTICA (ACCORDI PRONTI - MAGGIORE)
+    // ============================================================
+    if (instrument === "acousticChordMajor") {
+        const allowed = ["C","D","E","F","G","A","B"];
+        let root = targetRoot[0];
+        if (!allowed.includes(root)) root = "C";
+        return `${root}2`; // ottava 2 fissa
+    }
+
+    // ============================================================
+    // 🎸 CHITARRA ACUSTICA (ACCORDI PRONTI - MINORE)
+    // ============================================================
+    if (instrument === "acousticChordMinor") {
+        const allowed = ["C","D","E","F","G","A","B"];
+        let root = targetRoot[0];
+        if (!allowed.includes(root)) root = "C";
+        return `${root}2`;
+    }
+
+    // ============================================================
+    // ✨ SHIMMER MAGGIORE
+    // ============================================================
+    if (instrument === "shimmerMajor") {
+        const allowed = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+        let root = allowed.includes(targetRoot) ? targetRoot : "C";
+        return `${root}2`;
+    }
+
+    // ============================================================
+    // ✨ SHIMMER MINORE
+    // ============================================================
+    if (instrument === "shimmerMinor") {
+        const allowed = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+        let root = allowed.includes(targetRoot) ? targetRoot : "C";
+        return `${root}2`;
+    }
+
+    // ============================================================
+    // 🎸 CHITARRE RITMICHE (solo root, ottava 2)
     // ============================================================
     if (instrument === "guitarPalm" || instrument === "guitarOpen") {
         return targetRoot[0];
     }
 
     // ============================================================
-    // CHITARRA LEAD (mantiene diesis, ottava variabile)
+    // 🎸 CHITARRA LEAD (mantiene diesis, ottava variabile)
     // ============================================================
     if (instrument === "guitarLead") {
-        let root = targetRoot;
-        if (targetRoot.includes("#")) {
-            // mantieni il diesis
-        } else if (targetRoot.includes("b")) {
-            root = targetRoot;
-        }
-        return root;
+        return targetRoot;
     }
 
     // ============================================================
-    // CHITARRA ACUSTICA VECCHIA (legacy, per compatibilità)
+    // 🎸 CHITARRA ACUSTICA (legacy)
     // ============================================================
     if (instrument === "acousticGuitar") {
-        let octave = targetOctave;
-        octave = Math.min(5, Math.max(2, octave));
-        
-        let root = targetRoot;
-        if (targetRoot === "F#") root = "Fs";
-        if (targetRoot === "G#") root = "Gs";
-        if (targetRoot === "A#") root = "As";
-        if (targetRoot === "C#") root = "Cs";
-        if (targetRoot === "D#") root = "Ds";
-        
+        const octave = Math.min(5, Math.max(2, targetOctave));
+        let root = targetRoot.replace("#", "s");
         return root + octave;
     }
 
     // ============================================================
-    // STRING PAD
+    // 🎹 STRING PAD
     // ============================================================
     if (instrument === "StStringPad") {
         const roots = ["A", "C", "D#", "F#"];
-        let root = targetRoot.toUpperCase();
-        
-        const flatToSharp = {
-            "BB": "A#", "EB": "D#", "AB": "G#", "DB": "C#", "GB": "F#"
-        };
-        if (root.includes("B")) {
-            root = flatToSharp[root] || root;
-        }
-        
         const semitone = n => ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"].indexOf(n);
-        const targetSemi = semitone(root);
-        
-        let best = "C";
-        let bestDist = Infinity;
-        
+        const targetSemi = semitone(targetRoot);
+        let best = "C", bestDist = Infinity;
         roots.forEach(r => {
             const dist = Math.abs(semitone(r) - targetSemi);
-            if (dist < bestDist) {
-                bestDist = dist;
-                best = r;
-            }
+            if (dist < bestDist) { bestDist = dist; best = r; }
         });
-        
-        let octave = Math.min(5, Math.max(0, targetOctave));
+        const octave = Math.min(5, Math.max(0, targetOctave));
         return best + octave;
     }
 
     // ============================================================
-    // BASSO (converte # in bemolle, ottava 1-2)
+    // 🎸 BASSO (converte # in bemolle, ottava 1-2)
     // ============================================================
     if (instrument === "bass") {
-    let root = targetRoot;
-
-    if (targetRoot.includes("#")) {
-        const sharpToFlat = {
-            "C#": "Db", "D#": "Eb", "F#": "Gb",
-            "G#": "Ab", "A#": "Bb"
-        };
-        root = sharpToFlat[targetRoot] ?? targetRoot[0];
+        let root = targetRoot;
+        if (targetRoot.includes("#")) {
+            const sharpToFlat = {
+                "C#": "Db", "D#": "Eb", "F#": "Gb",
+                "G#": "Ab", "A#": "Bb"
+            };
+            root = sharpToFlat[targetRoot] ?? targetRoot[0];
+        }
+        if (targetRoot.includes("b")) root = targetRoot;
+        const allowed = ["C","Db","D","Eb","E","F","Gb","G","Ab","A","Bb","B"];
+        if (!allowed.includes(root)) root = "C";
+        return root;
     }
-
-    if (targetRoot.includes("b")) {
-        root = targetRoot;
-    }
-
-    const allowed = ["C","Db","D","Eb","E","F","Gb","G","Ab","A","Bb","B"];
-    if (!allowed.includes(root)) root = "C";
-
-    return root;
-}
 
     // ============================================================
-    // DEFAULT (fallback sicuro)
+    // 🎵 DEFAULT (fallback sicuro)
     // ============================================================
     return targetRoot[0] + targetOctave;
 }
+
 
 export const metalVolumeMap = {
     guitar: "Chitarre",
