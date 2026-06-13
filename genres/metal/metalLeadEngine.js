@@ -16,7 +16,7 @@ import {
     padMotionEnhancer
 } from "../../utils/leadEnhancers.js";
 
-console.log("metalLeadEngine.js ver. 098.5 test 1 loaded");
+console.log("metalLeadEngine.js ver. 098.6 loaded");
 
 function getStrictScale(root, isMinor) {
     const allNotes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
@@ -846,7 +846,7 @@ export function scheduleLead(section, progression, instruments, params, rand, me
     // ============================================================
     if (isBalladLead) {
         // Intro/Outro: solo Shimmer
-        
+        return;
         const originalBpm = Tone.Transport.bpm.value;
         const balladBpm = 80;
     Tone.Transport.bpm.value = balladBpm;
@@ -854,7 +854,7 @@ export function scheduleLead(section, progression, instruments, params, rand, me
     const stepTime = balladMeasureDur / 16;
     
         if (isIntro) {
-            //scheduleShimmer(section, progression, instruments, params, rand, balladMeasureDur);
+            scheduleShimmer(section, progression, instruments, params, rand, balladMeasureDur);
             return;
         }
         
@@ -865,7 +865,7 @@ export function scheduleLead(section, progression, instruments, params, rand, me
         const halfMeasure = measureDur / 2;
         
         // Shimmer: accordo lungo nella prima metà
-        //scheduleShimmer(section, progression, instruments, params, rand, balladMeasureDur);
+        scheduleShimmer(section, progression, instruments, params, rand, balladMeasureDur);
         
         // GuitarLead: movimento nella prima metà
         
