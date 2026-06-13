@@ -16,18 +16,23 @@ import {
     padMotionEnhancer
 } from "../../utils/leadEnhancers.js";
 
-console.log("metalLeadEngine.js ver. 098.3 loaded");
+console.log("metalLeadEngine.js ver. 098.4 loaded");
 
 function getStrictScale(root, isMinor) {
     const allNotes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-    let cleanRoot = root.replace(/[0-9]/g, "").toUpperCase();
+    // FIX: Estrae SOLO la lettera della nota ed eventuali # o b, ignorando il tipo di accordo (es. "Am" -> "A")
+    const rootMatch = root.match(/[A-G][b#]?/i);
+    let cleanRoot = rootMatch ? rootMatch[0].toUpperCase() : "A";
+    
     const alt = { DB: "C#", EB: "D#", GB: "F#", AB: "G#", BB: "A#" };
     cleanRoot = alt[cleanRoot] || cleanRoot;
     let idx = allNotes.indexOf(cleanRoot);
-    if (idx === -1) idx = 9;
+    if (idx === -1) idx = 9; // Fallback su A
+    
     const intervals = isMinor ? [0, 2, 3, 5, 7, 8, 10] : [0, 2, 4, 5, 7, 9, 11];
     return intervals.map(i => allNotes[(idx + i) % 12]);
 }
+
 
 // ============================================================
 // FUNZIONI DI SUPPORTO
