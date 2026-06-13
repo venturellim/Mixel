@@ -16,7 +16,7 @@ import {
     padMotionEnhancer
 } from "../../utils/leadEnhancers.js";
 
-console.log("metalLeadEngine.js ver. 098.1 loaded");
+console.log("metalLeadEngine.js ver. 098.2 loaded");
 
 function getStrictScale(root, isMinor) {
     const allNotes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
@@ -669,26 +669,30 @@ function scheduleShimmer(section, progression, instruments, params, rand, measur
         velocity = 0.55;
     }
     
+    
     for (let m = 0; m < section.measures; m++) {
         const measureStart = section.startTime + m * measureDur;
         const currentRoot = progression[m % progression.length];
-        
         // USA NORMALIZZANOTE!
         const chordName = normalizeNote(currentRoot, isMinor ? "shimmerMinor" : "shimmerMajor");
+    
+        console.log("🔊 SHIMMER - chordName:", chordName, "root:", currentRoot, "isMinor:", isMinor);
         
         const useAlternateNotes = isIntro;
         
         pattern.forEach((step, idx) => {
-            const time = measureStart + step * (measureDur / 16);
-            
+    const time = measureStart + step * (measureDur / 16);
+               
             let octaveOffset = 0;
             if (useAlternateNotes) {
                 octaveOffset = (idx % 2 === 0) ? 0 : 1;
             }
             
             const finalChordName = useAlternateNotes && octaveOffset === 1 
-                ? chordName.replace("2", "3")
+                ? chordName.replace("2", "2")
                 : chordName;
+                
+                console.log("🔊 finalChordName:", finalChordName, "step:", step, "idx:", idx);
             
             const dynVelocity = useAlternateNotes ? velocity * (0.8 + idx * 0.05) : velocity;
             
