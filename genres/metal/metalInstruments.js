@@ -2,7 +2,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("metalInstruments.js ver. 014 loaded");
+console.log("metalInstruments.js ver. 014.1 loaded");
 
 // ============================================================
 // 🎚 BUS SPECIFICI DEL METAL
@@ -521,11 +521,11 @@ if (instrument === "acousticChordMajor") {
     let root = targetRoot;
     // Converte diesis in formato chiave (es. "F#" rimane "F#")
     // Non convertiamo in "Fs" perché la chiave deve essere valida per Tone!
-    if (root === "F#") root = "F#";
-    if (root === "G#") root = "G#";
-    if (root === "A#") root = "A#";
-    if (root === "C#") root = "C#";
-    if (root === "D#") root = "D#";
+    if (root === "F#") root = "F";
+    if (root === "G#") root = "G";
+    if (root === "A#") root = "A";
+    if (root === "C#") root = "C";
+    if (root === "D#") root = "D";
     
     return `${root}2`;  // ottava 2 fissa
 }
@@ -535,11 +535,11 @@ if (instrument === "acousticChordMajor") {
 // ============================================================
 if (instrument === "acousticChordMinor") {
     let root = targetRoot;
-    if (root === "F#") root = "F#";
-    if (root === "G#") root = "G#";
-    if (root === "A#") root = "A#";
-    if (root === "C#") root = "C#";
-    if (root === "D#") root = "D#";
+    if (root === "F#") root = "F";
+    if (root === "G#") root = "G";
+    if (root === "A#") root = "A";
+    if (root === "C#") root = "C";
+    if (root === "D#") root = "D";
     
     return `${root}2`;  // stessa nota, ma sampler minore!
 }
