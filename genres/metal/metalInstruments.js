@@ -245,7 +245,7 @@ export function createShimmerMinor() {
                 }
             });
         }
-    })connect(stringBus);
+    }).connect(stringBus);
     
     return sampler;
 }
