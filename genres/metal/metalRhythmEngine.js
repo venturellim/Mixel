@@ -6,7 +6,7 @@ import {
     leadPadMelodicLibrary 
 } from "../../utils/leadLibraries.js";
 
-console.log("metalRhythmEngine.js ver. 030.2 loaded");
+console.log("metalRhythmEngine.js ver. 030.2 test loaded");
 
 // ============================================================
 // FUNZIONI DI SUPPORTO PER LA BALLAD
@@ -223,7 +223,9 @@ if (acousticChordInstrument) {
             // Nota fondamentale
             const bassRoot = currentRoot;
             const bassNote = normalizeNote(bassRoot, "bass") + "1";
-            Tone.Transport.schedule(t => {
+            
+
+Tone.Transport.schedule(t => {
                 bass.triggerAttackRelease(bassNote, "2n", t, 0.5);
                 if (score) score.addNote("Bass", bassNote, section.name);
             }, measureStart);
@@ -231,6 +233,7 @@ if (acousticChordInstrument) {
             // Quinta (opzionale, per movimento)
             const rawFifth = buildFifth(currentRoot);
             const fifthBass = normalizeNote(rawFifth, "bass") + "1";
+            console.log("BASS ROOT:", bassNote, "FIFTH:", fifthBass);
             Tone.Transport.schedule(t => {
                 bass.triggerAttackRelease(fifthBass, "4n", t, 0.4);
                 if (score) score.addNote("Bass", fifthBass, section.name);
