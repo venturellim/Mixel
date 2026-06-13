@@ -513,38 +513,64 @@ export function normalizeNote(note, instrument, isMinor = false) {
     const match = note.match(/^([A-G][#b]?)(\d+)?$/);
     const targetRoot = match ? match[1] : "C";
     const targetOctave = match && match[2] ? parseInt(match[2]) : 4;
+    
+    // ============================================================
+// CHITARRA ACUSTICA (ACCORDI PRONTI - MAGGIORE)
+// ============================================================
+if (instrument === "acousticChordMajor") {
+    let root = targetRoot;
+    // Converte diesis in formato chiave (es. "F#" rimane "F#")
+    // Non convertiamo in "Fs" perché la chiave deve essere valida per Tone!
+    if (root === "F#") root = "F#";
+    if (root === "G#") root = "G#";
+    if (root === "A#") root = "A#";
+    if (root === "C#") root = "C#";
+    if (root === "D#") root = "D#";
+    
+    return `${root}2`;  // ottava 2 fissa
+}
 
-    // ============================================================
-    // CHITARRA ACUSTICA (ACCORDI PRONTI)
-    // ============================================================
-    if (instrument === "acousticChord") {
-        let root = targetRoot;
-        // Converte diesis in formato file
-        if (root === "F#") root = "Fs";
-        if (root === "G#") root = "Gs";
-        if (root === "A#") root = "As";
-        if (root === "C#") root = "Cs";
-        if (root === "D#") root = "Ds";
-        
-        // Aggiunge "m" se minore, altrimenti lascia invariato
-        const suffix = isMinor ? "m" : "";
-        return `${root}${suffix}2`;  // ottava 2 fissa per gli accordi
-    }
+// ============================================================
+// CHITARRA ACUSTICA (ACCORDI PRONTI - MINORE)
+// ============================================================
+if (instrument === "acousticChordMinor") {
+    let root = targetRoot;
+    if (root === "F#") root = "F#";
+    if (root === "G#") root = "G#";
+    if (root === "A#") root = "A#";
+    if (root === "C#") root = "C#";
+    if (root === "D#") root = "D#";
+    
+    return `${root}2`;  // stessa nota, ma sampler minore!
+}
 
-    // ============================================================
-    // SHIMMER PAD
-    // ============================================================
-    if (instrument === "shimmer") {
-        let root = targetRoot;
-        if (root === "F#") root = "Fs";
-        if (root === "G#") root = "Gs";
-        if (root === "A#") root = "As";
-        if (root === "C#") root = "Cs";
-        if (root === "D#") root = "Ds";
-        
-        const suffix = isMinor ? "m" : "";
-        return `${root}${suffix}2`;
-    }
+// ============================================================
+// SHIMMER MAGGIORE
+// ============================================================
+if (instrument === "shimmerMajor") {
+    let root = targetRoot;
+    if (root === "F#") root = "F#";
+    if (root === "G#") root = "G#";
+    if (root === "A#") root = "A#";
+    if (root === "C#") root = "C#";
+    if (root === "D#") root = "D#";
+    
+    return `${root}2`;
+}
+
+// ============================================================
+// SHIMMER MINORE
+// ============================================================
+if (instrument === "shimmerMinor") {
+    let root = targetRoot;
+    if (root === "F#") root = "F#";
+    if (root === "G#") root = "G#";
+    if (root === "A#") root = "A#";
+    if (root === "C#") root = "C#";
+    if (root === "D#") root = "D#";
+    
+    return `${root}2`;
+}
 
     // ============================================================
     // CHITARRE RITMICHE (solo root, ottava 2)

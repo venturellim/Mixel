@@ -667,18 +667,8 @@ function scheduleShimmer(section, progression, instruments, params, rand, measur
         const measureStart = section.startTime + m * measureDur;
         const currentRoot = progression[m % progression.length];
         
-        // Normalizza la root per il shimmer
-        let rootForFile = currentRoot;
-        if (rootForFile === "F#") rootForFile = "Fs";
-        if (rootForFile === "G#") rootForFile = "Gs";
-        if (rootForFile === "A#") rootForFile = "As";
-        if (rootForFile === "C#") rootForFile = "Cs";
-        if (rootForFile === "D#") rootForFile = "Ds";
-        if (rootForFile === "Eb") rootForFile = "Ds";
-        if (rootForFile === "Bb") rootForFile = "As";
-        
-        // Ora il chordName è sempre "C2" (il sampler minore sa già che è minore)
-        const chordName = `${rootForFile}2`;
+        // USA NORMALIZZANOTE!
+        const chordName = normalizeNote(currentRoot, isMinor ? "shimmerMinor" : "shimmerMajor");
         
         const useAlternateNotes = isIntro;
         
@@ -703,7 +693,6 @@ function scheduleShimmer(section, progression, instruments, params, rand, measur
         });
     }
 }
-
 
 // ============================================================
 // SCHEDULE LEAD MELODICA (GuitarLead)

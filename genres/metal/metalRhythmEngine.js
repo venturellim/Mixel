@@ -151,21 +151,6 @@ if (isBalladMode) {
         const measureStart = section.startTime + m * balladMeasureDur;
         const currentRoot = progression[m % progression.length];
         
-        // Normalizza la root (es. "F#" → "Fs")
-        let rootForFile = currentRoot;
-        if (rootForFile === "F#") rootForFile = "Fs";
-        if (rootForFile === "G#") rootForFile = "Gs";
-        if (rootForFile === "A#") rootForFile = "As";
-        if (rootForFile === "C#") rootForFile = "Cs";
-        if (rootForFile === "D#") rootForFile = "Ds";
-        if (rootForFile === "Eb") rootForFile = "Ds";
-        if (rootForFile === "Bb") rootForFile = "As";
-        
-        // Nome dell'accordo (es. "C2" o "Cm2")
-        //const chordName = isMinor ? `${rootForFile}m2` : `${rootForFile}2`;
-        // La nota è sempre C2, D2, E2... senza "m"
-const chordName = `${rootForFile}2`;
-        
         // Scegli pattern in base alla sezione
         let usePattern;
         const name = section.name?.toLowerCase() || "";
@@ -179,7 +164,9 @@ const chordName = `${rootForFile}2`;
         // 1. CHITARRA ACUSTICA — ACCORDO PRONTO (SINGOLO SAMPLE)
         // ============================================================
         // Scegli lo strumento accordo giusto in base a isMinor
+// Scegli lo strumento accordo giusto in base a isMinor
 const acousticChordInstrument = isMinor ? acousticChordMinor : acousticChordMajor;
+const chordName = normalizeNote(currentRoot, isMinor ? "acousticChordMinor" : "acousticChordMajor");
 
 if (acousticChordInstrument) {
     usePattern.steps.forEach(step => {
@@ -187,9 +174,6 @@ if (acousticChordInstrument) {
         const duration = (usePattern.type === "long") ? "2n" : 
                        (usePattern.type === "medium") ? "8n" : "16n";
         const velocity = (usePattern.type === "long") ? 0.7 : 0.55;
-        
-        // Ora il chordName è sempre "C2", mai "Cm2"
-        const chordName = `${rootForFile}2`;
         
         Tone.Transport.schedule(t => {
             acousticChordInstrument.triggerAttackRelease(chordName, duration, t, velocity);
