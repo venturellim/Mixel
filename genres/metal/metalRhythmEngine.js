@@ -6,7 +6,7 @@ import {
     leadPadMelodicLibrary 
 } from "../../utils/leadLibraries.js";
 
-console.log("metalRhythmEngine.js ver. 030.1 loaded");
+console.log("metalRhythmEngine.js ver. 030.2 loaded");
 
 // ============================================================
 // FUNZIONI DI SUPPORTO PER LA BALLAD
@@ -162,7 +162,9 @@ if (isBalladMode) {
         if (rootForFile === "Bb") rootForFile = "As";
         
         // Nome dell'accordo (es. "C2" o "Cm2")
-        const chordName = isMinor ? `${rootForFile}m2` : `${rootForFile}2`;
+        //const chordName = isMinor ? `${rootForFile}m2` : `${rootForFile}2`;
+        // La nota è sempre C2, D2, E2... senza "m"
+const chordName = `${rootForFile}2`;
         
         // Scegli pattern in base alla sezione
         let usePattern;
