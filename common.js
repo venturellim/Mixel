@@ -4,7 +4,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("common.js ver. 027 loaded");
+console.log("common.js ver. 027.1 loaded");
 
 // ======================================================
 // 🎚 MASTER BUS & MASTERING
@@ -288,92 +288,135 @@ export async function waitDNA(analysisData) {
 // ======================================================
 // 📦 FASE 2: CARICAMENTO STRUMENTI (ATTESA REALE)
 // ======================================================
+// ======================================================
+// 📦 FASE 2: CARICAMENTO STRUMENTI (ATTESA MINIMA 7s + BLOCCO AL 90%)
+// ======================================================
 export async function waitInstruments(genreInstruments, selectedGenre = null) {
     initWin11Loader();
     showWin11UI();
+    
     const firstStart = 1;
-if (firstStart === 1) {
-loadLottieAnimation('loader.json');
-
     var loadingQueue = [];
-    var displayNames = {
-        dance: "Dance",
-        metal: "Metal",
-        orchestra: "Orchestra",
-        piano: "Piano"
-    };
     
-    for (var genreKey in genreInstruments) {
-        var instruments = genreInstruments[genreKey];
-        var displayName = displayNames[genreKey] || genreKey.charAt(0).toUpperCase() + genreKey.slice(1);
+    if (firstStart === 1) {
+        loadLottieAnimation('loader.json');
+
+        var displayNames = {
+            dance: "Dance",
+            metal: "Metal",
+            orchestra: "Orchestra",
+            piano: "Piano"
+        };
         
-        for (var i = 0; i < instruments.length; i++) {
-            loadingQueue.push({
-                genre: genreKey,
-                genreDisplay: displayName,
-                instrumentName: instruments[i],
-                instrumentIndex: i + 1,
-                instrumentTotal: instruments.length
-            });
+        for (var genreKey in genreInstruments) {
+            var instruments = genreInstruments[genreKey];
+            var displayName = displayNames[genreKey] || genreKey.charAt(0).toUpperCase() + genreKey.slice(1);
+            
+            for (var i = 0; i < instruments.length; i++) {
+                loadingQueue.push({
+                    genre: genreKey,
+                    genreDisplay: displayName,
+                    instrumentName: instruments[i],
+                    instrumentIndex: i + 1,
+                    instrumentTotal: instruments.length
+                });
+            }
         }
+        
+        var totalInstruments = loadingQueue.length;
+        
+        updateWin11UI(0, 0, "Inizializzazione", 0, 0, "Avvio...", "Caricamento strumenti", "Preparazione dei campioni...", "-", false);
+        
+        var startTime = Date.now();
+        var TOTAL_DURATION_MS = 7000;
+        var isToneLoaded = false;
+        var currentPercent = 0;
+
+        // Monitoriamo in background quando Tone.js ha davvero finito
+        Tone.loaded().then(() => {
+            isToneLoaded = true;
+        });
+        
+        var animationInterval = setInterval(function() {
+            var elapsed = Date.now() - startTime;
+            
+            // Calcoliamo la percentuale teorica basata sul tempo (arriva a 90 in 7 secondi)
+            var timePercent = (elapsed / TOTAL_DURATION_MS) * 90;
+            
+            if (timePercent < 90) {
+                // FASE 1: Siamo dentro i 7 secondi, la barra avanza linearmente fino al 90%
+                currentPercent = timePercent;
+            } else if (!isToneLoaded) {
+                // FASE 2: Sono passati i 7 secondi MA i file audio non sono pronti. Ci inchiodiamo al 90%
+                currentPercent = 90;
+            } else {
+                // FASE 3: I 7 secondi sono passati E i file audio sono pronti. Scatto fluido verso il 100%
+                currentPercent += 2.5; 
+                if (currentPercent >= 100) {
+                    currentPercent = 100;
+                    clearInterval(animationInterval);
+                }
+            }
+            
+            // Mappiamo l'indice degli strumenti in base alla percentuale attuale riscalata su base 100
+            var virtualPercent = (currentPercent / 90) * 100;
+            var targetInstrumentIndex = Math.floor((virtualPercent / 100) * totalInstruments);
+            targetInstrumentIndex = Math.min(targetInstrumentIndex, totalInstruments - 1);
+            
+            if (targetInstrumentIndex >= 0 && loadingQueue[targetInstrumentIndex]) {
+                var current = loadingQueue[targetInstrumentIndex];
+                var sameGenreLoaded = loadingQueue.slice(0, targetInstrumentIndex + 1).filter(item => item.genre === current.genre).length;
+                var sameGenreTotal = loadingQueue.filter(item => item.genre === current.genre).length;
+                
+                // Gestione fluida della barra del singolo genere
+                var genrePercent = (sameGenreLoaded / sameGenreTotal) * 100;
+                if (currentPercent === 90 && !isToneLoaded) {
+                    genrePercent = 95; // La blocchiamo quasi alla fine se siamo in attesa della rete
+                }
+                
+                var instrumentDisplay = `${current.instrumentName} (${current.instrumentIndex}/${current.instrumentTotal})`;
+                
+                // Cambiamo il testo di stato in base alla situazione reale
+                var statusText = `Caricamento ${current.genreDisplay}: ${instrumentDisplay}...`;
+                if (currentPercent === 90 && !isToneLoaded) {
+                    statusText = "Download dei campioni audio aggiuntivi in corso...";
+                } else if (currentPercent > 90) {
+                    statusText = "Finalizzazione del mix in corso...";
+                }
+
+                updateWin11UI(
+                    currentPercent,
+                    genrePercent,
+                    current.genreDisplay,
+                    sameGenreLoaded,
+                    sameGenreTotal,
+                    statusText,
+                    "Caricamento strumenti",
+                    currentPercent === 90 && !isToneLoaded ? "Ottimizzazione della connessione..." : "Preparazione del tuo mix...",
+                    instrumentDisplay,
+                    false
+                );
+            }
+        }, 50);
+        
+        // Aspetta che Tone.js dichiari il caricamento completato
+        await Tone.loaded();
+        
+        // Aspetta che anche l'animazione grafica abbia raggiunto fisicamente il 100% (lo scatto finale)
+        await new Promise(function(resolve) {
+            var checkEndInterval = setInterval(() => {
+                if (currentPercent >= 100) {
+                    clearInterval(checkEndInterval);
+                    resolve();
+                }
+            }, 50);
+        });
+        
+        updateWin11UI(100, 100, "Completato!", totalInstruments, totalInstruments, "Tutti gli strumenti pronti!", "Caricamento completato", "Pronto per suonare!", "✅ Completato!", false);
     }
     
-    var totalInstruments = loadingQueue.length;
-    
-    updateWin11UI(0, 0, "Inizializzazione", 0, 0, "Avvio...", "Caricamento strumenti", "Preparazione dei campioni...", "-", false);
-    
-    var startTime = Date.now();
-    var TOTAL_DURATION_MS = 7000;
-    
-    var animationInterval = setInterval(function() {
-        var elapsed = Date.now() - startTime;
-        var totalPercent = Math.min(100, (elapsed / TOTAL_DURATION_MS) * 100);
-        
-        var targetInstrumentIndex = Math.floor((totalPercent / 100) * totalInstruments);
-        targetInstrumentIndex = Math.min(targetInstrumentIndex, totalInstruments - 1);
-        
-        if (targetInstrumentIndex >= 0 && loadingQueue[targetInstrumentIndex]) {
-            var current = loadingQueue[targetInstrumentIndex];
-            
-            var sameGenreLoaded = loadingQueue.slice(0, targetInstrumentIndex + 1).filter(item => item.genre === current.genre).length;
-            var sameGenreTotal = loadingQueue.filter(item => item.genre === current.genre).length;
-            
-            var genrePercent = (sameGenreLoaded / sameGenreTotal) * 100;
-            var instrumentDisplay = `${current.instrumentName} (${current.instrumentIndex}/${current.instrumentTotal})`;
-            
-            updateWin11UI(
-                totalPercent,
-                genrePercent,
-                current.genreDisplay,
-                sameGenreLoaded,
-                sameGenreTotal,
-                `Caricamento ${current.genreDisplay}: ${instrumentDisplay}...`,
-                "Caricamento strumenti",
-                "Preparazione del tuo mix...",
-                instrumentDisplay,
-                false
-            );
-        }
-        
-        if (totalPercent >= 100) {
-            clearInterval(animationInterval);
-        }
-    }, 50);
-    
-    var loadedPromise = Tone.loaded();
-    
-    await Promise.all([
-        loadedPromise,
-        new Promise(function(resolve) {
-            setTimeout(resolve, TOTAL_DURATION_MS);
-        })
-    ]);
-    
-    clearInterval(animationInterval);
-    
-    updateWin11UI(100, 100, "Completato!", totalInstruments, totalInstruments, "Tutti gli strumenti pronti!", "Caricamento completato", "Pronto per suonare!", "✅ Completato!", false);
-    }
-    await new Promise(function(r) { setTimeout(r, 500); });
+    // Un piccolo delay finale al 100% per far vedere il check verde prima di chiudere
+    await new Promise(function(r) { setTimeout(r, 600); });
     
     hideWin11UI();
     return loadingQueue;
