@@ -6,7 +6,7 @@ import {
     leadPadMelodicLibrary 
 } from "../../utils/leadLibraries.js";
 
-console.log("metalRhythmEngine.js ver. 031.2 loaded");
+console.log("metalRhythmEngine.js ver. 031.3 loaded");
 
 // ============================================================
 // FUNZIONI DI SUPPORTO PER LA BALLAD
@@ -291,9 +291,11 @@ case "ballad_chorus_simple":
     console.log("🎸 BALLAD GROOVE ATTIVO:", currentGroove, "s:", s, "pattern:", currentGrooveData.pattern);
     
     const acousticChordInstrument = isMinor ? acousticChordMinor : acousticChordMajor;
-    console.log("🔍 acousticChordInstrument:", acousticChordInstrument ? "esiste" : "NULL", "isMinor:", isMinor);
-    
-    if (acousticChordInstrument && currentGrooveData.pattern.includes(s)) {
+    console.log("🔍 currentGrooveData:", currentGrooveData);
+console.log("🔍 pattern:", currentGrooveData?.pattern);
+console.log("🔍 s:", s);
+console.log("🔍 includes:", currentGrooveData?.pattern?.includes(s)); 
+ if (acousticChordInstrument && currentGrooveData.pattern.includes(s)) {
         console.log("🔍 CONDIZIONE VERA - suono accordo");
         playGuitar = false;
         const chordName = normalizeNote(currentRoot, isMinor ? "acousticChordMinor" : "acousticChordMajor");
