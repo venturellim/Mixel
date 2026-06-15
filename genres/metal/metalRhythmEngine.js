@@ -6,7 +6,7 @@ import {
     leadPadMelodicLibrary 
 } from "../../utils/leadLibraries.js";
 
-console.log("metalRhythmEngine.js ver. 031.1 loaded");
+console.log("metalRhythmEngine.js ver. 031.2 loaded");
 
 // ============================================================
 // FUNZIONI DI SUPPORTO PER LA BALLAD
@@ -282,36 +282,33 @@ const isAcousticGroove = currentGrooveData?.acoustic === true;
             // LOGICA GROOVE
             switch (currentGroove) {
             case "ballad_intro_strum":
-    console.log("🎸 BALLAD GROOVE ATTIVO:", currentGroove, "s:", s, "pattern:", currentGrooveData.pattern);
-    
 case "ballad_intro_slow":
 case "ballad_verse_simple":
 case "ballad_verse_strum":
 case "ballad_pre_build":
 case "ballad_chorus_full":
 case "ballad_chorus_simple":
-    // Logica per groove acustici
+    console.log("🎸 BALLAD GROOVE ATTIVO:", currentGroove, "s:", s, "pattern:", currentGrooveData.pattern);
+    
     const acousticChordInstrument = isMinor ? acousticChordMinor : acousticChordMajor;
+    console.log("🔍 acousticChordInstrument:", acousticChordInstrument ? "esiste" : "NULL", "isMinor:", isMinor);
+    
     if (acousticChordInstrument && currentGrooveData.pattern.includes(s)) {
-        playGuitar = false;  // Non suonare le chitarre elettriche
+        console.log("🔍 CONDIZIONE VERA - suono accordo");
+        playGuitar = false;
         const chordName = normalizeNote(currentRoot, isMinor ? "acousticChordMinor" : "acousticChordMajor");
-        const duration = currentGrooveData.duration || "16n";
-        const velocity = 0.55;
+        console.log("🔍 chordName:", chordName, "duration:", currentGrooveData.duration);
         
         Tone.Transport.schedule(t => {
-            acousticChordInstrument.triggerAttackRelease(chordName, duration, t, velocity);
+            console.log("🔍 SCHEDULATO - suono", chordName);
+            acousticChordInstrument.triggerAttackRelease(chordName, currentGrooveData.duration, t, 0.55);
             if (score) score.addNote("AcousticChord", chordName, section.name);
         }, absoluteTime);
+    } else {
+        console.log("🔍 CONDIZIONE FALSA - non suono");
     }
-    
-    // Batteria ridotta per ballad
-    if (currentGrooveData.pattern.includes(s)) {
-        if (s === 0) kick = true;
-        if (s === 8) kick = true;
-        if (s === 4 || s === 12) snare = true;
-    }
-    break;
-                case "intro_ambient":
+    break; 
+                   case "intro_ambient":
                     if (s === 0) { playGuitar = true; inst = guitarOpen; sustain = true; kick = true; }
                     break;
                 case "intro_heavy_strikes":
