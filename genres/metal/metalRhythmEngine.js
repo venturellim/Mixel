@@ -6,7 +6,7 @@ import {
     leadPadMelodicLibrary 
 } from "../../utils/leadLibraries.js";
 
-console.log("metalRhythmEngine.js ver. 031 loaded");
+console.log("metalRhythmEngine.js ver. 031.1 loaded");
 
 // ============================================================
 // FUNZIONI DI SUPPORTO PER LA BALLAD
@@ -282,6 +282,8 @@ const isAcousticGroove = currentGrooveData?.acoustic === true;
             // LOGICA GROOVE
             switch (currentGroove) {
             case "ballad_intro_strum":
+    console.log("🎸 BALLAD GROOVE ATTIVO:", currentGroove, "s:", s, "pattern:", currentGrooveData.pattern);
+    
 case "ballad_intro_slow":
 case "ballad_verse_simple":
 case "ballad_verse_strum":
