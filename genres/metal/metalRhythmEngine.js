@@ -6,7 +6,7 @@ import {
     leadPadMelodicLibrary 
 } from "../../utils/leadLibraries.js";
 
-console.log("metalRhythmEngine.js ver. 031.3 loaded");
+console.log("metalRhythmEngine.js ver. 031.4 loaded");
 
 // ============================================================
 // FUNZIONI DI SUPPORTO PER LA BALLAD
@@ -103,7 +103,13 @@ function schedulePadInRhythm(section, progression, instruments, params, rand) {
 // ============================================================
 
 export function scheduleRhythm(section, progression, instruments, params, rand, measureDur, nextSectionRoot, score) {
+console.log("🔍 instruments disponibili:", Object.keys(instruments));
+    console.log("🔍 scheduleRhythm - instruments keys:", Object.keys(instruments));
+    console.log("🔍 acousticChordMajor:", instruments.acousticChordMajor ? "esiste" : "NULL");
+    console.log("🔍 acousticChordMinor:", instruments.acousticChordMinor ? "esiste" : "NULL");
+    
     const { drums, guitarPalm, guitarOpen, bass, acousticChordMajor, acousticChordMinor, StStringPad } = instruments;
+}
     if (!drums || !guitarPalm || !bass) return;
 
     const hasAcoustic = !!(acousticChordMajor || acousticChordMinor);
@@ -291,6 +297,9 @@ case "ballad_chorus_simple":
     console.log("🎸 BALLAD GROOVE ATTIVO:", currentGroove, "s:", s, "pattern:", currentGrooveData.pattern);
     
     const acousticChordInstrument = isMinor ? acousticChordMinor : acousticChordMajor;
+    console.log("🔍 acousticChordMajor:", acousticChordMajor ? "esiste" : "NULL");
+console.log("🔍 acousticChordMinor:", acousticChordMinor ? "esiste" : "NULL");
+console.log("🔍 acousticChordInstrument scelto:", acousticChordInstrument ? "esiste" : "NULL");
     console.log("🔍 currentGrooveData:", currentGrooveData);
 console.log("🔍 pattern:", currentGrooveData?.pattern);
 console.log("🔍 s:", s);
