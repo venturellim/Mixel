@@ -109,7 +109,7 @@ console.log("🔍 instruments disponibili:", Object.keys(instruments));
     console.log("🔍 acousticChordMinor:", instruments.acousticChordMinor ? "esiste" : "NULL");
     
     const { drums, guitarPalm, guitarOpen, bass, acousticChordMajor, acousticChordMinor, StStringPad } = instruments;
-}
+    
     if (!drums || !guitarPalm || !bass) return;
 
     const hasAcoustic = !!(acousticChordMajor || acousticChordMinor);
