@@ -6,7 +6,7 @@ import {
     leadPadMelodicLibrary 
 } from "../../utils/leadLibraries.js";
 
-console.log("metalRhythmEngine.js ver. 031.9 loaded");
+console.log("metalRhythmEngine.js ver. 031.10 loaded");
 
 // ============================================================
 // FUNZIONI DI SUPPORTO PER LA BALLAD
@@ -295,13 +295,12 @@ case "ballad_pre_build":
 case "ballad_chorus_full":
 case "ballad_chorus_simple":
     // ============================================================
-    // BALLAD LOGICA AUTONOMA (NON USA IL METAL NORMALE)
+    // BALLAD MODE - VERSIONE CHE SUONA (da metalRhythmEngine 5)
     // ============================================================
-    
-    // 1. CHITARRA ACUSTICA - accordi
     const acousticChordInstrument = isMinor ? acousticChordMinor : acousticChordMajor;
+    const chordName = normalizeNote(currentRoot, isMinor ? "acousticChordMinor" : "acousticChordMajor");
+    
     if (acousticChordInstrument && currentGrooveData.pattern.includes(s)) {
-        const chordName = normalizeNote(currentRoot, isMinor ? "acousticChordMinor" : "acousticChordMajor");
         const duration = currentGrooveData.duration || "16n";
         const velocity = 0.55;
         
@@ -311,7 +310,22 @@ case "ballad_chorus_simple":
         }, absoluteTime);
     }
     
-    // 2. BASSO - solo sul kick (inizio misura)
+    // Batteria soft (come nella 5)
+    if (s === 0) {
+        Tone.Transport.schedule(t => {
+            try { drums.player("kick").start(t); } catch(e){}
+            if (score) score.addNote("Drums", "Kick", section.name);
+        }, absoluteTime);
+    }
+    
+    if (s === 8 && m % 2 === 0) {
+        Tone.Transport.schedule(t => {
+            try { drums.player("ride").start(t); } catch(e){} 
+            if (score) score.addNote("Drums", "Ride", section.name);
+        }, absoluteTime);
+    }
+    
+    // Basso sul kick (come nella 5)
     if (s === 0 && bass) {
         const bassNote = normalizeNote(currentRoot, "bass") + "1";
         Tone.Transport.schedule(t => {
@@ -320,23 +334,7 @@ case "ballad_chorus_simple":
         }, absoluteTime);
     }
     
-    // 3. BATTERIA - SOLO KICK e RIDE (nessun metal)
-    if (s === 0) {
-        Tone.Transport.schedule(t => {
-            try { drums.player("kick").start(t); } catch(e){}
-            if (score) score.addNote("Drums", "Kick", section.name);
-        }, absoluteTime);
-    }
-    
-    // Ride ogni 2 misure
-    if (s === 8 && m % 2 === 0) {
-        Tone.Transport.schedule(t => {
-            try { drums.player("ride").start(t); } catch(e){} 
-            if (score) score.addNote("Drums", "Ride", section.name);
-        }, absoluteTime);
-    }
-    
-    break; 
+    break;
          case "intro_ambient":
                     if (s === 0) { playGuitar = true; inst = guitarOpen; sustain = true; kick = true; }
                     break;
