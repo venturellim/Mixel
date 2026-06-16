@@ -6,7 +6,7 @@ import {
     leadPadMelodicLibrary 
 } from "../../utils/leadLibraries.js";
 
-console.log("metalRhythmEngine.js ver. 031.7 loaded");
+console.log("metalRhythmEngine.js ver. 031.8 loaded");
 
 // ============================================================
 // FUNZIONI DI SUPPORTO PER LA BALLAD
@@ -303,19 +303,75 @@ case "ballad_chorus_simple":
        const chordName = normalizeNote(currentRoot, isMinor ? "acousticChordMinor" : "acousticChordMajor");
         
         // Innesco audio diretto
-        acousticChordInstrument.triggerAttackRelease(chordName, currentGrooveData.duration, absoluteTime, 0.55);
+        
+        const rootToUse = customNote || currentRoot;
+                
+                const palmLen = texture < 0.3 ? "8n" : "16n";
+
+                Tone.Transport.schedule(t => {
+                        Tone.Transport.schedule((stopTime) => { try { inst.triggerRelease(stopTime); } catch(e) {} }, t + 0.002);
+                    }
+                    acousticChordInstrument.triggerAttackRelease(chordName, currentGrooveData.duration, absoluteTime, 0.55);
+        
         
         if (score) {
             Tone.Draw.schedule(() => {
                 score.addNote("AcousticChord", chordName, section.name);
             }, absoluteTime);
         }
+   }
+        
+        // ============================================================
+        // 2. BASSO — SEMPLICE, SOSTIENE L'ARMONIA
+        // ============================================================
+        if (bass) {
+            const bassNote = normalizeNote(rootToUse, "bass") + "1";
+            Tone.Transport.schedule(t => {
+                bass.triggerAttackRelease(bassNote, "2n", t, 0.5);
+                if (score) score.addNote("Bass", bassNote, section.name);
+            }, measureStart);
+            
+            if (m % 2 === 1) {
+            Tone.Transport.schedule(t => {
+                bass.triggerAttackRelease(bassNote, "2n", t, 0.5);
+                if (score) score.addNote("Bass", bassNote, section.name);
+                }
+           }
+     }
 
-        // 🌟 IL FIX: Schedula un colpo di cassa/piatto soft dedicato alla ballad ed esci dal loop dello step!
-        Tone.Transport.schedule(time => {
-            if (s === 0) try { drums.player("kick").start(time); } catch(e){}
-            if (s === 8 && !currentGroove.includes("intro")) try { drums.player("snare").start(time); } catch(e){}
-        }, absoluteTime);
+        // ============================================================
+        // 3. BATTERIA — MINIMA (solo kick e piatti)
+        // ============================================================
+        
+        // Kick all'inizio della misura (soft)
+        Tone.Transport.schedule(t => {
+            try { drums.player("kick").start(t); } catch(e){}
+            if (score) score.addNote("Drums", "Kick", section.name);
+        }, measureStart);
+        
+        // Kick anche a metà misura (opzionale, ogni 2 misure)
+        if (m % 2 === 1) {
+            Tone.Transport.schedule(t => {
+                try { drums.player("kick").start(t); } catch(e){}
+                if (score) score.addNote("Drums", "Kick", section.name);
+            }, measureStart + balladMeasureDur * 0.5);
+        }
+        
+        // Crash all'inizio sezione (intro e chorus)
+        if (m === 0 && (name.includes("chorus") || name.includes("intro"))) {
+            Tone.Transport.schedule(t => {
+                try { drums.player("crash1").start(t); } catch(e){}
+                if (score) score.addNote("Drums", "Crash", section.name);
+            }, measureStart);
+        }
+        
+        // Ride o hi-hat delicato ogni 2 misure
+        if (m % 2 === 0 && energy > 0.3) {
+            Tone.Transport.schedule(t => {
+                try { drums.player("ride").start(t); } catch(e){} 
+                if (score) score.addNote("Drums", "Ride", section.name);
+            }, measureStart + balladMeasureDur * 0.75);
+        },absoluteTime);
 
         // Saltiamo il resto del ciclo per questo step 's', così la batteria metal non sovrascrive nulla!
         continue; 
