@@ -6,7 +6,7 @@ import {
     leadPadMelodicLibrary 
 } from "../../utils/leadLibraries.js";
 
-console.log("metalRhythmEngine.js ver. 031.11.1 loaded");
+console.log("metalRhythmEngine.js ver. 031.11.2 loaded");
 
 // ============================================================
 // FUNZIONI DI SUPPORTO PER LA BALLAD
@@ -305,7 +305,7 @@ case "ballad_chorus_simple":
     // Chitarra elettrica aperta
     if (pattern.includes(s)) {
         playGuitar = true;
-        inst = guitarOpen;
+        inst = acousticChordMajor;
         sustain = true;
     }
 
