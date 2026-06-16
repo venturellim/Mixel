@@ -6,7 +6,7 @@ import {
     leadPadMelodicLibrary 
 } from "../../utils/leadLibraries.js";
 
-console.log("metalRhythmEngine.js ver. 031.11 loaded");
+console.log("metalRhythmEngine.js ver. 031.11.1 loaded");
 
 // ============================================================
 // FUNZIONI DI SUPPORTO PER LA BALLAD
@@ -294,38 +294,34 @@ case "ballad_verse_strum":
 case "ballad_pre_build":
 case "ballad_chorus_full":
 case "ballad_chorus_simple":
+
     // ============================================================
-    // BALLAD MODE - VERSIONE CHE SUONA (da metalRhythmEngine 5)
+    // BALLAD MODE — versione elettrica con guitarOpen
     // ============================================================
-    const acousticChordInstrument = isMinor ? acousticChordMinor : acousticChordMajor;
-    const chordName = normalizeNote(currentRoot, isMinor ? "acousticChordMinor" : "acousticChordMajor");
-    
-    if (acousticChordInstrument && currentGrooveData.pattern.includes(s)) {
-        const duration = currentGrooveData.duration || "16n";
-        const velocity = 0.55;
-        
-        Tone.Transport.schedule(t => {
-            acousticChordInstrument.triggerAttackRelease(chordName, duration, t, velocity);
-            if (score) score.addNote("AcousticChord", chordName, section.name);
-        }, absoluteTime);
+
+    // Pattern classico ballad (8 step)
+    const pattern = [0, 6, 8, 10, 12];
+
+    // Chitarra elettrica aperta
+    if (pattern.includes(s)) {
+        playGuitar = true;
+        inst = guitarOpen;
+        sustain = true;
     }
-    
-    // Batteria soft (come nella 5)
+
+    // Batteria soft (kick iniziale + ride ogni 2 misure)
     if (s === 0) {
-        Tone.Transport.schedule(t => {
-            try { drums.player("kick").start(t); } catch(e){}
-            if (score) score.addNote("Drums", "Kick", section.name);
-        }, absoluteTime);
+        kick = true;
     }
-    
+
     if (s === 8 && m % 2 === 0) {
         Tone.Transport.schedule(t => {
-            try { drums.player("ride").start(t); } catch(e){} 
+            try { drums.player("ride").start(t); } catch(e){}
             if (score) score.addNote("Drums", "Ride", section.name);
         }, absoluteTime);
     }
-    
-    // Basso sul kick (come nella 5)
+
+    // Basso sul kick (come nella ballad)
     if (s === 0 && bass) {
         const bassNote = normalizeNote(currentRoot, "bass") + "1";
         Tone.Transport.schedule(t => {
@@ -333,8 +329,9 @@ case "ballad_chorus_simple":
             if (score) score.addNote("Bass", bassNote, section.name);
         }, absoluteTime);
     }
-    
+
     break;
+    
          case "intro_ambient":
                     if (s === 0) { playGuitar = true; inst = guitarOpen; sustain = true; kick = true; }
                     break;
