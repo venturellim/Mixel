@@ -6,7 +6,7 @@ import {
     leadPadMelodicLibrary 
 } from "../../utils/leadLibraries.js";
 
-console.log("metalRhythmEngine.js ver. 031.4 loaded");
+console.log("metalRhythmEngine.js ver. 031.5 loaded");
 
 // ============================================================
 // FUNZIONI DI SUPPORTO PER LA BALLAD
@@ -310,11 +310,21 @@ console.log("🔍 includes:", currentGrooveData?.pattern?.includes(s));
         const chordName = normalizeNote(currentRoot, isMinor ? "acousticChordMinor" : "acousticChordMajor");
         console.log("🔍 chordName:", chordName, "duration:", currentGrooveData.duration);
         
-        Tone.Transport.schedule(t => {
-            console.log("🔍 SCHEDULATO - suono", chordName);
-            acousticChordInstrument.triggerAttackRelease(chordName, currentGrooveData.duration, t, 0.55);
-            if (score) score.addNote("AcousticChord", chordName, section.name);
+        if (acousticChordInstrument && currentGrooveData.pattern.includes(s)) {
+    console.log("🔍 CONDIZIONE VERA - suono accordo");
+    playGuitar = false;
+    const chordName = normalizeNote(currentRoot, isMinor ? "acousticChordMinor" : "acousticChordMajor");
+    console.log("🔍 chordName:", chordName, "duration:", currentGrooveData.duration);
+    
+    // 🌟 SUONA DIRETTAMENTE AL MOMENTO 'absoluteTime' SENZA WRAPPER
+    acousticChordInstrument.triggerAttackRelease(chordName, currentGrooveData.duration, absoluteTime, 0.55);
+    
+    if (score) {
+        Tone.Draw.schedule(() => {
+            score.addNote("AcousticChord", chordName, section.name);
         }, absoluteTime);
+    }
+}
     } else {
         console.log("🔍 CONDIZIONE FALSA - non suono");
     }
