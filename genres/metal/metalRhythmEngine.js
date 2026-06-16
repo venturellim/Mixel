@@ -6,7 +6,7 @@ import {
     leadPadMelodicLibrary 
 } from "../../utils/leadLibraries.js";
 
-console.log("metalRhythmEngine.js ver. 031.8 loaded");
+console.log("metalRhythmEngine.js ver. 031.9 loaded");
 
 // ============================================================
 // FUNZIONI DI SUPPORTO PER LA BALLAD
@@ -294,90 +294,50 @@ case "ballad_verse_strum":
 case "ballad_pre_build":
 case "ballad_chorus_full":
 case "ballad_chorus_simple":
-    console.log("🎸 BALLAD GROOVE ATTIVO:", currentGroove);
+    // ============================================================
+    // BALLAD LOGICA AUTONOMA (NON USA IL METAL NORMALE)
+    // ============================================================
     
+    // 1. CHITARRA ACUSTICA - accordi
     const acousticChordInstrument = isMinor ? acousticChordMinor : acousticChordMajor;
-    
     if (acousticChordInstrument && currentGrooveData.pattern.includes(s)) {
+        const chordName = normalizeNote(currentRoot, isMinor ? "acousticChordMinor" : "acousticChordMajor");
+        const duration = currentGrooveData.duration || "16n";
+        const velocity = 0.55;
         
-       const chordName = normalizeNote(currentRoot, isMinor ? "acousticChordMinor" : "acousticChordMajor");
-        
-        // Innesco audio diretto
-        
-        const rootToUse = customNote || currentRoot;
-                
-                const palmLen = texture < 0.3 ? "8n" : "16n";
-
-                Tone.Transport.schedule(t => {
-                        Tone.Transport.schedule((stopTime) => { try { inst.triggerRelease(stopTime); } catch(e) {} }, t + 0.002);
-                    }
-                    acousticChordInstrument.triggerAttackRelease(chordName, currentGrooveData.duration, absoluteTime, 0.55);
-        
-        
-        if (score) {
-            Tone.Draw.schedule(() => {
-                score.addNote("AcousticChord", chordName, section.name);
-            }, absoluteTime);
-        }
-   }
-        
-        // ============================================================
-        // 2. BASSO — SEMPLICE, SOSTIENE L'ARMONIA
-        // ============================================================
-        if (bass) {
-            const bassNote = normalizeNote(rootToUse, "bass") + "1";
-            Tone.Transport.schedule(t => {
-                bass.triggerAttackRelease(bassNote, "2n", t, 0.5);
-                if (score) score.addNote("Bass", bassNote, section.name);
-            }, measureStart);
-            
-            if (m % 2 === 1) {
-            Tone.Transport.schedule(t => {
-                bass.triggerAttackRelease(bassNote, "2n", t, 0.5);
-                if (score) score.addNote("Bass", bassNote, section.name);
-                }
-           }
-     }
-
-        // ============================================================
-        // 3. BATTERIA — MINIMA (solo kick e piatti)
-        // ============================================================
-        
-        // Kick all'inizio della misura (soft)
+        Tone.Transport.schedule(t => {
+            acousticChordInstrument.triggerAttackRelease(chordName, duration, t, velocity);
+            if (score) score.addNote("AcousticChord", chordName, section.name);
+        }, absoluteTime);
+    }
+    
+    // 2. BASSO - solo sul kick (inizio misura)
+    if (s === 0 && bass) {
+        const bassNote = normalizeNote(currentRoot, "bass") + "1";
+        Tone.Transport.schedule(t => {
+            bass.triggerAttackRelease(bassNote, "2n", t, 0.5);
+            if (score) score.addNote("Bass", bassNote, section.name);
+        }, absoluteTime);
+    }
+    
+    // 3. BATTERIA - SOLO KICK e RIDE (nessun metal)
+    if (s === 0) {
         Tone.Transport.schedule(t => {
             try { drums.player("kick").start(t); } catch(e){}
             if (score) score.addNote("Drums", "Kick", section.name);
-        }, measureStart);
-        
-        // Kick anche a metà misura (opzionale, ogni 2 misure)
-        if (m % 2 === 1) {
-            Tone.Transport.schedule(t => {
-                try { drums.player("kick").start(t); } catch(e){}
-                if (score) score.addNote("Drums", "Kick", section.name);
-            }, measureStart + balladMeasureDur * 0.5);
-        }
-        
-        // Crash all'inizio sezione (intro e chorus)
-        if (m === 0 && (name.includes("chorus") || name.includes("intro"))) {
-            Tone.Transport.schedule(t => {
-                try { drums.player("crash1").start(t); } catch(e){}
-                if (score) score.addNote("Drums", "Crash", section.name);
-            }, measureStart);
-        }
-        
-        // Ride o hi-hat delicato ogni 2 misure
-        if (m % 2 === 0 && energy > 0.3) {
-            Tone.Transport.schedule(t => {
-                try { drums.player("ride").start(t); } catch(e){} 
-                if (score) score.addNote("Drums", "Ride", section.name);
-            }, measureStart + balladMeasureDur * 0.75);
-        },absoluteTime);
-
-        // Saltiamo il resto del ciclo per questo step 's', così la batteria metal non sovrascrive nulla!
-        continue; 
+        }, absoluteTime);
     }
-    break;
-      case "intro_ambient":
+    
+    // Ride ogni 2 misure
+    if (s === 8 && m % 2 === 0) {
+        Tone.Transport.schedule(t => {
+            try { drums.player("ride").start(t); } catch(e){} 
+            if (score) score.addNote("Drums", "Ride", section.name);
+        }, absoluteTime);
+    }
+    
+    break; 
+         case "intro_ambient":
                     if (s === 0) { playGuitar = true; inst = guitarOpen; sustain = true; kick = true; }
                     break;
                 case "intro_heavy_strikes":
