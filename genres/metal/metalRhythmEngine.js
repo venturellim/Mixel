@@ -6,7 +6,7 @@ import {
     leadPadMelodicLibrary 
 } from "../../utils/leadLibraries.js";
 
-console.log("metalRhythmEngine.js ver. 031.11.2 loaded");
+console.log("metalRhythmEngine.js ver. 032 loaded");
 
 // ============================================================
 // FUNZIONI DI SUPPORTO PER LA BALLAD
@@ -296,32 +296,18 @@ case "ballad_chorus_full":
 case "ballad_chorus_simple":
 
     // ============================================================
-    // BALLAD MODE — versione elettrica con guitarOpen
+    // BALLAD GROOVE - usa il pattern dal grooveCharacteristics
     // ============================================================
-
-    // Pattern classico ballad (8 step)
-    const pattern = [0, 6, 8, 10, 12];
-
-    // Chitarra elettrica aperta
+    
+    // 1. CHITARRA ACUSTICA (o elettrica clean)
+    const pattern = currentGrooveData.pattern;
     if (pattern.includes(s)) {
         playGuitar = true;
-        inst = acousticChordMajor;
+        inst = isMinor ? acousticChordMinor : acousticChordMajor;
         sustain = true;
     }
-
-    // Batteria soft (kick iniziale + ride ogni 2 misure)
-    if (s === 0) {
-        kick = true;
-    }
-
-    if (s === 8 && m % 2 === 0) {
-        Tone.Transport.schedule(t => {
-            try { drums.player("ride").start(t); } catch(e){}
-            if (score) score.addNote("Drums", "Ride", section.name);
-        }, absoluteTime);
-    }
-
-    // Basso sul kick (come nella ballad)
+    
+    // 2. BASSO - sul kick (inizio misura)
     if (s === 0 && bass) {
         const bassNote = normalizeNote(currentRoot, "bass") + "1";
         Tone.Transport.schedule(t => {
@@ -329,7 +315,47 @@ case "ballad_chorus_simple":
             if (score) score.addNote("Bass", bassNote, section.name);
         }, absoluteTime);
     }
-
+    
+    // 3. BATTERIA - soft
+    // Kick all'inizio misura
+    if (s === 0) {
+        kick = true;
+    }
+    
+    // Ride ogni 2 misure (sul beat 8, che è metà misura)
+    if (s === 8 && m % 2 === 0) {
+        Tone.Transport.schedule(t => {
+            try { drums.player("ride").start(t); } catch(e){}
+            if (score) score.addNote("Drums", "Ride", section.name);
+        }, absoluteTime);
+    }
+    
+    // Snare leggera ogni 2 misure (sul beat 4 e 12)
+    if ((s === 4 || s === 12) && m % 2 === 0) {
+        snare = true;
+    }
+    
+    // 4. FILL ZONE PER BALLAD (rullata sul ride)
+    const isBalladFill = isLastMeasure && s >= 12 && complexity > 0.3;
+    
+    if (isBalladFill) {
+        // Rullata di ride invece del kick
+        // Ogni 2 sedicesimi (12, 14)
+        if (s === 12 || s === 14) {
+            Tone.Transport.schedule(t => {
+                try { drums.player("ride").start(t); } catch(e){}
+                if (score) score.addNote("Drums", "RideFill", section.name);
+            }, absoluteTime);
+        }
+        
+        // Un colpo di snare o tom leggero alla fine
+        if (s === 15) {
+            Tone.Transport.schedule(t => {
+                try { drums.player("snare").start(t, 0, 0.3); } catch(e){}  // velocity 0.3 = soft
+                if (score) score.addNote("Drums", "SnareFill", section.name);
+            }, absoluteTime);
+        }
+    }
     break;
     
          case "intro_ambient":
