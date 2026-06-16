@@ -6,7 +6,7 @@ import {
     leadPadMelodicLibrary 
 } from "../../utils/leadLibraries.js";
 
-console.log("metalRhythmEngine.js ver. 031.5 loaded");
+console.log("metalRhythmEngine.js ver. 031.6 loaded");
 
 // ============================================================
 // FUNZIONI DI SUPPORTO PER LA BALLAD
@@ -294,42 +294,34 @@ case "ballad_verse_strum":
 case "ballad_pre_build":
 case "ballad_chorus_full":
 case "ballad_chorus_simple":
-    console.log("🎸 BALLAD GROOVE ATTIVO:", currentGroove, "s:", s, "pattern:", currentGrooveData.pattern);
+    console.log("🎸 BALLAD GROOVE ATTIVO:", currentGroove);
     
     const acousticChordInstrument = isMinor ? acousticChordMinor : acousticChordMajor;
-    console.log("🔍 acousticChordMajor:", acousticChordMajor ? "esiste" : "NULL");
-console.log("🔍 acousticChordMinor:", acousticChordMinor ? "esiste" : "NULL");
-console.log("🔍 acousticChordInstrument scelto:", acousticChordInstrument ? "esiste" : "NULL");
-    console.log("🔍 currentGrooveData:", currentGrooveData);
-console.log("🔍 pattern:", currentGrooveData?.pattern);
-console.log("🔍 s:", s);
-console.log("🔍 includes:", currentGrooveData?.pattern?.includes(s)); 
- if (acousticChordInstrument && currentGrooveData.pattern.includes(s)) {
-        console.log("🔍 CONDIZIONE VERA - suono accordo");
-        playGuitar = false;
-        const chordName = normalizeNote(currentRoot, isMinor ? "acousticChordMinor" : "acousticChordMajor");
-        console.log("🔍 chordName:", chordName, "duration:", currentGrooveData.duration);
+    
+    if (acousticChordInstrument && currentGrooveData.pattern.includes(s)) {
+        // Ripristiniamo l'ottava corretta se i sample la richiedono (es. C3)
+        //const chordName = normalizeNote(currentRoot, isMinor ? "acousticChordMinor" : "acousticChordMajor") + "3";
         
-        if (acousticChordInstrument && currentGrooveData.pattern.includes(s)) {
-    console.log("🔍 CONDIZIONE VERA - suono accordo");
-    playGuitar = false;
-    const chordName = normalizeNote(currentRoot, isMinor ? "acousticChordMinor" : "acousticChordMajor");
-    console.log("🔍 chordName:", chordName, "duration:", currentGrooveData.duration);
-    
-    // 🌟 SUONA DIRETTAMENTE AL MOMENTO 'absoluteTime' SENZA WRAPPER
-    acousticChordInstrument.triggerAttackRelease(chordName, currentGrooveData.duration, absoluteTime, 0.55);
-    
-    if (score) {
-        Tone.Draw.schedule(() => {
-            score.addNote("AcousticChord", chordName, section.name);
+        // Innesco audio diretto
+        acousticChordInstrument.triggerAttackRelease(chordName, currentGrooveData.duration, absoluteTime, 0.55);
+        
+        if (score) {
+            Tone.Draw.schedule(() => {
+                score.addNote("AcousticChord", chordName, section.name);
+            }, absoluteTime);
+        }
+
+        // 🌟 IL FIX: Schedula un colpo di cassa/piatto soft dedicato alla ballad ed esci dal loop dello step!
+        Tone.Transport.schedule(time => {
+            if (s === 0) try { drums.player("kick").start(time); } catch(e){}
+            if (s === 8 && !currentGroove.includes("intro")) try { drums.player("snare").start(time); } catch(e){}
         }, absoluteTime);
+
+        // Saltiamo il resto del ciclo per questo step 's', così la batteria metal non sovrascrive nulla!
+        continue; 
     }
-}
-    } else {
-        console.log("🔍 CONDIZIONE FALSA - non suono");
-    }
-    break; 
-                   case "intro_ambient":
+    break;
+      case "intro_ambient":
                     if (s === 0) { playGuitar = true; inst = guitarOpen; sustain = true; kick = true; }
                     break;
                 case "intro_heavy_strikes":
