@@ -8,7 +8,7 @@ import { metalVolumeMap } from "./metalInstruments.js";
 import { scheduleRhythm } from "./metalRhythmEngine.js";
 import { scheduleLead } from "./metalLeadEngine.js"; 
 
-console.log("metalEngine.js ver. 018 loaded");
+console.log("metalEngine.js ver. 018 test loaded");
 
 export function createMetalEngine(params, score, instruments) {
     const rand = createSeededRandom(params.dna);
@@ -166,7 +166,7 @@ if (chorusEndSection && chorusSection) {
 
         // SCHEDULAZIONE
         scheduleRhythm(sec, realNotes, instruments, combinedParams, rand, measureDur, nextSectionRoot, score);
-scheduleLead(sec, realNotes, instruments, combinedParams, rand, measureDur, score);
+//scheduleLead(sec, realNotes, instruments, combinedParams, rand, measureDur, score);
     });
 
     return {
