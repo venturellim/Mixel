@@ -6,7 +6,7 @@ import {
     leadPadMelodicLibrary 
 } from "../../utils/leadLibraries.js";
 
-console.log("metalRhythmEngine.js ver. 032.4 loaded");
+console.log("metalRhythmEngine.js ver. 033 loaded");
 
 // ============================================================
 // FUNZIONI DI SUPPORTO PER LA BALLAD
@@ -102,24 +102,23 @@ function schedulePadInRhythm(section, progression, instruments, params, rand) {
 // FUNZIONE PRINCIPALE
 // ============================================================
 
-export function scheduleRhythm(section, progression, instruments, params, rand, measureDur, nextSectionRoot, score) {
-console.log("🔍 instruments disponibili:", Object.keys(instruments));
-    console.log("🔍 scheduleRhythm - instruments keys:", Object.keys(instruments));
-    console.log("🔍 acousticChordMajor:", instruments.acousticChordMajor ? "esiste" : "NULL");
-    console.log("🔍 acousticChordMinor:", instruments.acousticChordMinor ? "esiste" : "NULL");
+export function scheduleRhythm(section, progression, instruments, params, rand, measureDur, nextSectionRoot, score, songContext) {
     
     const { drums, guitarPalm, guitarOpen, bass, acousticChordMajor, acousticChordMinor, StStringPad } = instruments;
     
     if (!drums || !guitarPalm || !bass) return;
 
     const hasAcoustic = !!(acousticChordMajor || acousticChordMinor);
+    const activeMeasureDur = songContext.isBalladActive 
+    ? songContext.balladMeasureDur 
+    : measureDur;
     
     const name = section?.name?.toLowerCase() || "";
     const isChorus = name.includes("chorus") || (name.includes("solo") && !name.includes("pre"));
     const isPreChorus = name.includes("pre") || name.includes("bridge");
     const isIntro = name.includes("intro");
     const isOutro = name.includes("outro");
-    const stepTime = measureDur / 16;
+    const stepTime = activeMeasureDur / 16;
     const { energy = 0.5, brightness = 0.5, complexity = 0.5, texture = 0.5 } = params?.imageParams || {};
     
 // ============================================================
@@ -263,27 +262,37 @@ console.log("🔍 instruments disponibili:", Object.keys(instruments));
     energy, brightness, complexity
 );
 
+// Verifica se il groove corrente è acustico (ballad)
+const currentGrooveData = grooveCharacteristics[currentGroove];
+
+const isMinor = (params?.imageParams?.mood < 0.5) || params?.scaleType?.includes("minor");
+
 // ============================================================
 // 🔥 IMPOSTA I FLAG PER LA LEAD (se è un groove ballad)
 // ============================================================
-const originalBpm = Tone.Transport.bpm.value;
-const currentGrooveData = grooveCharacteristics[currentGroove];
-// Determina se la scala è minore (per gli accordi acustici)
-const isMinor = (params?.imageParams?.mood < 0.5) || params?.scaleType?.includes("minor");
-if (currentGrooveData?.acoustic === true) {
-    section.isBallad = true;
-    section.balladMode = isMinor ? 1 : 2;
-    const balladBpm = 80;
-    Tone.Transport.bpm.value = balladBpm;
-    const balladMeasureDur = (60 / balladBpm) * 4;
-    const stepTime = balladMeasureDur / 16;
+// ============================================================
+    // ATTIVA BALLAD SE IL GROOVE È ACUSTICO
+    // ============================================================
+    if (currentGrooveData?.acoustic === true) {
+        
+        // Usa il contesto per attivare la ballad
+        songContext.activateBallad(isMinor);
+        section.isBallad = true;  // Mantieni per retrocompatibilità
+        section.balladMode = songContext.balladMode;
+        
+        // Usa il balladMeasureDur dal contesto
+        const balladMeasureDur = songContext.balladMeasureDur;
+        const stepTime = balladMeasureDur / 16;
 } else {
-    section.isBallad = false;
-    section.balladMode = 0;
-}
+    if (songContext.isBalladActive) {
+            songContext.deactivateBallad();
+            section.isBallad = false;
+            section.balladMode = 0;
+        }
+    }
 
     for (let m = 0; m < section.measures; m++) {
-        const measureStartTime = section.startTime + (m * measureDur);
+        const measureStartTime = section.startTime + (m * activeMeasureDur);
         const currentRoot = progression[m % progression.length];
         const nextRoot = progression[(m + 1) % progression.length] || nextSectionRoot;
         const isLastMeasure = (m === section.measures - 1);
@@ -297,8 +306,6 @@ if (currentGrooveData?.acoustic === true) {
                 inst = (rand() < 0.85) ? guitarOpen : guitarPalm;
             }
             
-            // Verifica se il groove corrente è acustico (ballad)
-const currentGrooveData = grooveCharacteristics[currentGroove];
 const isAcousticGroove = currentGrooveData?.acoustic === true;
 
             // LOGICA GROOVE
@@ -756,6 +763,6 @@ break;
         }
     }
     // Ripristina BPM originale
-    Tone.Transport.bpm.value = originalBpm;
+    Tone.Transport.bpm.value = songContext.originalBpm;
     
 }

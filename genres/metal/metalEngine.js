@@ -8,7 +8,7 @@ import { metalVolumeMap } from "./metalInstruments.js";
 import { scheduleRhythm } from "./metalRhythmEngine.js";
 import { scheduleLead } from "./metalLeadEngine.js"; 
 
-console.log("metalEngine.js ver. 019 loaded");
+console.log("metalEngine.js ver. 020 loaded");
 
 export function createMetalEngine(params, score, instruments) {
     const rand = createSeededRandom(params.dna);
@@ -17,8 +17,40 @@ export function createMetalEngine(params, score, instruments) {
     Tone.Transport.stop();
     Tone.Transport.cancel(); 
     Tone.Transport.bpm.value = metalParams.bpm;
+    
+    // ============================================================
+    // CONTESTO CONDIVISO
+    // ============================================================
+    const songContext = {
+        isBallad: false,
+        balladMode: 0,        // 0=no ballad, 1=minore, 2=maggiore
+        balladBpm: 80,
+        originalBpm: metalParams.bpm,
+        balladMeasureDur: null,
+        isBalladActive: false,
+        
+        // Metodo per attivare la ballad
+        activateBallad(isMinor) {
+            this.isBallad = true;
+            this.isBalladActive = true;
+            this.balladMode = isMinor ? 1 : 2;
+            this.originalBpm = Tone.Transport.bpm.value;
+            Tone.Transport.bpm.value = this.balladBpm;
+            this.balladMeasureDur = (60 / this.balladBpm) * 4;
+            console.log(`🎵 BALLAD ACTIVATED - mode: ${this.balladMode} | BPM: ${this.balladBpm}`);
+        },
+        
+        // Metodo per disattivare la ballad
+        deactivateBallad() {
+            this.isBallad = false;
+            this.isBalladActive = false;
+            this.balladMode = 0;
+            Tone.Transport.bpm.value = this.originalBpm;
+            console.log(`🎸 BALLAD DEACTIVATED - BPM restored to: ${this.originalBpm}`);
+        }
+    };
 
-    const hasPreChorus = params.imageParams.energy > 0.3; 
+const hasPreChorus = params.imageParams.energy > 0.3; 
     const preChorusWeight = hasPreChorus ? 4 : 0;
     const hasBridge = params.imageParams.complexity > 0.4; // bridge se complessità > 0.4
 
@@ -169,9 +201,9 @@ if (chorusEndSection && chorusSection) {
     // ============================================================
     const balladMode = sec.balladMode || 0;  // 0 = non ballad, 1 = minore, 2 = maggiore
     
-    scheduleRhythm(sec, realNotes, instruments, combinedParams, rand, measureDur, nextSectionRoot, score);
-    scheduleLead(sec, realNotes, instruments, combinedParams, rand, measureDur, score, balladMode);
-});
+    scheduleRhythm(sec, realNotes, instruments, combinedParams, rand, measureDur, nextSectionRoot, score, songContext);
+        scheduleLead(sec, realNotes, instruments, combinedParams, rand, measureDur, score, songContext);
+    });
 
     return {
         totalDuration: structure.totalDuration,

@@ -18,7 +18,7 @@ import {
     padMotionEnhancer
 } from "../../utils/leadEnhancers.js";
 
-console.log("metalLeadEngine.js ver. 100 loaded");
+console.log("metalLeadEngine.js ver. 101 loaded");
 
 // Effetti principali per la lead ballad
 const balladChorus = new Tone.Chorus({
@@ -904,7 +904,8 @@ function scheduleAcousticSolo(section, progression, instruments, params, rand, m
 // ============================================================
 // API PUBBLICA - MODIFICATA con balladMode
 // ============================================================
-export function scheduleLead(section, progression, instruments, params, rand, measureDur, score, balladMode = 0) {
+// metalLeadEngine.js
+export function scheduleLead(section, progression, instruments, params, rand, measureDur, score, songContext) {
     window.currentParams = params;
     
     const name = section.name?.toLowerCase() || "";
@@ -912,42 +913,37 @@ export function scheduleLead(section, progression, instruments, params, rand, me
     const isSolo = name.includes("solo");
     
     // ============================================================
-    // BALLAD MODE
-    // ===========================================================
-
-    // 🔥 RICONOSCIMENTO BALLAD
-    const isBallad = section.isBallad === true || balladMode > 0;
+    // LEGGI LO STATO DAL CONTESTO
+    // ============================================================
+    const isBallad = songContext?.isBalladActive === true;
     
-    if (balladMode > 0) {
-        const isMinor = (balladMode === 1);  // 1 = minore, 2 = maggiore
-        const originalBpm = Tone.Transport.bpm.value;
-        const balladBpm = 80;
-    Tone.Transport.bpm.value = balladBpm;
-    const balladMeasureDur = (60 / balladBpm) * 4;
-    const stepTime = balladMeasureDur / 16;        
+    if (isBallad) {
+        const balladMode = songContext.balladMode;
+        const isMinor = (balladMode === 1);
+        const balladMeasureDur = songContext.balladMeasureDur || (60 / 80) * 4;
+        
         console.log(`🎵 BALLAD LEAD - ${isMinor ? "minore" : "maggiore"} | ${section.name}`);
         
-        // Intro/Outro: solo Shimmer
+        // ... logica ballad usando balladMeasureDur ...
+        
         if (isIntro) {
-            //scheduleShimmer(section, progression, instruments, balladMeasureDur, isMinor);
+            // Intro: solo Shimmer
+            scheduleShimmer(section, progression, instruments, balladMeasureDur, isMinor);
             return;
         }
         
-        // Verse/Chorus: Shimmer + GuitarLead in contrappunto
-        //scheduleShimmer(section, progression, instruments, balladMeasureDur, isMinor);
+        // Verse/Chorus: Shimmer + GuitarLead
+        scheduleShimmer(section, progression, instruments, balladMeasureDur, isMinor);
         scheduleBalladLead(section, progression, instruments, balladMeasureDur, score, isMinor);
         
-        // Solo opzionale (se c'è sezione solo e complexity > 0.6)
+        // Solo opzionale
         if (isSolo && params?.imageParams?.complexity > 0.6) {
             scheduleAcousticSolo(section, progression, instruments, params, rand, measureDur, score);
         }
         
-        // Ripristina BPM originale
-    Tone.Transport.bpm.value = originalBpm;
-        
         return;
     }
-    
+      
     // ============================================================
     // METAL MODE NORMALE (legacy)
     // ============================================================
