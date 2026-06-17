@@ -18,7 +18,7 @@ import {
     padMotionEnhancer
 } from "../../utils/leadEnhancers.js";
 
-console.log("metalLeadEngine.js ver. 101 loaded");
+console.log("metalLeadEngine.js ver. 101.1 loaded");
 
 // Effetti principali per la lead ballad
 const balladChorus = new Tone.Chorus({
@@ -928,12 +928,12 @@ export function scheduleLead(section, progression, instruments, params, rand, me
         
         if (isIntro) {
             // Intro: solo Shimmer
-            scheduleShimmer(section, progression, instruments, balladMeasureDur, isMinor);
+            //scheduleShimmer(section, progression, instruments, balladMeasureDur, isMinor);
             return;
         }
         
         // Verse/Chorus: Shimmer + GuitarLead
-        scheduleShimmer(section, progression, instruments, balladMeasureDur, isMinor);
+        //scheduleShimmer(section, progression, instruments, balladMeasureDur, isMinor);
         scheduleBalladLead(section, progression, instruments, balladMeasureDur, score, isMinor);
         
         // Solo opzionale
