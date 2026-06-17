@@ -8,7 +8,7 @@ import { metalVolumeMap } from "./metalInstruments.js";
 import { scheduleRhythm } from "./metalRhythmEngine.js";
 import { scheduleLead } from "./metalLeadEngine.js"; 
 
-console.log("metalEngine.js ver. 018 test loaded");
+console.log("metalEngine.js ver. 019 loaded");
 
 export function createMetalEngine(params, score, instruments) {
     const rand = createSeededRandom(params.dna);
@@ -143,31 +143,35 @@ if (chorusEndSection && chorusSection) {
     };
 
     structure.sections.forEach((sec, index) => {
-        const info = progressions[sec.name];
-        const sectionRoot = info?.root || metalParams.tonalCenter[0] || "E";
-        const degrees = info?.progression || ["i"];
+    const info = progressions[sec.name];
+    const sectionRoot = info?.root || metalParams.tonalCenter[0] || "E";
+    const degrees = info?.progression || ["i"];
 
-        let fullProgression = [];
-        while (fullProgression.length < sec.measures) {
-            fullProgression = fullProgression.concat(degrees);
-        }
-        fullProgression = fullProgression.slice(0, sec.measures);
+    let fullProgression = [];
+    while (fullProgression.length < sec.measures) {
+        fullProgression = fullProgression.concat(degrees);
+    }
+    fullProgression = fullProgression.slice(0, sec.measures);
 
-        const realNotes = fullProgression.map(d => degreeToRoot(d, sectionRoot));
+    const realNotes = fullProgression.map(d => degreeToRoot(d, sectionRoot));
 
-        const nextSec = structure.sections[index + 1];
-        const nextSectionRoot = nextSec ? (progressions[nextSec.name]?.root || sectionRoot) : sectionRoot;
+    const nextSec = structure.sections[index + 1];
+    const nextSectionRoot = nextSec ? (progressions[nextSec.name]?.root || sectionRoot) : sectionRoot;
 
-        // Visual feedback
-        Tone.Transport.schedule(() => {
-            const mood = sec.name === "bridge" ? "BRIDGE (solo lead!)" : currentDnaMood(params.imageParams);
-            console.log(`%c ▶ ${sec.name.toUpperCase()} | ${mood}`, "color: #191970; font-weight: bold;");
-        }, sec.startTime);
+    // Visual feedback
+    Tone.Transport.schedule(() => {
+        const mood = sec.name === "bridge" ? "BRIDGE (solo lead!)" : currentDnaMood(params.imageParams);
+        console.log(`%c ▶ ${sec.name.toUpperCase()} | ${mood}`, "color: #191970; font-weight: bold;");
+    }, sec.startTime);
 
-        // SCHEDULAZIONE
-        scheduleRhythm(sec, realNotes, instruments, combinedParams, rand, measureDur, nextSectionRoot, score);
-//scheduleLead(sec, realNotes, instruments, combinedParams, rand, measureDur, score);
-    });
+    // ============================================================
+    // SCHEDULAZIONE - passa balladMode a scheduleLead
+    // ============================================================
+    const balladMode = sec.balladMode || 0;  // 0 = non ballad, 1 = minore, 2 = maggiore
+    
+    scheduleRhythm(sec, realNotes, instruments, combinedParams, rand, measureDur, nextSectionRoot, score);
+    scheduleLead(sec, realNotes, instruments, combinedParams, rand, measureDur, score, balladMode);
+});
 
     return {
         totalDuration: structure.totalDuration,
