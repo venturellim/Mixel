@@ -18,7 +18,34 @@ import {
     padMotionEnhancer
 } from "../../utils/leadEnhancers.js";
 
-console.log("metalLeadEngine.js ver. 099.1 loaded");
+console.log("metalLeadEngine.js ver. 100 loaded");
+
+// Effetti principali per la lead ballad
+const balladChorus = new Tone.Chorus({
+    frequency: 0.25,
+    delayTime: 8,
+    depth: 0.6,
+    type: "sine"
+}).start();
+
+const balladDelay = new Tone.FeedbackDelay({
+    delayTime: "8n.",
+    feedback: 0.35,
+    wet: 0.45
+});
+
+// Shimmer parallelo (send FX)
+const shimmerPitch = new Tone.PitchShift({
+    pitch: 12,
+    windowSize: 0.2,
+    wet: 0.5
+});
+
+const shimmerReverb = new Tone.Reverb({
+    decay: 5.5,
+    wet: 0.55
+});
+
 
 function getStrictScale(root, isMinor) {
     const allNotes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
@@ -243,6 +270,33 @@ function schedulePad(section, progression, instruments, params, rand) {
 // ============================================================
 function scheduleBalladLead(section, progression, instruments, balladMeasureDur, score, isMinor) {
     const { guitarLead, leadVibrato } = instruments;
+    const shimmerSend = new Tone.Gain(0.35); // quanto shimmer vuoi
+
+    // Applica effetti SOLO in ballad (una volta sola)
+if (!guitarLead._balladFX) {
+
+    // Scollega la catena metal
+    guitarLead.disconnect();
+
+    // Catena principale (chorus + delay)
+    guitarLead.chain(
+        balladChorus,
+        balladDelay,
+        Tone.Destination
+    );
+
+    // Catena parallela (shimmer)
+    guitarLead.connect(shimmerSend);
+    shimmerSend.chain(
+        shimmerPitch,
+        shimmerReverb,
+        Tone.Destination
+    );
+
+    guitarLead._balladFX = true;
+}
+
+
     if (!guitarLead) return;
     
     const name = section.name?.toLowerCase() || "";
@@ -872,12 +926,12 @@ export function scheduleLead(section, progression, instruments, params, rand, me
         
         // Intro/Outro: solo Shimmer
         if (isIntro) {
-            scheduleShimmer(section, progression, instruments, balladMeasureDur, isMinor);
+            //scheduleShimmer(section, progression, instruments, balladMeasureDur, isMinor);
             return;
         }
         
         // Verse/Chorus: Shimmer + GuitarLead in contrappunto
-        scheduleShimmer(section, progression, instruments, balladMeasureDur, isMinor);
+        //scheduleShimmer(section, progression, instruments, balladMeasureDur, isMinor);
         scheduleBalladLead(section, progression, instruments, balladMeasureDur, score, isMinor);
         
         // Solo opzionale (se c'è sezione solo e complexity > 0.6)
