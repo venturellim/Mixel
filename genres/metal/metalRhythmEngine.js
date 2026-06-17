@@ -6,7 +6,7 @@ import {
     leadPadMelodicLibrary 
 } from "../../utils/leadLibraries.js";
 
-console.log("metalRhythmEngine.js ver. 032.3 loaded");
+console.log("metalRhythmEngine.js ver. 032.4 loaded");
 
 // ============================================================
 // FUNZIONI DI SUPPORTO PER LA BALLAD
@@ -266,13 +266,13 @@ console.log("🔍 instruments disponibili:", Object.keys(instruments));
 // ============================================================
 // 🔥 IMPOSTA I FLAG PER LA LEAD (se è un groove ballad)
 // ============================================================
+const originalBpm = Tone.Transport.bpm.value;
 const currentGrooveData = grooveCharacteristics[currentGroove];
 // Determina se la scala è minore (per gli accordi acustici)
 const isMinor = (params?.imageParams?.mood < 0.5) || params?.scaleType?.includes("minor");
 if (currentGrooveData?.acoustic === true) {
     section.isBallad = true;
     section.balladMode = isMinor ? 1 : 2;
-    const originalBpm = Tone.Transport.bpm.value;
     const balladBpm = 80;
     Tone.Transport.bpm.value = balladBpm;
     const balladMeasureDur = (60 / balladBpm) * 4;
