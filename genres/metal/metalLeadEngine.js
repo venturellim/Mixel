@@ -18,7 +18,7 @@ import {
     padMotionEnhancer
 } from "../../utils/leadEnhancers.js";
 
-console.log("metalLeadEngine.js ver. 099 loaded");
+console.log("metalLeadEngine.js ver. 099.1 loaded");
 
 function getStrictScale(root, isMinor) {
     const allNotes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
@@ -862,8 +862,11 @@ export function scheduleLead(section, progression, instruments, params, rand, me
     // ============================================================
     if (balladMode > 0) {
         const isMinor = (balladMode === 1);  // 1 = minore, 2 = maggiore
+        const originalBpm = Tone.Transport.bpm.value;
         const balladBpm = 80;
-        const balladMeasureDur = (60 / balladBpm) * 4;
+    Tone.Transport.bpm.value = balladBpm;
+    const balladMeasureDur = (60 / balladBpm) * 4;
+    const stepTime = balladMeasureDur / 16;
         
         console.log(`🎵 BALLAD LEAD - ${isMinor ? "minore" : "maggiore"} | ${section.name}`);
         
@@ -881,6 +884,9 @@ export function scheduleLead(section, progression, instruments, params, rand, me
         if (isSolo && params?.imageParams?.complexity > 0.6) {
             scheduleAcousticSolo(section, progression, instruments, params, rand, measureDur, score);
         }
+        
+        // Ripristina BPM originale
+    Tone.Transport.bpm.value = originalBpm;
         
         return;
     }

@@ -6,7 +6,7 @@ import {
     leadPadMelodicLibrary 
 } from "../../utils/leadLibraries.js";
 
-console.log("metalRhythmEngine.js ver. 032.2 loaded");
+console.log("metalRhythmEngine.js ver. 032.3 loaded");
 
 // ============================================================
 // FUNZIONI DI SUPPORTO PER LA BALLAD
@@ -272,6 +272,11 @@ const isMinor = (params?.imageParams?.mood < 0.5) || params?.scaleType?.includes
 if (currentGrooveData?.acoustic === true) {
     section.isBallad = true;
     section.balladMode = isMinor ? 1 : 2;
+    const originalBpm = Tone.Transport.bpm.value;
+    const balladBpm = 80;
+    Tone.Transport.bpm.value = balladBpm;
+    const balladMeasureDur = (60 / balladBpm) * 4;
+    const stepTime = balladMeasureDur / 16;
 } else {
     section.isBallad = false;
     section.balladMode = 0;
@@ -745,4 +750,7 @@ break;
             }, absoluteTime);
         }
     }
+    // Ripristina BPM originale
+    Tone.Transport.bpm.value = originalBpm;
+    
 }
