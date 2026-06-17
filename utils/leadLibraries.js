@@ -84,6 +84,81 @@ export const leadMelodicLibrary = {
     ]
 };
 
+// ============================================================
+// BALLAD LEAD LIBRARIES (complete)
+// ============================================================
+
+// 1. QUANDO SUONARE (pattern ritmici)
+export const balladLeadRhythmLibrary = {
+    guitarLead: {
+        intro: [[0, 8], [0, 4, 8, 12], [0, 6, 12]],
+        verse: [[0, 6, 12], [0, 4, 8, 12], [0, 8]],
+        prechorus: [[0, 4, 7, 11, 12], [0, 4, 8, 12], [0, 6, 12]],
+        chorus: [[0, 2, 4, 6, 8, 10, 12, 14], [0, 4, 8, 12], [0, 8, 12]],
+        bridge: [[0, 6, 12], [0, 8]],
+        solo: [[0, 4, 8, 12], [0, 3, 6, 9, 12]],
+        outro: [[0, 8], [0]]
+    },
+    shimmer: {
+        intro: [[0, 3, 6, 8, 10, 13], [0, 4, 8, 12], [0, 6, 10, 14]],
+        verse: [[0, 8], [0, 6, 12], [0]],
+        prechorus: [[0, 4, 8, 12], [0, 6, 10, 14]],
+        chorus: [[0, 8, 12], [0, 4, 8, 12], [0, 6, 12]],
+        bridge: [[0, 8], [0, 4, 8, 12]],
+        solo: [[0, 8], [0, 4, 8, 12]],
+        outro: [[0, 8], [0]]
+    }
+};
+
+// 2. COSA SUONARE (pattern melodici - gradi della scala)
+export const balladLeadMelodicLibrary = {
+    guitarLead: {
+        intro: [[0, 2, 4, 2, 0], [0, 3, 5, 3, 0], [0, 4, 2, 0]],
+        verse: [[0, 2, 4, 5, 4, 2, 0], [0, 3, 5, 6, 5, 3, 0], [0, 4, 6, 7, 6, 4, 0]],
+        prechorus: [[0, 2, 4, 6, 7, 6, 4, 2], [0, 3, 5, 7, 5, 3, 0], [0, 4, 6, 5, 4, 2, 0]],
+        chorus: [[0, 4, 7, 9, 7, 4, 0], [0, 5, 7, 9, 7, 5, 0], [0, 4, 6, 8, 6, 4, 0], [0, 4, 7, 5, 4, 2, 0]],
+        bridge: [[0, 4, 6, 4, 2, 0], [0, 3, 5, 3, 0]],
+        solo: [[0, 4, 7, 9, 7, 4, 0], [0, 5, 7, 10, 7, 5, 0], [0, 4, 6, 8, 10, 8, 6, 4]],
+        outro: [[0, 4, 2, 0], [0, 3, 2, 0]]
+    },
+    shimmer: {
+        // Shimmer suona gradi della scala per creare movimento melodico
+        intro: [
+            [0, 2, 4, 5, 4, 2, 0],     // movimento dolce
+            [0, 3, 5, 6, 5, 3, 0],     // più ampio
+            [0, 4, 6, 7, 6, 4, 0]      // più luminoso
+        ],
+        verse: [
+            [0, 2, 4, 2, 0],           // semplice
+            [0, 3, 5, 3, 0],           // un po' più mosso
+            [0, 4, 2, 0]               // discendente
+        ],
+        prechorus: [
+            [0, 2, 4, 6, 4, 2, 0],
+            [0, 3, 5, 7, 5, 3, 0],
+            [0, 4, 6, 5, 4, 2, 0]
+        ],
+        chorus: [
+            [0, 4, 7, 9, 7, 4, 0],     // epico
+            [0, 5, 7, 9, 7, 5, 0],     // più brillante
+            [0, 4, 6, 8, 6, 4, 0],     // più dolce
+            [0, 4, 7, 5, 4, 2, 0]      // discendente
+        ],
+        bridge: [
+            [0, 4, 6, 4, 2, 0],
+            [0, 3, 5, 3, 0]
+        ],
+        solo: [
+            [0, 4, 7, 9, 7, 4, 0],
+            [0, 5, 7, 10, 7, 5, 0]
+        ],
+        outro: [
+            [0, 4, 2, 0],
+            [0, 3, 2, 0]
+        ]
+    }
+};
+
 export const leadPadRhythmLibrary = {
     static: [[0], [0, 8], [0, 4, 8, 12]],
     motion: [[0, 2, 4, 6], [0, 3, 6, 9], [0, 4, 8, 12]],
