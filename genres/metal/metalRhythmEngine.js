@@ -645,7 +645,10 @@ case "epic_chorus_anthem":
 
     if (s === 4 || s === 12) snare = true;
 
+    if (s === 0) {
     try { drums.player("crash1").start(absoluteTime); } catch(e){}
+}
+
 break;
 case "epic_chorus_sustain":
     if (s === 0) {
@@ -659,7 +662,9 @@ case "epic_chorus_sustain":
 
     if (s === 8) snare = true;
 
+    if (s === 0) {
     try { drums.player("crash1").start(absoluteTime); } catch(e){}
+}
 break;
 case "epic_chorus_double":
     kick = true;

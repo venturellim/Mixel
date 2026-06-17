@@ -913,15 +913,18 @@ export function scheduleLead(section, progression, instruments, params, rand, me
     
     // ============================================================
     // BALLAD MODE
-    // ============================================================
+    // ===========================================================
+
+    // 🔥 RICONOSCIMENTO BALLAD
+    const isBallad = section.isBallad === true || balladMode > 0;
+    
     if (balladMode > 0) {
         const isMinor = (balladMode === 1);  // 1 = minore, 2 = maggiore
         const originalBpm = Tone.Transport.bpm.value;
         const balladBpm = 80;
     Tone.Transport.bpm.value = balladBpm;
     const balladMeasureDur = (60 / balladBpm) * 4;
-    const stepTime = balladMeasureDur / 16;
-        
+    const stepTime = balladMeasureDur / 16;        
         console.log(`🎵 BALLAD LEAD - ${isMinor ? "minore" : "maggiore"} | ${section.name}`);
         
         // Intro/Outro: solo Shimmer
