@@ -6,7 +6,7 @@ import {
     leadPadMelodicLibrary 
 } from "../../utils/leadLibraries.js";
 
-console.log("metalRhythmEngine.js ver. 030.4 loaded");
+console.log("metalRhythmEngine.js ver. 033 loaded");
 
 // ============================================================
 // FUNZIONI DI SUPPORTO PER LA BALLAD
@@ -102,177 +102,43 @@ function schedulePadInRhythm(section, progression, instruments, params, rand) {
 // FUNZIONE PRINCIPALE
 // ============================================================
 
-export function scheduleRhythm(section, progression, instruments, params, rand, measureDur, nextSectionRoot, score) {
+export function scheduleRhythm(section, progression, instruments, params, rand, measureDur, nextSectionRoot, score, songContext) {
+    
     const { drums, guitarPalm, guitarOpen, bass, acousticChordMajor, acousticChordMinor, StStringPad } = instruments;
+    
     if (!drums || !guitarPalm || !bass) return;
 
     const hasAcoustic = !!(acousticChordMajor || acousticChordMinor);
+    const activeMeasureDur = songContext.isBalladActive 
+    ? songContext.balladMeasureDur 
+    : measureDur;
     
     const name = section?.name?.toLowerCase() || "";
     const isChorus = name.includes("chorus") || (name.includes("solo") && !name.includes("pre"));
     const isPreChorus = name.includes("pre") || name.includes("bridge");
     const isIntro = name.includes("intro");
     const isOutro = name.includes("outro");
-    const stepTime = measureDur / 16;
+    const stepTime = activeMeasureDur / 16;
     const { energy = 0.5, brightness = 0.5, complexity = 0.5, texture = 0.5 } = params?.imageParams || {};
-
-    // Condizione per ballad: energy bassa (<0.4) e complexity bassa (<0.4)
-    const isBalladMode = hasAcoustic && energy < 0.4 && complexity < 0.4;
-    section.isBallad = isBalladMode;
-
-// ============================================================
-// BALLAD MODE — VERSIONE DEFINITIVA
-// ============================================================
-
-if (isBalladMode) {
-    console.log(`🎸 BALLAD MODE ACTIVE (Celestial Dream style) | ${section.name}`);
-
-    // Salva BPM originale e imposta BPM ballad (80)
-    const originalBpm = Tone.Transport.bpm.value;
-    const balladBpm = 80;
-    Tone.Transport.bpm.value = balladBpm;
-    const balladMeasureDur = (60 / balladBpm) * 4;
-    const stepTime = balladMeasureDur / 16;
     
-    // Determina se la ballad deve essere in scala minore o maggiore (dai parametri della foto)
-    // mood < 0.5 → minore (malinconico), mood > 0.5 → maggiore (più luminoso)
-    const isMinor = (params?.imageParams?.mood < 0.5) || params?.scaleType?.includes("minor");
-    console.log(`🎵 Ballad chord mode: ${isMinor ? "MINORE (malinconico)" : "MAGGIORE (luminoso)"}`);
-    
-    // Pattern di plettrate per la chitarra acustica
-    const strumPatterns = [
-        { steps: [0], type: "long" },           // Taaaa (accordo lungo)
-        { steps: [4, 5, 6, 7], type: "fast" },  // tatataaaa (4 note veloci)
-        { steps: [10, 11, 12], type: "medium" }, // tatataa (3 note)
-    ];
-    
-    // Pattern alternativi per variazione
-    const altPatterns = [
-        { steps: [0, 1, 2, 3], type: "fast", desc: "upbeat" },
-        { steps: [0], type: "long", desc: "sustain" },
-        { steps: [4, 5, 6], type: "medium", desc: "fill" },
-        { steps: [8, 9, 10, 11], type: "fast", desc: "chorus" }
-    ];
-    
-    for (let m = 0; m < section.measures; m++) {
-        const measureStart = section.startTime + m * balladMeasureDur;
-        const currentRoot = progression[m % progression.length];
-        
-        // Scegli pattern in base alla sezione
-        let usePattern;
-        const name = section.name?.toLowerCase() || "";
-        if (name.includes("chorus")) {
-            usePattern = altPatterns[Math.floor(rand() * altPatterns.length)];
-        } else {
-            usePattern = strumPatterns[Math.floor(rand() * strumPatterns.length)];
-        }
-        
-        // ============================================================
-        // 1. CHITARRA ACUSTICA — ACCORDO PRONTO (SINGOLO SAMPLE)
-        // ============================================================
-        // Scegli lo strumento accordo giusto in base a isMinor
-// Scegli lo strumento accordo giusto in base a isMinor
-const acousticChordInstrument = isMinor ? acousticChordMinor : acousticChordMajor;
-const chordName = normalizeNote(currentRoot, isMinor ? "acousticChordMinor" : "acousticChordMajor");
-
-if (acousticChordInstrument) {
-    usePattern.steps.forEach(step => {
-        const absoluteTime = measureStart + step * stepTime;
-        const duration = (usePattern.type === "long") ? "2n" : 
-                       (usePattern.type === "medium") ? "8n" : "16n";
-        const velocity = (usePattern.type === "long") ? 0.7 : 0.55;
-        
-        Tone.Transport.schedule(t => {
-            acousticChordInstrument.triggerAttackRelease(chordName, duration, t, velocity);
-            if (score) score.addNote("acousticChord", chordName + (isMinor ? "m" : ""), section.name);
-        }, absoluteTime);
-    });
-}
-        
-        // ============================================================
-        // 2. BATTERIA — MINIMA (solo kick e piatti)
-        // ============================================================
-        
-        // Kick all'inizio della misura
-        Tone.Transport.schedule(t => {
-            try { drums.player("kick").start(t); } catch(e){}
-            if (score) score.addNote("Drums", "Kick", section.name);
-        }, measureStart);
-        
-        // Kick a metà misura (ogni 2 misure)
-        if (m % 2 === 1) {
-            Tone.Transport.schedule(t => {
-                try { drums.player("kick").start(t); } catch(e){}
-                if (score) score.addNote("Drums", "Kick", section.name);
-            }, measureStart + balladMeasureDur * 0.5);
-        }
-        
-        // Crash all'inizio di intro o chorus
-        if (m === 0 && (name.includes("chorus") || name.includes("intro"))) {
-            Tone.Transport.schedule(t => {
-                try { drums.player("crash1").start(t); } catch(e){}
-                if (score) score.addNote("Drums", "Crash", section.name);
-            }, measureStart);
-        }
-        
-        // Ride delicato ogni 2 misure
-        if (m % 2 === 0 && energy > 0.3) {
-            Tone.Transport.schedule(t => {
-                try { drums.player("ride").start(t); } catch(e){} 
-                if (score) score.addNote("Drums", "Ride", section.name);
-            }, measureStart + balladMeasureDur * 0.75);
-        }
-        
-        // ============================================================
-        // 3. BASSO — SOSTIENE L'ARMONIA
-        // ============================================================
-        if (bass) {
-            // Nota fondamentale
-            const bassRoot = currentRoot;
-            const bassNote = normalizeNote(bassRoot, "bass") + "1";
-            
-
-Tone.Transport.schedule(t => {
-                bass.triggerAttackRelease(bassNote, "2n", t, 0.5);
-                if (score) score.addNote("Bass", bassNote, section.name);
-            }, measureStart);
-            
-            // Quinta (opzionale, per movimento)
-            const rawFifth = buildFifth(currentRoot);
-            const fifthBass = normalizeNote(rawFifth, "bass") + "1";
-            console.log("BASS ROOT:", bassNote, "FIFTH:", fifthBass);
-            Tone.Transport.schedule(t => {
-                bass.triggerAttackRelease(fifthBass, "4n", t, 0.4);
-                if (score) score.addNote("Bass", fifthBass, section.name);
-            }, measureStart + balladMeasureDur * 0.5);
-        }
-    }
-    
-    // Ripristina BPM originale
-    Tone.Transport.bpm.value = originalBpm;
-    
-    return;
-}  
-
 // ============================================================
     // METAL MODE NORMALE (groove completo)
     // ============================================================
 
     const grooves = {
-        intro: ["intro_ambient", "intro_heavy_strikes", "stratovarius_intro", "doom_slow", "cinematic_buildup", "industrial_static", "stoner_doom", "power_ballad"],
-        verse: ["gallop_classic", "gallop_triplet", "thrash_diamond", "palm_mute_chug", "motorhead_drive", "technical_sync", "meshuggah_ish", "breakdown_heavy", "jump_groove", "double_time_punk", "power_gallop", "groove_metal", "black_tremolo", "speed_metal", "death_roll", "thrash_skank",
-        "epic_verse_open",
-"epic_verse_ride",
-"epic_verse_pad"],
-        prechorus: ["pre_build_up", "driving_eights", "march_to_war", "suspended_tension", "epic_buildup", "power_ballad",
-        "epic_pre_timpani",
-"epic_pre_build",
-"epic_pre_sustain"],
-        bridge: ["pre_build_up", "driving_eights", "march_to_war", "suspended_tension", "epic_buildup", "power_ballad"],
-        chorus: ["helloween_speed", "chorus_pure_sustain", "chorus_sustain_hit", "anthem_half_time", "power_ride_groove", "double_kick_wall", "blast_beat_light", "epic_waltz_feel", "symphonic_blast", "power_gallop", "speed_metal", "power_ballad", "epic_chorus_anthem",
-"epic_chorus_sustain",
-"epic_chorus_double"]
-    };
+    intro: ["intro_ambient", "intro_heavy_strikes", "stratovarius_intro", "doom_slow", "cinematic_buildup", "industrial_static", "stoner_doom", "power_ballad",
+        "ballad_intro_strum", "ballad_intro_slow"],
+    verse: ["gallop_classic", "gallop_triplet", "thrash_diamond", "palm_mute_chug", "motorhead_drive", "technical_sync", "meshuggah_ish", "breakdown_heavy", "jump_groove", "double_time_punk", "power_gallop", "groove_metal", "black_tremolo", "speed_metal", "death_roll", "thrash_skank",
+        "epic_verse_open", "epic_verse_ride", "epic_verse_pad",
+        "ballad_verse_simple", "ballad_verse_strum"],
+    prechorus: ["pre_build_up", "driving_eights", "march_to_war", "suspended_tension", "epic_buildup", "power_ballad",
+        "epic_pre_timpani", "epic_pre_build", "epic_pre_sustain",
+        "ballad_pre_build"],
+    bridge: ["pre_build_up", "driving_eights", "march_to_war", "suspended_tension", "epic_buildup", "power_ballad"],
+    chorus: ["helloween_speed", "chorus_pure_sustain", "chorus_sustain_hit", "anthem_half_time", "power_ride_groove", "double_kick_wall", "blast_beat_light", "epic_waltz_feel", "symphonic_blast", "power_gallop", "speed_metal", "power_ballad", "epic_chorus_anthem",
+        "epic_chorus_sustain", "epic_chorus_double",
+        "ballad_chorus_full", "ballad_chorus_simple"]
+};
 
     const grooveCharacteristics = {
         "intro_ambient": { energy: 0.2, brightness: 0.3, complexity: 0.2 },
@@ -330,7 +196,50 @@ Tone.Transport.schedule(t => {
 // ===== EPIC CHORUS =====
 "epic_chorus_anthem": { energy: 0.8, brightness: 0.9, complexity: 0.4, tempo: "medium" },
 "epic_chorus_sustain":{ energy: 0.7, brightness: 0.9, complexity: 0.3, tempo: "slow" },
-"epic_chorus_double": { energy: 0.9, brightness: 0.8, complexity: 0.5, tempo: "fast" }
+"epic_chorus_double": { energy: 0.9, brightness: 0.8, complexity: 0.5, tempo: "fast" },
+// ===== BALLAD GROOVES =====
+"ballad_intro_strum": { 
+    energy: 0.22, brightness: 0.3, complexity: 0.2, 
+    pattern: [0, 4, 8, 12],
+    acoustic: true,
+    duration: "16n"
+},
+"ballad_intro_slow": { 
+    energy: 0.2, brightness: 0.3, complexity: 0.18, 
+    pattern: [0, 8],
+    acoustic: true,
+    duration: "8n"
+},
+"ballad_verse_simple": { 
+    energy: 0.28, brightness: 0.32, complexity: 0.22, 
+    pattern: [0, 6, 12],
+    acoustic: true,
+    duration: "16n"
+},
+"ballad_verse_strum": { 
+    energy: 0.3, brightness: 0.35, complexity: 0.25, 
+    pattern: [0, 4, 8, 12],
+    acoustic: true,
+    duration: "16n"
+},
+"ballad_pre_build": { 
+    energy: 0.35, brightness: 0.38, complexity: 0.3, 
+    pattern: [0, 4, 7, 11, 12],
+    acoustic: true,
+    duration: "16n"
+},
+"ballad_chorus_full": { 
+    energy: 0.4, brightness: 0.42, complexity: 0.35, 
+    pattern: [0, 2, 4, 6, 8, 10, 12, 14],
+    acoustic: true,
+    duration: "16n"
+},
+"ballad_chorus_simple": { 
+    energy: 0.35, brightness: 0.4, complexity: 0.3, 
+    pattern: [0, 8],
+    acoustic: true,
+    duration: "8n"
+}
     };
 
     const getGroove = (type, energy, brightness, complexity) => {
@@ -349,12 +258,41 @@ Tone.Transport.schedule(t => {
     };
 
     const currentGroove = getGroove(
-        isIntro ? "intro" : (isPreChorus ? "prechorus" : (isChorus ? "chorus" : "verse")),
-        energy, brightness, complexity
-    );
+    isIntro ? "intro" : (isPreChorus ? "prechorus" : (isChorus ? "chorus" : "verse")),
+    energy, brightness, complexity
+);
+
+// Verifica se il groove corrente è acustico (ballad)
+const currentGrooveData = grooveCharacteristics[currentGroove];
+
+const isMinor = (params?.imageParams?.mood < 0.5) || params?.scaleType?.includes("minor");
+
+// ============================================================
+// 🔥 IMPOSTA I FLAG PER LA LEAD (se è un groove ballad)
+// ============================================================
+// ============================================================
+    // ATTIVA BALLAD SE IL GROOVE È ACUSTICO
+    // ============================================================
+    if (currentGrooveData?.acoustic === true) {
+        
+        // Usa il contesto per attivare la ballad
+        songContext.activateBallad(isMinor);
+        section.isBallad = true;  // Mantieni per retrocompatibilità
+        section.balladMode = songContext.balladMode;
+        
+        // Usa il balladMeasureDur dal contesto
+        const balladMeasureDur = songContext.balladMeasureDur;
+        const stepTime = balladMeasureDur / 16;
+} else {
+    if (songContext.isBalladActive) {
+            songContext.deactivateBallad();
+            section.isBallad = false;
+            section.balladMode = 0;
+        }
+    }
 
     for (let m = 0; m < section.measures; m++) {
-        const measureStartTime = section.startTime + (m * measureDur);
+        const measureStartTime = section.startTime + (m * activeMeasureDur);
         const currentRoot = progression[m % progression.length];
         const nextRoot = progression[(m + 1) % progression.length] || nextSectionRoot;
         const isLastMeasure = (m === section.measures - 1);
@@ -367,10 +305,83 @@ Tone.Transport.schedule(t => {
             if (isChorus) {
                 inst = (rand() < 0.85) ? guitarOpen : guitarPalm;
             }
+            
+const isAcousticGroove = currentGrooveData?.acoustic === true;
 
             // LOGICA GROOVE
             switch (currentGroove) {
-                case "intro_ambient":
+            case "ballad_intro_strum":
+case "ballad_intro_slow":
+case "ballad_verse_simple":
+case "ballad_verse_strum":
+case "ballad_pre_build":
+case "ballad_chorus_full":
+case "ballad_chorus_simple":
+
+    // ============================================================
+    // BALLAD GROOVE - usa il pattern dal grooveCharacteristics
+    // ============================================================
+    
+    // 1. CHITARRA ACUSTICA (o elettrica clean)
+    const pattern = currentGrooveData.pattern;
+    if (pattern.includes(s)) {
+        playGuitar = true;
+        inst = isMinor ? acousticChordMinor : acousticChordMajor;
+        sustain = true;
+    }
+    
+    // 2. BASSO - sul kick (inizio misura)
+    if (s === 0 && bass) {
+        const bassNote = normalizeNote(currentRoot, "bass") + "1";
+        Tone.Transport.schedule(t => {
+            bass.triggerAttackRelease(bassNote, "2n", t, 0.5);
+            if (score) score.addNote("Bass", bassNote, section.name);
+        }, absoluteTime);
+    }
+    
+    // 3. BATTERIA - soft
+    // Kick all'inizio misura
+    if (s === 0) {
+        kick = true;
+    }
+    
+    // Ride ogni 2 misure (sul beat 8, che è metà misura)
+    if (s === 8 && m % 2 === 0) {
+        Tone.Transport.schedule(t => {
+            try { drums.player("ride").start(t); } catch(e){}
+            if (score) score.addNote("Drums", "Ride", section.name);
+        }, absoluteTime);
+    }
+    
+    // Snare leggera ogni 2 misure (sul beat 4 e 12)
+    if ((s === 4 || s === 12) && m % 2 === 0) {
+        snare = true;
+    }
+    
+    // 4. FILL ZONE PER BALLAD (rullata sul ride)
+    const isBalladFill = isLastMeasure && s >= 12 && complexity > 0.3;
+    
+    if (isBalladFill) {
+        // Rullata di ride invece del kick
+        // Ogni 2 sedicesimi (12, 14)
+        if (s === 12 || s === 14) {
+            Tone.Transport.schedule(t => {
+                try { drums.player("ride").start(t); } catch(e){}
+                if (score) score.addNote("Drums", "RideFill", section.name);
+            }, absoluteTime);
+        }
+        
+        // Un colpo di snare o tom leggero alla fine
+        if (s === 15) {
+            Tone.Transport.schedule(t => {
+                try { drums.player("snare").start(t, 0, 0.3); } catch(e){}  // velocity 0.3 = soft
+                if (score) score.addNote("Drums", "SnareFill", section.name);
+            }, absoluteTime);
+        }
+    }
+    break;
+    
+         case "intro_ambient":
                     if (s === 0) { playGuitar = true; inst = guitarOpen; sustain = true; kick = true; }
                     break;
                 case "intro_heavy_strikes":
@@ -641,7 +652,10 @@ case "epic_chorus_anthem":
 
     if (s === 4 || s === 12) snare = true;
 
+    if (s === 0) {
     try { drums.player("crash1").start(absoluteTime); } catch(e){}
+}
+
 break;
 case "epic_chorus_sustain":
     if (s === 0) {
@@ -655,7 +669,9 @@ case "epic_chorus_sustain":
 
     if (s === 8) snare = true;
 
+    if (s === 0) {
     try { drums.player("crash1").start(absoluteTime); } catch(e){}
+}
 break;
 case "epic_chorus_double":
     kick = true;
@@ -746,4 +762,7 @@ break;
             }, absoluteTime);
         }
     }
+    // Ripristina BPM originale
+    Tone.Transport.bpm.value = songContext.originalBpm;
+    
 }
