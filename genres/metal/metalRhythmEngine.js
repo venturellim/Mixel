@@ -692,7 +692,7 @@ if (s === 0 && m === 0) applyPreset(guitarLead, "epicVerse");
 
 break;
 case "epic_pre_sustain":
-if (s === 0 && m === 00) applyPreset(guitarLead, "epicVerse");
+if (s === 0 && m === 0) applyPreset(guitarLead, "epicVerse");
 
     if (s === 0) {
         playGuitar = true;
