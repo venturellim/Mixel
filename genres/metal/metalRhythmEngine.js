@@ -6,7 +6,7 @@ import {
     leadPadMelodicLibrary 
 } from "../../utils/leadLibraries.js";
 
-console.log("metalRhythmEngine.js ver. 033.2 test loaded");
+console.log("metalRhythmEngine.js ver. 034 loaded");
 
 // ============================================================
 // FUNZIONI DI SUPPORTO PER LA BALLAD
@@ -119,23 +119,31 @@ export function scheduleRhythm(section, progression, instruments, params, rand, 
     const { energy = 0.5, brightness = 0.5, complexity = 0.5, texture = 0.5 } = params?.imageParams || {};
     
 // ============================================================
-    // METAL MODE NORMALE (groove completo)
-    // ============================================================
-
-    const grooves = {
-    intro: ["intro_ambient", "intro_heavy_strikes", "stratovarius_intro", "doom_slow", "cinematic_buildup", "industrial_static", "stoner_doom", "power_ballad",
-        "ballad_intro_strum", "ballad_intro_slow"],
-    verse: ["gallop_classic", "gallop_triplet", "thrash_diamond", "palm_mute_chug", "motorhead_drive", "technical_sync", "meshuggah_ish", "breakdown_heavy", "jump_groove", "double_time_punk", "power_gallop", "groove_metal", "black_tremolo", "speed_metal", "death_roll", "thrash_skank",
-        "epic_verse_open", "epic_verse_ride", "epic_verse_pad",
-        "ballad_verse_simple", "ballad_verse_strum"],
-    prechorus: ["pre_build_up", "driving_eights", "march_to_war", "suspended_tension", "epic_buildup", "power_ballad",
-        "epic_pre_timpani", "epic_pre_build", "epic_pre_sustain",
-        "ballad_pre_build"],
+// GROOVES LISTS - METAL
+// ============================================================
+const metalGrooves = {
+    intro: ["intro_ambient", "intro_heavy_strikes", "stratovarius_intro", "doom_slow", "cinematic_buildup", "industrial_static", "stoner_doom", "power_ballad"],
+    verse: ["gallop_classic", "gallop_triplet", "thrash_diamond", "palm_mute_chug", "motorhead_drive", "technical_sync", "meshuggah_ish", "breakdown_heavy", "jump_groove", "double_time_punk", "power_gallop", "groove_metal", "black_tremolo", "speed_metal", "death_roll", "thrash_skank", "epic_verse_open", "epic_verse_ride", "epic_verse_pad"],
+    prechorus: ["pre_build_up", "driving_eights", "march_to_war", "suspended_tension", "epic_buildup", "power_ballad", "epic_pre_timpani", "epic_pre_build", "epic_pre_sustain"],
     bridge: ["pre_build_up", "driving_eights", "march_to_war", "suspended_tension", "epic_buildup", "power_ballad"],
-    chorus: ["helloween_speed", "chorus_pure_sustain", "chorus_sustain_hit", "anthem_half_time", "power_ride_groove", "double_kick_wall", "blast_beat_light", "epic_waltz_feel", "symphonic_blast", "power_gallop", "speed_metal", "power_ballad", "epic_chorus_anthem",
-        "epic_chorus_sustain", "epic_chorus_double",
-        "ballad_chorus_full", "ballad_chorus_simple"]
+    chorus: ["helloween_speed", "chorus_pure_sustain", "chorus_sustain_hit", "anthem_half_time", "power_ride_groove", "double_kick_wall", "blast_beat_light", "epic_waltz_feel", "symphonic_blast", "power_gallop", "speed_metal", "power_ballad", "epic_chorus_anthem", "epic_chorus_sustain", "epic_chorus_double"]
 };
+
+// ============================================================
+// GROOVES LISTS - BALLAD (SEPARATA)
+// ============================================================
+const balladGrooves = {
+    intro: ["ballad_intro_strum", "ballad_intro_slow"],
+    verse: ["ballad_verse_simple", "ballad_verse_strum"],
+    prechorus: ["ballad_pre_build"],
+    bridge: ["ballad_pre_build"],
+    chorus: ["ballad_chorus_full", "ballad_chorus_simple"],
+    outro: ["ballad_intro_slow"]
+};
+
+// ============================================================
+// GROOVE CHARACTERISTICS - METAL
+// ============================================================
 
     const grooveCharacteristics = {
         "intro_ambient": { energy: 0.2, brightness: 0.3, complexity: 0.2 },
@@ -193,106 +201,127 @@ export function scheduleRhythm(section, progression, instruments, params, rand, 
 // ===== EPIC CHORUS =====
 "epic_chorus_anthem": { energy: 0.8, brightness: 0.9, complexity: 0.4, tempo: "medium" },
 "epic_chorus_sustain":{ energy: 0.7, brightness: 0.9, complexity: 0.3, tempo: "slow" },
-"epic_chorus_double": { energy: 0.9, brightness: 0.8, complexity: 0.5, tempo: "fast" },
-// ===== BALLAD GROOVES =====
-"ballad_intro_strum": { 
-    energy: 0.22, brightness: 0.3, complexity: 0.2, 
-    pattern: [0, 4, 8, 12],
-    acoustic: true,
-    duration: "16n"
-},
-"ballad_intro_slow": { 
-    energy: 0.2, brightness: 0.3, complexity: 0.18, 
-    pattern: [0, 8],
-    acoustic: true,
-    duration: "8n"
-},
-"ballad_verse_simple": { 
-    energy: 0.28, brightness: 0.32, complexity: 0.22, 
-    pattern: [0, 6, 12],
-    acoustic: true,
-    duration: "16n"
-},
-"ballad_verse_strum": { 
-    energy: 0.3, brightness: 0.35, complexity: 0.25, 
-    pattern: [0, 4, 8, 12],
-    acoustic: true,
-    duration: "16n"
-},
-"ballad_pre_build": { 
-    energy: 0.35, brightness: 0.38, complexity: 0.3, 
-    pattern: [0, 4, 7, 11, 12],
-    acoustic: true,
-    duration: "16n"
-},
-"ballad_chorus_full": { 
-    energy: 0.4, brightness: 0.42, complexity: 0.35, 
-    pattern: [0, 2, 4, 6, 8, 10, 12, 14],
-    acoustic: true,
-    duration: "16n"
-},
-"ballad_chorus_simple": { 
-    energy: 0.35, brightness: 0.4, complexity: 0.3, 
-    pattern: [0, 8],
-    acoustic: true,
-    duration: "8n"
+"epic_chorus_double": { energy: 0.9, brightness: 0.8, complexity: 0.5, tempo: "fast" }
 }
     };
 
-    const getGroove = (type, energy, brightness, complexity) => {
-        const family = grooves[type] || grooves.verse;
-        const scoredGrooves = family.map(groove => {
-            const chars = grooveCharacteristics[groove];
-            if (!chars) return { name: groove, score: 0 };
-            const energyDiff = Math.abs(energy - chars.energy);
-            const brightnessDiff = Math.abs(brightness - chars.brightness);
-            const complexityDiff = Math.abs(complexity - chars.complexity);
-            let score = 1 - (energyDiff * 0.5 + brightnessDiff * 0.3 + complexityDiff * 0.2);
-            return { name: groove, score: score };
-        });
-        scoredGrooves.sort((a, b) => b.score - a.score);
-        return scoredGrooves[0].name;
-    };
+// ============================================================
+// GROOVE CHARACTERISTICS - BALLAD (SEPARATA)
+// ============================================================
+const balladGrooveCharacteristics = {
+    "ballad_intro_strum": { 
+        energy: 0.22, brightness: 0.3, complexity: 0.2, 
+        pattern: [0, 4, 8, 12],
+        duration: "16n"
+    },
+    "ballad_intro_slow": { 
+        energy: 0.2, brightness: 0.3, complexity: 0.18, 
+        pattern: [0, 8],
+        duration: "8n"
+    },
+    "ballad_verse_simple": { 
+        energy: 0.28, brightness: 0.32, complexity: 0.22, 
+        pattern: [0, 6, 12],
+        duration: "16n"
+    },
+    "ballad_verse_strum": { 
+        energy: 0.3, brightness: 0.35, complexity: 0.25, 
+        pattern: [0, 4, 8, 12],
+        duration: "16n"
+    },
+    "ballad_pre_build": { 
+        energy: 0.35, brightness: 0.38, complexity: 0.3, 
+        pattern: [0, 4, 7, 11, 12],
+        duration: "16n"
+    },
+    "ballad_chorus_full": { 
+        energy: 0.4, brightness: 0.42, complexity: 0.35, 
+        pattern: [0, 2, 4, 6, 8, 10, 12, 14],
+        duration: "16n"
+    },
+    "ballad_chorus_simple": { 
+        energy: 0.35, brightness: 0.4, complexity: 0.3, 
+        pattern: [0, 8],
+        duration: "8n"
+    }
+};
 
-    const currentGroove = getGroove(
-    isIntro ? "intro" : (isPreChorus ? "prechorus" : (isChorus ? "chorus" : "verse")),
-    energy, brightness, complexity
-);
-
-// Verifica se il groove corrente è acustico (ballad)
-const currentGrooveData = grooveCharacteristics[currentGroove];
-
+    // ============================================================
+// 1. DETERMINA SE È BALLAD
+// ============================================================
 const isMinor = (params?.imageParams?.mood < 0.5) || params?.scaleType?.includes("minor");
 
+// Determina se è ballad (come nella 030.4)
+// Puoi usare hasAcoustic + parametri, oppure un flag esterno
+const isBalladMode = hasAcoustic && energy < 0.4 && complexity < 0.4;
+
 // ============================================================
-// 🔥 IMPOSTA I FLAG PER LA LEAD (se è un groove ballad)
+// 2. SELEZIONA IL GROOVE IN BASE AL TIPO
 // ============================================================
-// ============================================================
-    // ATTIVA BALLAD SE IL GROOVE È ACUSTICO
-    // ============================================================
-    if (currentGrooveData?.acoustic === true) {
-        
-        // Usa il contesto per attivare la ballad
-        songContext.activateBallad(isMinor);
-        section.isBallad = true;  // Mantieni per retrocompatibilità
-        section.balladMode = songContext.balladMode;
-} else {
-    if (songContext.isBalladActive) {
-            songContext.deactivateBallad();
-            section.isBallad = false;
-            section.balladMode = 0;
-        }
-    }
+let currentGroove;
+let currentGrooveData;
+let isAcousticGroove;
+
+// Funzione di scoring per i metal groove
+const getMetalGroove = (type, energy, brightness, complexity) => {
+    const family = metalGrooves[type] || metalGrooves.verse;
+    const scoredGrooves = family.map(groove => {
+        const chars = grooveCharacteristics[groove];
+        if (!chars) return { name: groove, score: 0 };
+        const energyDiff = Math.abs(energy - chars.energy);
+        const brightnessDiff = Math.abs(brightness - chars.brightness);
+        const complexityDiff = Math.abs(complexity - chars.complexity);
+        let score = 1 - (energyDiff * 0.5 + brightnessDiff * 0.3 + complexityDiff * 0.2);
+        return { name: groove, score: score };
+    });
+    scoredGrooves.sort((a, b) => b.score - a.score);
+    return scoredGrooves[0].name;
+};
+
+if (isBalladMode) {
+    // ✅ USA LA LISTA BALLAD
+    const sectionType = isIntro ? "intro" : (isPreChorus ? "prechorus" : (isChorus ? "chorus" : "verse"));
+    const family = balladGrooves[sectionType] || balladGrooves.verse;
     
-    const activeMeasureDur = songContext.isBalladActive 
+    // Scegli random (o con logica) dalla lista ballad
+    currentGroove = family[Math.floor(rand() * family.length)];
+    currentGrooveData = balladGrooveCharacteristics[currentGroove];
+    isAcousticGroove = true;
+    
+    // Attiva ballad nel contesto
+    songContext.activateBallad(isMinor);
+    section.isBallad = true;
+    section.balladMode = songContext.balladMode;
+    
+} else {
+    // ✅ USA LA LISTA METAL
+    const sectionType = isIntro ? "intro" : (isPreChorus ? "prechorus" : (isChorus ? "chorus" : "verse"));
+    currentGroove = getMetalGroove(sectionType, energy, brightness, complexity);
+    currentGrooveData = grooveCharacteristics[currentGroove];
+    isAcousticGroove = false;
+    
+    // Disattiva ballad se attiva
+    if (songContext.isBalladActive) {
+        songContext.deactivateBallad();
+        section.isBallad = false;
+        section.balladMode = 0;
+    }
+}
+
+// ============================================================
+// 3. ORA CALCOLA IL TIMING
+// ============================================================
+const activeMeasureDur = songContext.isBalladActive 
     ? songContext.balladMeasureDur 
     : measureDur;
-    
-        const stepTime = activeMeasureDur / 16;
-        
-        console.log(`📍 ${section.name} | isBalladActive: ${songContext.isBalladActive} | activeMeasureDur: ${activeMeasureDur} | currentGroove: ${currentGroove}`);
+const stepTime = activeMeasureDur / 16;
 
-    for (let m = 0; m < section.measures; m++) {
+console.log(`📍 ${section.name} | isBalladActive: ${songContext.isBalladActive} | currentGroove: ${currentGroove} | isAcoustic: ${isAcousticGroove}`);
+
+// ============================================================
+// 4. LOOP DELLE MISURE
+// ============================================================
+for (let m = 0; m < section.measures; m++) {
         const measureStartTime = section.startTime + (m * activeMeasureDur);
         const currentRoot = progression[m % progression.length];
         const nextRoot = progression[(m + 1) % progression.length] || nextSectionRoot;
@@ -306,8 +335,6 @@ const isMinor = (params?.imageParams?.mood < 0.5) || params?.scaleType?.includes
             if (isChorus) {
                 inst = (rand() < 0.85) ? guitarOpen : guitarPalm;
             }
-            
-const isAcousticGroove = currentGrooveData?.acoustic === true;
 
             // LOGICA GROOVE
             switch (currentGroove) {
