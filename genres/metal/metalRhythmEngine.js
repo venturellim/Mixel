@@ -202,7 +202,6 @@ const balladGrooves = {
 "epic_chorus_anthem": { energy: 0.8, brightness: 0.9, complexity: 0.4, tempo: "medium" },
 "epic_chorus_sustain":{ energy: 0.7, brightness: 0.9, complexity: 0.3, tempo: "slow" },
 "epic_chorus_double": { energy: 0.9, brightness: 0.8, complexity: 0.5, tempo: "fast" }
-}
     };
 
 // ============================================================
