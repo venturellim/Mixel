@@ -340,146 +340,67 @@ for (let m = 0; m < section.measures; m++) {
 
             // LOGICA GROOVE
             switch (currentGroove) {
-            case "ballad_intro_strum":
-case "ballad_intro_slow":
-case "ballad_verse_simple":
-case "ballad_verse_strum":
-case "ballad_pre_build":
-if (s === 0) applyPreset(guitarLead, "balladVerse");
-
-// ============================================================
-    // BALLAD GROOVE - usa il pattern dal grooveCharacteristics
-    // ============================================================
-    
-    // 1. CHITARRA ACUSTICA (o elettrica clean)
-    const pattern = currentGrooveData.pattern;
-    if (pattern.includes(s)) {
-        playGuitar = true;
-        inst = isMinor ? acousticChordMinor : acousticChordMajor;
-        sustain = true;
-    }
-    
-    // 2. BASSO - sul kick (inizio misura)
-    if (s === 0 && bass) {
-        const bassNote = normalizeNote(currentRoot, "bass") + "1";
-        Tone.Transport.schedule(t => {
-            bass.triggerAttackRelease(bassNote, "2n", t, 0.5);
-            if (score) score.addNote("Bass", bassNote, section.name);
-        }, absoluteTime);
-    }
-    
-    // 3. BATTERIA - soft
-    // Kick all'inizio misura
-    if (s === 0) {
-        kick = true;
-    }
-    
-    // Ride ogni 2 misure (sul beat 8, che è metà misura)
-    if (s === 8 && m % 2 === 0) {
-        Tone.Transport.schedule(t => {
-            try { drums.player("ride").start(t); } catch(e){}
-            if (score) score.addNote("Drums", "Ride", section.name);
-        }, absoluteTime);
-    }
-    
-    // Snare leggera ogni 2 misure (sul beat 4 e 12)
-    if ((s === 4 || s === 12) && m % 2 === 0) {
-        snare = true;
-    }
-    
-    // 4. FILL ZONE PER BALLAD (rullata sul ride)
-    const isBalladFill = isLastMeasure && s >= 12 && complexity > 0.3;
-    
-    if (isBalladFill) {
-        // Rullata di ride invece del kick
-        // Ogni 2 sedicesimi (12, 14)
-        if (s === 12 || s === 14) {
+    case "ballad_intro_strum":
+    case "ballad_intro_slow":
+    case "ballad_verse_simple":
+    case "ballad_verse_strum":
+    case "ballad_pre_build":
+    case "ballad_chorus_full":
+    case "ballad_chorus_simple":
+        // 🔥 APPLICA PRESET SOLO ALL'INIZIO DELLA SEZIONE
+        if (s === 0 && m === 0) {
+            const isChorus = currentGroove.includes("chorus");
+            applyPreset(guitarLead, isChorus ? "balladChorus" : "balladVerse");
+        }
+        
+        // 1. CHITARRA ACUSTICA
+        const pattern = currentGrooveData.pattern;
+        if (pattern.includes(s)) {
+            playGuitar = true;
+            inst = isMinor ? acousticChordMinor : acousticChordMajor;
+            sustain = true;
+        }
+        
+        // 2. BASSO
+        if (s === 0 && bass) {
+            const bassNote = normalizeNote(currentRoot, "bass") + "1";
             Tone.Transport.schedule(t => {
-                try { drums.player("ride").start(t); } catch(e){}
-                if (score) score.addNote("Drums", "RideFill", section.name);
+                bass.triggerAttackRelease(bassNote, "2n", t, 0.5);
+                if (score) score.addNote("Bass", bassNote, section.name);
             }, absoluteTime);
         }
         
-        // Un colpo di snare o tom leggero alla fine
-        if (s === 15) {
-            Tone.Transport.schedule(t => {
-                try { drums.player("snare").start(t, 0, 0.3); } catch(e){}  // velocity 0.3 = soft
-                if (score) score.addNote("Drums", "SnareFill", section.name);
-            }, absoluteTime);
-        }
-    }
-    break;
-
-case "ballad_chorus_full":
-case "ballad_chorus_simple":
-if (s === 0) applyPreset(guitarLead, "balladChorus");
-
-
-    // ============================================================
-    // BALLAD GROOVE - usa il pattern dal grooveCharacteristics
-    // ============================================================
-    
-    // 1. CHITARRA ACUSTICA (o elettrica clean)
-    const pattern = currentGrooveData.pattern;
-    if (pattern.includes(s)) {
-        playGuitar = true;
-        inst = isMinor ? acousticChordMinor : acousticChordMajor;
-        sustain = true;
-    }
-    
-    // 2. BASSO - sul kick (inizio misura)
-    if (s === 0 && bass) {
-        const bassNote = normalizeNote(currentRoot, "bass") + "1";
-        Tone.Transport.schedule(t => {
-            bass.triggerAttackRelease(bassNote, "2n", t, 0.5);
-            if (score) score.addNote("Bass", bassNote, section.name);
-        }, absoluteTime);
-    }
-    
-    // 3. BATTERIA - soft
-    // Kick all'inizio misura
-    if (s === 0) {
-        kick = true;
-    }
-    
-    // Ride ogni 2 misure (sul beat 8, che è metà misura)
-    if (s === 8 && m % 2 === 0) {
-        Tone.Transport.schedule(t => {
-            try { drums.player("ride").start(t); } catch(e){}
-            if (score) score.addNote("Drums", "Ride", section.name);
-        }, absoluteTime);
-    }
-    
-    // Snare leggera ogni 2 misure (sul beat 4 e 12)
-    if ((s === 4 || s === 12) && m % 2 === 0) {
-        snare = true;
-    }
-    
-    // 4. FILL ZONE PER BALLAD (rullata sul ride)
-    const isBalladFill = isLastMeasure && s >= 12 && complexity > 0.3;
-    
-    if (isBalladFill) {
-        // Rullata di ride invece del kick
-        // Ogni 2 sedicesimi (12, 14)
-        if (s === 12 || s === 14) {
+        // 3. BATTERIA - soft
+        if (s === 0) kick = true;
+        
+        if (s === 8 && m % 2 === 0) {
             Tone.Transport.schedule(t => {
                 try { drums.player("ride").start(t); } catch(e){}
-                if (score) score.addNote("Drums", "RideFill", section.name);
+                if (score) score.addNote("Drums", "Ride", section.name);
             }, absoluteTime);
         }
         
-        // Un colpo di snare o tom leggero alla fine
-        if (s === 15) {
-            Tone.Transport.schedule(t => {
-                try { drums.player("snare").start(t, 0, 0.3); } catch(e){}  // velocity 0.3 = soft
-                if (score) score.addNote("Drums", "SnareFill", section.name);
-            }, absoluteTime);
+        if ((s === 4 || s === 12) && m % 2 === 0) snare = true;
+        
+        // 4. FILL
+        const isBalladFill = isLastMeasure && s >= 12 && complexity > 0.3;
+        if (isBalladFill) {
+            if (s === 12 || s === 14) {
+                Tone.Transport.schedule(t => {
+                    try { drums.player("ride").start(t); } catch(e){}
+                    if (score) score.addNote("Drums", "RideFill", section.name);
+                }, absoluteTime);
+            }
+            if (s === 15) {
+                Tone.Transport.schedule(t => {
+                    try { drums.player("snare").start(t, 0, 0.3); } catch(e){}
+                    if (score) score.addNote("Drums", "SnareFill", section.name);
+                }, absoluteTime);
+            }
         }
-    }
-    break;
-    
+        break;      
          case "intro_ambient":
-         if (s === 0) applyPreset(guitarLead, "ambientIntro");
+         if (s === 0 && m === 0) applyPreset(guitarLead, "ambientIntro");
 
                     if (s === 0) { playGuitar = true; inst = guitarOpen; sustain = true; kick = true; }
                     break;
@@ -492,7 +413,7 @@ if (s === 0) applyPreset(guitarLead, "balladChorus");
                     if (s === 12) snare = true;
                     break;
                 case "cinematic_buildup":
-                if (s === 0) applyPreset(guitarLead, "epicOutro");
+                if (s === 0 && m === 0) applyPreset(guitarLead, "epicOutro");
 
                     kick = true;
                     if (s === 0) { playGuitar = true; inst = guitarOpen; sustain = true; }
@@ -503,18 +424,18 @@ if (s === 0) applyPreset(guitarLead, "balladChorus");
                     if (s === 8) { playGuitar = true; inst = guitarOpen; sustain = true; }
                     break;
                 case "doom_slow":
-                    if (s === 0) applyPreset(guitarLead, "ambientIntro");
+                    if (s === 0 && m === 0) applyPreset(guitarLead, "ambientIntro");
 
                     if (s === 0 || s === 8) { playGuitar = true; inst = guitarOpen; sustain = true; kick = true; snare = (s === 8); }
                     break;
                 case "gallop_classic":
-                if (s === 0) applyPreset(guitarLead, "heavyVerse");
+                if (s === 0 && m === 0) applyPreset(guitarLead, "heavyVerse");
 
                     if (s % 4 !== 1) { playGuitar = true; inst = guitarPalm; kick = (s % 4 === 0); }
                     if (s === 4 || s === 12) snare = true;
                     break;
                 case "gallop_triplet":
-                if (s === 0) applyPreset(guitarLead, "heavyVerse");
+                if (s === 0 && m === 0) applyPreset(guitarLead, "heavyVerse");
 
                     const tripletBeat = Math.floor(s / 2.666);
                     if (tripletBeat % 3 !== 0) { playGuitar = true; inst = guitarPalm; }
@@ -522,19 +443,19 @@ if (s === 0) applyPreset(guitarLead, "balladChorus");
                     if (tripletBeat === 4 || tripletBeat === 10) snare = true;
                     break;
                 case "palm_mute_chug":
-                if (s === 0) applyPreset(guitarLead, "heavyVerse");
+                if (s === 0 && m === 0) applyPreset(guitarLead, "heavyVerse");
 
                     playGuitar = true; inst = guitarPalm; kick = (s % 2 === 0);
                     if (s === 4 || s === 12) snare = true;
                     break;
                 case "motorhead_drive":
-                if (s === 0) applyPreset(guitarLead, "heavyVerse");
+                if (s === 0 && m === 0) applyPreset(guitarLead, "heavyVerse");
 
                     playGuitar = true; inst = guitarPalm; kick = (s % 2 === 0); snare = (s === 4 || s === 12);
                     if (s === 0 || s === 8) inst = guitarOpen;
                     break;
                 case "technical_sync":
-                if (s === 0) applyPreset(guitarLead, "progVerse");
+                if (s === 0 && m === 0) applyPreset(guitarLead, "progVerse");
 
                     playGuitar = ([0, 3, 5, 8, 11, 13].includes(s));
                     kick = ([0, 4, 8, 12].includes(s)) || (s === 3 || s === 11);
@@ -542,14 +463,14 @@ if (s === 0) applyPreset(guitarLead, "balladChorus");
                     if (playGuitar) inst = guitarPalm;
                     break;
                 case "thrash_diamond":
-                if (s === 0) applyPreset(guitarLead, "heavyVerse");
+                if (s === 0 && m === 0) applyPreset(guitarLead, "heavyVerse");
 
                     if ([0, 2, 6].includes(s)) { playGuitar = true; inst = guitarPalm; kick = true; }
                     if (s === 4) { playGuitar = true; inst = guitarOpen; sustain = true; snare = true; }
                     if (s === 12) snare = true;
                     break;
                 case "meshuggah_ish":
-                if (s === 0) applyPreset(guitarLead, "progVerse");
+                if (s === 0 && m === 0) applyPreset(guitarLead, "progVerse");
 
                     if ([0, 3, 6, 8, 11, 14].includes(s)) { playGuitar = true; kick = true; }
                     if (s === 4 || s === 12) snare = true;
@@ -623,13 +544,13 @@ if (s === 0) applyPreset(guitarLead, "balladChorus");
                     if (s === 8) kick = true;
                     break;
                 case "symphonic_blast":
-                if (s === 0) applyPreset(guitarLead, "epicOutro");
+                if (s === 0 && m === 0) applyPreset(guitarLead, "epicOutro");
 
                     kick = true; snare = (s % 2 !== 0); playGuitar = (s % 4 === 0);
                     if (playGuitar) { inst = guitarOpen; sustain = true; }
                     break;
                 case "groove_metal":
-                if (s === 0) applyPreset(guitarLead, "heavyVerse");
+                if (s === 0 && m === 0) applyPreset(guitarLead, "heavyVerse");
 
                     playGuitar = ([0, 3, 5, 8, 10, 13].includes(s));
                     kick = ([0, 3, 5, 8, 10, 13].includes(s));
@@ -640,14 +561,14 @@ if (s === 0) applyPreset(guitarLead, "balladChorus");
                     playGuitar = true; inst = guitarPalm; kick = (s % 4 === 0 || s % 4 === 2); snare = (s === 4 || s === 12);
                     break;
                 case "stoner_doom":
-                if (s === 0) applyPreset(guitarLead, "ambientIntro");
+                if (s === 0 && m === 0) applyPreset(guitarLead, "ambientIntro");
 
                     if (s === 0) { playGuitar = true; inst = guitarOpen; sustain = true; kick = true; }
                     if (s === 8) { playGuitar = true; inst = guitarOpen; sustain = true; kick = true; snare = true; }
                     if (s === 4 || s === 12) snare = true;
                     break;
                 case "prog_odd":
-                if (s === 0) applyPreset(guitarLead, "progVerse");
+                if (s === 0 && m === 0) applyPreset(guitarLead, "progVerse");
 
                     const oddPattern = [0, 2, 4, 6, 9, 11, 13];
                     playGuitar = oddPattern.includes(s); kick = oddPattern.includes(s); snare = (s === 6 || s === 13);
@@ -662,7 +583,7 @@ if (s === 0) applyPreset(guitarLead, "balladChorus");
                     if (s === 6 || s === 14) snare = true;
                     break;
                 case "speed_metal":
-                if (s === 0) applyPreset(guitarLead, "heavyVerse");
+                if (s === 0 && m === 0) applyPreset(guitarLead, "heavyVerse");
 
                     kick = true; playGuitar = true; inst = guitarPalm; snare = (s === 4 || s === 12);
                     if (s % 4 === 0) inst = guitarOpen;
@@ -675,7 +596,7 @@ if (s === 0) applyPreset(guitarLead, "balladChorus");
                     if (buildupIntensity > 3) kick = true;
                     break;
                 case "death_roll":
-                if (s === 0) applyPreset(guitarLead, "heavyVerse");
+                if (s === 0 && m === 0) applyPreset(guitarLead, "heavyVerse");
 
                     kick = (s % 2 === 0); snare = (s % 4 === 1 || s % 4 === 3); playGuitar = (s % 2 === 0); inst = guitarPalm;
                     if (s % 8 === 0) inst = guitarOpen;
@@ -685,13 +606,13 @@ if (s === 0) applyPreset(guitarLead, "balladChorus");
                     if (s === 4 || s === 12) snare = true;
                     break;
                 case "thrash_skank":
-                if (s === 0) applyPreset(guitarLead, "heavyVerse");
+                if (s === 0 && m === 0) applyPreset(guitarLead, "heavyVerse");
 
                     playGuitar = true; inst = guitarPalm; kick = (s % 4 === 0 || s % 4 === 2); snare = (s % 4 === 1 || s % 4 === 3);
                     if (s % 8 === 0) inst = guitarOpen;
                     break;
                 case "djent":
-                if (s === 0) applyPreset(guitarLead, "progVerse");
+                if (s === 0 && m === 0) applyPreset(guitarLead, "progVerse");
 
                     playGuitar = ([0, 3, 5, 8, 11, 13].includes(s));
                     kick = ([0, 3, 5, 8, 11, 13].includes(s));
@@ -700,7 +621,7 @@ if (s === 0) applyPreset(guitarLead, "balladChorus");
                     if (s === 0 || s === 8) inst = guitarOpen;
                     break;
                     case "epic_verse_open":
-                    if (s === 0) applyPreset(guitarLead, "epicVerse");
+                    if (s === 0 && m === 0) applyPreset(guitarLead, "epicVerse");
 
     if (s === 0) {
         playGuitar = true;
@@ -716,7 +637,7 @@ if (s === 0) {
 
 break;
 case "epic_verse_ride":
-if (s === 0) applyPreset(guitarLead, "epicVerse");
+if (s === 0 && m === 0) applyPreset(guitarLead, "epicVerse");
 
     if (s === 0) {
     schedulePadInRhythm(section, progression, instruments, params, rand);}
@@ -731,7 +652,7 @@ if (s === 0) applyPreset(guitarLead, "epicVerse");
     try { drums.player("ride").start(absoluteTime); } catch(e){}
 break;
 case "epic_verse_pad":
-if (s === 0) applyPreset(guitarLead, "epicVerse");
+if (s === 0 && m === 0) applyPreset(guitarLead, "epicVerse");
 
     if (s === 0) {
         playGuitar = true;
@@ -746,7 +667,7 @@ if (s === 0) applyPreset(guitarLead, "epicVerse");
     if (s === 4 || s === 12) snare = true;
 break;
 case "epic_pre_timpani":
-if (s === 0) applyPreset(guitarLead, "epicVerse");
+if (s === 0 && m === 0) applyPreset(guitarLead, "epicVerse");
 
     if (s % 2 === 0) kick = true;
 
@@ -755,7 +676,7 @@ if (s === 0) applyPreset(guitarLead, "epicVerse");
 
 break;
 case "epic_pre_build":
-if (s === 0) applyPreset(guitarLead, "epicVerse");
+if (s === 0 && m === 0) applyPreset(guitarLead, "epicVerse");
 
     if (s % 4 === 0) {
         playGuitar = true;
@@ -771,7 +692,7 @@ if (s === 0) applyPreset(guitarLead, "epicVerse");
 
 break;
 case "epic_pre_sustain":
-if (s === 0) applyPreset(guitarLead, "epicVerse");
+if (s === 0 && m === 00) applyPreset(guitarLead, "epicVerse");
 
     if (s === 0) {
         playGuitar = true;
@@ -787,7 +708,7 @@ if (s === 0) applyPreset(guitarLead, "epicVerse");
 break;
 case "epic_chorus_anthem":
 
-if (s === 0) applyPreset(guitarLead, "epicChorus");
+if (s === 0 && m === 0) applyPreset(guitarLead, "epicChorus");
 
     if (s % 4 === 0) {
         playGuitar = true;
@@ -806,7 +727,7 @@ if (s === 0) applyPreset(guitarLead, "epicChorus");
 
 break;
 case "epic_chorus_sustain":
-if (s === 0) applyPreset(guitarLead, "epicChorus");
+if (s === 0 && m === 0) applyPreset(guitarLead, "epicChorus");
 
     if (s === 0) {
         playGuitar = true;
@@ -824,7 +745,7 @@ if (s === 0) applyPreset(guitarLead, "epicChorus");
 }
 break;
 case "epic_chorus_double":
-if (s === 0) applyPreset(guitarLead, "epicChorus");
+if (s === 0 && m === 0) applyPreset(guitarLead, "epicChorus");
 
     kick = true;
     if (s === 0) {
