@@ -6,7 +6,7 @@ import {
     leadPadMelodicLibrary 
 } from "../../utils/leadLibraries.js";
 
-console.log("metalRhythmEngine.js ver. 033.2 loaded");
+console.log("metalRhythmEngine.js ver. 033.2 test loaded");
 
 // ============================================================
 // FUNZIONI DI SUPPORTO PER LA BALLAD
@@ -289,6 +289,8 @@ const isMinor = (params?.imageParams?.mood < 0.5) || params?.scaleType?.includes
     : measureDur;
     
         const stepTime = activeMeasureDur / 16;
+        
+        console.log(`📍 ${section.name} | isBalladActive: ${songContext.isBalladActive} | activeMeasureDur: ${activeMeasureDur} | currentGroove: ${currentGroove}`);
 
     for (let m = 0; m < section.measures; m++) {
         const measureStartTime = section.startTime + (m * activeMeasureDur);
