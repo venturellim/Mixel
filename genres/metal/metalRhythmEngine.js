@@ -6,7 +6,7 @@ import {
     leadPadMelodicLibrary 
 } from "../../utils/leadLibraries.js";
 
-console.log("metalRhythmEngine.js ver. 033.1 loaded");
+console.log("metalRhythmEngine.js ver. 033.2 loaded");
 
 // ============================================================
 // FUNZIONI DI SUPPORTO PER LA BALLAD
@@ -109,16 +109,13 @@ export function scheduleRhythm(section, progression, instruments, params, rand, 
     if (!drums || !guitarPalm || !bass) return;
 
     const hasAcoustic = !!(acousticChordMajor || acousticChordMinor);
-    const activeMeasureDur = songContext.isBalladActive 
-    ? songContext.balladMeasureDur 
-    : measureDur;
     
     const name = section?.name?.toLowerCase() || "";
     const isChorus = name.includes("chorus") || (name.includes("solo") && !name.includes("pre"));
     const isPreChorus = name.includes("pre") || name.includes("bridge");
     const isIntro = name.includes("intro");
     const isOutro = name.includes("outro");
-    const stepTime = activeMeasureDur / 16;
+    
     const { energy = 0.5, brightness = 0.5, complexity = 0.5, texture = 0.5 } = params?.imageParams || {};
     
 // ============================================================
@@ -279,10 +276,6 @@ const isMinor = (params?.imageParams?.mood < 0.5) || params?.scaleType?.includes
         songContext.activateBallad(isMinor);
         section.isBallad = true;  // Mantieni per retrocompatibilità
         section.balladMode = songContext.balladMode;
-        
-        // Usa il balladMeasureDur dal contesto
-        const balladMeasureDur = songContext.balladMeasureDur;
-        const stepTime = balladMeasureDur / 16;
 } else {
     if (songContext.isBalladActive) {
             songContext.deactivateBallad();
@@ -290,6 +283,12 @@ const isMinor = (params?.imageParams?.mood < 0.5) || params?.scaleType?.includes
             section.balladMode = 0;
         }
     }
+    
+    const activeMeasureDur = songContext.isBalladActive 
+    ? songContext.balladMeasureDur 
+    : measureDur;
+    
+        const stepTime = activeMeasureDur / 16;
 
     for (let m = 0; m < section.measures; m++) {
         const measureStartTime = section.startTime + (m * activeMeasureDur);
