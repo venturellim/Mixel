@@ -6,7 +6,7 @@ import {
     leadPadMelodicLibrary 
 } from "../../utils/leadLibraries.js";
 
-console.log("metalRhythmEngine.js ver. 033 loaded");
+console.log("metalRhythmEngine.js ver. 033.1 loaded");
 
 // ============================================================
 // FUNZIONI DI SUPPORTO PER LA BALLAD
@@ -725,42 +725,44 @@ break;
                 }, absoluteTime);
             }
 
-            // SCHEDULAZIONE BATTERIA
-            Tone.Transport.schedule(time => {
-                let playedHiHat = false;
-                let playedRide = false;
-                let playedCrash = false;
+// SCHEDULAZIONE BATTERIA - SOLO SE NON È UN GROOVE ACUSTICO
+if (!isAcousticGroove) {
+    Tone.Transport.schedule(time => {
+        let playedHiHat = false;
+        let playedRide = false;
+        let playedCrash = false;
 
-                if (kick) drums.player("kick").start(time);
-                if (snare) drums.player("snare").start(time);
-                
-                if (s % 2 === 0 && !isLastMeasure) {
-                    try { 
-                        const cymbal = (isChorus || energy > 0.7) ? "ride" : "hihat";
-                        drums.player(cymbal).start(time); 
-                        if (cymbal === "ride") playedRide = true; else playedHiHat = true;
-                    } catch(e) {}
-                }
-                
-                if (s === 0 && m === 0) { 
-                    try { drums.player("crash1").start(time); playedCrash = true; } catch(e) {} 
-                }
-
-                if (isFillZone) { 
-                    try { drums.player("tom" + (s - 11)).start(time); } catch(e) {} 
-                }
-
-                Tone.Draw.schedule(() => {
-                    if (score) {
-                        if (kick) score.addNote("Drums", "Kick", section.name);
-                        if (snare) score.addNote("Drums", "Snare", section.name);
-                        if (playedHiHat || playedRide) score.addNote("Drums", "HiHat", section.name);
-                        if (playedCrash) score.addNote("Drums", "Crash", section.name);
-                        if (isFillZone) score.addNote("Drums", "Snare", section.name);
-                    }
-                }, time);
-            }, absoluteTime);
+        if (kick) drums.player("kick").start(time);
+        if (snare) drums.player("snare").start(time);
+        
+        if (s % 2 === 0 && !isLastMeasure) {
+            try { 
+                const cymbal = (isChorus || energy > 0.7) ? "ride" : "hihat";
+                drums.player(cymbal).start(time); 
+                if (cymbal === "ride") playedRide = true; else playedHiHat = true;
+            } catch(e) {}
         }
+        
+        if (s === 0 && m === 0) { 
+            try { drums.player("crash1").start(time); playedCrash = true; } catch(e) {} 
+        }
+
+        if (isFillZone) { 
+            try { drums.player("tom" + (s - 11)).start(time); } catch(e) {} 
+        }
+
+        Tone.Draw.schedule(() => {
+            if (score) {
+                if (kick) score.addNote("Drums", "Kick", section.name);
+                if (snare) score.addNote("Drums", "Snare", section.name);
+                if (playedHiHat || playedRide) score.addNote("Drums", "HiHat", section.name);
+                if (playedCrash) score.addNote("Drums", "Crash", section.name);
+                if (isFillZone) score.addNote("Drums", "Snare", section.name);
+            }
+        }, time);
+    }, absoluteTime);
+}
+    }
     }
     // Ripristina BPM originale
     Tone.Transport.bpm.value = songContext.originalBpm;
