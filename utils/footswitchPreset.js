@@ -1,9 +1,11 @@
 // footswitchPreset.js — Extreme FX Rack + Presets (Petrucci Style)
 // Versione con inizializzazione lazy per evitare problemi di caricamento
 
+// footswitchPreset.js — Extreme FX Rack + Presets + Controller (Versione Unificata)
+
 import * as Tone from "https://esm.sh/tone";
 
-console.log("footswitchPreset.js ver. 003.2 loaded");
+console.log("footswitchPreset.js ver. 004 loaded");
 
 // ============================================================
 // STATO INTERNO — INIZIALIZZAZIONE LAZY
@@ -12,6 +14,7 @@ console.log("footswitchPreset.js ver. 003.2 loaded");
 let fxRack = null;
 let footswitchPresets = null;
 let initialized = false;
+let isPanelOpen = false;
 
 // ============================================================
 // 🎛 FX RACK — INIZIALIZZAZIONE
@@ -107,7 +110,6 @@ export function initFxRack() {
         
     } catch (error) {
         console.error("❌ Errore durante l'inizializzazione del FX Rack:", error);
-        // Crea oggetti vuoti per evitare crash
         fxRack = {};
         footswitchPresets = {};
         initialized = true;
@@ -119,7 +121,6 @@ export function initFxRack() {
 // ============================================================
 
 export function applyPreset(guitarLead, presetName) {
-    // Inizializza solo quando serve
     initFxRack();
     
     if (!guitarLead) {
@@ -129,7 +130,6 @@ export function applyPreset(guitarLead, presetName) {
     
     if (!footswitchPresets || !footswitchPresets[presetName]) {
         console.warn(`⚠️ applyPreset: preset "${presetName}" non trovato`);
-        // Se non c'è preset, collega diretto
         try {
             guitarLead.disconnect();
             guitarLead.connect(Tone.Destination);
@@ -138,28 +138,22 @@ export function applyPreset(guitarLead, presetName) {
     }
 
     try {
-        // Scollega tutto
         guitarLead.disconnect();
-
-        // Costruisci la catena
         const chain = footswitchPresets[presetName]
             .map(name => fxRack[name])
             .filter(fx => fx !== undefined && fx !== null);
 
         if (chain.length === 0) {
-            // Se la catena è vuota, collega diretto
             guitarLead.connect(Tone.Destination);
             console.log(`🎛 Preset ${presetName}: clean (no FX)`);
             return;
         }
 
-        // Applica routing
         guitarLead.chain(...chain, Tone.Destination);
         console.log(`🎛 Preset ${presetName}: ${chain.map(fx => fx.constructor?.name || 'FX').join(' → ')}`);
         
     } catch(error) {
         console.error(`❌ Errore applicazione preset ${presetName}:`, error);
-        // Fallback: collega diretto
         try {
             guitarLead.disconnect();
             guitarLead.connect(Tone.Destination);
@@ -168,146 +162,15 @@ export function applyPreset(guitarLead, presetName) {
 }
 
 // ============================================================
-// UTILITY — PER DEBUG
-// ============================================================
-
-export function getFxRackStatus() {
-    return {
-        initialized,
-        effectsCount: fxRack ? Object.keys(fxRack).length : 0,
-        presetsCount: footswitchPresets ? Object.keys(footswitchPresets).length : 0,
-    };
-}
-
-// ============================================================
-// CLASSIFICAZIONE GROOVE → FAMIGLIA (opzionale)
-// ============================================================
-
-export const grooveFamilies = {
-    // HEAVY METAL
-    gallop_classic: "heavy",
-    gallop_triplet: "heavy",
-    thrash_diamond: "heavy",
-    palm_mute_chug: "heavy",
-    motorhead_drive: "heavy",
-    speed_metal: "heavy",
-    death_roll: "heavy",
-    thrash_skank: "heavy",
-    groove_metal: "heavy",
-
-    // EPIC METAL
-    epic_verse_open: "epic",
-    epic_verse_ride: "epic",
-    epic_verse_pad: "epic",
-    epic_pre_timpani: "epic",
-    epic_pre_build: "epic",
-    epic_pre_sustain: "epic",
-    epic_chorus_anthem: "epic",
-    epic_chorus_sustain: "epic",
-    epic_chorus_double: "epic",
-    symphonic_blast: "epic",
-    cinematic_buildup: "epic",
-
-    // PROG METAL
-    technical_sync: "prog",
-    meshuggah_ish: "prog",
-    prog_odd: "prog",
-    djent: "prog",
-
-    // BALLAD
-    ballad_intro_strum: "ballad",
-    ballad_intro_slow: "ballad",
-    ballad_verse_simple: "ballad",
-    ballad_verse_strum: "ballad",
-    ballad_pre_build: "ballad",
-    ballad_chorus_full: "ballad",
-    ballad_chorus_simple: "ballad",
-
-    // AMBIENT / CLEAN
-    intro_ambient: "ambient",
-    stoner_doom: "ambient",
-    doom_slow: "ambient"
-};
-
-// ============================================================
-// MAPPATURA FAMIGLIA + SEZIONE → PRESET
-// ============================================================
-
-export const familyPresetMap = {
-    heavy: {
-        intro: "heavyIntro",
-        verse: "heavyVerse",
-        prechorus: "heavyVerse",
-        chorus: "heavyChorus",
-        solo: "heavySolo",
-        outro: "heavyOutro"
-    },
-    epic: {
-        intro: "epicIntro",
-        verse: "epicVerse",
-        prechorus: "epicVerse",
-        chorus: "epicChorus",
-        solo: "epicSolo",
-        outro: "epicOutro"
-    },
-    prog: {
-        intro: "progIntro",
-        verse: "progVerse",
-        prechorus: "progVerse",
-        chorus: "progChorus",
-        solo: "progSolo",
-        outro: "progOutro"
-    },
-    ballad: {
-        intro: "balladVerse",
-        verse: "balladVerse",
-        prechorus: "balladVerse",
-        chorus: "balladChorus",
-        solo: "balladChorus",
-        outro: "balladOutro"
-    },
-    ambient: {
-        intro: "ambientIntro",
-        verse: "ambientPad",
-        prechorus: "ambientPad",
-        chorus: "ambientIntro",
-        solo: "ambientPad",
-        outro: "ambientIntro"
-    }
-};
-
-// ============================================================
-// FUNZIONE AUTOMATICA: GROOVE → PRESET
-// ============================================================
-
-export function getPresetForGroove(grooveName, sectionName) {
-    const family = grooveFamilies[grooveName] || "heavy";
-    
-    const sec = sectionName.toLowerCase();
-    let secType = "verse";
-    if (sec.includes("intro")) secType = "intro";
-    else if (sec.includes("pre")) secType = "prechorus";
-    else if (sec.includes("chorus")) secType = "chorus";
-    else if (sec.includes("solo") || sec.includes("bridge")) secType = "solo";
-    else if (sec.includes("outro")) secType = "outro";
-    
-    return familyPresetMap[family][secType];
-}
-
-// ============================================================
 // 🎛️ CONTROLLO PARAMETRI IN TEMPO REALE
 // ============================================================
 
-/**
- * Ottiene i parametri modificabili per un effetto
- */
 export function getEffectParams(effectName) {
     initFxRack();
     
     const effect = fxRack[effectName];
     if (!effect) return null;
     
-    // Mappa dei parametri modificabili per ogni effetto
     const paramMap = {
         chorus: {
             frequency: { min: 0.1, max: 10, step: 0.1, label: "Rate", unit: "Hz" },
@@ -370,9 +233,6 @@ export function getEffectParams(effectName) {
     return paramMap[effectName] || null;
 }
 
-/**
- * Imposta un parametro di un effetto in tempo reale
- */
 export function setEffectParam(effectName, paramName, value) {
     initFxRack();
     
@@ -383,18 +243,13 @@ export function setEffectParam(effectName, paramName, value) {
     }
     
     try {
-        // Per parametri che sono AudioParam
         if (effect[paramName] && typeof effect[paramName].value !== 'undefined') {
             effect[paramName].value = value;
             return true;
-        }
-        // Per parametri che sono metodi
-        else if (typeof effect[paramName] === 'function') {
+        } else if (typeof effect[paramName] === 'function') {
             effect[paramName](value);
             return true;
-        }
-        // Per parametri annidati (es. effect.wet.value)
-        else if (paramName.includes('.')) {
+        } else if (paramName.includes('.')) {
             const parts = paramName.split('.');
             let target = effect;
             for (let i = 0; i < parts.length - 1; i++) {
@@ -407,19 +262,14 @@ export function setEffectParam(effectName, paramName, value) {
                 return true;
             }
         }
-        
         console.warn(`⚠️ Parametro "${paramName}" non trovato su "${effectName}"`);
         return false;
-        
     } catch(e) {
         console.warn(`⚠️ Errore impostazione ${effectName}.${paramName}:`, e);
         return false;
     }
 }
 
-/**
- * Ottiene il valore corrente di un parametro
- */
 export function getEffectParam(effectName, paramName) {
     initFxRack();
     
@@ -446,10 +296,321 @@ export function getEffectParam(effectName, paramName) {
     }
 }
 
-/**
- * Ottiene tutti gli effetti disponibili
- */
 export function getAvailableEffects() {
     initFxRack();
     return Object.keys(fxRack || {});
+}
+
+// ============================================================
+// 🎛️ UI — CREAZIONE PANNELLO CONTROLLI
+// ============================================================
+
+export function initFxController() {
+    console.log("🎛️ Inizializzazione FX Controller...");
+    
+    if (!document.getElementById('fx-toggle')) {
+        createUI();
+    }
+    
+    setupEventListeners();
+    buildEffectControls();
+    
+    console.log("✅ FX Controller pronto!");
+}
+
+function createUI() {
+    const toggle = document.createElement('button');
+    toggle.id = 'fx-toggle';
+    toggle.textContent = '🎛️';
+    toggle.title = 'Toggle FX Panel';
+    document.body.appendChild(toggle);
+    
+    const panel = document.createElement('div');
+    panel.id = 'fx-panel';
+    panel.style.display = 'none';
+    panel.innerHTML = `
+        <div class="fx-header">
+            <h3>🎛️ FX Controls</h3>
+            <button id="fx-close">✕</button>
+        </div>
+        <div class="fx-search">
+            <input type="text" id="fx-search" placeholder="🔍 Cerca effetto...">
+        </div>
+        <div id="fx-content"></div>
+        <div class="fx-footer">
+            <button id="fx-reset">🔄 Reset All</button>
+            <span id="fx-status">✅ Live</span>
+        </div>
+    `;
+    document.body.appendChild(panel);
+}
+
+function setupEventListeners() {
+    const toggle = document.getElementById('fx-toggle');
+    const panel = document.getElementById('fx-panel');
+    const close = document.getElementById('fx-close');
+    const search = document.getElementById('fx-search');
+    const reset = document.getElementById('fx-reset');
+    
+    toggle.addEventListener('click', () => {
+        isPanelOpen = !isPanelOpen;
+        panel.style.display = isPanelOpen ? 'flex' : 'none';
+        panel.classList.toggle('open', isPanelOpen);
+        toggle.textContent = isPanelOpen ? '✕' : '🎛️';
+    });
+    
+    close.addEventListener('click', () => {
+        isPanelOpen = false;
+        panel.style.display = 'none';
+        panel.classList.remove('open');
+        toggle.textContent = '🎛️';
+    });
+    
+    search.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase();
+        document.querySelectorAll('.fx-group').forEach(group => {
+            const name = group.dataset.effect.toLowerCase();
+            group.style.display = name.includes(query) ? 'block' : 'none';
+        });
+    });
+    
+    reset.addEventListener('click', resetAllEffects);
+}
+
+function buildEffectControls() {
+    const container = document.getElementById('fx-content');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    const effects = getAvailableEffects();
+    const sortedEffects = effects.sort();
+    const effectsWithParams = sortedEffects.filter(name => getEffectParams(name) !== null);
+    
+    if (effectsWithParams.length === 0) {
+        container.innerHTML = '<div class="fx-no-results">Nessun effetto disponibile</div>';
+        return;
+    }
+    
+    effectsWithParams.forEach(effectName => {
+        const params = getEffectParams(effectName);
+        const group = createEffectGroup(effectName, params);
+        container.appendChild(group);
+    });
+}
+
+function createEffectGroup(effectName, params) {
+    const group = document.createElement('div');
+    group.className = 'fx-group';
+    group.dataset.effect = effectName;
+    
+    const header = document.createElement('div');
+    header.className = 'fx-group-header';
+    header.innerHTML = `
+        <h4>${formatEffectName(effectName)}</h4>
+        <button class="fx-group-toggle active">▼</button>
+    `;
+    
+    const body = document.createElement('div');
+    body.className = 'fx-group-body open';
+    
+    Object.entries(params).forEach(([paramName, paramConfig]) => {
+        const paramDiv = document.createElement('div');
+        paramDiv.className = 'param';
+        
+        const currentValue = getEffectParam(effectName, paramName);
+        const value = currentValue !== null ? currentValue : paramConfig.min;
+        
+        paramDiv.innerHTML = `
+            <label>${paramConfig.label}</label>
+            <input type="range" 
+                   min="${paramConfig.min}" 
+                   max="${paramConfig.max}" 
+                   step="${paramConfig.step}" 
+                   value="${value}"
+                   data-effect="${effectName}"
+                   data-param="${paramName}">
+            <span class="value">${Number(value).toFixed(2)}</span>
+            ${paramConfig.unit ? `<span class="unit">${paramConfig.unit}</span>` : ''}
+        `;
+        
+        const slider = paramDiv.querySelector('input[type="range"]');
+        const valueDisplay = paramDiv.querySelector('.value');
+        
+        slider.addEventListener('input', () => {
+            const val = parseFloat(slider.value);
+            valueDisplay.textContent = val.toFixed(2);
+            setEffectParam(effectName, paramName, val);
+            
+            const status = document.getElementById('fx-status');
+            if (status) {
+                status.textContent = '⚡ Live';
+                status.className = '';
+                setTimeout(() => {
+                    status.textContent = '✅ Live';
+                    status.className = '';
+                }, 500);
+            }
+        });
+        
+        body.appendChild(paramDiv);
+    });
+    
+    const toggleBtn = header.querySelector('.fx-group-toggle');
+    toggleBtn.addEventListener('click', () => {
+        body.classList.toggle('open');
+        toggleBtn.classList.toggle('active');
+    });
+    
+    group.appendChild(header);
+    group.appendChild(body);
+    return group;
+}
+
+function resetAllEffects() {
+    document.querySelectorAll('.fx-group .param input[type="range"]').forEach(slider => {
+        const effectName = slider.dataset.effect;
+        const paramName = slider.dataset.param;
+        const defaultValue = parseFloat(slider.min);
+        
+        slider.value = defaultValue;
+        const valueDisplay = slider.parentElement.querySelector('.value');
+        if (valueDisplay) valueDisplay.textContent = defaultValue.toFixed(2);
+        setEffectParam(effectName, paramName, defaultValue);
+    });
+    
+    const status = document.getElementById('fx-status');
+    if (status) {
+        status.textContent = '🔄 Reset!';
+        status.className = 'off';
+        setTimeout(() => {
+            status.textContent = '✅ Live';
+            status.className = '';
+        }, 1000);
+    }
+}
+
+function formatEffectName(name) {
+    return name
+        .replace(/([A-Z])/g, ' $1')
+        .replace(/(\d+)/g, ' $1')
+        .replace(/^./, str => str.toUpperCase())
+        .trim();
+}
+
+// ============================================================
+// UTILITY
+// ============================================================
+
+export function getFxRackStatus() {
+    return {
+        initialized,
+        effectsCount: fxRack ? Object.keys(fxRack).length : 0,
+        presetsCount: footswitchPresets ? Object.keys(footswitchPresets).length : 0,
+    };
+}
+
+export function toggleFxPanel() {
+    const toggle = document.getElementById('fx-toggle');
+    if (toggle) toggle.click();
+}
+
+export function isFxPanelOpen() {
+    return isPanelOpen;
+}
+
+// ============================================================
+// CLASSIFICAZIONE GROOVE → FAMIGLIA
+// ============================================================
+
+export const grooveFamilies = {
+    gallop_classic: "heavy",
+    gallop_triplet: "heavy",
+    thrash_diamond: "heavy",
+    palm_mute_chug: "heavy",
+    motorhead_drive: "heavy",
+    speed_metal: "heavy",
+    death_roll: "heavy",
+    thrash_skank: "heavy",
+    groove_metal: "heavy",
+    epic_verse_open: "epic",
+    epic_verse_ride: "epic",
+    epic_verse_pad: "epic",
+    epic_pre_timpani: "epic",
+    epic_pre_build: "epic",
+    epic_pre_sustain: "epic",
+    epic_chorus_anthem: "epic",
+    epic_chorus_sustain: "epic",
+    epic_chorus_double: "epic",
+    symphonic_blast: "epic",
+    cinematic_buildup: "epic",
+    technical_sync: "prog",
+    meshuggah_ish: "prog",
+    prog_odd: "prog",
+    djent: "prog",
+    ballad_intro_strum: "ballad",
+    ballad_intro_slow: "ballad",
+    ballad_verse_simple: "ballad",
+    ballad_verse_strum: "ballad",
+    ballad_pre_build: "ballad",
+    ballad_chorus_full: "ballad",
+    ballad_chorus_simple: "ballad",
+    intro_ambient: "ambient",
+    stoner_doom: "ambient",
+    doom_slow: "ambient"
+};
+
+export const familyPresetMap = {
+    heavy: {
+        intro: "heavyIntro",
+        verse: "heavyVerse",
+        prechorus: "heavyVerse",
+        chorus: "heavyChorus",
+        solo: "heavySolo",
+        outro: "heavyOutro"
+    },
+    epic: {
+        intro: "epicIntro",
+        verse: "epicVerse",
+        prechorus: "epicVerse",
+        chorus: "epicChorus",
+        solo: "epicSolo",
+        outro: "epicOutro"
+    },
+    prog: {
+        intro: "progIntro",
+        verse: "progVerse",
+        prechorus: "progVerse",
+        chorus: "progChorus",
+        solo: "progSolo",
+        outro: "progOutro"
+    },
+    ballad: {
+        intro: "balladVerse",
+        verse: "balladVerse",
+        prechorus: "balladVerse",
+        chorus: "balladChorus",
+        solo: "balladChorus",
+        outro: "balladOutro"
+    },
+    ambient: {
+        intro: "ambientIntro",
+        verse: "ambientPad",
+        prechorus: "ambientPad",
+        chorus: "ambientIntro",
+        solo: "ambientPad",
+        outro: "ambientIntro"
+    }
+};
+
+export function getPresetForGroove(grooveName, sectionName) {
+    const family = grooveFamilies[grooveName] || "heavy";
+    const sec = sectionName.toLowerCase();
+    let secType = "verse";
+    if (sec.includes("intro")) secType = "intro";
+    else if (sec.includes("pre")) secType = "prechorus";
+    else if (sec.includes("chorus")) secType = "chorus";
+    else if (sec.includes("solo") || sec.includes("bridge")) secType = "solo";
+    else if (sec.includes("outro")) secType = "outro";
+    return familyPresetMap[family][secType];
 }
