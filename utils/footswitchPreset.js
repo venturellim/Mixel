@@ -1,102 +1,190 @@
 // footswitchPreset.js — Extreme FX Rack + Presets (Petrucci Style)
-// Tutti gli effetti definiti qui dentro, pronti per routing dinamico
+// Versione con inizializzazione lazy per evitare problemi di caricamento
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("footswitchPreset.js ver. 001 loaded");
-
-
-// ============================================================
-// 🎛 FX RACK — TUTTI GLI EFFETTI DISPONIBILI
-// (anche quelli non usati ora, per future catene)
-// ============================================================
-
-export const fxRack = {
-
-    // ===== MODULAZIONI =====
-    chorus: new Tone.Chorus(0.25, 4, 0.6).start(),
-    flanger: new Tone.FeedbackDelay("16n", 0.5),
-    phaser: new Tone.Phaser({ frequency: 0.5, octaves: 3, baseFrequency: 350 }),
-    tremolo: new Tone.Tremolo(9, 0.6).start(),
-    vibrato: new Tone.Vibrato(5, 0.3),
-
-    // ===== DELAY =====
-    delay8: new Tone.FeedbackDelay("8n", 0.35),
-    delay8d: new Tone.FeedbackDelay("8n.", 0.40), // dotted eighth
-    delayQuarter: new Tone.FeedbackDelay("4n", 0.25),
-
-    // ===== RIVERBERI =====
-    reverbHall: new Tone.Reverb({ decay: 4.5, wet: 0.40 }),
-    reverbPlate: new Tone.Reverb({ decay: 2.8, wet: 0.35 }),
-    reverbShimmer: new Tone.Reverb({ decay: 6.0, wet: 0.60 }),
-
-    // ===== SHIMMER =====
-    shimmerPitch: new Tone.PitchShift({ pitch: 12, wet: 0.50 }),
-    shimmerPitch2: new Tone.PitchShift({ pitch: 7, wet: 0.40 }),
-
-    // ===== EQ / WIDENER =====
-    eq: new Tone.EQ3({ low: -1, mid: 1, high: 2 }),
-    widener: new Tone.StereoWidener(0.80),
-    stereoSpread: new Tone.StereoWidener(0.90),
-
-    // ===== AUTO FX =====
-    autowah: new Tone.AutoWah({ baseFrequency: 100, octaves: 4, sensitivity: 0.5, wet: 0.7 }),
-    envelopeFilter: new Tone.Filter({ type: "bandpass", frequency: 800 }),
-
-    // ===== SPECIAL FX =====
-    harmonizer5: new Tone.PitchShift({ pitch: 7, wet: 0.50 }),
-    harmonizerOct: new Tone.PitchShift({ pitch: 12, wet: 0.50 }),
-    rotary: new Tone.Rotary({ frequency: 1.2, depth: 0.8 }),
-
-    // ===== DISTORSIONI (non usate ora, ma pronte) =====
-    distortion: new Tone.Distortion(0.6),
-    overdrive: new Tone.Distortion(0.3),
-    bitcrusher: new Tone.BitCrusher(4),
-};
+console.log("footswitchPreset.js ver. 002 loaded");
 
 // ============================================================
-// 🎚 PRESET — SOLO QUELLI CHE SUONANO BENE NEI TUOI STILI
-// (Heavy, Epic, Prog, Ballad, Ambient)
+// STATO INTERNO — INIZIALIZZAZIONE LAZY
 // ============================================================
 
-export const footswitchPresets = {
-
-    // ===== HEAVY METAL =====
-    heavyIntro: ["autowah", "eq"],
-    heavyVerse: ["eq"],
-    heavyChorus: ["widener", "eq"],
-    heavySolo: ["delay8d", "reverbPlate", "widener"],
-    heavyOutro: ["autowah", "reverbHall"],
-
-    // ===== EPIC METAL =====
-    epicIntro: ["flanger", "reverbHall"],
-    epicVerse: ["chorus", "eq"],
-    epicChorus: ["chorus", "delay8d", "reverbHall"],
-    epicSolo: ["delay8d", "harmonizer5", "reverbHall", "widener"],
-    epicOutro: ["stereoSpread", "reverbHall"],
-
-    // ===== PROG METAL (Petrucci) =====
-    progIntro: ["phaser", "eq"],
-    progVerse: ["eq"],
-    progChorus: ["widener", "delayQuarter"],
-    progSolo: ["delay8d", "reverbPlate", "harmonizer5", "widener"],
-    progOutro: ["rotary", "reverbHall"],
-
-    // ===== BALLAD =====
-    balladVerse: ["chorus", "delay8d"],
-    balladChorus: ["chorus", "delay8d", "shimmerPitch", "reverbShimmer"],
-    balladOutro: ["chorus", "reverbHall"],
-
-    // ===== AMBIENT =====
-    ambientIntro: ["chorus", "delay8d", "shimmerPitch", "reverbShimmer"],
-    ambientPad: ["shimmerPitch", "shimmerPitch2", "reverbShimmer"],
-};
+let fxRack = null;
+let footswitchPresets = null;
+let initialized = false;
 
 // ============================================================
-// CLASSIFICAZIONE GROOVE → FAMIGLIA
+// 🎛 FX RACK — INIZIALIZZAZIONE
 // ============================================================
+
+function initFxRack() {
+    if (initialized) return;
+    
+    console.log("🎛 Inizializzazione FX Rack...");
+    
+    try {
+        fxRack = {
+
+            // ===== MODULAZIONI =====
+            chorus: new Tone.Chorus(0.25, 4, 0.6),
+            flanger: new Tone.FeedbackDelay("16n", 0.5),
+            phaser: new Tone.Phaser({ frequency: 0.5, octaves: 3, baseFrequency: 350 }),
+            tremolo: new Tone.Tremolo(9, 0.6),
+            vibrato: new Tone.Vibrato(5, 0.3),
+
+            // ===== DELAY =====
+            delay8: new Tone.FeedbackDelay("8n", 0.35),
+            delay8d: new Tone.FeedbackDelay("8n.", 0.40),
+            delayQuarter: new Tone.FeedbackDelay("4n", 0.25),
+
+            // ===== RIVERBERI =====
+            reverbHall: new Tone.Reverb({ decay: 4.5, wet: 0.40 }),
+            reverbPlate: new Tone.Reverb({ decay: 2.8, wet: 0.35 }),
+            reverbShimmer: new Tone.Reverb({ decay: 6.0, wet: 0.60 }),
+
+            // ===== SHIMMER =====
+            shimmerPitch: new Tone.PitchShift({ pitch: 12, wet: 0.50 }),
+            shimmerPitch2: new Tone.PitchShift({ pitch: 7, wet: 0.40 }),
+
+            // ===== EQ / WIDENER =====
+            eq: new Tone.EQ3({ low: -1, mid: 1, high: 2 }),
+            widener: new Tone.StereoWidener(0.80),
+            stereoSpread: new Tone.StereoWidener(0.90),
+
+            // ===== AUTO FX =====
+            autowah: new Tone.AutoWah({ baseFrequency: 100, octaves: 4, sensitivity: 0.5, wet: 0.7 }),
+            envelopeFilter: new Tone.Filter({ type: "bandpass", frequency: 800 }),
+
+            // ===== SPECIAL FX =====
+            harmonizer5: new Tone.PitchShift({ pitch: 7, wet: 0.50 }),
+            harmonizerOct: new Tone.PitchShift({ pitch: 12, wet: 0.50 }),
+            rotary: new Tone.Rotary({ frequency: 1.2, depth: 0.8 }),
+
+            // ===== DISTORSIONI =====
+            distortion: new Tone.Distortion(0.6),
+            overdrive: new Tone.Distortion(0.3),
+            bitcrusher: new Tone.BitCrusher(4),
+        };
+
+        // Avvia gli effetti che necessitano di start()
+        if (fxRack.chorus) fxRack.chorus.start();
+        if (fxRack.tremolo) fxRack.tremolo.start();
+
+        footswitchPresets = {
+
+            // ===== HEAVY METAL =====
+            heavyIntro: ["autowah", "eq"],
+            heavyVerse: ["eq"],
+            heavyChorus: ["widener", "eq"],
+            heavySolo: ["delay8d", "reverbPlate", "widener"],
+            heavyOutro: ["autowah", "reverbHall"],
+
+            // ===== EPIC METAL =====
+            epicIntro: ["flanger", "reverbHall"],
+            epicVerse: ["chorus", "eq"],
+            epicChorus: ["chorus", "delay8d", "reverbHall"],
+            epicSolo: ["delay8d", "harmonizer5", "reverbHall", "widener"],
+            epicOutro: ["stereoSpread", "reverbHall"],
+
+            // ===== PROG METAL =====
+            progIntro: ["phaser", "eq"],
+            progVerse: ["eq"],
+            progChorus: ["widener", "delayQuarter"],
+            progSolo: ["delay8d", "reverbPlate", "harmonizer5", "widener"],
+            progOutro: ["rotary", "reverbHall"],
+
+            // ===== BALLAD =====
+            balladVerse: ["chorus", "delay8d"],
+            balladChorus: ["chorus", "delay8d", "shimmerPitch", "reverbShimmer"],
+            balladOutro: ["chorus", "reverbHall"],
+
+            // ===== AMBIENT =====
+            ambientIntro: ["chorus", "delay8d", "shimmerPitch", "reverbShimmer"],
+            ambientPad: ["shimmerPitch", "shimmerPitch2", "reverbShimmer"],
+        };
+
+        initialized = true;
+        console.log("✅ FX Rack inizializzato con successo");
+        
+    } catch (error) {
+        console.error("❌ Errore durante l'inizializzazione del FX Rack:", error);
+        // Crea oggetti vuoti per evitare crash
+        fxRack = {};
+        footswitchPresets = {};
+        initialized = true;
+    }
+}
+
+// ============================================================
+// 🔥 FUNZIONE DI ROUTING — CAMBIA CATENA EFFETTI AL VOLO
+// ============================================================
+
+export function applyPreset(guitarLead, presetName) {
+    // Inizializza solo quando serve
+    initFxRack();
+    
+    if (!guitarLead) {
+        console.warn(`⚠️ applyPreset: guitarLead non disponibile per "${presetName}"`);
+        return;
+    }
+    
+    if (!footswitchPresets || !footswitchPresets[presetName]) {
+        console.warn(`⚠️ applyPreset: preset "${presetName}" non trovato`);
+        // Se non c'è preset, collega diretto
+        try {
+            guitarLead.disconnect();
+            guitarLead.connect(Tone.Destination);
+        } catch(e) {}
+        return;
+    }
+
+    try {
+        // Scollega tutto
+        guitarLead.disconnect();
+
+        // Costruisci la catena
+        const chain = footswitchPresets[presetName]
+            .map(name => fxRack[name])
+            .filter(fx => fx !== undefined && fx !== null);
+
+        if (chain.length === 0) {
+            // Se la catena è vuota, collega diretto
+            guitarLead.connect(Tone.Destination);
+            console.log(`🎛 Preset ${presetName}: clean (no FX)`);
+            return;
+        }
+
+        // Applica routing
+        guitarLead.chain(...chain, Tone.Destination);
+        console.log(`🎛 Preset ${presetName}: ${chain.map(fx => fx.constructor?.name || 'FX').join(' → ')}`);
+        
+    } catch(error) {
+        console.error(`❌ Errore applicazione preset ${presetName}:`, error);
+        // Fallback: collega diretto
+        try {
+            guitarLead.disconnect();
+            guitarLead.connect(Tone.Destination);
+        } catch(e) {}
+    }
+}
+
+// ============================================================
+// UTILITY — PER DEBUG
+// ============================================================
+
+export function getFxRackStatus() {
+    return {
+        initialized,
+        effectsCount: fxRack ? Object.keys(fxRack).length : 0,
+        presetsCount: footswitchPresets ? Object.keys(footswitchPresets).length : 0,
+    };
+}
+
+// ============================================================
+// CLASSIFICAZIONE GROOVE → FAMIGLIA (opzionale)
+// ============================================================
+
 export const grooveFamilies = {
-
     // HEAVY METAL
     gallop_classic: "heavy",
     gallop_triplet: "heavy",
@@ -145,8 +233,8 @@ export const grooveFamilies = {
 // ============================================================
 // MAPPATURA FAMIGLIA + SEZIONE → PRESET
 // ============================================================
-export const familyPresetMap = {
 
+export const familyPresetMap = {
     heavy: {
         intro: "heavyIntro",
         verse: "heavyVerse",
@@ -155,7 +243,6 @@ export const familyPresetMap = {
         solo: "heavySolo",
         outro: "heavyOutro"
     },
-
     epic: {
         intro: "epicIntro",
         verse: "epicVerse",
@@ -164,7 +251,6 @@ export const familyPresetMap = {
         solo: "epicSolo",
         outro: "epicOutro"
     },
-
     prog: {
         intro: "progIntro",
         verse: "progVerse",
@@ -173,7 +259,6 @@ export const familyPresetMap = {
         solo: "progSolo",
         outro: "progOutro"
     },
-
     ballad: {
         intro: "balladVerse",
         verse: "balladVerse",
@@ -182,7 +267,6 @@ export const familyPresetMap = {
         solo: "balladChorus",
         outro: "balladOutro"
     },
-
     ambient: {
         intro: "ambientIntro",
         verse: "ambientPad",
@@ -196,42 +280,17 @@ export const familyPresetMap = {
 // ============================================================
 // FUNZIONE AUTOMATICA: GROOVE → PRESET
 // ============================================================
+
 export function getPresetForGroove(grooveName, sectionName) {
-
-    const family = grooveFamilies[grooveName] || "heavy"; // fallback
-
+    const family = grooveFamilies[grooveName] || "heavy";
+    
     const sec = sectionName.toLowerCase();
-
     let secType = "verse";
     if (sec.includes("intro")) secType = "intro";
     else if (sec.includes("pre")) secType = "prechorus";
     else if (sec.includes("chorus")) secType = "chorus";
     else if (sec.includes("solo") || sec.includes("bridge")) secType = "solo";
     else if (sec.includes("outro")) secType = "outro";
-
-    const preset = familyPresetMap[family][secType];
-
-    return preset;
+    
+    return familyPresetMap[family][secType];
 }
-
-
-// ============================================================
-// 🔥 FUNZIONE DI ROUTING — CAMBIA CATENA EFFETTI AL VOLO
-// ============================================================
-
-export function applyPreset(guitarLead, presetName) {
-    if (!guitarLead || !footswitchPresets[presetName]) return;
-
-    // Scollega tutto
-    guitarLead.disconnect();
-
-    // Costruisci la catena
-    const chain = footswitchPresets[presetName].map(name => fxRack[name]);
-
-    // Applica routing
-    guitarLead.chain(...chain, Tone.Destination);
-
-    console.log("🎛 Footswitch preset attivato:", presetName);
-}
-
-
