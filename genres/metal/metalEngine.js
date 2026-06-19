@@ -9,12 +9,12 @@ import { scheduleRhythm } from "./metalRhythmEngine.js";
 import { scheduleLead } from "./metalLeadEngine.js"; 
 import { initFxRack } from "../../utils/footswitchPreset.js";
 
-console.log("metalEngine.js ver. 020.1 loaded");
+console.log("metalEngine.js ver. 020.2 loaded");
 
 export function createMetalEngine(params, score, instruments) {
 
 // Inizializza FX Rack all'avvio (non blocca)
-    initFxRack().catch(e => console.warn("FX Rack init:", e));
+    initFxRack();
 
     const rand = createSeededRandom(params.dna);
     const metalParams = buildPowerMetalParams(rand);
