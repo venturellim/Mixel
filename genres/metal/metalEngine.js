@@ -7,8 +7,7 @@ import { generateSongProgressions, degreeToRoot } from "../../utils/musicTheory.
 import { metalVolumeMap } from "./metalInstruments.js";
 import { scheduleRhythm } from "./metalRhythmEngine.js";
 import { scheduleLead } from "./metalLeadEngine.js"; 
-import { initFxRack } from "../../utils/footswitchPreset.js";
-import { initFxController } from "../../utils/fxController.js";
+import { initFxRack, initFxController } from "../../utils/footswitchPreset.js";
 
 console.log("metalEngine.js ver. 020.2 loaded");
 
