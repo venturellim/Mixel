@@ -8,13 +8,17 @@ import { metalVolumeMap } from "./metalInstruments.js";
 import { scheduleRhythm } from "./metalRhythmEngine.js";
 import { scheduleLead } from "./metalLeadEngine.js"; 
 import { initFxRack } from "../../utils/footswitchPreset.js";
+import { initFxController } from "../../utils/fxController.js";
 
 console.log("metalEngine.js ver. 020.2 loaded");
 
 export function createMetalEngine(params, score, instruments) {
 
-// Inizializza FX Rack all'avvio (non blocca)
+// Inizializza FX Rack
     initFxRack();
+    
+    // Inizializza il controller FX (UI)
+    initFxController();
 
     const rand = createSeededRandom(params.dna);
     const metalParams = buildPowerMetalParams(rand);
