@@ -3,7 +3,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("footswitchPreset.js ver. 005.2 loaded");
+console.log("footswitchPreset.js ver. 005 loaded");
 
 // ============================================================
 // STATO INTERNO — INIZIALIZZAZIONE LAZY
@@ -306,17 +306,17 @@ export function getAvailableEffects() {
 export function initFxController() {
     console.log("🎛️ Inizializzazione FX Controller...");
     
+    // Crea il pulsante FX dopo Spartito
     createFxButton();
-    console.log("✅ Pulsante creato");
     
+    // Crea il pannello a tendina (stile mixer)
     createFxPanel();
-    console.log("✅ Pannello creato");
     
+    // Setup event listeners
     setupEventListeners();
-    console.log("✅ Event listeners impostati");
     
+    // Genera i controlli per gli effetti
     buildEffectControls();
-    console.log("✅ Controlli costruiti");
     
     console.log("✅ FX Controller pronto!");
 }
@@ -367,25 +367,16 @@ function createFxButton() {
 // CREA PANNELLO FX (STILE MIXER — SCENDE DALL'ALTO)
 // ============================================================
 
-// ============================================================
-// CREA PANNELLO FX (STILE MIXER — SCENDE DALL'ALTO)
-// ============================================================
-
 function createFxPanel() {
-    // Controlla se esiste già
-    if (document.getElementById('fxEffectsPanel')) {
-        console.log("ℹ️ Pannello FX già esistente");
-        return;
-    }
-    
-    console.log("🛠️ Creazione pannello FX...");
+    if (document.getElementById('fxEffectsPanel')) return;
     
     const panel = document.createElement('div');
     panel.id = 'fxEffectsPanel';
     panel.className = 'fx-effects-panel';
     panel.style.cssText = `
         position: fixed;
-        top: -100%;
+        top: 0;
+        
         left: 0;
         right: 0;
         background: rgba(0, 0, 0, 0.95);
@@ -394,7 +385,7 @@ function createFxPanel() {
         border-bottom-right-radius: 20px;
         padding: 20px;
         transition: top 0.4s cubic-bezier(0.22, 1, 0.36, 1);
-        z-index: 1100;
+        z-index: 1000;
         max-height: 80vh;
         overflow-y: auto;
         box-shadow: 0 10px 30px rgba(0,0,0,0.5);
@@ -443,7 +434,6 @@ function createFxPanel() {
     `;
     
     document.body.appendChild(panel);
-    console.log("✅ Pannello FX creato e aggiunto al DOM");
 }
 
 // ============================================================
@@ -457,42 +447,20 @@ function setupEventListeners() {
     const search = document.getElementById('fx-effects-search');
     const reset = document.getElementById('fx-effects-reset');
     
-    console.log("🔍 Debug FX:", { 
-        btn: !!btn, 
-        panel: !!panel, 
-        close: !!close,
-        search: !!search,
-        reset: !!reset
-    });
-    
-    if (!btn) {
-        console.error("❌ Pulsante FX non trovato!");
-        return;
+    if (btn && panel) {
+        btn.addEventListener('click', () => {
+            panel.classList.toggle('show');
+            btn.style.background = panel.classList.contains('show') 
+                ? 'rgba(255,107,107,0.3)' 
+                : 'rgba(255,255,255,0.1)';
+            btn.style.borderColor = panel.classList.contains('show') 
+                ? '#ff6b6b' 
+                : 'rgba(255,255,255,0.2)';
+        });
     }
     
-    if (!panel) {
-        console.error("❌ Pannello FX non trovato!");
-        return;
-    }
-    
-    // Toggle panel
-    btn.addEventListener('click', function(e) {
-        e.preventDefault();
-        console.log("🔄 Toggle FX panel cliccato!");
-        panel.classList.toggle('show');
-        this.style.background = panel.classList.contains('show') 
-            ? 'rgba(255,107,107,0.3)' 
-            : 'rgba(255,255,255,0.1)';
-        this.style.borderColor = panel.classList.contains('show') 
-            ? '#ff6b6b' 
-            : 'rgba(255,255,255,0.2)';
-        console.log("📌 Panel show:", panel.classList.contains('show'));
-    });
-    
-    if (close) {
-        close.addEventListener('click', function(e) {
-            e.preventDefault();
-            console.log("❌ Chiusura FX panel");
+    if (close && panel) {
+        close.addEventListener('click', () => {
             panel.classList.remove('show');
             if (btn) {
                 btn.style.background = 'rgba(255,255,255,0.1)';
@@ -502,7 +470,7 @@ function setupEventListeners() {
     }
     
     if (search) {
-        search.addEventListener('input', function(e) {
+        search.addEventListener('input', (e) => {
             const query = e.target.value.toLowerCase();
             document.querySelectorAll('.fx-effect-group').forEach(group => {
                 const name = group.dataset.effect.toLowerCase();
@@ -514,9 +482,9 @@ function setupEventListeners() {
     if (reset) {
         reset.addEventListener('click', resetAllEffects);
     }
-} 
+}
 
-//============================================================
+// ============================================================
 // COSTRUISCI CONTROLLI CON LED (BOSS STYLE)
 // ============================================================
 
