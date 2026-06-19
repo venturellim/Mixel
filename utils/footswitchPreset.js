@@ -5,7 +5,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("footswitchPreset.js ver. 004.2 loaded");
+console.log("footswitchPreset.js ver. 004.3 loaded");
 
 // ============================================================
 // STATO INTERNO — INIZIALIZZAZIONE LAZY
@@ -333,13 +333,13 @@ function createUI() {
         top: -100%;
         left: 50%;
         transform: translateX(-50%);
-        width: 90%;
-        max-width: 800px;
+        width: 97%;
+        max-width: 1000px;
         background: rgba(10, 10, 20, 0.95);
         backdrop-filter: blur(20px);
         border-bottom-left-radius: 20px;
         border-bottom-right-radius: 20px;
-        padding: 20px 30px;
+        padding: 20px 10px;
         transition: top 0.4s cubic-bezier(0.22, 1, 0.36, 1);
         z-index: 99999;
         max-height: 80vh;
