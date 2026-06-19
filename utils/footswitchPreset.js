@@ -3,7 +3,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("footswitchPreset.js ver. 005.1 loaded");
+console.log("footswitchPreset.js ver. 005.2 loaded");
 
 // ============================================================
 // STATO INTERNO — INIZIALIZZAZIONE LAZY
@@ -394,7 +394,7 @@ function createFxPanel() {
         border-bottom-right-radius: 20px;
         padding: 20px;
         transition: top 0.4s cubic-bezier(0.22, 1, 0.36, 1);
-        z-index: 1000;
+        z-index: 1100;
         max-height: 80vh;
         overflow-y: auto;
         box-shadow: 0 10px 30px rgba(0,0,0,0.5);
