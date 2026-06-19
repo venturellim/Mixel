@@ -3,7 +3,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("footswitchPreset.js ver. 003.1 loaded");
+console.log("footswitchPreset.js ver. 003.2 loaded");
 
 // ============================================================
 // STATO INTERNO — INIZIALIZZAZIONE LAZY
@@ -68,7 +68,6 @@ export function initFxRack() {
         // Avvia gli effetti che necessitano di start()
         if (fxRack.chorus) fxRack.chorus.start();
         if (fxRack.tremolo) fxRack.tremolo.start();
-        if (fxRack.autowah) fxRack.autowah.start();
         
         footswitchPresets = {
 
