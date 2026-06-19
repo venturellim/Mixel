@@ -293,3 +293,163 @@ export function getPresetForGroove(grooveName, sectionName) {
     
     return familyPresetMap[family][secType];
 }
+
+// ============================================================
+// 🎛️ CONTROLLO PARAMETRI IN TEMPO REALE
+// ============================================================
+
+/**
+ * Ottiene i parametri modificabili per un effetto
+ */
+export function getEffectParams(effectName) {
+    initFxRack();
+    
+    const effect = fxRack[effectName];
+    if (!effect) return null;
+    
+    // Mappa dei parametri modificabili per ogni effetto
+    const paramMap = {
+        chorus: {
+            frequency: { min: 0.1, max: 10, step: 0.1, label: "Rate", unit: "Hz" },
+            depth: { min: 0, max: 1, step: 0.01, label: "Depth", unit: "" },
+            wet: { min: 0, max: 1, step: 0.01, label: "Mix", unit: "" }
+        },
+        tremolo: {
+            frequency: { min: 1, max: 20, step: 0.5, label: "Rate", unit: "Hz" },
+            depth: { min: 0, max: 1, step: 0.01, label: "Depth", unit: "" }
+        },
+        vibrato: {
+            frequency: { min: 1, max: 15, step: 0.5, label: "Rate", unit: "Hz" },
+            depth: { min: 0, max: 1, step: 0.01, label: "Depth", unit: "" }
+        },
+        delay8d: {
+            delayTime: { min: 0.1, max: 2, step: 0.01, label: "Time", unit: "s" },
+            feedback: { min: 0, max: 0.9, step: 0.01, label: "Feedback", unit: "" },
+            wet: { min: 0, max: 1, step: 0.01, label: "Mix", unit: "" }
+        },
+        delay8: {
+            delayTime: { min: 0.1, max: 1.5, step: 0.01, label: "Time", unit: "s" },
+            feedback: { min: 0, max: 0.9, step: 0.01, label: "Feedback", unit: "" },
+            wet: { min: 0, max: 1, step: 0.01, label: "Mix", unit: "" }
+        },
+        reverbHall: {
+            decay: { min: 0.5, max: 10, step: 0.5, label: "Decay", unit: "s" },
+            wet: { min: 0, max: 1, step: 0.01, label: "Mix", unit: "" }
+        },
+        reverbPlate: {
+            decay: { min: 0.5, max: 6, step: 0.5, label: "Decay", unit: "s" },
+            wet: { min: 0, max: 1, step: 0.01, label: "Mix", unit: "" }
+        },
+        reverbShimmer: {
+            decay: { min: 1, max: 12, step: 0.5, label: "Decay", unit: "s" },
+            wet: { min: 0, max: 1, step: 0.01, label: "Mix", unit: "" }
+        },
+        autowah: {
+            baseFrequency: { min: 50, max: 500, step: 10, label: "Freq", unit: "Hz" },
+            octaves: { min: 1, max: 6, step: 0.5, label: "Octaves", unit: "" },
+            wet: { min: 0, max: 1, step: 0.01, label: "Mix", unit: "" }
+        },
+        phaser: {
+            frequency: { min: 0.1, max: 5, step: 0.1, label: "Rate", unit: "Hz" },
+            wet: { min: 0, max: 1, step: 0.01, label: "Mix", unit: "" }
+        },
+        flanger: {
+            delayTime: { min: 0.05, max: 0.5, step: 0.01, label: "Delay", unit: "s" },
+            feedback: { min: 0, max: 0.9, step: 0.01, label: "Feedback", unit: "" },
+            wet: { min: 0, max: 1, step: 0.01, label: "Mix", unit: "" }
+        },
+        widener: {
+            width: { min: 0, max: 1, step: 0.01, label: "Width", unit: "" }
+        },
+        harmonizer5: {
+            pitch: { min: -12, max: 12, step: 0.5, label: "Pitch", unit: "st" },
+            wet: { min: 0, max: 1, step: 0.01, label: "Mix", unit: "" }
+        }
+    };
+    
+    return paramMap[effectName] || null;
+}
+
+/**
+ * Imposta un parametro di un effetto in tempo reale
+ */
+export function setEffectParam(effectName, paramName, value) {
+    initFxRack();
+    
+    const effect = fxRack[effectName];
+    if (!effect) {
+        console.warn(`⚠️ Effetto "${effectName}" non trovato`);
+        return false;
+    }
+    
+    try {
+        // Per parametri che sono AudioParam
+        if (effect[paramName] && typeof effect[paramName].value !== 'undefined') {
+            effect[paramName].value = value;
+            return true;
+        }
+        // Per parametri che sono metodi
+        else if (typeof effect[paramName] === 'function') {
+            effect[paramName](value);
+            return true;
+        }
+        // Per parametri annidati (es. effect.wet.value)
+        else if (paramName.includes('.')) {
+            const parts = paramName.split('.');
+            let target = effect;
+            for (let i = 0; i < parts.length - 1; i++) {
+                target = target[parts[i]];
+                if (!target) throw new Error(`Property ${parts[i]} not found`);
+            }
+            const lastKey = parts[parts.length - 1];
+            if (target[lastKey] && typeof target[lastKey].value !== 'undefined') {
+                target[lastKey].value = value;
+                return true;
+            }
+        }
+        
+        console.warn(`⚠️ Parametro "${paramName}" non trovato su "${effectName}"`);
+        return false;
+        
+    } catch(e) {
+        console.warn(`⚠️ Errore impostazione ${effectName}.${paramName}:`, e);
+        return false;
+    }
+}
+
+/**
+ * Ottiene il valore corrente di un parametro
+ */
+export function getEffectParam(effectName, paramName) {
+    initFxRack();
+    
+    const effect = fxRack[effectName];
+    if (!effect) return null;
+    
+    try {
+        if (effect[paramName] && typeof effect[paramName].value !== 'undefined') {
+            return effect[paramName].value;
+        }
+        if (paramName.includes('.')) {
+            const parts = paramName.split('.');
+            let target = effect;
+            for (let i = 0; i < parts.length; i++) {
+                target = target[parts[i]];
+                if (!target) return null;
+            }
+            if (typeof target.value !== 'undefined') return target.value;
+            return target;
+        }
+        return null;
+    } catch(e) {
+        return null;
+    }
+}
+
+/**
+ * Ottiene tutti gli effetti disponibili
+ */
+export function getAvailableEffects() {
+    initFxRack();
+    return Object.keys(fxRack || {});
+}
