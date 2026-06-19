@@ -3,7 +3,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("footswitchPreset.js ver. 003 loaded");
+console.log("footswitchPreset.js ver. 003.1 loaded");
 
 // ============================================================
 // STATO INTERNO — INIZIALIZZAZIONE LAZY
@@ -58,14 +58,6 @@ export function initFxRack() {
             // ===== SPECIAL FX =====
             harmonizer5: new Tone.PitchShift({ pitch: 7, wet: 0.50 }),
             harmonizerOct: new Tone.PitchShift({ pitch: 12, wet: 0.50 }),
-            leslie: {
-                vibrato: new Tone.Vibrato(6.5, 0.4),  // Velocità alta per modalità Fast
-                tremolo: new Tone.Tremolo(6.5, 0.7),  // Sincronizzato con vibrato
-            },
-            leslieSlow: {
-                vibrato: new Tone.Vibrato(0.8, 0.35),  // Velocità bassa per modalità Slow
-                tremolo: new Tone.Tremolo(0.8, 0.6),
-            },
 
             // ===== DISTORSIONI =====
             distortion: new Tone.Distortion(0.6),
@@ -76,11 +68,8 @@ export function initFxRack() {
         // Avvia gli effetti che necessitano di start()
         if (fxRack.chorus) fxRack.chorus.start();
         if (fxRack.tremolo) fxRack.tremolo.start();
-        if (fxRack.leslie?.vibrato) fxRack.leslie.vibrato.start();
-        if (fxRack.leslie?.tremolo) fxRack.leslie.tremolo.start();
-        if (fxRack.leslieSlow?.vibrato) fxRack.leslieSlow.vibrato.start();
-        if (fxRack.leslieSlow?.tremolo) fxRack.leslieSlow.tremolo.start();
-
+        if (fxRack.autowah) fxRack.autowah.start();
+        
         footswitchPresets = {
 
             // ===== HEAVY METAL =====
@@ -102,7 +91,7 @@ export function initFxRack() {
             progVerse: ["eq"],
             progChorus: ["widener", "delayQuarter"],
             progSolo: ["delay8d", "reverbPlate", "harmonizer5", "widener"],
-            progOutro: ["leslie", "reverbHall"],
+            progOutro: ["vibrato", "tremolo", "reverbHall"],
 
             // ===== BALLAD =====
             balladVerse: ["chorus", "delay8d"],
