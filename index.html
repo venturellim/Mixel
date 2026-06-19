@@ -15,8 +15,8 @@
 </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
     
-    
-<link rel="stylesheet" href="/utils/fxControls.css">
+    <!-- ✅ FX Controls CSS (per il nuovo pannello effetti) -->
+    <link rel="stylesheet" href="/utils/fxControls.css">
 </head>
 
 <body>
@@ -75,7 +75,10 @@
                         <button id="btnPlay">▶️ Play</button>
                         <button id="btnPause">⏸️ Pause</button>
                         <button id="btnStop">⏹️ Stop</button>
-                        <button id="btnFxPanel">🎛️ FX</button>
+                        <!-- ✅ Pulsante per il tuo mixer (EQ + Volumi) -->
+                        <button id="btnFxPanel">🎛️ Mixer</button>
+                        <!-- ✅ Pulsante per gli effetti in tempo reale (verrà gestito da fxController.js) -->
+                        <!-- <button id="btnFxEffects">🎚️ FX</button> -->
                         <button id="btnSpartito" class="spartito-btn hidden">🎼 Spartito</button>
                     </div>
 
@@ -107,10 +110,10 @@
     </div>
 </div>
 
-<!-- FX PANEL (SCENDE DALL'ALTO) -->
+<!-- ✅ TUO MIXER PANEL (EQ + Volumi) — QUESTO RESTA -->
 <div id="fxPanel" class="fx-panel">
     <div class="panel-header">
-        <h2>Controlli Audio</h2>
+        <h2>🎛️ Mixer</h2>
         <button id="closeFxPanel" class="close-panel-btn">✖</button>
     </div>
     <div class="fx-section">
@@ -132,6 +135,9 @@
         <h3>Volumi Strumenti</h3>
     </div>
 </div>
+
+<!-- ✅ Il nuovo FX Controls Panel viene creato DINAMICAMENTE da fxController.js -->
+<!-- Non serve scriverlo qui, verrà aggiunto automaticamente -->
 
 <script type="module" src="main.js"></script>
 
