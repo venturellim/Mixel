@@ -3,7 +3,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("footswitchPreset.js ver. 002 loaded");
+console.log("footswitchPreset.js ver. 002.1 loaded");
 
 // ============================================================
 // STATO INTERNO — INIZIALIZZAZIONE LAZY
@@ -17,7 +17,7 @@ let initialized = false;
 // 🎛 FX RACK — INIZIALIZZAZIONE
 // ============================================================
 
-function initFxRack() {
+export function initFxRack() {
     if (initialized) return;
     
     console.log("🎛 Inizializzazione FX Rack...");
