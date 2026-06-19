@@ -1057,3 +1057,92 @@ body {
     font-size: 13px;
     padding: 30px 0;
 }
+
+/* ==========================================
+   FX EFFECTS PANEL (BOSS STYLE)
+   ========================================== */
+
+/* Pulsante FX Effects (stile mixer) */
+.fx-effects-btn {
+    background: rgba(255,255,255,0.1) !important;
+    border: 1px solid rgba(255,255,255,0.2) !important;
+    border-radius: 30px !important;
+    color: #fff !important;
+    padding: 8px 14px !important;
+    cursor: pointer !important;
+    font-size: 13px !important;
+    transition: all 0.2s !important;
+}
+
+.fx-effects-btn:hover {
+    background: rgba(255,107,107,0.2) !important;
+    border-color: rgba(255,107,107,0.4) !important;
+    transform: scale(1.05);
+}
+
+.fx-effects-btn.active {
+    background: rgba(255,107,107,0.3) !important;
+    border-color: #ff6b6b !important;
+}
+
+/* FX Effects Panel (scende dall'alto come il mixer) */
+#fxEffectsPanel {
+    position: fixed;
+    top: -100%;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.95);
+    backdrop-filter: blur(20px);
+    border-bottom-left-radius: 20px;
+    border-bottom-right-radius: 20px;
+    padding: 20px;
+    transition: top 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    z-index: 1000;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+#fxEffectsPanel.show {
+    top: 0;
+}
+
+/* Effetto hover sui gruppi */
+.fx-effect-group:hover {
+    border-color: rgba(255,107,107,0.2) !important;
+}
+
+/* LED acceso (verde BOSS style) */
+.fx-led.on {
+    background: #00ff00 !important;
+    box-shadow: 0 0 15px rgba(0,255,0,0.5) !important;
+    border-color: rgba(0,255,0,0.3) !important;
+}
+
+/* LED spento */
+.fx-led.off {
+    background: #222 !important;
+    box-shadow: none !important;
+    border-color: rgba(255,255,255,0.05) !important;
+}
+
+/* LED attivo (rosso) */
+.fx-led.active {
+    background: #ff3333 !important;
+    box-shadow: 0 0 15px rgba(255,51,51,0.5) !important;
+    border-color: rgba(255,51,51,0.3) !important;
+}
+
+/* Scrollbar per il pannello FX */
+#fxEffectsPanel::-webkit-scrollbar {
+    width: 4px;
+}
+
+#fxEffectsPanel::-webkit-scrollbar-thumb {
+    background: #ff6b6b;
+    border-radius: 2px;
+}
+
+#fxEffectsPanel::-webkit-scrollbar-track {
+    background: transparent;
+}
