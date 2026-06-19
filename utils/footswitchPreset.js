@@ -5,7 +5,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("footswitchPreset.js ver. 004.1 loaded");
+console.log("footswitchPreset.js ver. 004.2 loaded");
 
 // ============================================================
 // STATO INTERNO — INIZIALIZZAZIONE LAZY
@@ -302,17 +302,15 @@ export function getAvailableEffects() {
 }
 
 // ============================================================
-// 🎛️ UI — CREAZIONE PANNELLO CONTROLLI (STILE MIXER)
+// 🎛️ UI — CREAZIONE PANNELLO CONTROLLI
 // ============================================================
 
 export function initFxController() {
     console.log("🎛️ Inizializzazione FX Controller...");
     
-    // Crea il pulsante FX dopo Spartito
-    createFxButton();
-    
-    // Crea il pannello a tendina (stile mixer - scende dall'alto)
-    createFxPanel();
+    if (!document.getElementById('fx-toggle')) {
+        createUI();
+    }
     
     setupEventListeners();
     buildEffectControls();
@@ -320,63 +318,24 @@ export function initFxController() {
     console.log("✅ FX Controller pronto!");
 }
 
-// ============================================================
-// CREA PULSANTE FX (DOPO SPARTITO)
-// ============================================================
-
-function createFxButton() {
-    const playerControls = document.querySelector('.player-controls');
-    if (!playerControls) {
-        console.warn("⚠️ .player-controls non trovato");
-        return;
-    }
-    
-    if (document.getElementById('btnFxEffects')) return;
-    
-    const btn = document.createElement('button');
-    btn.id = 'btnFxEffects';
-    btn.textContent = '🎚️ FX';
-    btn.className = 'fx-effects-btn';
-    btn.style.cssText = `
-        background: rgba(255,255,255,0.1);
-        border: 1px solid rgba(255,255,255,0.2);
-        border-radius: 30px;
-        color: #fff;
-        padding: 8px 14px;
-        cursor: pointer;
-        font-size: 13px;
-        transition: all 0.2s;
-    `;
-    
-    // Cerca il pulsante Spartito e inserisci DOPO
-    const spartitoBtn = document.getElementById('btnSpartito');
-    if (spartitoBtn && spartitoBtn.nextSibling) {
-        playerControls.insertBefore(btn, spartitoBtn.nextSibling);
-    } else if (spartitoBtn) {
-        playerControls.appendChild(btn);
-    } else {
-        playerControls.appendChild(btn);
-    }
-    
-    console.log("✅ Pulsante FX aggiunto dopo Spartito");
-}
-
-// ============================================================
-// CREA PANNELLO FX (SCENDE DALL'ALTO — PIÙ LARGO)
-// ============================================================
-
-function createFxPanel() {
-    if (document.getElementById('fxEffectsPanel')) return;
+function createUI() {
+    const toggle = document.createElement('button');
+    toggle.id = 'fx-toggle';
+    toggle.textContent = '🎛️';
+    toggle.title = 'Toggle FX Panel';
+    document.body.appendChild(toggle);
     
     const panel = document.createElement('div');
-    panel.id = 'fxEffectsPanel';
-    panel.className = 'fx-effects-panel';
+    panel.id = 'fx-panel';
+    // ✅ NASCOSTO IN ALTO (top: -100%)
     panel.style.cssText = `
         position: fixed;
         top: -100%;
-        left: 0;
-        right: 0;
-        background: rgba(0, 0, 0, 0.95);
+        left: 50%;
+        transform: translateX(-50%);
+        width: 90%;
+        max-width: 800px;
+        background: rgba(10, 10, 20, 0.95);
         backdrop-filter: blur(20px);
         border-bottom-left-radius: 20px;
         border-bottom-right-radius: 20px;
@@ -385,114 +344,61 @@ function createFxPanel() {
         z-index: 99999;
         max-height: 80vh;
         overflow-y: auto;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        max-width: 800px;
-        margin: 0 auto;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 90%;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+        color: #e0e0e0;
+        font-family: 'Segoe UI', -apple-system, sans-serif;
     `;
     
     panel.innerHTML = `
-        <div class="panel-header">
-            <h2>🎚️ Controlli Effetti</h2>
-            <button id="closeFxEffectsPanel" class="close-panel-btn">✖</button>
+        <div class="fx-header">
+            <h3>🎛️ FX Controls</h3>
+            <button id="fx-close">✕</button>
         </div>
         <div class="fx-search">
-            <input type="text" id="fx-effects-search" placeholder="🔍 Cerca effetto..." style="
-                width: 100%;
-                padding: 10px 16px;
-                border-radius: 10px;
-                border: 1px solid rgba(255,255,255,0.1);
-                background: rgba(255,255,255,0.05);
-                color: #fff;
-                font-size: 14px;
-                outline: none;
-                box-sizing: border-box;
-                margin-bottom: 15px;
-            ">
+            <input type="text" id="fx-search" placeholder="🔍 Cerca effetto...">
         </div>
-        <div id="fx-effects-content" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
-        <div style="
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-top: 15px;
-            border-top: 1px solid rgba(255,255,255,0.1);
-            margin-top: 15px;
-        ">
-            <button id="fx-effects-reset" style="
-                background: rgba(255,107,107,0.15);
-                border: 1px solid rgba(255,107,107,0.2);
-                color: #ff6b6b;
-                padding: 8px 20px;
-                border-radius: 8px;
-                cursor: pointer;
-                font-size: 13px;
-                transition: all 0.3s;
-            ">🔄 Reset All</button>
-            <span id="fx-effects-status" style="font-size: 12px; color: #4ecdc4;">✅ Live</span>
+        <div id="fx-content"></div>
+        <div class="fx-footer">
+            <button id="fx-reset">🔄 Reset All</button>
+            <span id="fx-status">✅ Live</span>
         </div>
     `;
-    
     document.body.appendChild(panel);
-    console.log("✅ Pannello FX creato (scende dall'alto, largo)");
 }
-
-// ============================================================
-// EVENT LISTENERS
-// ============================================================
 
 function setupEventListeners() {
-    const btn = document.getElementById('btnFxEffects');
-    const panel = document.getElementById('fxEffectsPanel');
-    const close = document.getElementById('closeFxEffectsPanel');
-    const search = document.getElementById('fx-effects-search');
-    const reset = document.getElementById('fx-effects-reset');
+    const toggle = document.getElementById('fx-toggle');
+    const panel = document.getElementById('fx-panel');
+    const close = document.getElementById('fx-close');
+    const search = document.getElementById('fx-search');
+    const reset = document.getElementById('fx-reset');
     
-    if (btn && panel) {
-        btn.addEventListener('click', () => {
-            panel.classList.toggle('show');
-            btn.style.background = panel.classList.contains('show') 
-                ? 'rgba(255,107,107,0.3)' 
-                : 'rgba(255,255,255,0.1)';
-            btn.style.borderColor = panel.classList.contains('show') 
-                ? '#ff6b6b' 
-                : 'rgba(255,255,255,0.2)';
+    toggle.addEventListener('click', () => {
+        isPanelOpen = !isPanelOpen;
+        // ✅ Usa classe show invece di style.display
+        panel.classList.toggle('show', isPanelOpen);
+        toggle.textContent = isPanelOpen ? '✕' : '🎛️';
+    });
+    
+    close.addEventListener('click', () => {
+        isPanelOpen = false;
+        panel.classList.remove('show');
+        toggle.textContent = '🎛️';
+    });
+    
+    search.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase();
+        document.querySelectorAll('.fx-group').forEach(group => {
+            const name = group.dataset.effect.toLowerCase();
+            group.style.display = name.includes(query) ? 'block' : 'none';
         });
-    }
+    });
     
-    if (close && panel) {
-        close.addEventListener('click', () => {
-            panel.classList.remove('show');
-            if (btn) {
-                btn.style.background = 'rgba(255,255,255,0.1)';
-                btn.style.borderColor = 'rgba(255,255,255,0.2)';
-            }
-        });
-    }
-    
-    if (search) {
-        search.addEventListener('input', (e) => {
-            const query = e.target.value.toLowerCase();
-            document.querySelectorAll('.fx-effect-group').forEach(group => {
-                const name = group.dataset.effect.toLowerCase();
-                group.style.display = name.includes(query) ? 'block' : 'none';
-            });
-        });
-    }
-    
-    if (reset) {
-        reset.addEventListener('click', resetAllEffects);
-    }
+    reset.addEventListener('click', resetAllEffects);
 }
 
-// ============================================================
-// COSTRUISCI CONTROLLI CON LED (BOSS STYLE)
-// ============================================================
-
 function buildEffectControls() {
-    const container = document.getElementById('fx-effects-content');
+    const container = document.getElementById('fx-content');
     if (!container) return;
     
     container.innerHTML = '';
@@ -502,223 +408,67 @@ function buildEffectControls() {
     const effectsWithParams = sortedEffects.filter(name => getEffectParams(name) !== null);
     
     if (effectsWithParams.length === 0) {
-        container.innerHTML = '<div style="text-align:center;color:#555;padding:30px 0;grid-column:1/-1;">Nessun effetto disponibile</div>';
+        container.innerHTML = '<div class="fx-no-results">Nessun effetto disponibile</div>';
         return;
     }
     
-    // Raggruppa effetti per categoria
-    const categories = {
-        modulazione: ['chorus', 'flanger', 'phaser', 'tremolo', 'vibrato'],
-        delay: ['delay8', 'delay8d', 'delayQuarter'],
-        riverbero: ['reverbHall', 'reverbPlate', 'reverbShimmer'],
-        shimmer: ['shimmerPitch', 'shimmerPitch2'],
-        eq: ['eq', 'widener', 'stereoSpread'],
-        auto: ['autowah', 'envelopeFilter'],
-        special: ['harmonizer5', 'harmonizerOct'],
-        distorsione: ['distortion', 'overdrive', 'bitcrusher']
-    };
-    
-    // Ordina effetti per categoria
-    const categorizedEffects = [];
-    Object.entries(categories).forEach(([category, effectList]) => {
-        effectList.forEach(name => {
-            if (effectsWithParams.includes(name)) {
-                categorizedEffects.push({ name, category });
-            }
-        });
-    });
-    
-    // Aggiungi effetti non categorizzati
-    effectsWithParams.forEach(name => {
-        if (!categorizedEffects.find(e => e.name === name)) {
-            categorizedEffects.push({ name, category: 'altro' });
-        }
-    });
-    
-    // Crea i gruppi per categoria
-    let currentCategory = '';
-    categorizedEffects.forEach(({ name, category }) => {
-        if (category !== currentCategory) {
-            currentCategory = category;
-            const categoryTitle = document.createElement('div');
-            categoryTitle.style.cssText = `
-                font-size: 11px;
-                text-transform: uppercase;
-                letter-spacing: 2px;
-                color: #666;
-                padding: 15px 0 8px 0;
-                border-bottom: 1px solid rgba(255,255,255,0.05);
-                margin-bottom: 10px;
-                grid-column: 1 / -1;
-            `;
-            categoryTitle.textContent = category.toUpperCase();
-            container.appendChild(categoryTitle);
-        }
-        
-        const group = createEffectGroupWithLED(name, getEffectParams(name));
+    effectsWithParams.forEach(effectName => {
+        const params = getEffectParams(effectName);
+        const group = createEffectGroup(effectName, params);
         container.appendChild(group);
     });
 }
 
-// ============================================================
-// CREA GRUPPO EFFETTO CON LED (BOSS STYLE)
-// ============================================================
-
-function createEffectGroupWithLED(effectName, params) {
+function createEffectGroup(effectName, params) {
     const group = document.createElement('div');
-    group.className = 'fx-effect-group';
+    group.className = 'fx-group';
     group.dataset.effect = effectName;
-    group.style.cssText = `
-        margin-bottom: 10px;
-        background: rgba(255,255,255,0.03);
-        border-radius: 10px;
-        padding: 10px 14px;
-        border: 1px solid rgba(255,255,255,0.04);
-        transition: all 0.3s;
-    `;
     
-    // Stato dell'effetto (ON/OFF)
-    const isActive = fxRack && fxRack[effectName] !== undefined;
-    
-    // Header con LED (BOSS style)
     const header = document.createElement('div');
-    header.style.cssText = `
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        cursor: pointer;
-        user-select: none;
+    header.className = 'fx-group-header';
+    header.innerHTML = `
+        <h4>${formatEffectName(effectName)}</h4>
+        <button class="fx-group-toggle active">▼</button>
     `;
     
-    // LED + Nome
-    const ledContainer = document.createElement('div');
-    ledContainer.style.cssText = `
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    `;
-    
-    // LED
-    const led = document.createElement('div');
-    led.className = 'fx-led';
-    led.style.cssText = `
-        width: 14px;
-        height: 14px;
-        border-radius: 50%;
-        background: ${isActive ? '#ff3333' : '#222'};
-        box-shadow: ${isActive ? '0 0 10px rgba(255,51,51,0.5)' : 'none'};
-        transition: all 0.3s;
-        flex-shrink: 0;
-        border: 1px solid ${isActive ? 'rgba(255,51,51,0.3)' : 'rgba(255,255,255,0.05)'};
-    `;
-    ledContainer.appendChild(led);
-    
-    // Nome
-    const nameSpan = document.createElement('span');
-    nameSpan.style.cssText = `
-        font-size: 13px;
-        color: ${isActive ? '#fff' : '#666'};
-        font-weight: ${isActive ? '600' : '400'};
-        transition: color 0.3s;
-    `;
-    nameSpan.textContent = formatEffectName(effectName);
-    ledContainer.appendChild(nameSpan);
-    
-    header.appendChild(ledContainer);
-    
-    // Toggle
-    const toggleBtn = document.createElement('button');
-    toggleBtn.style.cssText = `
-        background: none;
-        border: none;
-        color: #555;
-        font-size: 14px;
-        cursor: pointer;
-        transition: transform 0.3s;
-        padding: 0 4px;
-    `;
-    toggleBtn.textContent = '▼';
-    toggleBtn.classList.add('fx-toggle-btn');
-    header.appendChild(toggleBtn);
-    
-    group.appendChild(header);
-    
-    // Body con parametri
     const body = document.createElement('div');
-    body.className = 'fx-params-body';
-    body.style.cssText = `
-        margin-top: 10px;
-        display: none;
-        padding-top: 10px;
-        border-top: 1px solid rgba(255,255,255,0.05);
-    `;
+    body.className = 'fx-group-body open';
     
-    // Parametri
     Object.entries(params).forEach(([paramName, paramConfig]) => {
         const paramDiv = document.createElement('div');
-        paramDiv.className = 'fx-param';
-        paramDiv.style.cssText = `
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 4px 0;
-        `;
+        paramDiv.className = 'param';
         
         const currentValue = getEffectParam(effectName, paramName);
         const value = currentValue !== null ? currentValue : paramConfig.min;
         
         paramDiv.innerHTML = `
-            <label style="
-                font-size: 10px;
-                color: #888;
-                width: 50px;
-                flex-shrink: 0;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-            ">${paramConfig.label}</label>
+            <label>${paramConfig.label}</label>
             <input type="range" 
                    min="${paramConfig.min}" 
                    max="${paramConfig.max}" 
                    step="${paramConfig.step}" 
                    value="${value}"
                    data-effect="${effectName}"
-                   data-param="${paramName}"
-                   style="
-                       flex: 1;
-                       height: 3px;
-                       -webkit-appearance: none;
-                       appearance: none;
-                       background: linear-gradient(to right, #2a2a3a, #ff6b6b);
-                       border-radius: 2px;
-                       outline: none;
-                       cursor: pointer;
-                   ">
-            <span class="fx-param-value" style="
-                font-size: 10px;
-                color: #ff6b6b;
-                min-width: 40px;
-                text-align: right;
-                font-family: monospace;
-            ">${Number(value).toFixed(2)}</span>
-            ${paramConfig.unit ? `<span style="font-size: 9px; color: #555; min-width: 18px;">${paramConfig.unit}</span>` : ''}
+                   data-param="${paramName}">
+            <span class="value">${Number(value).toFixed(2)}</span>
+            ${paramConfig.unit ? `<span class="unit">${paramConfig.unit}</span>` : ''}
         `;
         
-        // Slider event
         const slider = paramDiv.querySelector('input[type="range"]');
-        const valueDisplay = paramDiv.querySelector('.fx-param-value');
+        const valueDisplay = paramDiv.querySelector('.value');
         
         slider.addEventListener('input', () => {
             const val = parseFloat(slider.value);
             valueDisplay.textContent = val.toFixed(2);
             setEffectParam(effectName, paramName, val);
             
-            const status = document.getElementById('fx-effects-status');
+            const status = document.getElementById('fx-status');
             if (status) {
                 status.textContent = '⚡ Live';
-                status.style.color = '#ff6b6b';
+                status.className = '';
                 setTimeout(() => {
                     status.textContent = '✅ Live';
-                    status.style.color = '#4ecdc4';
+                    status.className = '';
                 }, 500);
             }
         });
@@ -726,56 +476,39 @@ function createEffectGroupWithLED(effectName, params) {
         body.appendChild(paramDiv);
     });
     
-    group.appendChild(body);
-    
-    // Toggle body
+    const toggleBtn = header.querySelector('.fx-group-toggle');
     toggleBtn.addEventListener('click', () => {
-        const isOpen = body.style.display === 'block';
-        body.style.display = isOpen ? 'none' : 'block';
-        toggleBtn.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+        body.classList.toggle('open');
+        toggleBtn.classList.toggle('active');
     });
     
-    // Hover effect
-    group.addEventListener('mouseenter', () => {
-        group.style.borderColor = 'rgba(255,107,107,0.2)';
-    });
-    group.addEventListener('mouseleave', () => {
-        group.style.borderColor = 'rgba(255,255,255,0.04)';
-    });
-    
+    group.appendChild(header);
+    group.appendChild(body);
     return group;
 }
 
-// ============================================================
-// RESET TUTTI GLI EFFETTI
-// ============================================================
-
 function resetAllEffects() {
-    document.querySelectorAll('.fx-effect-group .fx-param input[type="range"]').forEach(slider => {
+    document.querySelectorAll('.fx-group .param input[type="range"]').forEach(slider => {
         const effectName = slider.dataset.effect;
         const paramName = slider.dataset.param;
         const defaultValue = parseFloat(slider.min);
         
         slider.value = defaultValue;
-        const valueDisplay = slider.parentElement.querySelector('.fx-param-value');
+        const valueDisplay = slider.parentElement.querySelector('.value');
         if (valueDisplay) valueDisplay.textContent = defaultValue.toFixed(2);
         setEffectParam(effectName, paramName, defaultValue);
     });
     
-    const status = document.getElementById('fx-effects-status');
+    const status = document.getElementById('fx-status');
     if (status) {
         status.textContent = '🔄 Reset!';
-        status.style.color = '#ff6b6b';
+        status.className = 'off';
         setTimeout(() => {
             status.textContent = '✅ Live';
-            status.style.color = '#4ecdc4';
+            status.className = '';
         }, 1000);
     }
 }
-
-// ============================================================
-// UTILITY
-// ============================================================
 
 function formatEffectName(name) {
     return name
@@ -786,26 +519,23 @@ function formatEffectName(name) {
 }
 
 // ============================================================
-// TOGGLE FX PANEL
+// UTILITY
 // ============================================================
 
-export function toggleFxEffectsPanel() {
-    const panel = document.getElementById('fxEffectsPanel');
-    if (panel) {
-        panel.classList.toggle('show');
-        const btn = document.getElementById('btnFxEffects');
-        if (btn) {
-            btn.style.background = panel.classList.contains('show') 
-                ? 'rgba(255,107,107,0.3)' 
-                : 'rgba(255,255,255,0.1)';
-            btn.style.borderColor = panel.classList.contains('show') 
-                ? '#ff6b6b' 
-                : 'rgba(255,255,255,0.2)';
-        }
-    }
+export function getFxRackStatus() {
+    return {
+        initialized,
+        effectsCount: fxRack ? Object.keys(fxRack).length : 0,
+        presetsCount: footswitchPresets ? Object.keys(footswitchPresets).length : 0,
+    };
 }
 
-function isFxPanelOpen() {
+export function toggleFxPanel() {
+    const toggle = document.getElementById('fx-toggle');
+    if (toggle) toggle.click();
+}
+
+export function isFxPanelOpen() {
     return isPanelOpen;
 }
 
