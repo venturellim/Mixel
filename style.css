@@ -1143,7 +1143,7 @@ body {
     backdrop-filter: blur(20px) !important;
     border-bottom-left-radius: 20px !important;
     border-bottom-right-radius: 20px !important;
-    padding: 20px 30px !important;
+    padding: 20px 10px !important;
     transition: top 0.4s cubic-bezier(0.22, 1, 0.36, 1) !important;
     z-index: 99999 !important;
     max-height: 80vh !important;
