@@ -3,7 +3,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("footswitchPreset.js ver. 005 loaded");
+console.log("footswitchPreset.js ver. 006 loaded");
 
 // ============================================================
 // STATO INTERNO — INIZIALIZZAZIONE LAZY
@@ -15,6 +15,7 @@ let initialized = false;
 let isPanelOpen = false;
 let currentPresetName = null;
 let currentPresetEffects = [];
+let lfoAnimationId = null; 
 
 // ============================================================
 // 🎛 FX RACK — INIZIALIZZAZIONE
@@ -369,6 +370,218 @@ function createFxButton() {
 }
 
 // ============================================================
+// 🎵 LFO VISUALIZER — ANIMAZIONE IN TEMPO REALE
+// ============================================================
+
+function startLFOAnimation() {
+    const canvas = document.getElementById('lfoCanvas');
+    if (!canvas) {
+        console.warn("⚠️ lfoCanvas non trovato");
+        return;
+    }
+    
+    // ✅ Assicura che il canvas abbia dimensioni corrette
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    
+    // Imposta dimensioni corrette per il rendering (se necessario)
+    if (canvas.width === 0 || canvas.height === 0) {
+        canvas.width = canvas.clientWidth * dpr || 600;
+        canvas.height = 60 * dpr || 60;
+    }
+    
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    
+    let time = 0;
+    let frameCount = 0;
+    
+    function drawLFO() {
+        // ✅ Controlla se il canvas esiste ancora
+        if (!document.getElementById('lfoCanvas')) {
+            if (lfoAnimationId) {
+                cancelAnimationFrame(lfoAnimationId);
+                lfoAnimationId = null;
+            }
+            return;
+        }
+        
+        // Ripulisci il canvas
+        ctx.clearRect(0, 0, width, height);
+        
+        // Sfondo griglia
+        ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+        ctx.lineWidth = 0.5;
+        for (let y = 0; y < height; y += height / 4) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(width, y);
+            ctx.stroke();
+        }
+        
+        // Linea centrale (zero)
+        ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, height / 2);
+        ctx.lineTo(width, height / 2);
+        ctx.stroke();
+        
+        // Prepara i dati per il disegno
+        const points = 200;
+        const data = new Float32Array(points);
+        
+        // ✅ Cerca l'effetto attivo con LFO (con controllo sicurezza)
+        const activeEffect = getActiveLFOEffect();
+        
+        // ✅ Aggiorna i label di riferimento
+        const effectNameEl = document.getElementById('lfo-effect-name');
+        const rateEl = document.getElementById('lfo-rate');
+        const depthEl = document.getElementById('lfo-depth');
+        
+        if (activeEffect) {
+            // Ottieni i parametri in tempo reale
+            const rate = getEffectParam(activeEffect, 'frequency') || 5;
+            const depth = getEffectParam(activeEffect, 'depth') || 0.5;
+            
+            // Aggiorna i label
+            if (effectNameEl) effectNameEl.textContent = formatEffectName(activeEffect);
+            if (rateEl) rateEl.textContent = `Rate: ${rate.toFixed(1)} Hz`;
+            if (depthEl) depthEl.textContent = `Depth: ${depth.toFixed(2)}`;
+            
+            // Genera la forma d'onda
+            for (let i = 0; i < points; i++) {
+                const x = (i / points) * Math.PI * 2;
+                // Forma d'onda mista (sin + cos per effetti diversi)
+                const wave = Math.sin(x * rate * 1.5 + time) * depth;
+                const wave2 = Math.cos(x * (rate * 0.7) + time * 0.8) * depth * 0.3;
+                data[i] = (wave + wave2) * 0.6;
+            }
+        } else {
+            // Nessun effetto LFO attivo
+            if (effectNameEl) effectNameEl.textContent = 'Nessun LFO attivo';
+            if (rateEl) rateEl.textContent = 'Rate: —';
+            if (depthEl) depthEl.textContent = 'Depth: —';
+            for (let i = 0; i < points; i++) {
+                data[i] = 0;
+            }
+        }
+        
+        // Disegna la forma d'onda
+        ctx.beginPath();
+        ctx.strokeStyle = '#ff6b6b';
+        ctx.lineWidth = 2;
+        ctx.shadowColor = 'rgba(255,107,107,0.3)';
+        ctx.shadowBlur = 10;
+        
+        for (let i = 0; i < points; i++) {
+            const x = (i / points) * width;
+            const y = (height / 2) - (data[i] * (height / 2) * 0.8);
+            
+            if (i === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+        }
+        ctx.stroke();
+        
+        // Riempimento sotto la curva (gradiente)
+        const gradient = ctx.createLinearGradient(0, 0, 0, height);
+        gradient.addColorStop(0, 'rgba(255,107,107,0)');
+        gradient.addColorStop(0.3, 'rgba(255,107,107,0.1)');
+        gradient.addColorStop(0.5, 'rgba(255,107,107,0.05)');
+        gradient.addColorStop(0.7, 'rgba(255,107,107,0.1)');
+        gradient.addColorStop(1, 'rgba(255,107,107,0)');
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        for (let i = 0; i < points; i++) {
+            const x = (i / points) * width;
+            const y = (height / 2) - (data[i] * (height / 2) * 0.8);
+            if (i === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+        }
+        ctx.lineTo(width, height / 2);
+        ctx.lineTo(0, height / 2);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Punti luminosi (effetto "glow" sui picchi)
+        for (let i = 0; i < points; i += 10) {
+            const x = (i / points) * width;
+            const y = (height / 2) - (data[i] * (height / 2) * 0.8);
+            const radius = Math.abs(data[i]) * 4 + 1;
+            if (radius > 1) {
+                ctx.beginPath();
+                ctx.arc(x, y, radius, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(255,107,107,' + Math.min(radius / 8, 0.5) + ')';
+        }
+        
+        // Avanza il tempo
+        time += 0.02;
+        frameCount++;
+        
+        // ✅ Continua l'animazione solo se il pannello è aperto
+        if (isPanelOpen) {
+            lfoAnimationId = requestAnimationFrame(drawLFO);
+        } else {
+            lfoAnimationId = null;
+        }
+    }
+    
+    // Avvia l'animazione
+    if (lfoAnimationId) {
+        cancelAnimationFrame(lfoAnimationId);
+        lfoAnimationId = null;
+    }
+    drawLFO();
+}
+
+// ============================================================
+// IDENTIFICA L'EFFETTO LFO ATTIVO
+// ============================================================
+
+function getActiveLFOEffect() {
+    // Effetti che usano LFO (hanno frequency + depth)
+    const lfoEffects = ['tremolo', 'vibrato', 'chorus', 'phaser', 'flanger', 'autowah'];
+    
+    // ✅ Controlla che fxRack esista
+    if (!fxRack) return null;
+    
+    // Cerca nel preset corrente
+    if (currentPresetEffects && currentPresetEffects.length > 0) {
+        for (const name of currentPresetEffects) {
+            if (lfoEffects.includes(name)) {
+                // Verifica che l'effetto esista e abbia i parametri
+                const params = getEffectParams(name);
+                if (params && params.frequency) {
+                    return name;
+                }
+            }
+        }
+    }
+    
+    // Se nessun effetto LFO nel preset, controlla se qualcuno è attivo globalmente
+    for (const name of lfoEffects) {
+        const effect = fxRack ? fxRack[name] : null;
+        if (effect) {
+            // Verifica se l'effetto è effettivamente in uso (wet > 0)
+            const wet = getEffectParam(name, 'wet');
+            if (wet !== null && wet > 0.01) {
+                return name;
+            }
+        }
+    }
+    
+    return null;
+}
+
+// ============================================================
 // CREA UI DEL PANNELLO
 // ============================================================
 
@@ -402,6 +615,31 @@ function createUI() {
             <h3>🎛️ FX Controls</h3>
             <button id="fx-close">✕</button>
         </div>
+        
+        <!-- ✅ LFO VISUALIZER -->
+        <div class="lfo-visualizer" style="
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            padding: 8px 12px;
+            margin: 8px 4px 12px 4px;
+            border: 1px solid rgba(255,255,255,0.05);
+        ">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                <span style="font-size:10px;color:#666;text-transform:uppercase;letter-spacing:1px;">🔊 LFO Visualizer</span>
+                <span id="lfo-effect-name" style="font-size:10px;color:#ff6b6b;font-weight:600;">—</span>
+            </div>
+            <canvas id="lfoCanvas" width="600" height="60" style="
+                width:100%;
+                height:60px;
+                border-radius:4px;
+                background: rgba(0,0,0,0.3);
+            "></canvas>
+            <div style="display:flex;justify-content:space-between;margin-top:2px;">
+                <span id="lfo-rate" style="font-size:9px;color:#555;">Rate: —</span>
+                <span id="lfo-depth" style="font-size:9px;color:#555;">Depth: —</span>
+            </div>
+        </div>
+        
         <div class="fx-search">
             <input type="text" id="fx-search" placeholder="🔍 Cerca effetto...">
         </div>
@@ -413,6 +651,11 @@ function createUI() {
     `;
     
     document.body.appendChild(panel);
+    
+    // ✅ Avvia l'animazione LFO (con un piccolo ritardo per assicurarsi che il canvas sia pronto)
+    setTimeout(() => {
+        startLFOAnimation();
+    }, 100);
 }
 
 // ============================================================
@@ -433,6 +676,14 @@ function setupEventListeners() {
             
             if (isPanelOpen) {
                 buildEffectControls();
+                // ✅ RIAVVIA L'ANIMAZIONE LFO
+                startLFOAnimation();
+            } else {
+                // ✅ FERMA L'ANIMAZIONE LFO QUANDO IL PANNELLO È CHIUSO
+                if (lfoAnimationId) {
+                    cancelAnimationFrame(lfoAnimationId);
+                    lfoAnimationId = null;
+                }
             }
             
             toggle.style.background = isPanelOpen 
@@ -448,12 +699,19 @@ function setupEventListeners() {
         close.addEventListener('click', () => {
             isPanelOpen = false;
             panel.classList.remove('show');
+            
+            // ✅ FERMA L'ANIMAZIONE LFO
+            if (lfoAnimationId) {
+                cancelAnimationFrame(lfoAnimationId);
+                lfoAnimationId = null;
+            }
+            
             if (toggle) {
                 toggle.style.background = 'rgba(255,255,255,0.1)';
                 toggle.style.borderColor = 'rgba(255,255,255,0.2)';
             }
         });
-    }
+    } 
     
     if (search) {
         search.addEventListener('input', (e) => {
