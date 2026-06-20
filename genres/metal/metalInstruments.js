@@ -2,7 +2,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("metalInstruments.js ver. 015 loaded");
+console.log("metalInstruments.js ver. 015.1 loaded");
 
 // ============================================================
 // 🎚 BUS SPECIFICI DEL METAL
@@ -432,8 +432,8 @@ guitarBus.gain.value = Tone.dbToGain(6);  // Chitarra ritmica
 bassBus.gain.value = Tone.dbToGain(4);    // Basso
 leadBus.gain.value = Tone.dbToGain(0);   // Lead
 drumBus.gain.value = Tone.dbToGain(0);   // Batteria
-stringBus.gain.value = Tone.dbToGain(4);   // String Pad
-acousticBus.gain.value = Tone.dbToGain(2);   // Chitarra Acustica 
+stringBus.gain.value = Tone.dbToGain(8);   // String Pad
+acousticBus.gain.value = Tone.dbToGain(6);   // Chitarra Acustica 
 
 // metalInstruments.js
 export function normalizeNote(note, instrument, isMinor = false) {
