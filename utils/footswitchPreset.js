@@ -5,7 +5,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("footswitchPreset.js ver. 004.4 loaded");
+console.log("footswitchPreset.js ver. 004.5 loaded");
 
 // ============================================================
 // STATO INTERNO — INIZIALIZZAZIONE LAZY
@@ -308,7 +308,11 @@ export function getAvailableEffects() {
 export function initFxController() {
     console.log("🎛️ Inizializzazione FX Controller...");
     
-    if (!document.getElementById('fx-toggle')) {
+    // ✅ Crea il pulsante FX dopo Spartito
+    createFxButton();
+    
+    // Poi crea il pannello e il resto
+    if (!document.getElementById('fx-panel')) {
         createUI();
     }
     
@@ -319,11 +323,6 @@ export function initFxController() {
 }
 
 function createUI() {
-    const toggle = document.createElement('button');
-    toggle.id = 'fx-toggle';
-    toggle.textContent = '🎛️';
-    toggle.title = 'Toggle FX Panel';
-    document.body.appendChild(toggle);
     
     const panel = document.createElement('div');
     panel.id = 'fx-panel';
@@ -367,7 +366,7 @@ function createUI() {
 }
 
 function setupEventListeners() {
-    const toggle = document.getElementById('fx-toggle');
+    const toggle = document.getElementById('btnFxEffects');
     const panel = document.getElementById('fx-panel');
     const close = document.getElementById('fx-close');
     const search = document.getElementById('fx-search');
@@ -395,6 +394,54 @@ function setupEventListeners() {
     });
     
     reset.addEventListener('click', resetAllEffects);
+}
+
+// ============================================================
+// CREA PULSANTE FX (DOPO SPARTITO, STILE MIXER)
+// ============================================================
+
+function createFxButton() {
+    const playerControls = document.querySelector('.player-controls');
+    if (!playerControls) {
+        console.warn("⚠️ .player-controls non trovato");
+        return;
+    }
+    
+    // Se il pulsante esiste già, non ricrearlo
+    if (document.getElementById('btnFxEffects')) return;
+    
+    // Crea il pulsante FX
+    const btn = document.createElement('button');
+    btn.id = 'btnFxEffects';
+    btn.textContent = '🎛️ FX';  // Cambia icona se vuoi: 🎚️
+    btn.className = 'fx-effects-btn';
+    
+    // Stile uguale al pulsante Mixer
+    btn.style.cssText = `
+        background: rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.2);
+        border-radius: 30px;
+        color: #fff;
+        padding: 8px 14px;
+        cursor: pointer;
+        font-size: 13px;
+        transition: all 0.2s;
+    `;
+    
+    // Cerca il pulsante Spartito e inserisci DOPO
+    const spartitoBtn = document.getElementById('btnSpartito');
+    if (spartitoBtn && spartitoBtn.nextSibling) {
+        // Inserisci dopo Spartito
+        playerControls.insertBefore(btn, spartitoBtn.nextSibling);
+    } else if (spartitoBtn) {
+        // Spartito esiste ma è l'ultimo
+        playerControls.appendChild(btn);
+    } else {
+        // Spartito non esiste, metti alla fine
+        playerControls.appendChild(btn);
+    }
+    
+    console.log("✅ Pulsante FX aggiunto dopo Spartito");
 }
 
 function buildEffectControls() {
