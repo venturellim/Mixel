@@ -2,7 +2,7 @@
 import * as Tone from "https://esm.sh/tone";
 import { masterEQ, registerInstrumentLoaded, logNote } from "../../common.js";
 
-console.log("metalInstruments.js ver. 014.4 loaded");
+console.log("metalInstruments.js ver. 015 loaded");
 
 // ============================================================
 // 🎚 BUS SPECIFICI DEL METAL
@@ -182,72 +182,6 @@ export function createStStringPad() {
     pad._padPanLFO.connect(pad._padPan.pan);
 
     return pad;
-}
-    
-export function createShimmerMajor() {
-    const sampler = new Tone.Sampler({
-        urls: {
-            C2: "Samples/Shimmer/C2.mp3",
-            D2: "Samples/Shimmer/D2.mp3",
-            E2: "Samples/Shimmer/E2.mp3",
-            F2: "Samples/Shimmer/F2.mp3",
-            G2: "Samples/Shimmer/G2.mp3",
-            A2: "Samples/Shimmer/A2.mp3",
-            B2: "Samples/Shimmer/B2.mp3",
-            "C#2": "Samples/Shimmer/Cs2.mp3",
-            "D#2": "Samples/Shimmer/Ds2.mp3",
-            "F#2": "Samples/Shimmer/Fs2.mp3",
-            "G#2": "Samples/Shimmer/Gs2.mp3",
-            "A#2": "Samples/Shimmer/As2.mp3"
-        },
-        release: 1.2,
-        onload: () => { 
-            registerInstrumentLoaded("Shimmer (Maggiore)");
-            sampler.set({
-                envelope: {
-                    attack: 1.5,
-                    decay: 0.5,
-                    sustain: 1.0,
-                    release: 2.5
-                }
-            });
-        }
-    }).connect(stringBus);
-    
-    return sampler;
-}
-
-export function createShimmerMinor() {
-    const sampler = new Tone.Sampler({
-        urls: {
-            C2: "Samples/Shimmer/Cm2.mp3",
-            D2: "Samples/Shimmer/Dm2.mp3",
-            E2: "Samples/Shimmer/Em2.mp3",
-            F2: "Samples/Shimmer/Fm2.mp3",
-            G2: "Samples/Shimmer/Gm2.mp3",
-            A2: "Samples/Shimmer/Am2.mp3",
-            B2: "Samples/Shimmer/Bm2.mp3",
-            "C#2": "Samples/Shimmer/Csm2.mp3",
-            "D#2": "Samples/Shimmer/Dsm2.mp3",
-            "F#2": "Samples/Shimmer/Fsm2.mp3",
-            "G#2": "Samples/Shimmer/Gsm2.mp3",
-            "A#2": "Samples/Shimmer/Asm2.mp3"
-        },
-        release: 1.2,
-        onload: () => { 
-            registerInstrumentLoaded("Shimmer (Minore)");
-            sampler.set({
-                envelope: {
-                    attack: 1.5,
-                    decay: 0.5,
-                    sustain: 1.0,
-                    release: 2.5
-                }
-            });
-        }
-    }).connect(stringBus);
-    
-    return sampler;
 }
     
 export function createAcousticGuitar() {
@@ -449,9 +383,7 @@ export async function loadMetalPack() {
     const bass = createBass();
     const drums = createDrums();
     const StStringPad = createStStringPad();
-    const shimmerMajor = createShimmerMajor();
-    const shimmerMinor = createShimmerMinor();
-
+    
     return {
         guitarPalm,
         guitarOpen,
@@ -462,8 +394,6 @@ export async function loadMetalPack() {
         bass,
         drums,
         StStringPad,
-        shimmerMajor,
-        shimmerMinor,
 
         // Bus
         guitarBus,
@@ -539,24 +469,6 @@ export function normalizeNote(note, instrument, isMinor = false) {
         const allowed = ["C","D","E","F","G","A","B"];
         let root = targetRoot[0];
         if (!allowed.includes(root)) root = "C";
-        return `${root}2`;
-    }
-
-    // ============================================================
-    // ✨ SHIMMER MAGGIORE
-    // ============================================================
-    if (instrument === "shimmerMajor") {
-        const allowed = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
-        let root = allowed.includes(targetRoot) ? targetRoot : "C";
-        return `${root}2`;
-    }
-
-    // ============================================================
-    // ✨ SHIMMER MINORE
-    // ============================================================
-    if (instrument === "shimmerMinor") {
-        const allowed = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
-        let root = allowed.includes(targetRoot) ? targetRoot : "C";
         return `${root}2`;
     }
 
