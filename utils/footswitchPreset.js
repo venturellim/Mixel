@@ -3,7 +3,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("footswitchPreset.js ver. 006.1 loaded");
+console.log("footswitchPreset.js ver. 007 loaded");
 
 // ============================================================
 // STATO INTERNO — INIZIALIZZAZIONE LAZY
@@ -124,11 +124,14 @@ export function initFxRack() {
 export function applyPreset(guitarLead, presetName) {
     initFxRack();
     
+    // ✅ Se non c'è guitarLead, resetta gli effetti correnti
     if (!guitarLead) {
         console.warn(`⚠️ applyPreset: guitarLead non disponibile per "${presetName}"`);
+        currentPresetEffects = [];
+        currentPresetName = null;
         return;
     }
-    
+     
     if (!footswitchPresets || !footswitchPresets[presetName]) {
         console.warn(`⚠️ applyPreset: preset "${presetName}" non trovato`);
         try {
@@ -316,12 +319,29 @@ export function getAvailableEffects() {
 export function initFxController() {
     console.log("🎛️ Inizializzazione FX Controller...");
     
-    createFxButton();
-    
-    if (!document.getElementById('fx-panel')) {
-        createUI();
+    // ✅ Rimuovi il pannello esistente se c'è
+    const existingPanel = document.getElementById('fx-panel');
+    if (existingPanel) {
+        existingPanel.remove();
+        console.log("🗑️ Pannello FX rimosso (ricreazione)");
     }
     
+    // ✅ Rimuovi il pulsante esistente se c'è
+    const existingBtn = document.getElementById('btnFxEffects');
+    if (existingBtn) {
+        existingBtn.remove();
+        console.log("🗑️ Pulsante FX rimosso (ricreazione)");
+    }
+    
+    // ✅ Ferma l'animazione LFO se attiva
+    if (lfoAnimationId) {
+        cancelAnimationFrame(lfoAnimationId);
+        lfoAnimationId = null;
+    }
+    
+    // Crea tutto da capo
+    createFxButton();
+    createUI();
     setupEventListeners();
     buildEffectControls();
     
@@ -335,11 +355,16 @@ export function initFxController() {
 function createFxButton() {
     const playerControls = document.querySelector('.player-controls');
     if (!playerControls) {
-        console.warn("⚠️ .player-controls non trovato");
+        console.warn("⚠️ .player-controls non trovato, riprovo tra 100ms");
+        setTimeout(createFxButton, 100);
         return;
     }
     
-    if (document.getElementById('btnFxEffects')) return;
+    // ✅ Rimuovi eventuali duplicati
+    const existingBtn = document.getElementById('btnFxEffects');
+    if (existingBtn) {
+        existingBtn.remove();
+    }
     
     const btn = document.createElement('button');
     btn.id = 'btnFxEffects';
@@ -621,6 +646,12 @@ function getActiveLFOEffect() {
 // ============================================================
 
 function createUI() {
+    // ✅ Rimuovi pannello esistente
+    const existingPanel = document.getElementById('fx-panel');
+    if (existingPanel) {
+        existingPanel.remove();
+    }
+    
     const panel = document.createElement('div');
     panel.id = 'fx-panel';
     panel.style.cssText = `
@@ -704,52 +735,67 @@ function setupEventListeners() {
     const search = document.getElementById('fx-search');
     const reset = document.getElementById('fx-reset');
     
-    if (toggle && panel) {
-        toggle.addEventListener('click', () => {
+    // ✅ Se manca il toggle o il panel, riprova dopo un po'
+    if (!toggle || !panel) {
+        console.warn("⚠️ Elementi FX non trovati, riprovo...");
+        setTimeout(setupEventListeners, 100);
+        return;
+    }
+    
+    // ✅ Rimuovi vecchi listener (clonando e sostituendo)
+    const newToggle = toggle.cloneNode(true);
+    toggle.parentNode.replaceChild(newToggle, toggle);
+    
+    // Ora usa il nuovo toggle
+    const finalToggle = document.getElementById('btnFxEffects');
+    const finalPanel = document.getElementById('fx-panel');
+    const finalClose = document.getElementById('fx-close');
+    const finalSearch = document.getElementById('fx-search');
+    const finalReset = document.getElementById('fx-reset');
+    
+    if (finalToggle && finalPanel) {
+        finalToggle.addEventListener('click', function fxToggleHandler() {
             isPanelOpen = !isPanelOpen;
-            panel.classList.toggle('show', isPanelOpen);
+            finalPanel.classList.toggle('show', isPanelOpen);
             
             if (isPanelOpen) {
                 buildEffectControls();
-                // ✅ RIAVVIA L'ANIMAZIONE LFO
                 startLFOAnimation();
             } else {
-                // ✅ FERMA L'ANIMAZIONE LFO QUANDO IL PANNELLO È CHIUSO
                 if (lfoAnimationId) {
                     cancelAnimationFrame(lfoAnimationId);
                     lfoAnimationId = null;
                 }
             }
             
-            toggle.style.background = isPanelOpen 
+            finalToggle.style.background = isPanelOpen 
                 ? 'rgba(255,107,107,0.3)' 
                 : 'rgba(255,255,255,0.1)';
-            toggle.style.borderColor = isPanelOpen 
+            finalToggle.style.borderColor = isPanelOpen 
                 ? '#ff6b6b' 
                 : 'rgba(255,255,255,0.2)';
         });
     }
     
-    if (close && panel) {
-        close.addEventListener('click', () => {
+    if (finalClose && finalPanel) {
+        finalClose.addEventListener('click', function fxCloseHandler() {
             isPanelOpen = false;
-            panel.classList.remove('show');
+            finalPanel.classList.remove('show');
             
-            // ✅ FERMA L'ANIMAZIONE LFO
             if (lfoAnimationId) {
                 cancelAnimationFrame(lfoAnimationId);
                 lfoAnimationId = null;
             }
             
-            if (toggle) {
-                toggle.style.background = 'rgba(255,255,255,0.1)';
-                toggle.style.borderColor = 'rgba(255,255,255,0.2)';
+            if (finalToggle) {
+                finalToggle.style.background = 'rgba(255,255,255,0.1)';
+                finalToggle.style.borderColor = 'rgba(255,255,255,0.2)';
             }
         });
-    } 
+    }
     
-    if (search) {
-        search.addEventListener('input', (e) => {
+    if (finalSearch) {
+        finalSearch.addEventListener('input', function searchHandler(e) {
             const query = e.target.value.toLowerCase();
             document.querySelectorAll('.fx-group').forEach(group => {
                 const name = group.dataset.effect.toLowerCase();
@@ -758,8 +804,8 @@ function setupEventListeners() {
         });
     }
     
-    if (reset) {
-        reset.addEventListener('click', resetAllEffects);
+    if (finalReset) {
+        finalReset.addEventListener('click', resetAllEffects);
     }
 }
 
