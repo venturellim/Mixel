@@ -3,7 +3,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("footswitchPreset.js ver. 006 loaded");
+console.log("footswitchPreset.js ver. 006.1 loaded");
 
 // ============================================================
 // STATO INTERNO — INIZIALIZZAZIONE LAZY
@@ -547,7 +547,7 @@ function startLFOAnimation() {
 // IDENTIFICA L'EFFETTO LFO ATTIVO
 // ============================================================
 
-function getActiveLFOEffect() {
+function getActiveLFOEffecOld() {
     // Effetti che usano LFO (hanno frequency + depth)
     const lfoEffects = ['tremolo', 'vibrato', 'chorus', 'phaser', 'flanger', 'autowah'];
     
@@ -575,6 +575,40 @@ function getActiveLFOEffect() {
             const wet = getEffectParam(name, 'wet');
             if (wet !== null && wet > 0.01) {
                 return name;
+            }
+        }
+    }
+    
+    return null;
+}
+
+// ============================================================
+// IDENTIFICA L'EFFETTO LFO ATTIVO
+// ============================================================
+
+function getActiveLFOEffect() {
+    // Effetti che usano LFO (hanno frequency + depth)
+    const lfoEffects = ['tremolo', 'vibrato', 'chorus', 'phaser', 'flanger', 'autowah'];
+    
+    // ✅ Controlla che fxRack esista
+    if (!fxRack) return null;
+    
+    // ✅ CERCA SOLO NEL PRESET CORRENTE
+    if (currentPresetEffects && currentPresetEffects.length > 0) {
+        // Prima cerca effetti con parametri modificabili
+        for (const name of currentPresetEffects) {
+            if (lfoEffects.includes(name)) {
+                const params = getEffectParams(name);
+                if (params && params.frequency) {
+                    return name;
+                }
+            }
+        }
+        
+        // Se nessun effetto LFO con parametri, cerca qualsiasi effetto LFO nel preset
+        for (const name of currentPresetEffects) {
+            if (lfoEffects.includes(name)) {
+                return name;  // Mostra l'LFO anche se non ha parametri (es. tremolo)
             }
         }
     }
