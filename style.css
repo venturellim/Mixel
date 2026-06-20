@@ -1006,3 +1006,24 @@ body {
 #fx-panel.show {
     top: 0 !important;
 }
+
+/* Per evitare overflow orizzontale */
+#fx-panel {
+    overflow-x: hidden !important;
+}
+
+#fx-panel .fx-group {
+    overflow: hidden;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+#fx-panel .param {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+#fx-panel .param input[type="range"] {
+    min-width: 0;
+    max-width: 100%;
+}
