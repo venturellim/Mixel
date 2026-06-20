@@ -1,11 +1,9 @@
-// footswitchPreset.js — Extreme FX Rack + Presets (Petrucci Style)
+// footswitchPreset.js — Extreme FX Rack + Presets + Controller  (Petrucci Style)
 // Versione con inizializzazione lazy per evitare problemi di caricamento
-
-// footswitchPreset.js — Extreme FX Rack + Presets + Controller (Versione Unificata)
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("footswitchPreset.js ver. 004.6 loaded");
+console.log("footswitchPreset.js ver. 005 loaded");
 
 // ============================================================
 // STATO INTERNO — INIZIALIZZAZIONE LAZY
@@ -15,6 +13,8 @@ let fxRack = null;
 let footswitchPresets = null;
 let initialized = false;
 let isPanelOpen = false;
+let currentPresetName = null;
+let currentPresetEffects = [];
 
 // ============================================================
 // 🎛 FX RACK — INIZIALIZZAZIONE
@@ -138,8 +138,11 @@ export function applyPreset(guitarLead, presetName) {
     }
 
     try {
+        currentPresetName = presetName;
+        currentPresetEffects = footswitchPresets[presetName] || [];
+        
         guitarLead.disconnect();
-        const chain = footswitchPresets[presetName]
+        const chain = currentPresetEffects
             .map(name => fxRack[name])
             .filter(fx => fx !== undefined && fx !== null);
 
@@ -151,6 +154,10 @@ export function applyPreset(guitarLead, presetName) {
 
         guitarLead.chain(...chain, Tone.Destination);
         console.log(`🎛 Preset ${presetName}: ${chain.map(fx => fx.constructor?.name || 'FX').join(' → ')}`);
+        
+        if (isPanelOpen) {
+            buildEffectControls();
+        }
         
     } catch(error) {
         console.error(`❌ Errore applicazione preset ${presetName}:`, error);
@@ -308,10 +315,8 @@ export function getAvailableEffects() {
 export function initFxController() {
     console.log("🎛️ Inizializzazione FX Controller...");
     
-    // ✅ Crea il pulsante FX dopo Spartito
     createFxButton();
     
-    // Poi crea il pannello e il resto
     if (!document.getElementById('fx-panel')) {
         createUI();
     }
@@ -322,11 +327,54 @@ export function initFxController() {
     console.log("✅ FX Controller pronto!");
 }
 
-function createUI() {
+// ============================================================
+// CREA PULSANTE FX (DOPO SPARTITO, STILE MIXER)
+// ============================================================
+
+function createFxButton() {
+    const playerControls = document.querySelector('.player-controls');
+    if (!playerControls) {
+        console.warn("⚠️ .player-controls non trovato");
+        return;
+    }
     
+    if (document.getElementById('btnFxEffects')) return;
+    
+    const btn = document.createElement('button');
+    btn.id = 'btnFxEffects';
+    btn.textContent = '🎚️ FX Control';
+    btn.className = 'fx-effects-btn';
+    
+    btn.style.cssText = `
+        background: rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.2);
+        border-radius: 30px;
+        color: #fff;
+        padding: 8px 14px;
+        cursor: pointer;
+        font-size: 13px;
+        transition: all 0.2s;
+    `;
+    
+    const spartitoBtn = document.getElementById('btnSpartito');
+    if (spartitoBtn && spartitoBtn.nextSibling) {
+        playerControls.insertBefore(btn, spartitoBtn.nextSibling);
+    } else if (spartitoBtn) {
+        playerControls.appendChild(btn);
+    } else {
+        playerControls.appendChild(btn);
+    }
+    
+    console.log("✅ Pulsante FX aggiunto dopo Spartito");
+}
+
+// ============================================================
+// CREA UI DEL PANNELLO
+// ============================================================
+
+function createUI() {
     const panel = document.createElement('div');
     panel.id = 'fx-panel';
-    // ✅ NASCOSTO IN ALTO (top: -100%)
     panel.style.cssText = `
         position: fixed;
         top: -100%;
@@ -343,6 +391,7 @@ function createUI() {
         z-index: 99999;
         max-height: 80vh;
         overflow-y: auto;
+        overflow-x: hidden;
         box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
         color: #e0e0e0;
         font-family: 'Segoe UI', -apple-system, sans-serif;
@@ -362,8 +411,13 @@ function createUI() {
             <span id="fx-status">✅ Live</span>
         </div>
     `;
+    
     document.body.appendChild(panel);
 }
+
+// ============================================================
+// EVENT LISTENERS
+// ============================================================
 
 function setupEventListeners() {
     const toggle = document.getElementById('btnFxEffects');
@@ -372,77 +426,53 @@ function setupEventListeners() {
     const search = document.getElementById('fx-search');
     const reset = document.getElementById('fx-reset');
     
-    toggle.addEventListener('click', () => {
-        isPanelOpen = !isPanelOpen;
-        // ✅ Usa classe show invece di style.display
-        panel.classList.toggle('show', isPanelOpen);
-        toggle.textContent = isPanelOpen ? '✕' : '🎛️';
-    });
-    
-    close.addEventListener('click', () => {
-        isPanelOpen = false;
-        panel.classList.remove('show');
-        toggle.textContent = '🎛️';
-    });
-    
-    search.addEventListener('input', (e) => {
-        const query = e.target.value.toLowerCase();
-        document.querySelectorAll('.fx-group').forEach(group => {
-            const name = group.dataset.effect.toLowerCase();
-            group.style.display = name.includes(query) ? 'block' : 'none';
+    if (toggle && panel) {
+        toggle.addEventListener('click', () => {
+            isPanelOpen = !isPanelOpen;
+            panel.classList.toggle('show', isPanelOpen);
+            
+            if (isPanelOpen) {
+                buildEffectControls();
+            }
+            
+            toggle.style.background = isPanelOpen 
+                ? 'rgba(255,107,107,0.3)' 
+                : 'rgba(255,255,255,0.1)';
+            toggle.style.borderColor = isPanelOpen 
+                ? '#ff6b6b' 
+                : 'rgba(255,255,255,0.2)';
         });
-    });
+    }
     
-    reset.addEventListener('click', resetAllEffects);
+    if (close && panel) {
+        close.addEventListener('click', () => {
+            isPanelOpen = false;
+            panel.classList.remove('show');
+            if (toggle) {
+                toggle.style.background = 'rgba(255,255,255,0.1)';
+                toggle.style.borderColor = 'rgba(255,255,255,0.2)';
+            }
+        });
+    }
+    
+    if (search) {
+        search.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            document.querySelectorAll('.fx-group').forEach(group => {
+                const name = group.dataset.effect.toLowerCase();
+                group.style.display = name.includes(query) ? 'block' : 'none';
+            });
+        });
+    }
+    
+    if (reset) {
+        reset.addEventListener('click', resetAllEffects);
+    }
 }
 
 // ============================================================
-// CREA PULSANTE FX (DOPO SPARTITO, STILE MIXER)
+// COSTRUISCI CONTROLLI EFFETTI
 // ============================================================
-
-function createFxButton() {
-    const playerControls = document.querySelector('.player-controls');
-    if (!playerControls) {
-        console.warn("⚠️ .player-controls non trovato");
-        return;
-    }
-    
-    // Se il pulsante esiste già, non ricrearlo
-    if (document.getElementById('btnFxEffects')) return;
-    
-    // Crea il pulsante FX
-    const btn = document.createElement('button');
-    btn.id = 'btnFxEffects';
-    btn.textContent = '🎚️FX Control';  
-    btn.className = 'fx-effects-btn';
-    
-    // Stile uguale al pulsante Mixer
-    btn.style.cssText = `
-        background: rgba(255,255,255,0.1);
-        border: 1px solid rgba(255,255,255,0.2);
-        border-radius: 30px;
-        color: #fff;
-        padding: 8px 14px;
-        cursor: pointer;
-        font-size: 13px;
-        transition: all 0.2s;
-    `;
-    
-    // Cerca il pulsante Spartito e inserisci DOPO
-    const spartitoBtn = document.getElementById('btnSpartito');
-    if (spartitoBtn && spartitoBtn.nextSibling) {
-        // Inserisci dopo Spartito
-        playerControls.insertBefore(btn, spartitoBtn.nextSibling);
-    } else if (spartitoBtn) {
-        // Spartito esiste ma è l'ultimo
-        playerControls.appendChild(btn);
-    } else {
-        // Spartito non esiste, metti alla fine
-        playerControls.appendChild(btn);
-    }
-    
-    console.log("✅ Pulsante FX aggiunto dopo Spartito");
-}
 
 function buildEffectControls() {
     const container = document.getElementById('fx-content');
@@ -450,21 +480,59 @@ function buildEffectControls() {
     
     container.innerHTML = '';
     
-    const effects = getAvailableEffects();
-    const sortedEffects = effects.sort();
-    const effectsWithParams = sortedEffects.filter(name => getEffectParams(name) !== null);
-    
-    if (effectsWithParams.length === 0) {
-        container.innerHTML = '<div class="fx-no-results">Nessun effetto disponibile</div>';
+    if (!currentPresetEffects || currentPresetEffects.length === 0) {
+        container.innerHTML = `
+            <div style="text-align:center;color:#555;padding:30px 0;">
+                <div style="font-size:24px;margin-bottom:10px;">🔇</div>
+                <div>Nessun effetto attivo</div>
+                <div style="font-size:12px;color:#444;margin-top:5px;">Il preset corrente non ha effetti</div>
+            </div>
+        `;
         return;
     }
     
-    effectsWithParams.forEach(effectName => {
+    if (currentPresetName) {
+        const presetInfo = document.createElement('div');
+        presetInfo.style.cssText = `
+            text-align: center;
+            font-size: 12px;
+            color: #888;
+            padding: 5px 0 15px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            margin-bottom: 15px;
+        `;
+        presetInfo.innerHTML = `
+            <span style="color:#666;">Preset attivo:</span>
+            <span style="color:#ff6b6b;font-weight:600;">${formatEffectName(currentPresetName)}</span>
+        `;
+        container.appendChild(presetInfo);
+    }
+    
+    const activeEffects = currentPresetEffects.filter(name => {
+        return getEffectParams(name) !== null;
+    });
+    
+    if (activeEffects.length === 0) {
+        container.innerHTML = `
+            <div style="text-align:center;color:#555;padding:30px 0;">
+                <div style="font-size:24px;margin-bottom:10px;">🎛️</div>
+                <div>Nessun parametro disponibile</div>
+                <div style="font-size:12px;color:#444;margin-top:5px;">Gli effetti attivi non hanno parametri modificabili</div>
+            </div>
+        `;
+        return;
+    }
+    
+    activeEffects.forEach(effectName => {
         const params = getEffectParams(effectName);
         const group = createEffectGroup(effectName, params);
         container.appendChild(group);
     });
 }
+
+// ============================================================
+// CREA GRUPPO EFFETTO
+// ============================================================
 
 function createEffectGroup(effectName, params) {
     const group = document.createElement('div');
@@ -484,15 +552,15 @@ function createEffectGroup(effectName, params) {
     Object.entries(params).forEach(([paramName, paramConfig]) => {
         const paramDiv = document.createElement('div');
         paramDiv.className = 'param';
-        paramDiv.className = 'param';
         paramDiv.style.cssText = `
             display: flex;
             align-items: center;
-            gap: 8px;           /* Riduci gap */
+            gap: 8px;
             padding: 3px 0;
             width: 100%;
             box-sizing: border-box;
         `;
+        
         const currentValue = getEffectParam(effectName, paramName);
         const value = currentValue !== null ? currentValue : paramConfig.min;
         
@@ -500,7 +568,7 @@ function createEffectGroup(effectName, params) {
             <label style="
                 font-size: 10px;
                 color: #888;
-                width: 45px;          /* ✅ Riduci larghezza label */
+                width: 45px;
                 flex-shrink: 0;
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
@@ -514,7 +582,7 @@ function createEffectGroup(effectName, params) {
                    data-param="${paramName}"
                    style="
                        flex: 1;
-                       min-width: 0;      /* ✅ Permette di ridursi */
+                       min-width: 0;
                        height: 4px;
                        -webkit-appearance: none;
                        appearance: none;
@@ -526,7 +594,7 @@ function createEffectGroup(effectName, params) {
             <span class="value" style="
                 font-size: 10px;
                 color: #ff6b6b;
-                min-width: 35px;       /* ✅ Riduci min-width */
+                min-width: 35px;
                 text-align: right;
                 font-family: monospace;
                 flex-shrink: 0;
@@ -567,6 +635,10 @@ function createEffectGroup(effectName, params) {
     return group;
 }
 
+// ============================================================
+// RESET TUTTI GLI EFFETTI
+// ============================================================
+
 function resetAllEffects() {
     document.querySelectorAll('.fx-group .param input[type="range"]').forEach(slider => {
         const effectName = slider.dataset.effect;
@@ -590,6 +662,10 @@ function resetAllEffects() {
     }
 }
 
+// ============================================================
+// UTILITY
+// ============================================================
+
 function formatEffectName(name) {
     return name
         .replace(/([A-Z])/g, ' $1')
@@ -597,10 +673,6 @@ function formatEffectName(name) {
         .replace(/^./, str => str.toUpperCase())
         .trim();
 }
-
-// ============================================================
-// UTILITY
-// ============================================================
 
 export function getFxRackStatus() {
     return {
@@ -611,8 +683,19 @@ export function getFxRackStatus() {
 }
 
 export function toggleFxPanel() {
-    const toggle = document.getElementById('fx-toggle');
-    if (toggle) toggle.click();
+    const panel = document.getElementById('fx-panel');
+    if (panel) {
+        panel.classList.toggle('show');
+        const btn = document.getElementById('btnFxEffects');
+        if (btn) {
+            btn.style.background = panel.classList.contains('show') 
+                ? 'rgba(255,107,107,0.3)' 
+                : 'rgba(255,255,255,0.1)';
+            btn.style.borderColor = panel.classList.contains('show') 
+                ? '#ff6b6b' 
+                : 'rgba(255,255,255,0.2)';
+        }
+    }
 }
 
 export function isFxPanelOpen() {
