@@ -519,7 +519,8 @@ function startLFOAnimation() {
             if (radius > 1) {
                 ctx.beginPath();
                 ctx.arc(x, y, radius, 0, Math.PI * 2);
-                ctx.fillStyle = 'rgba(255,107,107,' + Math.min(radius / 8, 0.5) + ')';
+                ctx.fillStyle = 'rgba(255,107,107,' + Math.min(radius / 8, 0.5)};
+                ctx.fill();
         }
         
         // Avanza il tempo
