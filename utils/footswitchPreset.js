@@ -5,7 +5,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("footswitchPreset.js ver. 004.3 loaded");
+console.log("footswitchPreset.js ver. 004.4 loaded");
 
 // ============================================================
 // STATO INTERNO — INIZIALIZZAZIONE LAZY
@@ -437,21 +437,54 @@ function createEffectGroup(effectName, params) {
     Object.entries(params).forEach(([paramName, paramConfig]) => {
         const paramDiv = document.createElement('div');
         paramDiv.className = 'param';
-        
+        paramDiv.className = 'param';
+        paramDiv.style.cssText = `
+            display: flex;
+            align-items: center;
+            gap: 8px;           /* Riduci gap */
+            padding: 3px 0;
+            width: 100%;
+            box-sizing: border-box;
+        `;
         const currentValue = getEffectParam(effectName, paramName);
         const value = currentValue !== null ? currentValue : paramConfig.min;
         
         paramDiv.innerHTML = `
-            <label>${paramConfig.label}</label>
+            <label style="
+                font-size: 10px;
+                color: #888;
+                width: 45px;          /* ✅ Riduci larghezza label */
+                flex-shrink: 0;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            ">${paramConfig.label}</label>
             <input type="range" 
                    min="${paramConfig.min}" 
                    max="${paramConfig.max}" 
                    step="${paramConfig.step}" 
                    value="${value}"
                    data-effect="${effectName}"
-                   data-param="${paramName}">
-            <span class="value">${Number(value).toFixed(2)}</span>
-            ${paramConfig.unit ? `<span class="unit">${paramConfig.unit}</span>` : ''}
+                   data-param="${paramName}"
+                   style="
+                       flex: 1;
+                       min-width: 0;      /* ✅ Permette di ridursi */
+                       height: 4px;
+                       -webkit-appearance: none;
+                       appearance: none;
+                       background: linear-gradient(to right, #2a2a3a, #ff6b6b);
+                       border-radius: 2px;
+                       outline: none;
+                       cursor: pointer;
+                   ">
+            <span class="value" style="
+                font-size: 10px;
+                color: #ff6b6b;
+                min-width: 35px;       /* ✅ Riduci min-width */
+                text-align: right;
+                font-family: monospace;
+                flex-shrink: 0;
+            ">${Number(value).toFixed(2)}</span>
+            ${paramConfig.unit ? `<span style="font-size: 9px; color: #555; min-width: 18px; flex-shrink: 0;">${paramConfig.unit}</span>` : ''}
         `;
         
         const slider = paramDiv.querySelector('input[type="range"]');
