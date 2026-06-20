@@ -5,7 +5,7 @@
 
 import * as Tone from "https://esm.sh/tone";
 
-console.log("footswitchPreset.js ver. 004.5 loaded");
+console.log("footswitchPreset.js ver. 004.6 loaded");
 
 // ============================================================
 // STATO INTERNO — INIZIALIZZAZIONE LAZY
@@ -413,7 +413,7 @@ function createFxButton() {
     // Crea il pulsante FX
     const btn = document.createElement('button');
     btn.id = 'btnFxEffects';
-    btn.textContent = '🎛️ FX';  // Cambia icona se vuoi: 🎚️
+    btn.textContent = '🎚️FX Control';  
     btn.className = 'fx-effects-btn';
     
     // Stile uguale al pulsante Mixer
