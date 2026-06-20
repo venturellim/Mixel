@@ -564,77 +564,227 @@ body {
     box-shadow: 0 5px 20px rgba(102,126,234,0.4);
 }
 
-/* FX Panel Controls */
-.fx-section {
-    margin-bottom: 25px;
+/* ==========================================
+   MIXER PANEL — STILE UNIFICATO CON FX
+   ========================================== */
+
+/* Mixer Panel - stesso stile del pannello FX */
+#fxPanel {
+    position: fixed !important;
+    top: -100% !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 95% !important;
+    max-width: 1000px !important;
+    background: rgba(10, 10, 20, 0.95) !important;
+    backdrop-filter: blur(20px) !important;
+    border-bottom-left-radius: 20px !important;
+    border-bottom-right-radius: 20px !important;
+    padding: 20px 30px !important;
+    transition: top 0.4s cubic-bezier(0.22, 1, 0.36, 1) !important;
+    z-index: 99998 !important;
+    max-height: 80vh !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8) !important;
+    color: #e0e0e0 !important;
+    font-family: 'Segoe UI', -apple-system, sans-serif !important;
 }
 
-.fx-section h3 {
-    margin-bottom: 15px;
-    font-size: 16px;
-    color: #00ff00;
+#fxPanel.show {
+    top: 0 !important;
 }
 
-.fx-control {
-    margin-bottom: 15px;
+/* Header del mixer */
+#fxPanel .panel-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    margin-bottom: 20px !important;
+    padding-bottom: 10px !important;
+    border-bottom: 1px solid rgba(255,255,255,0.2) !important;
 }
 
-.fx-control label {
-    display: block;
-    margin-bottom: 8px;
-    font-size: 13px;
-    opacity: 0.8;
+#fxPanel .panel-header h2 {
+    font-size: 20px !important;
+    color: #fff !important;
+    margin: 0 !important;
 }
 
-.fx-control input[type="range"] {
-    width: 100%;
-    height: 6px;
-    border-radius: 3px;
-    background: #333;
-    -webkit-appearance: none;
+#fxPanel .close-panel-btn {
+    background: rgba(255,255,255,0.1) !important;
+    border: none !important;
+    width: 35px !important;
+    height: 35px !important;
+    border-radius: 50% !important;
+    color: white !important;
+    font-size: 18px !important;
+    cursor: pointer !important;
+    transition: all 0.2s !important;
 }
 
-.fx-control input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: #00ff00;
-    cursor: pointer;
+#fxPanel .close-panel-btn:hover {
+    background: #ff4444 !important;
+    transform: rotate(90deg) !important;
 }
 
-.volume-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 12px;
-    padding: 8px;
-    background: rgba(255,255,255,0.05);
-    border-radius: 10px;
+/* Sezioni del mixer */
+#fxPanel .fx-section {
+    margin-bottom: 25px !important;
+    background: rgba(255,255,255,0.03) !important;
+    border-radius: 10px !important;
+    padding: 15px 18px !important;
+    border: 1px solid rgba(255,255,255,0.04) !important;
 }
 
-.volume-row label {
-    flex: 0 0 80px;
-    font-size: 12px;
+#fxPanel .fx-section h3 {
+    margin-bottom: 15px !important;
+    font-size: 13px !important;
+    color: #888 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1.5px !important;
+    font-weight: 600 !important;
 }
 
-.volume-row input[type="range"] {
-    flex: 1;
+/* Controlli EQ - stile unificato */
+#fxPanel .fx-control {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 4px 0 !important;
 }
 
-.volume-row button {
-    padding: 5px 10px;
-    font-size: 11px;
-    background: rgba(255,255,255,0.1);
-    border: none;
-    border-radius: 5px;
-    color: white;
-    cursor: pointer;
+#fxPanel .fx-control label {
+    font-size: 11px !important;
+    color: #888 !important;
+    width: 45px !important;
+    flex-shrink: 0 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
 }
 
-.volume-row button:hover {
-    background: #00ff00;
-    color: #000;
+#fxPanel .fx-control input[type="range"] {
+    flex: 1 !important;
+    min-width: 0 !important;
+    height: 4px !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    background: linear-gradient(to right, #2a2a3a, #4ecdc4) !important; /* Azzurro/verde per EQ */
+    border-radius: 2px !important;
+    outline: none !important;
+    cursor: pointer !important;
+}
+
+#fxPanel .fx-control input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    width: 14px !important;
+    height: 14px !important;
+    border-radius: 50% !important;
+    background: radial-gradient(circle, #4ecdc4, #44b39d) !important;
+    cursor: pointer !important;
+    box-shadow: 0 0 15px rgba(78, 205, 196, 0.3) !important;
+}
+
+#fxPanel .fx-control input[type="range"]::-moz-range-thumb {
+    width: 14px !important;
+    height: 14px !important;
+    border-radius: 50% !important;
+    background: #4ecdc4 !important;
+    cursor: pointer !important;
+    border: none !important;
+}
+
+/* Volumi strumenti - stile unificato */
+#fxPanel .volume-row {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 4px 0 !important;
+}
+
+#fxPanel .volume-row label {
+    font-size: 11px !important;
+    color: #888 !important;
+    width: 80px !important;
+    flex-shrink: 0 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+#fxPanel .volume-row input[type="range"] {
+    flex: 1 !important;
+    min-width: 0 !important;
+    height: 4px !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    background: linear-gradient(to right, #2a2a3a, #a8e6cf) !important; /* Verde chiaro per volumi */
+    border-radius: 2px !important;
+    outline: none !important;
+    cursor: pointer !important;
+}
+
+#fxPanel .volume-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    width: 14px !important;
+    height: 14px !important;
+    border-radius: 50% !important;
+    background: radial-gradient(circle, #a8e6cf, #7bc4a8) !important;
+    cursor: pointer !important;
+    box-shadow: 0 0 15px rgba(168, 230, 207, 0.3) !important;
+}
+
+#fxPanel .volume-row input[type="range"]::-moz-range-thumb {
+    width: 14px !important;
+    height: 14px !important;
+    border-radius: 50% !important;
+    background: #a8e6cf !important;
+    cursor: pointer !important;
+    border: none !important;
+}
+
+#fxPanel .volume-row button {
+    padding: 4px 10px !important;
+    font-size: 10px !important;
+    background: rgba(255,255,255,0.05) !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    border-radius: 6px !important;
+    color: #888 !important;
+    cursor: pointer !important;
+    transition: all 0.2s !important;
+    flex-shrink: 0 !important;
+}
+
+#fxPanel .volume-row button:hover {
+    background: rgba(168, 230, 207, 0.2) !important;
+    border-color: #a8e6cf !important;
+    color: #fff !important;
+}
+
+/* Valori numerici per EQ e Volume */
+#fxPanel .fx-control .value,
+#fxPanel .volume-row .value {
+    font-size: 10px !important;
+    color: #4ecdc4 !important;
+    min-width: 35px !important;
+    text-align: right !important;
+    font-family: monospace !important;
+    flex-shrink: 0 !important;
+}
+
+/* Scrollbar del mixer */
+#fxPanel::-webkit-scrollbar {
+    width: 4px !important;
+}
+
+#fxPanel::-webkit-scrollbar-thumb {
+    background: #4ecdc4 !important;
+    border-radius: 2px !important;
+}
+
+#fxPanel::-webkit-scrollbar-track {
+    background: transparent !important;
 }
 
 /* ==========================================
